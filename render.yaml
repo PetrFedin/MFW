@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mfw-platform-mvp
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: feature/multi-event-brics
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CREDENTIAL_SECRET
+        generateValue: true
