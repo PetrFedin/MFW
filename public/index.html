@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Moscow Fashion Platform</title><link rel="stylesheet" href="/app.css">
+</head>
+<body data-theme="platform">
+<div id="app">
+<header class="topbar">
+  <button class="brand" data-scope="platform"><span class="mark">M</span><span>MOSCOW<br>FASHION</span></button>
+  <div class="switcher">
+    <button data-event="mfw-2026-09" class="switch active">MFW</button>
+    <button data-event="brics-fashion-summit-2026" class="switch">BFS</button>
+  </div>
+  <button id="adminBtn" class="icon-btn">ADMIN</button>
+</header>
+<main>
+<section id="hero" class="hero"></section>
+<section class="actions">
+  <button data-view="today" class="action active">TODAY</button>
+  <button data-view="programme" class="action">PROGRAMME</button>
+  <button data-view="pass" class="action">MY PASS</button>
+  <button data-view="admin" class="action">CONTROL</button>
+</section>
+<section id="content"></section>
+</main>
+<nav class="bottom">
+ <button data-view="today">Today</button><button data-view="programme">Programme</button>
+ <button data-view="pass">Pass</button><button data-view="profile">Profile</button>
+</nav>
+</div>
+<script type="module" src="/app.js"></script>
+</body></html>
