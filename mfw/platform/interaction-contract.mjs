@@ -131,3 +131,15 @@ console.log('Brand 365 state machine + owner Audience Asset contract: PASS');
 const platformTower=fs.readFileSync(path.join(root,'platform.js'),'utf8');
 ['OWNER CONTROL TOWER','Brand-by-brand contribution','Cohort retention','Cross-brand migration','MFW ↔ BFS cross-event','Scenario valuation'].forEach(x=>{if(!platformTower.includes(x))throw new Error('Owner Control Tower UI missing: '+x)});
 console.log('Owner Control Tower contract: PASS');
+
+const migration017=fs.readFileSync(path.join(root,'..','..','mfw-api','migrations','017_mvp_persistence.sql'),'utf8');
+const migration018=fs.readFileSync(path.join(root,'..','..','mfw-api','migrations','018_identity_interests_registration.sql'),'utf8');
+const migration019=fs.readFileSync(path.join(root,'..','..','mfw-api','migrations','019_platform_registrations.sql'),'utf8');
+['user_agenda','b2b_meetings','b2b_meeting_events'].forEach(x=>{if(!migration017.includes(x))throw new Error('MVP persistence migration missing: '+x)});
+['user_interests','registration_type','submitted_payload'].forEach(x=>{if(!migration018.includes(x))throw new Error('Identity migration missing: '+x)});
+['platform_registrations','event_brand','pending_review'].forEach(x=>{if(!migration019.includes(x))throw new Error('Platform registration migration missing: '+x)});
+['/v1/me/profile','/v1/me/interests','/v1/platform/registrations/','/v1/agenda/conflicts'].forEach(x=>{if(!authority.includes(x))throw new Error('Persistent MVP authority missing: '+x)});
+['syncProfileToAuthority','syncPlatformRegistration','hydrateAccountFromAuthority','https://mfw-authority.onrender.com'].forEach(x=>{if(!platformJs.includes(x))throw new Error('Platform authority sync missing: '+x)});
+if(mfwApp.includes('https://moscow-fashion-week-authority.onrender.com'))throw new Error('legacy Moscow authority URL still present in MFW app');
+if(!mfwApp.includes('https://mfw-authority.onrender.com'))throw new Error('canonical MFW authority URL missing');
+console.log('persistent account + registrations + agenda + canonical authority contract: PASS');
