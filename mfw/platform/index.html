@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Moscow Fashion Platform</title><link rel="stylesheet" href="./platform.css">
+</head><body>
+<header class="platform-bar">
+  <div class="platform-wordmark">MOSCOW<br>FASHION PLATFORM</div>
+  <nav class="event-switcher" aria-label="Event switcher">
+    <button class="event-button active" data-event="mfw">MFW</button>
+    <button class="event-button" data-event="bfs">BRICS+ FASHION SUMMIT</button>
+  </nav>
+  <div class="platform-actions"><button class="hub-button" id="hubBtn">ПЛАТФОРМА</button><button class="for-you-button" id="forYouBtn">ДЛЯ ВАС</button><button class="value-button" id="valueBtn">ЦЕННОСТЬ</button><button class="investor-button" id="investorBtn">ИНВЕСТОРУ</button><button class="account" id="accountBtn">ACCOUNT</button></div>
+</header>
+<main class="experience">
+  <iframe id="eventFrame" title="Event experience" src="../index.html"></iframe>
+</main>
+<div class="event-note" id="eventNote">MFW · ORIGINAL EXPERIENCE</div>
+
+<div class="account-drawer hidden" id="accountDrawer" aria-hidden="true">
+  <div class="drawer-card">
+    <div class="drawer-head">
+      <div><div class="drawer-kicker">ONE PLATFORM ACCOUNT</div><h2>Профиль и регистрации</h2></div>
+      <button class="drawer-close" id="accountClose">×</button>
+    </div>
+    <form id="profileForm" class="profile-form">
+      <label>Имя<input name="firstName" required></label>
+      <label>Фамилия<input name="lastName" required></label>
+      <label>Email<input name="email" type="email" required></label>
+      <label>Телефон<input name="phone" required></label>
+      <label>Компания<input name="company"></label>
+      <label>Должность<input name="title"></label>
+      <label>Страна<input name="country"></label>
+      <button class="save-profile" type="submit">СОХРАНИТЬ ОБЩИЙ ПРОФИЛЬ</button>
+    </form>
+    <div class="registration-grid" id="registrationGrid"></div>
+    <div class="drawer-foot">
+      <span>Общий профиль хранится один раз.</span>
+      <b>Каждое мероприятие подтверждается отдельно.</b>
+    </div>
+  </div>
+</div>
+
+<div class="registration-modal hidden" id="registrationModal" aria-hidden="true">
+  <div class="registration-card">
+    <button class="drawer-close" id="registrationClose">×</button>
+    <div class="drawer-kicker" id="registrationKicker"></div>
+    <h2 id="registrationTitle"></h2>
+    <p class="registration-copy">Данные общего профиля уже подставлены. Проверьте их и отдельно подтвердите участие именно в этом мероприятии.</p>
+    <form id="registrationForm" class="event-form">
+      <label>Тип участия<select name="registrationType" id="registrationType"></select></label>
+      <label>Компания<input name="company"></label>
+      <label>Должность<input name="title"></label>
+      <label>Профессиональная цель<textarea name="purpose" rows="3" placeholder="Что вы хотите получить от мероприятия"></textarea></label>
+      <label class="confirm-row"><input type="checkbox" name="confirm" required><span id="confirmLabel">Подтверждаю отдельную регистрацию</span></label>
+      <button class="save-profile" type="submit">ОТПРАВИТЬ РЕГИСТРАЦИЮ</button>
+    </form>
+  </div>
+</div>
+
+<div class="value-modal hidden" id="valueModal"><div class="value-card"><button class="drawer-close" id="valueClose">×</button><div class="drawer-kicker">ПОЧЕМУ ПЛАТФОРМА НУЖНА ПОСЛЕ СОБЫТИЯ</div><h2>Не только билет.<br>Fashion relationship layer.</h2><div class="value-grid">
+<div><b>Посетителю</b><span>Любимые бренды и проекты</span><span>Персональная программа</span><span>Новости без поиска по соцсетям</span><span>30-дневные privileges</span></div>
+<div><b>Профессионалу</b><span>Buyer shortlist</span><span>B2B meetings</span><span>Line sheets и follow-up</span><span>Контакты после события</span></div>
+<div><b>Бренду</b><span>Owned followers</span><span>Favorites / intent</span><span>Reward campaigns</span><span>Post-event audience</span></div>
+<div><b>Владельцу</b><span>Registration → attendance</span><span>Engagement → follow</span><span>Reward → return</span><span>Meeting → lead</span></div>
+</div><div class="value-funnel"><span>REGISTER</span><i>→</i><span>ATTEND</span><i>→</i><span>ENGAGE</span><i>→</i><span>FOLLOW</span><i>→</i><span>FAVORITE</span><i>→</i><span>REWARD</span><i>→</i><span>RETURN</span></div><p>Это продуктовая модель MVP. Реальные KPI появляются только после подключения production analytics и реальных пользователей.</p></div></div>
+<div class="investor-modal hidden" id="investorModal"><div class="investor-card"><button class="drawer-close" id="investorClose">×</button><div class="drawer-kicker">OWNER / INVESTOR ROUTE</div><h2>Один актив.<br>Два сильных бренда.</h2><div class="investor-steps"><button data-investor-step="1"><b>01</b><span>MFW — существующий полноценный experience</span></button><button data-investor-step="2"><b>02</b><span>BFS — отдельный summit experience</span></button><button data-investor-step="3"><b>03</b><span>Один account, две независимые регистрации</span></button><button data-investor-step="4"><b>04</b><span>Programme + QR + B2B</span></button><button data-investor-step="5"><b>05</b><span>Масштабирование на следующие события</span></button></div><div class="investor-proof"><div><strong>2</strong><span>event brands</span></div><div><strong>1</strong><span>identity layer</span></div><div><strong>2</strong><span>event authorities</span></div><div><strong>∞</strong><span>next events</span></div></div><p id="investorNarrative">Выберите шаг — приложение само откроет нужный контекст для демонстрации.</p></div></div><div class="hub-modal hidden" id="hubModal"><div class="hub-card">
+<button class="drawer-close" id="hubClose">×</button>
+<div class="drawer-kicker">MOSCOW FASHION PLATFORM</div><h2>Ваш fashion hub</h2>
+<div class="hub-tabs">
+<button class="active" data-hub-tab="directory">Каталог</button>
+<button data-hub-tab="agenda">Мой календарь</button>
+<button data-hub-tab="wallet">Reward Wallet</button>
+<button data-hub-tab="owner">Owner Analytics</button>
+</div>
+<div id="hubContent"></div>
+</div></div>
+<div class="for-you-modal hidden" id="forYouModal"><div class="for-you-card"><button class="drawer-close" id="forYouClose">×</button><div class="drawer-kicker">ПЕРСОНАЛЬНЫЙ FASHION GRAPH</div><h2>Для вас</h2><div class="for-you-grid" id="forYouGrid"></div><div class="owner-funnel" id="ownerFunnel"></div></div></div>
+<script src="./event-data.js"></script><script src="./platform.js"></script>
+</body></html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" rx="210" fill="#070707"/>
+<text x="86" y="390" fill="#f7f7f2" font-family="Arial,Helvetica,sans-serif" font-size="190" font-weight="900" letter-spacing="-14">MFW</text>
+<rect x="88" y="468" width="848" height="26" rx="13" fill="#d7ff39"/>
+<text x="90" y="610" fill="#f7f7f2" font-family="Arial,Helvetica,sans-serif" font-size="66" font-weight="700">MOSCOW</text>
+<text x="90" y="694" fill="#f7f7f2" font-family="Arial,Helvetica,sans-serif" font-size="66" font-weight="700">FASHION WEEK</text>
+</svg>
