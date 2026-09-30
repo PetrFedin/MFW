@@ -65,3 +65,40 @@ The already-created direct Render services do not automatically adopt new Bluepr
 
 Required proof:
 `migrations 001-016 → /health dataMode=postgres → schema ready → Golden Path → social reverification`.
+
+
+## 2026-09-30 — MVP persistence wave 017
+
+**Git exact head:** `8d4cfaf237af966967a911ead129f82a7aab0237`
+
+Completed:
+- added migration `017_mvp_persistence.sql`;
+- added persistent `user_agenda` with reminder configuration;
+- added persistent `b2b_meetings` and immutable `b2b_meeting_events`;
+- event registration/cancellation now use PostgreSQL when authority is in postgres mode;
+- B2B meeting creation now uses PostgreSQL when authority is in postgres mode;
+- added `GET /v1/agenda`, `POST /v1/agenda/:eventId/save`, `DELETE /v1/agenda/:eventId`;
+- schema readiness now requires the new MVP persistence tables.
+
+Render exact-head proof:
+- `mfw-platform`: deploy `dep-daulmvu0tbcc73bpeb90` — **live**
+- `mfw-api`: deploy `dep-dauln10jo6nc73dm6r6g` — **live**
+- `mfw-authority`: deploy `dep-dauln3142hec73ev75pg` — **live**
+- all three deployed exact commit `8d4cfaf237af966967a911ead129f82a7aab0237`;
+- authority deep self-test: **PASS**;
+- authority remains `dataMode=memory` because the direct-created service has not yet received `DATABASE_URL`;
+- social reverification remains inactive with reason `postgres_required`.
+
+Infrastructure defect:
+- services report `autoDeploy=yes`, but commits after initial provisioning did not automatically create deployments;
+- exact-head deployment therefore had to be triggered via Render API;
+- treat auto-deploy webhook as unproven until a later commit produces a deploy without manual/API trigger.
+
+Next gate:
+- apply the canonical Blueprint or otherwise securely wire `mfw-postgres` to `mfw-authority`;
+- migrations 001-017;
+- `dataMode=postgres`;
+- schema readiness PASS;
+- PostgreSQL golden paths;
+- social reverification active;
+- only then call persistent MVP authority production-ready.
