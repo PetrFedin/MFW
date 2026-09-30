@@ -1,0 +1,66 @@
+services:
+  - type: web
+    name: mfw-platform
+    runtime: static
+    repo: https://github.com/PetrFedin/MFW
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: echo "MFW static build"
+    staticPublishPath: ./mfw
+
+  - type: web
+    name: mfw-api
+    runtime: node
+    repo: https://github.com/PetrFedin/MFW
+    branch: main
+    plan: free
+    region: frankfurt
+    autoDeployTrigger: commit
+    buildCommand: echo "MFW API build"
+    startCommand: node mfw-api/server.js
+
+  - type: web
+    name: mfw-authority
+    runtime: node
+    repo: https://github.com/PetrFedin/MFW
+    branch: main
+    plan: free
+    region: frankfurt
+    autoDeployTrigger: commit
+    buildCommand: cd mfw-api && npm install --omit=dev
+    startCommand: cd mfw-api && node server-v2.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MFW_REQUIRE_POSTGRES
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: MFW_JWT_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: VK_CLIENT_ID
+        sync: false
+      - key: VK_CLIENT_SECRET
+        sync: false
+
+  - type: cron
+    name: mfw-social-reverification
+    runtime: node
+    repo: https://github.com/PetrFedin/MFW
+    branch: main
+    plan: free
+    region: frankfurt
+    schedule: "17 3 * * *"
+    buildCommand: cd mfw-api && npm install --omit=dev
+    startCommand: cd mfw-api && node reverify-social.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: VK_CLIENT_ID
+        sync: false
+      - key: VK_CLIENT_SECRET
+        sync: false
