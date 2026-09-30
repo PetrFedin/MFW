@@ -124,3 +124,20 @@ After PostgreSQL is available:
 5. verify social reverification;
 6. set `MFW_REQUIRE_POSTGRES=true`;
 7. record exact deploy in this file and `RELEASE_LOG.md`.
+
+
+## 2026-09-30 exact-head MVP identity wave
+
+Canonical services are live on:
+`f201fd66a875a2b701abd8a6f690687b169624d6`
+
+Deploy IDs:
+- platform: `dep-daum268jo6nc73dne1a0`
+- API: `dep-daum28btqb8s73btcc4g`
+- authority: `dep-daum29k1nsns73eqtrs0`
+
+Authority deep self-test: PASS.
+
+Persistence remains blocked only by secure `DATABASE_URL` wiring from `mfw-postgres` to the direct-created authority service. Current mode: `memory`.
+
+Auto-deploy defect is confirmed: commits did not produce deployments automatically even though `autoDeploy=yes`; until fixed, exact-head verification requires explicit deploy trigger.
