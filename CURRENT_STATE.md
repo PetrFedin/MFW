@@ -112,7 +112,7 @@ Modelled metrics must not be presented as audited business valuation.
 
 ## PostgreSQL
 
-Current migrations: **001–016**.
+Current migrations: **001–019**.
 
 Latest schema layer:
 
@@ -138,3 +138,18 @@ The next major product-development layer is **Ecosystem Economics & Investor Mod
 - 12/24/36 month scenarios
 
 This file must be updated whenever a major development wave is completed.
+
+
+## MVP identity and registration authority
+
+Current account model:
+- one shared identity/profile;
+- explicit interests persisted server-side;
+- separate project registrations for MFW and BFS;
+- project registration is distinct from registration to a specific show/session;
+- role/application context is persisted per MFW/BFS registration;
+- personal agenda is a separate entity;
+- agenda conflicts are detected server-side when PostgreSQL is active.
+
+Current canonical authority URL:
+`https://mfw-authority.onrender.com`
