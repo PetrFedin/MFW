@@ -14,6 +14,64 @@
   var hubModal=document.getElementById('hubModal');
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
+  var AUTHORITY='https://mfw-authority.onrender.com';
+  function accessToken(){try{return localStorage.getItem('mfwAccessToken')||'';}catch(e){return '';}}
+  function setAccessToken(v){try{if(v)localStorage.setItem('mfwAccessToken',v);else localStorage.removeItem('mfwAccessToken');}catch(e){}}
+  function displayName(){return ((accountState.profile.firstName||'')+' '+(accountState.profile.lastName||'')).trim()||'MFW User';}
+  async function ensureAuthoritySession(role,force){
+    var token=accessToken();
+    if(token&&!force)return token;
+    var r=await fetch(AUTHORITY+'/v1/auth/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:displayName(),role:role||'Visitor'})});
+    var out=await r.json();if(!r.ok)throw new Error(out.error||'auth_failed');
+    setAccessToken(out.session);try{localStorage.setItem('mfwUserId',out.user&&out.user.id||'');}catch(e){}
+    return out.session;
+  }
+  async function authorityFetch(path,options){
+    options=options||{};var headers=Object.assign({'Content-Type':'application/json'},options.headers||{});
+    var token=accessToken();if(token)headers.Authorization='Bearer '+token;
+    var r=await fetch(AUTHORITY+path,Object.assign({},options,{headers:headers}));
+    var out=await r.json().catch(function(){return {};});
+    if(!r.ok)throw Object.assign(new Error(out.error||('HTTP '+r.status)),{data:out,status:r.status});
+    return out;
+  }
+  function eventRoleMode(code,roleId){
+    var row=(EVENT_CONFIG[code].roles||[]).filter(function(x){return x.id===roleId;})[0];
+    return row&&row.mode||'public';
+  }
+  async function syncProfileToAuthority(primaryRole){
+    await ensureAuthoritySession(primaryRole||'Visitor',true);
+    return authorityFetch('/v1/me/profile',{method:'PATCH',body:JSON.stringify({
+      displayName:displayName(),primaryRole:String(primaryRole||'visitor').toLowerCase(),locale:'ru',
+      organisation:accountState.profile.company||'',jobTitle:accountState.profile.title||'',
+      country:accountState.profile.country||'',marketingConsent:true,networkingVisible:true
+    })});
+  }
+  async function syncPlatformRegistration(code,reg){
+    var role=reg.registrationType||'visitor';
+    await syncProfileToAuthority(role);
+    var out=await authorityFetch('/v1/platform/registrations/'+code,{method:'POST',body:JSON.stringify({
+      registrationType:role,mode:eventRoleMode(code,role),company:reg.company||'',title:reg.title||'',
+      purpose:reg.purpose||'',confirmedAt:reg.confirmedAt,confirm:true
+    })});
+    if(out&&out.data)accountState.registrations[code]=Object.assign({},reg,out.data);
+    saveState();return out;
+  }
+  async function hydrateAccountFromAuthority(){
+    if(!accessToken())return;
+    try{
+      var out=await authorityFetch('/v1/me',{method:'GET'}),d=out.data||{},p=d.profile||{};
+      if(p.displayName){
+        var parts=String(p.displayName).trim().split(/\s+/);
+        accountState.profile.firstName=parts.shift()||accountState.profile.firstName;
+        accountState.profile.lastName=parts.join(' ')||accountState.profile.lastName;
+      }
+      if(p.organisation!=null)accountState.profile.company=p.organisation||'';
+      if(p.jobTitle!=null)accountState.profile.title=p.jobTitle||'';
+      if(p.country!=null)accountState.profile.country=p.country||'';
+      (d.platformRegistrations||[]).forEach(function(r){accountState.registrations[r.eventCode]=r;});
+      saveState();fillProfile();renderRegistrations();
+    }catch(e){}
+  }
 
   var DEFAULT_PROFILE={firstName:'Alex',lastName:'Morgan',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Fashion Industry',title:'Guest',country:'Russia'};
   var EVENT_CONFIG={
@@ -269,7 +327,7 @@
     [].slice.call(registrationGrid.querySelectorAll('[data-copy]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.copy,true);};});
   }
   function openAccount(){
-    fillProfile();renderRegistrations();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');
+    fillProfile();renderRegistrations();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
   }
   function closeAccount(){accountDrawer.classList.add('hidden');accountDrawer.setAttribute('aria-hidden','true');}
   function openRegistration(code,copied){
@@ -295,25 +353,24 @@
     registrationModal.classList.remove('hidden');registrationModal.setAttribute('aria-hidden','false');
   }
   function closeRegistration(){registrationModal.classList.add('hidden');registrationModal.setAttribute('aria-hidden','true');currentRegistrationEvent=null;}
-  profileForm.onsubmit=function(e){
+  profileForm.onsubmit=async function(e){
     e.preventDefault();
     var fd=new FormData(profileForm);
     accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()));
     saveState();renderRegistrations();
+    var preferred=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'visitor';
+    try{await syncProfileToAuthority(preferred);saveState();}catch(err){console.warn('profile authority sync failed',err);}
   };
-  registrationForm.onsubmit=function(e){
+  registrationForm.onsubmit=async function(e){
     e.preventDefault();if(!currentRegistrationEvent)return;
-    var fd=new FormData(registrationForm);
-    accountState.registrations[currentRegistrationEvent]={
-      eventCode:currentRegistrationEvent,
-      registrationType:fd.get('registrationType'),
-      company:fd.get('company'),
-      title:fd.get('title'),
-      purpose:fd.get('purpose'),
-      status:'submitted',
-      confirmedAt:new Date().toISOString()
+    var code=currentRegistrationEvent,fd=new FormData(registrationForm);
+    var reg={
+      eventCode:code,registrationType:fd.get('registrationType'),company:fd.get('company'),
+      title:fd.get('title'),purpose:fd.get('purpose'),status:'submitted',confirmedAt:new Date().toISOString()
     };
-    saveState();closeRegistration();renderRegistrations();
+    accountState.registrations[code]=reg;saveState();renderRegistrations();
+    try{await syncPlatformRegistration(code,reg);}catch(err){console.warn('registration authority sync failed',err);}
+    closeRegistration();renderRegistrations();
   };
   document.getElementById('accountBtn').onclick=openAccount;
   document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');};
