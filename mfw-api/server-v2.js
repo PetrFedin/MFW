@@ -606,7 +606,7 @@ async function checkDatabaseSchema(){
     'loyalty_offer_requirements','loyalty_eligibility','loyalty_claims','brand_follows','brand_content_posts',
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
-    'user_agenda','b2b_meetings','b2b_meeting_events','user_interests'
+    'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
@@ -2372,6 +2372,55 @@ async function router(req,res){
     return json(res,200,{user:{id:userId,name,role,demo:true},session,dataMode:pool?'postgres':'memory'});
   }
 
+  if(req.method==='GET'&&p==='/v1/platform/registrations'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const r=await pool.query(`SELECT event_brand AS "eventCode",registration_type AS "registrationType",status,
+        organisation AS company,job_title AS title,purpose,confirmed_at AS "confirmedAt",updated_at AS "updatedAt"
+        FROM platform_registrations WHERE user_id::text=$1 ORDER BY event_brand`,[userId]);
+      return json(res,200,{data:r.rows,source:'postgres'});
+    }
+    return json(res,200,{data:[],source:'memory',demo:true});
+  }
+
+  if(req.method==='POST'&&p.startsWith('/v1/platform/registrations/')){
+    const eventBrand=p.split('/')[4];
+    if(!['mfw','bfs'].includes(eventBrand))return json(res,400,{error:'invalid_event_brand'});
+    const b=await readBody(req);
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const registrationType=String(b.registrationType||'visitor').toLowerCase();
+    const allowedByEvent={
+      mfw:['visitor','buyer','stylist','media','blogger','photo_video','volunteer','designer_brand','speaker','partner'],
+      bfs:['visitor','media','blogger','photo_video','volunteer','delegate','speaker','participant','partner']
+    };
+    if(!allowedByEvent[eventBrand].includes(registrationType))return json(res,400,{error:'invalid_registration_type',allowed:allowedByEvent[eventBrand]});
+    const mode=String(b.mode||'public');
+    const reviewModes=['accreditation','application','selection','managed'];
+    const status=reviewModes.includes(mode)?'pending_review':'submitted';
+    if(pool){
+      const user=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[userId]);
+      if(!user.rowCount)return json(res,404,{error:'user_not_found'});
+      const r=await pool.query(`INSERT INTO platform_registrations(user_id,event_brand,registration_type,status,organisation,job_title,purpose,confirmed_at,submitted_payload)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)
+        ON CONFLICT(user_id,event_brand) DO UPDATE SET registration_type=EXCLUDED.registration_type,status=EXCLUDED.status,
+          organisation=EXCLUDED.organisation,job_title=EXCLUDED.job_title,purpose=EXCLUDED.purpose,
+          confirmed_at=EXCLUDED.confirmed_at,submitted_payload=EXCLUDED.submitted_payload,updated_at=now()
+        RETURNING event_brand AS "eventCode",registration_type AS "registrationType",status,
+          organisation AS company,job_title AS title,purpose,confirmed_at AS "confirmedAt",updated_at AS "updatedAt"`,
+        [user.rows[0].id,eventBrand,registrationType,status,
+          String(b.company||b.organisation||'').slice(0,200)||null,
+          String(b.title||b.jobTitle||'').slice(0,160)||null,
+          String(b.purpose||'').slice(0,1000)||null,
+          b.confirmedAt||new Date().toISOString(),
+          JSON.stringify({mode,confirm:!!b.confirm,source:'platform'})]);
+      await track('platform_registration_submitted',{eventBrand,registrationType,status,mode},userId);
+      return json(res,201,{data:r.rows[0],source:'postgres'});
+    }
+    return json(res,201,{data:{eventCode:eventBrand,registrationType,status,company:b.company||'',title:b.title||'',purpose:b.purpose||'',confirmedAt:b.confirmedAt||new Date().toISOString(),demo:true},source:'memory'});
+  }
+
   if(req.method==='GET'&&p==='/v1/me'){
     const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
     if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
@@ -2385,7 +2434,10 @@ async function router(req,res){
       const registrations=await pool.query(`SELECT COALESCE(e.external_key,e.id::text) AS "eventId",e.title,e.event_type AS "eventType",
         r.status,r.registration_type AS "registrationType",r.organisation,r.job_title AS "jobTitle",r.purpose,r.updated_at AS "updatedAt"
         FROM event_registrations r JOIN events e ON e.id=r.event_id WHERE r.user_id=$1 ORDER BY e.starts_at`,[profile.rows[0].id]);
-      return json(res,200,{data:{profile:profile.rows[0],interests:interests.rows,registrations:registrations.rows},source:'postgres'});
+      const platformRegistrations=await pool.query(`SELECT event_brand AS "eventCode",registration_type AS "registrationType",status,
+        organisation AS company,job_title AS title,purpose,confirmed_at AS "confirmedAt",updated_at AS "updatedAt"
+        FROM platform_registrations WHERE user_id=$1 ORDER BY event_brand`,[profile.rows[0].id]);
+      return json(res,200,{data:{profile:profile.rows[0],interests:interests.rows,platformRegistrations:platformRegistrations.rows,programmeRegistrations:registrations.rows},source:'postgres'});
     }
     const user=memory.users.get(userId)||{id:userId,name:'Demo User',role:'Visitor'};
     return json(res,200,{data:{profile:{id:user.id,displayName:user.name,primaryRole:String(user.role||'Visitor').toLowerCase(),locale:'ru'},interests:memory.userInterests.get(userId)||[],registrations:[...memory.eventRegistrations.values()].filter(x=>x.userId===userId)},source:'memory',demo:true});
@@ -2396,7 +2448,7 @@ async function router(req,res){
     const b=await readBody(req);
     const userId=userSubject(req,b.userId||'demo_user');
     if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
-    const allowedRoles=['visitor','participant','client','buyer','designer','media','speaker','partner','delegate','staff','organizer'];
+    const allowedRoles=['visitor','participant','client','buyer','designer','designer_brand','stylist','media','blogger','photo_video','volunteer','speaker','partner','delegate','staff','organizer'];
     const role=String(b.primaryRole||(session&&session.role)||'visitor').toLowerCase();
     if(!allowedRoles.includes(role))return json(res,400,{error:'invalid_primary_role',allowed:allowedRoles});
     if(pool){
@@ -2622,6 +2674,27 @@ async function router(req,res){
       wallet:'awaiting_pass_type_id_certificate',
       testflight:'awaiting_apple_team_signing'
     }});
+    if(req.method==='GET'&&p==='/v1/admin/platform-registrations'){
+      if(pool){
+        const r=await pool.query(`SELECT pr.id,pr.event_brand AS "eventCode",pr.registration_type AS "registrationType",pr.status,
+          pr.organisation AS company,pr.job_title AS title,pr.purpose,pr.created_at AS "createdAt",pr.updated_at AS "updatedAt",
+          p.display_name AS "displayName",u.email,u.phone
+          FROM platform_registrations pr JOIN users u ON u.id=pr.user_id LEFT JOIN profiles p ON p.user_id=u.id
+          ORDER BY pr.updated_at DESC LIMIT 500`);
+        return json(res,200,{data:r.rows,source:'postgres'});
+      }
+      return json(res,200,{data:[],source:'memory',demo:true});
+    }
+    if(req.method==='PATCH'&&p.startsWith('/v1/admin/platform-registrations/')){
+      if(!pool)return json(res,409,{error:'postgres_required'});
+      const id=p.split('/').pop(),b=await readBody(req),status=String(b.status||'');
+      if(!['submitted','pending_review','approved','rejected','revoked','cancelled'].includes(status))return json(res,400,{error:'invalid_status'});
+      const r=await pool.query('UPDATE platform_registrations SET status=$2,updated_at=now() WHERE id::text=$1 RETURNING id,event_brand AS "eventCode",registration_type AS "registrationType",status,updated_at AS "updatedAt"',[id,status]);
+      if(!r.rowCount)return json(res,404,{error:'registration_not_found'});
+      await track('platform_registration_reviewed',{id,status},sessionFromRequest(req)?.sub||null);
+      return json(res,200,{data:r.rows[0]});
+    }
+
     if(req.method==='GET'&&p==='/v1/admin/events') return json(res,200,{data:memory.events});
     if(req.method==='GET'&&p==='/v1/admin/accreditations') return json(res,200,{data:memory.accreditations});
     if(req.method==='GET'&&p==='/v1/admin/streams') return json(res,200,{data:memory.streams});
