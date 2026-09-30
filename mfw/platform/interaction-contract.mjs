@@ -143,3 +143,9 @@ const migration019=fs.readFileSync(path.join(root,'..','..','mfw-api','migration
 if(mfwApp.includes('https://moscow-fashion-week-authority.onrender.com'))throw new Error('legacy Moscow authority URL still present in MFW app');
 if(!mfwApp.includes('https://mfw-authority.onrender.com'))throw new Error('canonical MFW authority URL missing');
 console.log('persistent account + registrations + agenda + canonical authority contract: PASS');
+
+const platformHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
+['interestGrid','saveInterests'].forEach(x=>{if(!platformHtml.includes(x))throw new Error('Account interest UI missing: '+x)});
+['INTEREST_OPTIONS','saveInterestsToAuthority','/v1/me/interests'].forEach(x=>{if(!platformJs.includes(x))throw new Error('Interest persistence UI missing: '+x)});
+['platform_registrations','/v1/platform/registrations/','pending_review'].forEach(x=>{if(!(migration019+authority).includes(x))throw new Error('Platform registration authority missing: '+x)});
+console.log('account interests + platform registrations contract: PASS');
