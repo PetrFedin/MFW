@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  var API='https://moscow-fashion-week-authority.onrender.com';
+  var API='https://mfw-authority.onrender.com';
   var VISUALS={
     runway:'https://static.tildacdn.com/tild3538-3661-4962-a431-363531303736/2026-03-15_215933.jpg',
     backstage:'https://static.tildacdn.com/tild3633-6561-4664-b432-343062643365/2026-03-16_144258.jpg',
