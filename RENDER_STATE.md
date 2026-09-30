@@ -68,3 +68,59 @@ For every release:
 6. update `RELEASE_LOG.md` with result and blockers.
 
 Do not call a release live until Render reports a successful deploy and the expected surfaces are verified.
+
+
+## Canonical MFW contour — LIVE
+
+Created: **2026-09-30**
+
+All three canonical services now source `PetrFedin/MFW:main` directly and have `autoDeploy=yes`.
+
+### Platform
+- service: `mfw-platform`
+- id: `srv-daug1qrncjis73fg95gg`
+- URL: https://mfw-platform.onrender.com
+- initial deploy: `dep-daug1r3ncjis73fg96b0`
+- exact commit: `6fa0adaae2db67fc6b5b21484c19cc5a9c665402`
+- status: **live**
+
+### API
+- service: `mfw-api`
+- id: `srv-daug1v6gekts73eal6j0`
+- URL: https://mfw-api.onrender.com
+- initial deploy: `dep-daug1vugekts73eal8d0`
+- exact commit: `6fa0adaae2db67fc6b5b21484c19cc5a9c665402`
+- status: **live**
+- startup evidence: `mfw_api_started`, version `investor-api-v2`
+
+### Authority
+- service: `mfw-authority`
+- id: `srv-daug20id0e5s73fjtsr0`
+- URL: https://mfw-authority.onrender.com
+- initial deploy: `dep-daug21ad0e5s73fjtuvg`
+- exact commit: `6fa0adaae2db67fc6b5b21484c19cc5a9c665402`
+- status: **live**
+- deep self-test: **PASS**
+- current persistence: `dataMode=memory`
+- social reverification scheduler: inactive until PostgreSQL is connected
+
+## Remaining production-persistence blocker
+
+There is currently no dedicated MFW PostgreSQL instance in the Render workspace.
+
+Do **not** reuse `renova-review-db`; it belongs to another project.
+
+Until a dedicated MFW PostgreSQL is provisioned and `DATABASE_URL` is wired:
+- authority can run and self-test in memory mode;
+- persistence across service restarts is not production-grade;
+- server-side social reverification remains disabled;
+- `MFW_REQUIRE_POSTGRES` remains `false`.
+
+After PostgreSQL is available:
+1. wire `DATABASE_URL`;
+2. run migrations 001–016;
+3. verify schema reconciliation;
+4. verify `dataMode=postgres`;
+5. verify social reverification;
+6. set `MFW_REQUIRE_POSTGRES=true`;
+7. record exact deploy in this file and `RELEASE_LOG.md`.
