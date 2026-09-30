@@ -1,3 +1,11 @@
+databases:
+  - name: mfw-postgres
+    plan: free
+    region: frankfurt
+    databaseName: mfw_postgres
+    user: mfw_postgres_user
+    postgresMajorVersion: "17"
+
 services:
   - type: web
     name: mfw-platform
@@ -28,16 +36,20 @@ services:
     region: frankfurt
     autoDeployTrigger: commit
     buildCommand: cd mfw-api && npm install --omit=dev
+    preDeployCommand: cd mfw-api && npm run migrate
     startCommand: cd mfw-api && node server-v2.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: MFW_REQUIRE_POSTGRES
-        value: "false"
+        value: "true"
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: mfw-postgres
+          property: connectionString
       - key: MFW_JWT_SECRET
-        sync: false
+        generateValue: true
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: VK_CLIENT_ID
@@ -57,7 +69,9 @@ services:
     startCommand: cd mfw-api && node reverify-social.js
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: mfw-postgres
+          property: connectionString
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: VK_CLIENT_ID
