@@ -69,11 +69,43 @@
       if(p.jobTitle!=null)accountState.profile.title=p.jobTitle||'';
       if(p.country!=null)accountState.profile.country=p.country||'';
       (d.platformRegistrations||[]).forEach(function(r){accountState.registrations[r.eventCode]=r;});
-      saveState();fillProfile();renderRegistrations();
+      if(Array.isArray(d.interests))setSelectedInterests(d.interests.map(function(x){return x.key;}));
+      saveState();fillProfile();renderRegistrations();renderInterestPicker();
     }catch(e){}
   }
 
   var DEFAULT_PROFILE={firstName:'Alex',lastName:'Morgan',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Fashion Industry',title:'Guest',country:'Russia'};
+  var INTEREST_OPTIONS=[
+    {id:'runway',label:'Показы'},
+    {id:'emerging_brands',label:'Новые бренды'},
+    {id:'womenswear',label:'Женская мода'},
+    {id:'menswear',label:'Мужская мода'},
+    {id:'accessories',label:'Аксессуары'},
+    {id:'sustainable',label:'Устойчивая мода'},
+    {id:'business',label:'Fashion business'},
+    {id:'retail',label:'Retail / Buying'},
+    {id:'technology',label:'Fashion Tech / AI'},
+    {id:'international',label:'Международные рынки'},
+    {id:'lectures',label:'Лекторий / дискуссии'},
+    {id:'networking',label:'B2B / networking'}
+  ];
+  function selectedInterests(){return safeJson('mfpInterests.v1',[]);}
+  function setSelectedInterests(v){try{localStorage.setItem('mfpInterests.v1',JSON.stringify(v));}catch(e){}}
+  function renderInterestPicker(){
+    var root=document.getElementById('interestGrid');if(!root)return;
+    var selected=new Set(selectedInterests());
+    root.innerHTML=INTEREST_OPTIONS.map(function(x){return '<button type="button" class="interest-chip '+(selected.has(x.id)?'active':'')+'" data-interest="'+x.id+'">'+x.label+'</button>';}).join('');
+    [].slice.call(root.querySelectorAll('[data-interest]')).forEach(function(b){b.onclick=function(){b.classList.toggle('active');};});
+  }
+  async function saveInterestsToAuthority(){
+    var root=document.getElementById('interestGrid'),chosen=[].slice.call(root.querySelectorAll('.interest-chip.active')).map(function(b){return b.dataset.interest;});
+    setSelectedInterests(chosen);
+    try{
+      await ensureAuthoritySession((accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor',false);
+      await authorityFetch('/v1/me/interests',{method:'PUT',body:JSON.stringify({interests:chosen})});
+    }catch(e){console.warn('interest authority sync failed',e);}
+  }
+
   var EVENT_CONFIG={
     mfw:{
       name:'Moscow Fashion Week',short:'MFW',
@@ -327,7 +359,7 @@
     [].slice.call(registrationGrid.querySelectorAll('[data-copy]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.copy,true);};});
   }
   function openAccount(){
-    fillProfile();renderRegistrations();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
+    fillProfile();renderRegistrations();renderInterestPicker();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
   }
   function closeAccount(){accountDrawer.classList.add('hidden');accountDrawer.setAttribute('aria-hidden','true');}
   function openRegistration(code,copied){
@@ -372,6 +404,7 @@
     try{await syncPlatformRegistration(code,reg);}catch(err){console.warn('registration authority sync failed',err);}
     closeRegistration();renderRegistrations();
   };
+  document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
   document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');};
   document.getElementById('valueBtn').onclick=function(){valueModal.classList.remove('hidden');};
