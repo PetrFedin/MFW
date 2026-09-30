@@ -2253,16 +2253,46 @@ async function router(req,res){
     const userId=String(b.userId||'demo_user');
     if(event.accessMode==='invite_only')return json(res,403,{error:'invitation_required',eventId});
     const status=(event.accessMode==='waitlist'||(event.waitlist>0&&event.checkedIn>=event.capacity))?'waitlist':'registered';
+    if(pool){
+      const dbEvent=await pool.query('SELECT id,access_mode,capacity FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1',[eventId]);
+      if(!dbEvent.rowCount)return json(res,404,{error:'event_not_found'});
+      const dbUser=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[userId]);
+      if(!dbUser.rowCount)return json(res,404,{error:'user_not_found'});
+      const eventRow=dbEvent.rows[0];
+      if(eventRow.access_mode==='invite_only')return json(res,403,{error:'invitation_required',eventId});
+      let dbStatus=eventRow.access_mode==='waitlist'?'waitlist':'registered';
+      if(eventRow.capacity!=null){
+        const occupied=await pool.query("SELECT count(*)::int n FROM event_registrations WHERE event_id=$1 AND status IN ('registered','confirmed','attended')",[eventRow.id]);
+        if(Number(occupied.rows[0].n)>=Number(eventRow.capacity))dbStatus='waitlist';
+      }
+      const saved=await pool.query(`INSERT INTO event_registrations(event_id,user_id,status,source)
+        VALUES($1,$2,$3,'app')
+        ON CONFLICT(event_id,user_id) DO UPDATE SET status=EXCLUDED.status,source='app',updated_at=now()
+        RETURNING id,user_id AS "userId",event_id AS "eventStorageId",status,source,created_at AS "createdAt",updated_at AS "updatedAt"`,
+        [eventRow.id,dbUser.rows[0].id,dbStatus]);
+      const item={...saved.rows[0],eventId};
+      await track('event_registered',{eventId,status:dbStatus},userId);
+      return json(res,201,{data:item,source:'postgres'});
+    }
     const key=userId+':'+eventId;
     const item={id:'reg_'+crypto.randomBytes(6).toString('hex'),userId,eventId,status,source:'app',createdAt:new Date().toISOString(),demo:true};
     memory.eventRegistrations.set(key,item);
     await track('event_registered',{eventId,status},userId);
-    return json(res,201,{data:item});
+    return json(res,201,{data:item,source:'memory'});
   }
   if(req.method==='POST'&&p.startsWith('/v1/events/')&&p.endsWith('/cancel')){
     const eventId=p.split('/')[3];
     const b=await readBody(req);
     const userId=String(b.userId||'demo_user');
+    if(pool){
+      const saved=await pool.query(`UPDATE event_registrations r SET status='cancelled',updated_at=now()
+        FROM events e WHERE r.event_id=e.id AND r.user_id::text=$1 AND (e.external_key=$2 OR e.id::text=$2)
+        RETURNING r.id,r.user_id AS "userId",r.event_id AS "eventStorageId",r.status,r.source,r.created_at AS "createdAt",r.updated_at AS "updatedAt"`,
+        [userId,eventId]);
+      if(!saved.rowCount)return json(res,404,{error:'registration_not_found'});
+      await track('event_registration_cancelled',{eventId},userId);
+      return json(res,200,{data:{...saved.rows[0],eventId},source:'postgres'});
+    }
     const key=userId+':'+eventId;
     let item=memory.eventRegistrations.get(key);
     if(!item){
@@ -2272,7 +2302,7 @@ async function router(req,res){
       item.status='cancelled';item.updatedAt=new Date().toISOString();
     }
     await track('event_registration_cancelled',{eventId},userId);
-    return json(res,200,{data:item});
+    return json(res,200,{data:item,source:'memory'});
   }
   if(req.method==='GET'&&p.startsWith('/v1/media/press-kit/')){
     const eventId=p.split('/').pop();
@@ -2372,11 +2402,38 @@ async function router(req,res){
 
   if(req.method==='POST'&&p==='/v1/meetings'){
     const b=await readBody(req);
+    const requester=userSubject(req,b.buyerId||b.userId||'demo_buyer');
+    if(!requester)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const user=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[requester]);
+      if(!user.rowCount)return json(res,404,{error:'user_not_found'});
+      let brandStorageId=null;
+      if(b.brandId){
+        const brand=await brand365Store.brandByRef(String(b.brandId));
+        if(!brand)return json(res,404,{error:'brand_not_found'});
+        brandStorageId=brand.storageId;
+      }
+      let eventStorageId=null;
+      if(b.eventId){
+        const ev=await pool.query('SELECT id FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1',[String(b.eventId)]);
+        if(!ev.rowCount)return json(res,404,{error:'event_not_found'});
+        eventStorageId=ev.rows[0].id;
+      }
+      const startsAt=b.startsAt||null;
+      const saved=await pool.query(`INSERT INTO b2b_meetings(event_id,brand_id,requester_user_id,organisation,starts_at,status,note,source,metadata)
+        VALUES($1,$2,$3,$4,$5,'requested',$6,'app',$7::jsonb)
+        RETURNING id,event_id AS "eventStorageId",brand_id AS "brandStorageId",requester_user_id AS "requesterUserId",organisation,starts_at AS "startsAt",status,note,created_at AS "createdAt"`,
+        [eventStorageId,brandStorageId,user.rows[0].id,String(b.organisation||'').slice(0,200)||null,startsAt,String(b.note||'').slice(0,1000)||null,JSON.stringify({slot:b.slot||null})]);
+      const meeting=saved.rows[0];
+      await pool.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null})]);
+      await track('meeting_requested',{meetingId:String(meeting.id),brandId:b.brandId||null,eventId:b.eventId||null},requester);
+      return json(res,201,{data:meeting,source:'postgres'});
+    }
     const id='mtg_'+crypto.randomBytes(8).toString('hex');
-    const meeting={id,brandId:String(b.brandId||'b1'),buyerId:String(b.buyerId||'demo_buyer'),slot:String(b.slot||'14:30'),status:'confirmed',createdAt:new Date().toISOString(),demo:true};
+    const meeting={id,brandId:String(b.brandId||'b1'),buyerId:requester,slot:String(b.slot||'14:30'),status:'confirmed',createdAt:new Date().toISOString(),demo:true};
     memory.meetings.set(id,meeting);
     await track('meeting_confirmed',meeting,meeting.buyerId);
-    return json(res,201,{data:meeting});
+    return json(res,201,{data:meeting,source:'memory'});
   }
   if(req.method==='POST'&&p==='/v1/analytics/track'){
     const b=await readBody(req);
