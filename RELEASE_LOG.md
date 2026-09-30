@@ -41,3 +41,27 @@ Every meaningful development wave should add:
 - verification performed
 - unresolved blockers
 - next continuation point
+
+
+## 2026-09-30 — Dedicated MFW PostgreSQL provisioned
+
+**Status:** database available; declarative wiring committed
+
+- Created dedicated Render PostgreSQL `mfw-postgres`
+- Render ID: `dpg-daugci8jo6nc738akc10-a`
+- PostgreSQL: 17
+- Region: Frankfurt
+- Plan: Free
+- Database: `mfw_postgres`
+- Canonical Blueprint now declares the database and wires `DATABASE_URL` using `fromDatabase`
+- Authority Blueprint now runs `npm run migrate` as `preDeployCommand`
+- Authority target invariant: `MFW_REQUIRE_POSTGRES=true`
+- Social reverification uses the same canonical database connection
+- Blueprint commit: `4efc8dce6b5a6a56098931195047314a1b9b7341`
+
+### Verification still required
+
+The already-created direct Render services do not automatically adopt new Blueprint-only wiring. Before declaring PostgreSQL production authority, verify the Blueprint-managed service/environment or wire the existing authority service through Render Dashboard without exposing the database credential.
+
+Required proof:
+`migrations 001-016 → /health dataMode=postgres → schema ready → Golden Path → social reverification`.
