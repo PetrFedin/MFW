@@ -2440,6 +2440,54 @@ async function router(req,res){
     await track(String(b.type||'unknown').slice(0,100),b.meta||{},b.userId||null);
     return json(res,202,{accepted:true});
   }
+  if(req.method==='GET'&&p==='/v1/agenda'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const r=await pool.query(`SELECT a.id,COALESCE(e.external_key,e.id::text) AS "eventId",e.title,e.event_type AS "eventType",
+        e.starts_at AS "startsAt",e.ends_at AS "endsAt",e.status,a.reminder_enabled AS "reminderEnabled",
+        a.reminder_minutes AS "reminderMinutes",a.source
+        FROM user_agenda a JOIN events e ON e.id=a.event_id
+        WHERE a.user_id::text=$1 ORDER BY e.starts_at`,[userId]);
+      return json(res,200,{data:r.rows,source:'postgres'});
+    }
+    return json(res,200,{data:[],source:'memory',demo:true});
+  }
+  if(req.method==='POST'&&p.startsWith('/v1/agenda/')&&p.endsWith('/save')){
+    const eventId=p.split('/')[3];
+    const b=await readBody(req);
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const ev=await pool.query('SELECT id FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1',[eventId]);
+      if(!ev.rowCount)return json(res,404,{error:'event_not_found'});
+      const user=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[userId]);
+      if(!user.rowCount)return json(res,404,{error:'user_not_found'});
+      const minutes=Math.max(0,Math.min(1440,Number(b.reminderMinutes==null?20:b.reminderMinutes)));
+      const r=await pool.query(`INSERT INTO user_agenda(user_id,event_id,reminder_minutes,reminder_enabled,source)
+        VALUES($1,$2,$3,$4,'app')
+        ON CONFLICT(user_id,event_id) DO UPDATE SET reminder_minutes=EXCLUDED.reminder_minutes,reminder_enabled=EXCLUDED.reminder_enabled,updated_at=now()
+        RETURNING id,event_id AS "eventStorageId",reminder_minutes AS "reminderMinutes",reminder_enabled AS "reminderEnabled",source,created_at AS "createdAt",updated_at AS "updatedAt"`,
+        [user.rows[0].id,ev.rows[0].id,minutes,b.reminderEnabled!==false]);
+      await track('agenda_saved',{eventId,reminderMinutes:minutes},userId);
+      return json(res,200,{data:{...r.rows[0],eventId},source:'postgres'});
+    }
+    await track('agenda_saved',{eventId},userId);
+    return json(res,200,{data:{eventId,userId,reminderEnabled:b.reminderEnabled!==false,reminderMinutes:Number(b.reminderMinutes||20),demo:true},source:'memory'});
+  }
+  if(req.method==='DELETE'&&p.startsWith('/v1/agenda/')){
+    const eventId=p.split('/')[3];
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const r=await pool.query(`DELETE FROM user_agenda a USING events e
+        WHERE a.event_id=e.id AND a.user_id::text=$1 AND (e.external_key=$2 OR e.id::text=$2) RETURNING a.id`,[userId,eventId]);
+      if(!r.rowCount)return json(res,404,{error:'agenda_item_not_found'});
+    }
+    await track('agenda_removed',{eventId},userId);
+    return json(res,200,{ok:true,eventId,source:pool?'postgres':'memory'});
+  }
+
   if(req.method==='GET'&&p==='/v1/analytics/overview') return json(res,200,{data:overview()});
 
   if(p.startsWith('/v1/admin/')){
