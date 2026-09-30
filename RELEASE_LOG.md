@@ -102,3 +102,36 @@ Next gate:
 - PostgreSQL golden paths;
 - social reverification active;
 - only then call persistent MVP authority production-ready.
+
+
+## 2026-09-30 — Persistent identity / registrations MVP
+
+**Exact deployed commit:** `f201fd66a875a2b701abd8a6f690687b169624d6`
+
+Completed:
+- migration `018_identity_interests_registration.sql`;
+- migration `019_platform_registrations.sql`;
+- persistent profile / primary role authority;
+- persistent explicit user interests;
+- separate MFW/BFS platform registration authority;
+- platform registration types and review status;
+- platform vs programme registration split;
+- server-side personal agenda conflict detection;
+- account drawer syncs profile and MFW/BFS registrations to canonical authority;
+- MFW frontend migrated from legacy `moscow-fashion-week-authority` to `mfw-authority`;
+- interaction contract rejects legacy Moscow authority URL.
+
+Render exact-head proof:
+- platform deploy `dep-daum268jo6nc73dne1a0` — LIVE;
+- API deploy `dep-daum28btqb8s73btcc4g` — LIVE;
+- authority deploy `dep-daum29k1nsns73eqtrs0` — LIVE;
+- authority deep self-test — PASS;
+- current authority persistence — `dataMode=memory`;
+- social reverification — inactive / `postgres_required`.
+
+Auto-deploy:
+- confirmed broken/unproven: the commit did not create deploys automatically despite `autoDeploy=yes`;
+- exact-head deployment was triggered via Render API.
+
+Current persistence gate:
+`mfw-postgres → DATABASE_URL → migrations 001-019 → schema PASS → dataMode=postgres → PostgreSQL Golden Paths → social reverification → MFW_REQUIRE_POSTGRES=true`.
