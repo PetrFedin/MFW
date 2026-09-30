@@ -604,7 +604,8 @@ async function checkDatabaseSchema(){
     'social_connections','brand_social_channels','social_memberships','loyalty_offers',
     'loyalty_offer_requirements','loyalty_eligibility','loyalty_claims','brand_follows','brand_content_posts',
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
-    'content_impressions','notification_deliveries','social_auth_flows'
+    'content_impressions','notification_deliveries','social_auth_flows',
+    'user_agenda','b2b_meetings','b2b_meeting_events'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
