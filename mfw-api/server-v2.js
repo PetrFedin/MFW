@@ -380,6 +380,7 @@ const memory={
   meetupMembers:new Map(),
   meetingProposals:new Map(),
   eventRegistrations:new Map(),
+  userInterests:new Map(),
   appInstallations:new Map(),
   socialConnections:new Map(),
   socialMemberships:new Map(),
@@ -605,7 +606,7 @@ async function checkDatabaseSchema(){
     'loyalty_offer_requirements','loyalty_eligibility','loyalty_claims','brand_follows','brand_content_posts',
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
-    'user_agenda','b2b_meetings','b2b_meeting_events'
+    'user_agenda','b2b_meetings','b2b_meeting_events','user_interests'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
@@ -615,6 +616,7 @@ async function checkDatabaseSchema(){
   const requiredColumns=[
     ['events','access_mode'],['event_registrations','source'],['streams','external_key'],['streams','provider_mode'],
     ['brands','external_key'],['brand_social_channels','external_key'],['loyalty_offers','external_key'],
+    ['event_registrations','registration_type'],['event_registrations','organisation'],['event_registrations','job_title'],['event_registrations','purpose'],['event_registrations','submitted_payload'],
     ['brand_content_posts','external_key'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at']
   ];
   const cols=await pool.query(`SELECT table_name,column_name FROM information_schema.columns
@@ -2251,7 +2253,11 @@ async function router(req,res){
     const event=memory.events.find(x=>x.id===eventId);
     if(!event)return json(res,404,{error:'event_not_found'});
     const b=await readBody(req);
-    const userId=String(b.userId||'demo_user');
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const registrationType=String(b.registrationType||b.role||'visitor').toLowerCase();
+    const allowedRegistrationTypes=['visitor','participant','client','buyer','designer','media','speaker','partner','delegate'];
+    if(!allowedRegistrationTypes.includes(registrationType))return json(res,400,{error:'invalid_registration_type',allowed:allowedRegistrationTypes});
     if(event.accessMode==='invite_only')return json(res,403,{error:'invitation_required',eventId});
     const status=(event.accessMode==='waitlist'||(event.waitlist>0&&event.checkedIn>=event.capacity))?'waitlist':'registered';
     if(pool){
@@ -2266,17 +2272,25 @@ async function router(req,res){
         const occupied=await pool.query("SELECT count(*)::int n FROM event_registrations WHERE event_id=$1 AND status IN ('registered','confirmed','attended')",[eventRow.id]);
         if(Number(occupied.rows[0].n)>=Number(eventRow.capacity))dbStatus='waitlist';
       }
-      const saved=await pool.query(`INSERT INTO event_registrations(event_id,user_id,status,source)
-        VALUES($1,$2,$3,'app')
-        ON CONFLICT(event_id,user_id) DO UPDATE SET status=EXCLUDED.status,source='app',updated_at=now()
-        RETURNING id,user_id AS "userId",event_id AS "eventStorageId",status,source,created_at AS "createdAt",updated_at AS "updatedAt"`,
-        [eventRow.id,dbUser.rows[0].id,dbStatus]);
+      const saved=await pool.query(`INSERT INTO event_registrations(event_id,user_id,status,source,registration_type,organisation,job_title,purpose,submitted_payload)
+        VALUES($1,$2,$3,'app',$4,$5,$6,$7,$8::jsonb)
+        ON CONFLICT(event_id,user_id) DO UPDATE SET status=EXCLUDED.status,source='app',
+          registration_type=EXCLUDED.registration_type,organisation=EXCLUDED.organisation,
+          job_title=EXCLUDED.job_title,purpose=EXCLUDED.purpose,submitted_payload=EXCLUDED.submitted_payload,updated_at=now()
+        RETURNING id,user_id AS "userId",event_id AS "eventStorageId",status,source,
+          registration_type AS "registrationType",organisation,job_title AS "jobTitle",purpose,
+          created_at AS "createdAt",updated_at AS "updatedAt"`,
+        [eventRow.id,dbUser.rows[0].id,dbStatus,registrationType,
+          String(b.organisation||b.company||'').slice(0,200)||null,
+          String(b.jobTitle||b.title||'').slice(0,160)||null,
+          String(b.purpose||'').slice(0,500)||null,
+          JSON.stringify({registrationType,confirmedAt:b.confirmedAt||new Date().toISOString()})]);
       const item={...saved.rows[0],eventId};
       await track('event_registered',{eventId,status:dbStatus},userId);
       return json(res,201,{data:item,source:'postgres'});
     }
     const key=userId+':'+eventId;
-    const item={id:'reg_'+crypto.randomBytes(6).toString('hex'),userId,eventId,status,source:'app',createdAt:new Date().toISOString(),demo:true};
+    const item={id:'reg_'+crypto.randomBytes(6).toString('hex'),userId,eventId,status,source:'app',registrationType,organisation:String(b.organisation||b.company||''),jobTitle:String(b.jobTitle||b.title||''),purpose:String(b.purpose||''),createdAt:new Date().toISOString(),demo:true};
     memory.eventRegistrations.set(key,item);
     await track('event_registered',{eventId,status},userId);
     return json(res,201,{data:item,source:'memory'});
@@ -2284,7 +2298,8 @@ async function router(req,res){
   if(req.method==='POST'&&p.startsWith('/v1/events/')&&p.endsWith('/cancel')){
     const eventId=p.split('/')[3];
     const b=await readBody(req);
-    const userId=String(b.userId||'demo_user');
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
     if(pool){
       const saved=await pool.query(`UPDATE event_registrations r SET status='cancelled',updated_at=now()
         FROM events e WHERE r.event_id=e.id AND r.user_id::text=$1 AND (e.external_key=$2 OR e.id::text=$2)
@@ -2355,6 +2370,91 @@ async function router(req,res){
     }
     await track('auth_demo',{role},userId);
     return json(res,200,{user:{id:userId,name,role,demo:true},session,dataMode:pool?'postgres':'memory'});
+  }
+
+  if(req.method==='GET'&&p==='/v1/me'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const profile=await pool.query(`SELECT u.id,u.email,u.phone,u.status,p.display_name AS "displayName",p.locale,
+        p.primary_role AS "primaryRole",p.organisation,p.job_title AS "jobTitle",p.city,p.country,
+        p.networking_visible AS "networkingVisible",p.marketing_consent AS "marketingConsent"
+        FROM users u LEFT JOIN profiles p ON p.user_id=u.id WHERE u.id::text=$1 LIMIT 1`,[userId]);
+      if(!profile.rowCount)return json(res,404,{error:'user_not_found'});
+      const interests=await pool.query('SELECT interest_key AS key,weight,source FROM user_interests WHERE user_id=$1 ORDER BY weight DESC,interest_key',[profile.rows[0].id]);
+      const registrations=await pool.query(`SELECT COALESCE(e.external_key,e.id::text) AS "eventId",e.title,e.event_type AS "eventType",
+        r.status,r.registration_type AS "registrationType",r.organisation,r.job_title AS "jobTitle",r.purpose,r.updated_at AS "updatedAt"
+        FROM event_registrations r JOIN events e ON e.id=r.event_id WHERE r.user_id=$1 ORDER BY e.starts_at`,[profile.rows[0].id]);
+      return json(res,200,{data:{profile:profile.rows[0],interests:interests.rows,registrations:registrations.rows},source:'postgres'});
+    }
+    const user=memory.users.get(userId)||{id:userId,name:'Demo User',role:'Visitor'};
+    return json(res,200,{data:{profile:{id:user.id,displayName:user.name,primaryRole:String(user.role||'Visitor').toLowerCase(),locale:'ru'},interests:memory.userInterests.get(userId)||[],registrations:[...memory.eventRegistrations.values()].filter(x=>x.userId===userId)},source:'memory',demo:true});
+  }
+
+  if(req.method==='PATCH'&&p==='/v1/me/profile'){
+    const session=sessionFromRequest(req);
+    const b=await readBody(req);
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const allowedRoles=['visitor','participant','client','buyer','designer','media','speaker','partner','delegate','staff','organizer'];
+    const role=String(b.primaryRole||(session&&session.role)||'visitor').toLowerCase();
+    if(!allowedRoles.includes(role))return json(res,400,{error:'invalid_primary_role',allowed:allowedRoles});
+    if(pool){
+      const user=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[userId]);
+      if(!user.rowCount)return json(res,404,{error:'user_not_found'});
+      await pool.query(`INSERT INTO profiles(user_id,display_name,locale,primary_role,organisation,job_title,city,country,networking_visible,marketing_consent)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,locale=EXCLUDED.locale,
+          primary_role=EXCLUDED.primary_role,organisation=EXCLUDED.organisation,job_title=EXCLUDED.job_title,
+          city=EXCLUDED.city,country=EXCLUDED.country,networking_visible=EXCLUDED.networking_visible,
+          marketing_consent=EXCLUDED.marketing_consent,updated_at=now()`,
+        [user.rows[0].id,String(b.displayName||'MFW User').slice(0,120),String(b.locale||'ru').slice(0,5),role,
+         String(b.organisation||b.company||'').slice(0,200)||null,String(b.jobTitle||b.title||'').slice(0,160)||null,
+         String(b.city||'').slice(0,120)||null,String(b.country||'').slice(0,120)||null,!!b.networkingVisible,!!b.marketingConsent]);
+      await track('profile_updated',{role,marketingConsent:!!b.marketingConsent},userId);
+      return json(res,200,{ok:true,userId,primaryRole:role,source:'postgres'});
+    }
+    const existing=memory.users.get(userId)||{id:userId};
+    memory.users.set(userId,{...existing,name:String(b.displayName||existing.name||'Demo User'),role});
+    return json(res,200,{ok:true,userId,primaryRole:role,source:'memory'});
+  }
+
+  if(req.method==='PUT'&&p==='/v1/me/interests'){
+    const b=await readBody(req);
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const raw=Array.isArray(b.interests)?b.interests:[];
+    const normalized=raw.slice(0,50).map(x=>typeof x==='string'?{key:x,weight:1}:{key:x.key,weight:x.weight==null?1:Number(x.weight)}).filter(x=>x.key).map(x=>({key:String(x.key).toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,64),weight:Math.max(0,Math.min(10,Number(x.weight||0)))})).filter(x=>x.key);
+    if(pool){
+      const user=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[userId]);
+      if(!user.rowCount)return json(res,404,{error:'user_not_found'});
+      const client=await pool.connect();
+      try{
+        await client.query('BEGIN');
+        await client.query("DELETE FROM user_interests WHERE user_id=$1 AND source='explicit'",[user.rows[0].id]);
+        for(const x of normalized)await client.query(`INSERT INTO user_interests(user_id,interest_key,weight,source)
+          VALUES($1,$2,$3,'explicit') ON CONFLICT(user_id,interest_key) DO UPDATE SET weight=EXCLUDED.weight,source='explicit',updated_at=now()`,[user.rows[0].id,x.key,x.weight]);
+        await client.query('COMMIT');
+      }catch(err){await client.query('ROLLBACK');throw err;}finally{client.release();}
+      await track('interests_updated',{count:normalized.length},userId);
+      return json(res,200,{data:normalized,source:'postgres'});
+    }
+    memory.userInterests.set(userId,normalized);
+    return json(res,200,{data:normalized,source:'memory',demo:true});
+  }
+
+  if(req.method==='GET'&&p==='/v1/me/registrations'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const r=await pool.query(`SELECT COALESCE(e.external_key,e.id::text) AS "eventId",e.title,e.event_type AS "eventType",
+        e.starts_at AS "startsAt",r.status,r.registration_type AS "registrationType",r.organisation,
+        r.job_title AS "jobTitle",r.purpose,r.updated_at AS "updatedAt"
+        FROM event_registrations r JOIN events e ON e.id=r.event_id
+        WHERE r.user_id::text=$1 ORDER BY e.starts_at`,[userId]);
+      return json(res,200,{data:r.rows,source:'postgres'});
+    }
+    return json(res,200,{data:[...memory.eventRegistrations.values()].filter(x=>x.userId===userId),source:'memory',demo:true});
   }
 
   if(req.method==='POST'&&p==='/v1/passes/issue'){
@@ -2446,14 +2546,33 @@ async function router(req,res){
     if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
     if(pool){
       const r=await pool.query(`SELECT a.id,COALESCE(e.external_key,e.id::text) AS "eventId",e.title,e.event_type AS "eventType",
-        e.starts_at AS "startsAt",e.ends_at AS "endsAt",e.status,a.reminder_enabled AS "reminderEnabled",
-        a.reminder_minutes AS "reminderMinutes",a.source
+        e.starts_at AS "startsAt",e.ends_at AS "endsAt",e.status,
+        CASE WHEN lower(COALESCE(e.metadata->>'eventCode',e.metadata->>'event_code',e.external_key,e.title,'')) LIKE '%bfs%'
+          OR lower(COALESCE(e.metadata->>'eventCode',e.metadata->>'event_code',e.external_key,e.title,'')) LIKE '%brics%' THEN 'bfs' ELSE 'mfw' END AS "eventBrand",
+        a.reminder_enabled AS "reminderEnabled",a.reminder_minutes AS "reminderMinutes",a.source
         FROM user_agenda a JOIN events e ON e.id=a.event_id
         WHERE a.user_id::text=$1 ORDER BY e.starts_at`,[userId]);
       return json(res,200,{data:r.rows,source:'postgres'});
     }
     return json(res,200,{data:[],source:'memory',demo:true});
   }
+  if(req.method==='GET'&&p==='/v1/agenda/conflicts'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(!pool)return json(res,200,{data:[],source:'memory',demo:true});
+    const r=await pool.query(`SELECT
+      COALESCE(e1.external_key,e1.id::text) AS "eventIdA",e1.title AS "titleA",e1.starts_at AS "startsAtA",e1.ends_at AS "endsAtA",
+      COALESCE(e2.external_key,e2.id::text) AS "eventIdB",e2.title AS "titleB",e2.starts_at AS "startsAtB",e2.ends_at AS "endsAtB"
+      FROM user_agenda a1 JOIN events e1 ON e1.id=a1.event_id
+      JOIN user_agenda a2 ON a2.user_id=a1.user_id AND a2.id>a1.id
+      JOIN events e2 ON e2.id=a2.event_id
+      WHERE a1.user_id::text=$1
+        AND e1.starts_at < COALESCE(e2.ends_at,e2.starts_at+interval '60 minutes')
+        AND e2.starts_at < COALESCE(e1.ends_at,e1.starts_at+interval '60 minutes')
+      ORDER BY LEAST(e1.starts_at,e2.starts_at)`,[userId]);
+    return json(res,200,{data:r.rows,count:r.rowCount,source:'postgres'});
+  }
+
   if(req.method==='POST'&&p.startsWith('/v1/agenda/')&&p.endsWith('/save')){
     const eventId=p.split('/')[3];
     const b=await readBody(req);
