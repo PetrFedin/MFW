@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["<APPLE_TEAM_ID>.<FINAL_BUNDLE_ID>"],
+        "components": [
+          { "/": "/event/*", "comment": "Open MFW event" },
+          { "/": "/brand/*", "comment": "Open MFW brand" },
+          { "/": "/pass", "comment": "Open current MFW pass" },
+          { "/": "/meetup/*", "comment": "Open MFW meetup" }
+        ]
+      }
+    ]
+  }
+}
