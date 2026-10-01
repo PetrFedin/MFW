@@ -597,3 +597,83 @@ This document is considered fully executed only when:
 ---
 
 **Implementation instruction:** preserve the current MFW authority model. Integrate external capabilities at explicit boundaries; never call a feature complete because an external service has been connected. Completion requires MFW-owned state transitions, tests, failure handling and release evidence.
+
+## 11. Additional integration wave — observability, privileged identity and rollout control
+
+These capabilities are additional to the phases above and must not bypass them.
+
+### 11.1 OpenTelemetry end-to-end tracing — ADOPT
+
+Reference: https://github.com/open-telemetry/opentelemetry-js
+
+Instrument:
+
+`web/API request -> auth -> domain command -> PostgreSQL -> pg-boss job -> provider call/webhook -> notification/stream/pass outcome`
+
+Required attributes:
+
+- release SHA;
+- request/correlation ID;
+- event/project scope;
+- job type/id;
+- provider name;
+- result/error class;
+- latency.
+
+Do **not** put access tokens, QR secrets, private profile data or raw campaign audience data into traces.
+
+Use tracing to answer operational questions such as: "why did this reminder/pass refresh/campaign delivery not complete?" It must remain an observability layer, not a business-state store.
+
+### 11.2 Passkeys for privileged roles — ADOPT
+
+Reference: https://github.com/MasterKale/SimpleWebAuthn
+
+Add WebAuthn/passkeys first for high-risk roles:
+
+- owner/admin;
+- organiser;
+- brand manager;
+- staff roles that can issue/revoke access or operate check-in;
+- later, optional end-user passwordless login.
+
+Passkeys complement the existing identity model. They do not create a separate user directory.
+
+Sensitive operations should support step-up authentication:
+
+- credential/pass revocation;
+- sponsor/brand access grant;
+- campaign launch;
+- export of audience data;
+- security/settings changes.
+
+Recovery flow must be explicit and audited.
+
+### 11.3 OpenFeature rollout boundary — ADAPT
+
+Reference: https://github.com/open-feature/js-sdk
+
+Introduce a small feature-evaluation boundary so rollout logic does not spread through UI/API conditionals.
+
+Use cases:
+
+- gradual feature rollout;
+- staff-only preview;
+- MFW vs BFS capability exposure;
+- emergency kill switch for non-critical features.
+
+GrowthBook may later act as an experimentation/flag provider, but MFW code consumes a stable feature interface.
+
+Flags must never control security invariants, consent validity, QR signature verification or financial truth.
+
+### 11.4 Operational acceptance
+
+Before this additional wave is complete:
+
+- traces connect HTTP, jobs and provider callbacks;
+- production secrets/PII are absent from telemetry samples;
+- privileged passkey enrollment/recovery is tested;
+- feature evaluation has deterministic fallback;
+- disabling the flag provider does not break core event admission, QR or agenda flows.
+
+**Sequencing:** OpenTelemetry can start immediately after durable PostgreSQL admission; passkeys follow stable production identity; OpenFeature should be introduced before the number of rollout/experiment conditions becomes difficult to govern.
+
