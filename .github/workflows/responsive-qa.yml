@@ -1,0 +1,45 @@
+name: Responsive QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  responsive:
+    name: Device matrix / Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install QA dependencies
+        working-directory: qa
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        working-directory: qa
+        run: npx playwright install --with-deps chromium
+      - name: Start static product server
+        run: |
+          python3 -m http.server 4173 --directory mfw >/tmp/mfw-static.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/platform/index.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/mfw-static.log
+          exit 1
+      - name: Run responsive device agents
+        working-directory: qa
+        run: npm test
+      - name: Upload responsive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-qa-${{ github.sha }}
+          path: |
+            qa/test-results
+            qa/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
