@@ -34,7 +34,7 @@ Current repository state already includes:
 - buyer/delegate B2B flows;
 - notification/reminder engine;
 - Owner Control Tower;
-- PostgreSQL schema through migrations 001–019.
+- PostgreSQL schema through migrations 001–020.
 
 The current production blocker recorded in `RENDER_STATE.md` is durable PostgreSQL admission. New persistent modules in this plan must not be declared production-ready while the authority is running in memory mode.
 
@@ -91,7 +91,7 @@ Legend:
 **Do this before every new persistent integration.**
 
 1. Provision/wire dedicated MFW PostgreSQL.
-2. Apply and verify migrations 001–019.
+2. Apply and verify migrations 001–020.
 3. Prove schema reconciliation and exact migration set.
 4. Prove `dataMode=postgres`.
 5. Re-run current identity/registration/agenda/loyalty golden paths.
