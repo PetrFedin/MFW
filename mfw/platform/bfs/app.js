@@ -47,13 +47,24 @@ if(window.MFP_DATA&&window.MFP_DATA.bfs){
 
 function $(s){return document.querySelector(s)}function $$(s){return [].slice.call(document.querySelectorAll(s))}
 function registration(){return state.account&&state.account.registrations&&state.account.registrations.bfs}
-function projectKey(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}
+function projectKey(name){return String(name||'').toLowerCase().replace(/[^a-z0-9а-я]+/gi,'-')}
 function persistBfs(){try{localStorage.setItem('bfsSavedSessions',JSON.stringify(state.saved));localStorage.setItem('bfsFollowedProjects',JSON.stringify(state.followedProjects));localStorage.setItem('bfsFavoriteProjects',JSON.stringify(state.favoriteProjects));localStorage.setItem('bfsRewardStarted',JSON.stringify(state.rewardStarted));}catch(e){}}
-function followProject(name){var k=projectKey(name);state.followedProjects[k]=!state.followedProjects[k];if(state.followedProjects[k]&&!state.rewardStarted[k])state.rewardStarted[k]=Date.now();persistBfs();render()}
-function favoriteProject(name){var k=projectKey(name);state.favoriteProjects[k]=!state.favoriteProjects[k];persistBfs();render()}
+function professionalEntity(name){
+ var sp=(window.MFP_DATA&&window.MFP_DATA.bfs.speakers||[]).filter(function(x){return x.name===name})[0];
+ if(sp)return {type:'speaker',ref:sp.id,name:sp.name};
+ var org=(organisations||[]).filter(function(x){return x.name===name})[0];
+ if(org)return {type:'organisation',ref:org.id,name:org.name};
+ return {type:'project',ref:projectKey(name),name:name};
+}
+async function syncProfessional(name){
+ var k=projectKey(name),e=professionalEntity(name),following=!!state.followedProjects[k],favorite=!!state.favoriteProjects[k];
+ try{await authority('/v1/professional/follows',{method:'POST',body:JSON.stringify({eventBrand:'bfs',entityType:e.type,entityRef:e.ref,displayName:e.name,favorite:favorite,action:following?'save':'remove'})});}catch(err){}
+}
+function followProject(name){var k=projectKey(name);state.followedProjects[k]=!state.followedProjects[k];if(state.followedProjects[k]&&!state.rewardStarted[k])state.rewardStarted[k]=Date.now();persistBfs();syncProfessional(name);render()}
+function favoriteProject(name){var k=projectKey(name);state.favoriteProjects[k]=!state.favoriteProjects[k];if(state.favoriteProjects[k])state.followedProjects[k]=true;persistBfs();syncProfessional(name);render()}
 function rewardProgress(name){var k=projectKey(name),start=state.rewardStarted[k];if(!start)return 0;return Math.min(30,Math.max(0,Math.floor((Date.now()-start)/86400000)))}
-function projectActions(name){var k=projectKey(name),followed=!!state.followedProjects[k],fav=!!state.favoriteProjects[k],days=rewardProgress(name);return '<div class="project-actions"><button data-follow-project="'+name+'">'+(followed?'✓ Подписка':'＋ Подписаться')+'</button><button data-favorite-project="'+name+'">'+(fav?'♥ Любимый':'♡ В любимые')+'</button></div>'+(followed?'<div class="reward-progress"><b>'+days+' / 30 дней</b><span>Непрерывная подписка до доступа к призам и предложениям проекта. В production срок подтверждается сервером и подключёнными каналами.</span><i style="width:'+(days/30*100)+'%"></i></div>':'')}
-function bindProjectActions(){$('[data-follow-project]').forEach(function(b){b.onclick=function(){followProject(b.dataset.followProject)}});$('[data-favorite-project]').forEach(function(b){b.onclick=function(){favoriteProject(b.dataset.favoriteProject)}})}
+function projectActions(name){var k=projectKey(name),followed=!!state.followedProjects[k],fav=!!state.favoriteProjects[k],days=rewardProgress(name);return '<div class="project-actions"><button data-follow-project="'+name+'">'+(followed?'✓ Подписка':'＋ Подписаться')+'</button><button data-favorite-project="'+name+'">'+(fav?'♥ Любимый':'♡ В любимые')+'</button></div>'+(followed?'<div class="reward-progress"><b>'+days+' дней связи</b><span>Server relationship signal. Конкретные rewards появляются только в опубликованных campaign.</span><i style="width:'+Math.min(100,days/30*100)+'%"></i></div>':'')}
+function bindProjectActions(){$$('[data-follow-project]').forEach(function(b){b.onclick=function(){followProject(b.dataset.followProject)}});$$('[data-favorite-project]').forEach(function(b){b.onclick=function(){favoriteProject(b.dataset.favoriteProject)}})}
 
 function cards(){
  return '<div class="grid">'+sessions.map(function(x){var saved=!!state.saved[x.id];return '<article class="card"><div class="time">'+x.time+'</div><span class="tag">'+x.tag+'</span><h3>'+x.title+'</h3><div class="meta">'+x.hall+' · МКЗ «Зарядье»</div><div class="card-actions"><button class="small-action" data-open-session="'+x.id+'">ПОДРОБНЕЕ</button><button class="small-action" data-save="'+x.id+'">'+(saved?'✓ В МОЕЙ ПРОГРАММЕ':'+ ДОБАВИТЬ')+'</button></div></article>'}).join('')+'</div>';
