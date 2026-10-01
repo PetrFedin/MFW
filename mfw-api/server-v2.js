@@ -1515,16 +1515,20 @@ async function router(req,res){
     const eventBrand=String(url.searchParams.get('eventBrand')||'mfw').toLowerCase();
     const all=url.searchParams.get('all')==='1';
     if(!all&&!['mfw','bfs'].includes(eventBrand))return json(res,400,{error:'invalid_event_brand'});
+    const includeDemo=url.searchParams.get('includeDemo')==='1';
     if(pool){
       const params=all?[]:[eventBrand];
-      const where=all?'':'WHERE event_brand=$1';
+      const brandWhere=all?'TRUE':'event_brand=$1';
+      const demoWhere=includeDemo?'TRUE':"COALESCE(metadata->>'demo','false')<>'true'";
       const r=await pool.query(`SELECT external_key AS id,season,title,event_type AS type,starts_at AS "startsAt",ends_at AS "endsAt",
         status,access_mode AS "accessMode",capacity,event_brand AS "eventBrand",source_url AS "sourceUrl",official_updated_at AS "officialUpdatedAt",metadata
-        FROM events ${where} ORDER BY starts_at`,params);
+        FROM events WHERE ${brandWhere} AND ${demoWhere} ORDER BY starts_at`,params);
       return json(res,200,{data:r.rows,source:'postgres'});
     }
-    const rows=memory.events.filter(x=>all||String(x.eventBrand||'mfw')===eventBrand).map(x=>({...x,eventBrand:x.eventBrand||'mfw'}));
-    return json(res,200,{data:rows,source:'memory',demo:true});
+    let rows=memory.events.filter(x=>(all||String(x.eventBrand||'mfw')===eventBrand)&&(includeDemo||!x.demo));
+    if(!rows.length&&!includeDemo)rows=memory.events.filter(x=>all||String(x.eventBrand||'mfw')===eventBrand);
+    rows=rows.map(x=>({...x,eventBrand:x.eventBrand||'mfw'}));
+    return json(res,200,{data:rows,source:'memory',demo:!OFFICIAL_SNAPSHOT});
   }
   if(req.method==='GET'&&p==='/v1/streams'){
     return json(res,200,{data:memory.streams,demo:true});
@@ -2696,8 +2700,9 @@ async function router(req,res){
     }
     const rows=pool
       ? (await pool.query(`SELECT external_key id,title,event_type AS type,event_brand AS "eventBrand",starts_at AS "startsAt",ends_at AS "endsAt",metadata
-          FROM events WHERE status IN ('published','live','delayed','completed') ORDER BY starts_at`)).rows
-      : memory.events.map(x=>({id:x.id,title:x.title,type:x.type,eventBrand:x.eventBrand||'mfw',startsAt:x.startsAt,endsAt:x.endsAt||null,metadata:x.metadata||{}}));
+          FROM events WHERE status IN ('published','live','delayed','completed')
+            AND COALESCE(metadata->>'demo','false')<>'true' ORDER BY starts_at`)).rows
+      : memory.events.filter(x=>!x.demo).map(x=>({id:x.id,title:x.title,type:x.type,eventBrand:x.eventBrand||'mfw',startsAt:x.startsAt,endsAt:x.endsAt||null,metadata:{...(x.metadata||{}),demo:!!x.demo}}));
     const interestWords={
       runway:['show','показ'],emerging_brands:['локаль','молод','new names','скаутинг'],
       womenswear:['womenswear','женск'],menswear:['menswear','мужск'],accessories:['аксессуар','jewelry','ювелир'],
