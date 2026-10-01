@@ -13,6 +13,7 @@ for(const rel of required){
  if(fs.statSync(p).size===0)throw new Error('Empty '+rel);
 }
 const platform=fs.readFileSync(path.join(root,'platform.js'),'utf8');
+const platformJs=platform;
 const bfs=fs.readFileSync(path.join(root,'bfs/app.js'),'utf8');
 new vm.Script(platform,{filename:'platform.js'});
 new vm.Script(bfs,{filename:'bfs/app.js'});
@@ -122,7 +123,6 @@ const migration016=fs.readFileSync(path.join(root,'..','..','mfw-api','migration
 ['advanceJourneyStateMachine','stopReason','experiment_group','scoreCustomerPredictions','acquisitionEconomics','audienceAssetSummary'].forEach(x=>{if(!store.includes(x))throw new Error('State machine/CDP authority missing: '+x)});
 ['journeys-tick','acquisition-economics','/v1/owner/audience-asset','brand_customer_acquired'].forEach(x=>{if(!authority.includes(x))throw new Error('State machine/CDP API missing: '+x)});
 ['Churn / Next Best Action','brand-journeys-tick','predicted_clv'].forEach(x=>{if(!mfwApp.includes(x))throw new Error('State machine/CDP Brand UI missing: '+x)});
-const platformJs=fs.readFileSync(path.join(root,'platform.js'),'utf8');
 ['MFW AUDIENCE ASSET','IDENTIFIED CUSTOMERS','ATTRIBUTABLE GMV','PREDICTED CLV','/v1/owner/audience-asset'].forEach(x=>{if(!platformJs.includes(x))throw new Error('Owner Audience Asset UI missing: '+x)});
 console.log('Brand 365 state machine + owner Audience Asset contract: PASS');
 
@@ -149,3 +149,11 @@ const platformHtml=fs.readFileSync(path.join(root,'index.html'),'utf8');
 ['INTEREST_OPTIONS','saveInterestsToAuthority','/v1/me/interests'].forEach(x=>{if(!platformJs.includes(x))throw new Error('Interest persistence UI missing: '+x)});
 ['platform_registrations','/v1/platform/registrations/','pending_review'].forEach(x=>{if(!(migration019+authority).includes(x))throw new Error('Platform registration authority missing: '+x)});
 console.log('account interests + platform registrations contract: PASS');
+
+const migration020=fs.readFileSync(path.join(root,'..','..','mfw-api','migrations','020_journey_closure.sql'),'utf8');
+['event_brand','professional_follows','b2b_leads','next_action'].forEach(x=>{if(!migration020.includes(x))throw new Error('Journey closure migration missing: '+x)});
+['/v1/me/recommendations','/v1/me/wallet','/v1/me/reminders','/v1/professional/follows','/v1/b2b/leads','/v1/loyalty/claims/','/v1/loyalty/redeem-token'].forEach(x=>{if(!authority.includes(x))throw new Error('Golden Path authority missing: '+x)});
+['renderForYou','renderAgenda','renderWallet','/v1/me/recommendations','/v1/me/wallet'].forEach(x=>{if(!platformJs.includes(x))throw new Error('Platform Golden Path UI missing: '+x)});
+['ensureAuthorityToken','/v1/professional/follows','/v1/meetings','/v1/b2b/leads','eventBrand:\'bfs\'','ES256 · ROTATING'].forEach(x=>{if(!bfs.includes(x))throw new Error('BFS Golden Path UI missing: '+x)});
+if(authority.includes('https://moscow-fashion-week-authority.onrender.com'))throw new Error('legacy Moscow authority URL remains in server-v2');
+console.log('MVP Golden Path journey closure contract: PASS');
