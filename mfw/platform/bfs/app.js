@@ -132,7 +132,8 @@ async function requestMeeting(input){
    note:'BFS app meeting request'
   })});
   if(out.data){
-   state.meeting=Object.assign({},local,{id:out.data.id,status:out.data.status,startsAt:out.data.startsAt});
+   state.meeting=Object.assign({},local,{id:out.data.id,status:out.data.status,startsAt:out.data.startsAt,organisationRef:input.organisationRef||null});
+   if(input.organisationRef){leadState[input.organisationRef]=Object.assign({},leadState[input.organisationRef]||{},{stage:'meeting_requested',updatedAt:new Date().toISOString()});saveLeads();}
    try{localStorage.setItem('bfsMeetingState',JSON.stringify(state.meeting))}catch(e){}
    b2b();
   }
@@ -155,16 +156,26 @@ function organisationDirectory(){
     '<div class="org-actions"><button data-org-meet="'+o.id+'">ЗАПРОСИТЬ ВСТРЕЧУ</button><button data-org-lead="'+o.id+'">QUALIFY LEAD</button></div></article>';
   }).join('');
  bindProjectActions();
- $$('[data-org-meet]').forEach(function(btn){btn.onclick=function(){var o=orgById(btn.dataset.orgMeet);if(!o)return;leadStage(o.id,'meeting_requested');requestMeeting({organisationRef:o.id,organisationName:o.name});};});
+ $('[data-org-meet]').forEach(function(btn){btn.onclick=function(){var o=orgById(btn.dataset.orgMeet);if(!o)return;requestMeeting({organisationRef:o.id,organisationName:o.name});};});
  $$('[data-org-lead]').forEach(function(btn){btn.onclick=function(){leadStage(btn.dataset.orgLead,'qualified');};});
+}
+async function refreshLeadPipeline(){
+ var root=$('#leadPipeline');if(!root)return;
+ try{
+  var out=await authority('/v1/b2b/leads',{method:'GET'}),rows=out.data||[];
+  root.innerHTML=rows.length?'<div class="section-head"><h2>Follow-up pipeline</h2><span>SERVER LEADS</span></div>'+
+   rows.slice(0,8).map(function(x){return '<article class="meeting-card"><b>'+(x.organisationName||x.counterpartName||'BFS lead')+'</b><span>'+String(x.stage||'interest').toUpperCase()+(x.nextAction?' · '+x.nextAction:'')+'</span>'+(x.stage==='met'?'<button data-followup-lead="'+x.id+'">FOLLOW-UP</button>':'')+'</article>';}).join('')
+   :'<div class="meta">После запроса и проведения встречи здесь появится follow-up pipeline.</div>';
+  $$('[data-followup-lead]').forEach(function(b){b.onclick=async function(){try{await authority('/v1/b2b/leads/'+encodeURIComponent(b.dataset.followupLead),{method:'PATCH',body:JSON.stringify({stage:'follow_up',nextAction:'Отправить материалы и согласовать следующий контакт'})});refreshLeadPipeline();}catch(e){}};});
+ }catch(e){root.innerHTML='<div class="meta">Lead pipeline временно недоступен.</div>';}
 }
 function b2b(){
  var meeting=state.meeting?'<div class="meeting-card"><b>'+state.meeting.delegate+'</b><span>'+(state.meeting.startsAt||state.meeting.slot||'')+' · '+String(state.meeting.status||'requested').toUpperCase()+'</span>'+
   '<div class="card-actions"><button id="meetingConfirm">CONFIRM</button><button id="meetingComplete">MEETING HELD</button><button id="cancelMeeting">CANCEL</button></div></div>':'';
  $('#content').innerHTML='<div class="section-head"><h2>B2B meetings</h2><span>SERVER WORKFLOW</span></div>'+
   '<div class="b2b"><div class="time">NETWORKING</div><h3>People → meeting → follow-up → lead</h3><p class="meta">Встреча сохраняется в authority; после завершения создаётся follow-up lead.</p>'+
-  '<div class="card-actions"><button class="lang" id="discoverDelegates">ЛЮДИ</button><button class="lang" id="orgDirectory">ОРГАНИЗАЦИИ</button></div></div>'+meeting;
- $('#discoverDelegates').onclick=delegateDiscovery;$('#orgDirectory').onclick=organisationDirectory;
+  '<div class="card-actions"><button class="lang" id="discoverDelegates">ЛЮДИ</button><button class="lang" id="orgDirectory">ОРГАНИЗАЦИИ</button></div></div>'+meeting+'<div id="leadPipeline"></div>';
+ $('#discoverDelegates').onclick=delegateDiscovery;$('#orgDirectory').onclick=organisationDirectory;refreshLeadPipeline();
  async function setMeetingStatus(status){
   if(!state.meeting||!state.meeting.id)return;
   try{
