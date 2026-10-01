@@ -677,3 +677,128 @@ Before this additional wave is complete:
 
 **Sequencing:** OpenTelemetry can start immediately after durable PostgreSQL admission; passkeys follow stable production identity; OpenFeature should be introduced before the number of rollout/experiment conditions becomes difficult to govern.
 
+## 12. Additional integration wave — searchable replay, runway media rights and venue operations
+
+This wave extends the media/event layer after the existing LIVE, programme, agenda and durable-job phases. It does not change registration, pass, CRM/CDP or campaign authorities.
+
+### 12.1 Searchable replay transcript and caption authority — ADOPT/ADAPT
+
+Processing reference: https://github.com/m-bain/whisperX
+
+For eligible MFW/BFS streams and replays, add an asynchronous media-processing path:
+
+`approved replay asset -> audio extraction -> speech transcription/alignment -> timecoded transcript segments -> human/editor review -> published captions/search projection`
+
+Persist in MFW:
+
+- replay/session/show ID;
+- processor/provider + model/version;
+- language;
+- segment start/end;
+- raw machine transcript;
+- reviewed/published transcript;
+- speaker label when confirmed;
+- processing status/error;
+- source asset checksum/version.
+
+Use cases:
+
+- searchable BFS session replay;
+- captions/accessibility;
+- speaker/session quotes with exact time anchors;
+- automatic chapter candidates;
+- post-event editorial search.
+
+WhisperX is a processing worker only. It must not become the programme/content authority and machine text must not be quoted as confirmed speaker wording until reviewed where accuracy matters.
+
+### 12.2 Runway Look Timeline — ADOPT
+
+Create a native timeline connecting a fashion-show replay to canonical collection/look records:
+
+`show -> replay -> time range -> look -> product/collection media -> designer/brand`
+
+Support:
+
+- manual exact look markers;
+- assisted candidate matching from approved runway frames/media;
+- correction/version history;
+- "jump to look" playback;
+- buyer shortlist from replay;
+- look-level engagement analytics.
+
+Any computer-vision similarity can suggest a look but cannot publish the relationship without confidence/review rules. The canonical look/collection identity stays in MFW.
+
+This layer should be implemented **after** replay assets and collection/look IDs are stable, and before advanced replay commerce is expanded.
+
+### 12.3 Media Rights, Embargo and Press Asset Authority — ADOPT
+
+Optional DAM reference/sidecar: https://github.com/resourcespace/resourcespace
+
+Introduce native MFW metadata for every press/editorial asset:
+
+- asset/media ID;
+- rights owner;
+- photographer/creator credit;
+- permitted channels/territories;
+- embargo until;
+- expiry where relevant;
+- press/public/private scope;
+- derivative permission;
+- associated brand/designer/show/session;
+- source/original checksum;
+- approved derivative IDs.
+
+Flow:
+
+`asset admission -> rights/credit -> review -> embargo/publish state -> approved distribution -> usage evidence`
+
+ResourceSpace may later be used as an editorial DAM sidecar if asset volume/press operations justify it. If used, MFW still stores the publication/rights projection required by product surfaces and never treats DAM folders as CRM or programme truth.
+
+A missing/expired right should fail closed for new publication.
+
+### 12.4 Venue Operations: capacity, queue and incident authority — ADOPT
+
+Add a bounded operational layer for live event execution:
+
+- venue/zone;
+- capacity;
+- observed occupancy snapshots;
+- entry/queue state;
+- temporary closure;
+- incident;
+- severity;
+- owner/team;
+- opened/resolved timestamps;
+- participant-impact flag;
+- communication status.
+
+Possible inputs:
+
+- staff observations;
+- check-in events;
+- explicitly integrated counters/sensors later.
+
+Do not infer precise occupancy from registration or QR check-ins alone unless the methodology is documented; exits/re-entry make such counts incomplete.
+
+Participant surfaces may then show:
+
+- "entry delayed";
+- "venue full";
+- alternate entrance;
+- schedule/room disruption.
+
+Staff/admin gets incident timeline, escalation and resolution evidence.
+
+### 12.5 Additional acceptance
+
+- replay search always resolves to exact asset + time range;
+- reviewed transcript and raw machine transcript are distinguishable;
+- runway look linkage is versioned and reversible;
+- no press asset publishes without a valid rights/embargo state;
+- venue capacity/queue state identifies whether it is observed, calculated or estimated;
+- incident alerts use existing MFW notification authority rather than a parallel messaging system.
+
+**Sequencing:** LIVE/replay provider first -> transcript/replay indexing -> runway timeline; media-rights metadata can start with editorial authoring; venue operations follows durable PostgreSQL/jobs and existing check-in authority.
+
+**Dependency hygiene:** pin runtime versions and review each external project's current LICENSE/security posture before adoption. ResourceSpace/WhisperX remain replaceable providers/components, not MFW domain authorities.
+
