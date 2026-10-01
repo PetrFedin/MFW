@@ -23,7 +23,8 @@
   async function ensureAuthoritySession(role,force){
     var token=accessToken();
     if(token&&!force)return token;
-    var r=await fetch(AUTHORITY+'/v1/auth/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:displayName(),role:role||'Visitor'})});
+    var identityKey=accountState.profile.email||accountState.profile.phone||displayName();
+    var r=await fetch(AUTHORITY+'/v1/auth/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:displayName(),role:role||'Visitor',identityKey:identityKey})});
     var out=await r.json();if(!r.ok)throw new Error(out.error||'auth_failed');
     setAccessToken(out.session);try{localStorage.setItem('mfwUserId',out.user&&out.user.id||'');}catch(e){}
     return out.session;
