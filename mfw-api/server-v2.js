@@ -1926,6 +1926,69 @@ async function router(req,res){
     const qrDataUrl=await QRCode.toDataURL('MFW-LOYALTY:'+code,{width:360,margin:2,errorCorrectionLevel:'M'});
     return json(res,201,{data:{...claim,code,qrDataUrl,redemption:{mode:'one_time_server_verified',surface:'market_or_brand_showroom'}}});
   }
+  if(req.method==='POST'&&p.startsWith('/v1/loyalty/claims/')&&p.endsWith('/qr')){
+    const claimId=p.split('/')[4];
+    const b=await readBody(req),userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    let claim=null,offer=null;
+    if(pool){
+      const r=await pool.query(`SELECT c.*,COALESCE(o.external_key,o.id::text) offer_ref
+        FROM loyalty_claims c JOIN loyalty_offers o ON o.id=c.offer_id
+        WHERE c.id::text=$1 AND c.user_id::text=$2 LIMIT 1`,[claimId,userId]);
+      if(!r.rowCount)return json(res,404,{error:'claim_not_found'});
+      claim=r.rows[0];offer=await brand365Store.offerByRef(claim.offer_ref);
+      if(claim.status!=='issued')return json(res,409,{error:'claim_not_active',status:claim.status});
+      if(claim.expires_at&&Date.now()>=new Date(claim.expires_at).getTime())return json(res,409,{error:'claim_expired'});
+    }else{
+      claim=memory.loyaltyClaims.get(claimId);
+      if(!claim||String(claim.userId)!==String(userId))return json(res,404,{error:'claim_not_found'});
+      offer=memory.loyaltyOffers.find(x=>x.id===claim.offerId);
+      if(claim.status!=='issued')return json(res,409,{error:'claim_not_active',status:claim.status});
+      if(claim.expiresAt&&Date.now()>=new Date(claim.expiresAt).getTime())return json(res,409,{error:'claim_expired'});
+    }
+    if(!offer)return json(res,404,{error:'offer_not_found'});
+    const eligibility=await evaluateLoyaltyOfferAuthority(userId,offer);
+    if(!eligibility.eligible)return json(res,409,{error:'eligibility_lost',eligibility});
+    const now=Date.now();
+    const payload={iss:'mfw',typ:'reward-pass',sub:String(userId),claimId:String(claimId),offerId:String(offer.id),brandId:String(offer.brandId),iat:now,exp:now+5*60*1000,jti:'reward_'+crypto.randomBytes(8).toString('hex')};
+    const token=signPayload(payload);
+    const qrDataUrl=await QRCode.toDataURL('MFW-REWARD:'+token,{width:360,margin:2,errorCorrectionLevel:'M'});
+    await track('loyalty_wallet_qr_opened',{claimId:String(claimId),offerId:offer.id},userId);
+    return json(res,200,{data:{claimId:String(claimId),status:'issued',token,qrDataUrl,expiresInMs:payload.exp-now,redemption:{mode:'short_lived_server_signed',surface:'market_or_brand_showroom'}}});
+  }
+
+  if(req.method==='POST'&&p==='/v1/loyalty/redeem-token'){
+    const b=await readBody(req),raw=String(b.token||'').trim().replace(/^MFW-REWARD:/,'');
+    const verified=verifyToken(raw);
+    if(!verified.ok||!verified.payload||verified.payload.typ!=='reward-pass')return json(res,401,{error:'invalid_reward_token'});
+    const payload=verified.payload,claimId=String(payload.claimId||'');
+    let claim=null,offer=null;
+    if(pool){
+      const r=await pool.query(`SELECT c.*,COALESCE(o.external_key,o.id::text) offer_ref
+        FROM loyalty_claims c JOIN loyalty_offers o ON o.id=c.offer_id WHERE c.id::text=$1 LIMIT 1`,[claimId]);
+      if(!r.rowCount)return json(res,404,{error:'claim_not_found'});
+      claim=r.rows[0];offer=await brand365Store.offerByRef(claim.offer_ref);
+      if(!offer)return json(res,404,{error:'offer_not_found'});
+      if(!(await brandPortalOk(req,offer.brandId))&&!adminOk(req))return json(res,403,{error:'brand_redemption_access_required'});
+      if(claim.status==='redeemed')return json(res,409,{error:'already_redeemed',redeemedAt:claim.redeemed_at});
+      if(claim.status==='revoked')return json(res,409,{error:'claim_revoked'});
+      if(claim.expires_at&&Date.now()>=new Date(claim.expires_at).getTime()){await brand365Store.updateClaimStatus(claim.id,'expired');return json(res,409,{error:'claim_expired'});}
+      const eligibility=await evaluateLoyaltyOfferAuthority(String(claim.user_id),offer);
+      if(!eligibility.eligible){await brand365Store.updateClaimStatus(claim.id,'revoked');return json(res,409,{error:'eligibility_lost',eligibility});}
+      const actor=sessionFromRequest(req),updated=await brand365Store.updateClaimStatus(claim.id,'redeemed',actor&&actor.sub||null);
+      await track('loyalty_claim_redeemed',{claimId,offerId:offer.id,brandId:offer.brandId,mode:'signed_qr'},String(claim.user_id));
+      return json(res,200,{data:{id:String(updated.id),offerId:offer.id,status:updated.status,redeemedAt:updated.redeemed_at,rewardType:offer.rewardType,rewardValue:offer.rewardValue}});
+    }
+    claim=memory.loyaltyClaims.get(claimId);if(!claim)return json(res,404,{error:'claim_not_found'});
+    offer=memory.loyaltyOffers.find(x=>x.id===claim.offerId);if(!offer)return json(res,404,{error:'offer_not_found'});
+    if(!(await brandPortalOk(req,offer.brandId))&&!adminOk(req))return json(res,403,{error:'brand_redemption_access_required'});
+    if(claim.status!=='issued')return json(res,409,{error:'claim_not_active',status:claim.status});
+    const eligibility=evaluateLoyaltyOffer(claim.userId,offer);if(!eligibility.eligible){claim.status='revoked';return json(res,409,{error:'eligibility_lost',eligibility});}
+    claim.status='redeemed';claim.redeemedAt=new Date().toISOString();
+    await track('loyalty_claim_redeemed',{claimId,offerId:offer.id,brandId:offer.brandId,mode:'signed_qr'},claim.userId);
+    return json(res,200,{data:{id:claim.id,offerId:offer.id,status:claim.status,redeemedAt:claim.redeemedAt,rewardType:offer.rewardType,rewardValue:offer.rewardValue}});
+  }
+
   if(req.method==='POST'&&p==='/v1/loyalty/redeem'){
     const b=await readBody(req);
     const code=String(b.code||'').trim().replace(/^MFW-LOYALTY:/,'');
