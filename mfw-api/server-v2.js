@@ -2734,6 +2734,144 @@ async function router(req,res){
     return json(res,result.ok?201:(result.status==='duplicate'?409:401),result);
   }
 
+  if(req.method==='GET'&&p==='/v1/professional/follows'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const eventBrand=String(url.searchParams.get('eventBrand')||'bfs');
+    if(pool){
+      const r=await pool.query(`SELECT event_brand AS "eventBrand",entity_type AS "entityType",entity_ref AS "entityRef",
+        display_name AS "displayName",favorite,followed_at AS "followedAt",updated_at AS "updatedAt"
+        FROM professional_follows WHERE user_id::text=$1 AND event_brand=$2 ORDER BY updated_at DESC`,[userId,eventBrand]);
+      return json(res,200,{data:r.rows,source:'postgres'});
+    }
+    const rows=[...memory.professionalFollows.values()].filter(x=>x.userId===String(userId)&&x.eventBrand===eventBrand);
+    return json(res,200,{data:rows,source:'memory',demo:true});
+  }
+  if(req.method==='POST'&&p==='/v1/professional/follows'){
+    const b=await readBody(req),userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const eventBrand=String(b.eventBrand||'bfs'),entityType=String(b.entityType||'organisation'),entityRef=String(b.entityRef||'').slice(0,160);
+    if(!['mfw','bfs'].includes(eventBrand))return json(res,400,{error:'invalid_event_brand'});
+    if(!['organisation','speaker','delegate','project'].includes(entityType)||!entityRef)return json(res,400,{error:'invalid_professional_entity'});
+    const following=b.action!=='remove',favorite=!!b.favorite;
+    if(pool){
+      if(following){
+        const r=await pool.query(`INSERT INTO professional_follows(user_id,event_brand,entity_type,entity_ref,display_name,favorite)
+          VALUES($1,$2,$3,$4,$5,$6)
+          ON CONFLICT(user_id,event_brand,entity_type,entity_ref) DO UPDATE SET display_name=EXCLUDED.display_name,
+            favorite=EXCLUDED.favorite,updated_at=now()
+          RETURNING event_brand AS "eventBrand",entity_type AS "entityType",entity_ref AS "entityRef",display_name AS "displayName",favorite,followed_at AS "followedAt",updated_at AS "updatedAt"`,
+          [userId,eventBrand,entityType,entityRef,String(b.displayName||'').slice(0,200)||null,favorite]);
+        await track('professional_followed',{eventBrand,entityType,entityRef,favorite},userId);
+        return json(res,200,{data:r.rows[0],following:true,source:'postgres'});
+      }
+      await pool.query('DELETE FROM professional_follows WHERE user_id::text=$1 AND event_brand=$2 AND entity_type=$3 AND entity_ref=$4',[userId,eventBrand,entityType,entityRef]);
+      await track('professional_unfollowed',{eventBrand,entityType,entityRef},userId);
+      return json(res,200,{following:false,source:'postgres'});
+    }
+    const key=[userId,eventBrand,entityType,entityRef].join(':');
+    if(following)memory.professionalFollows.set(key,{userId:String(userId),eventBrand,entityType,entityRef,displayName:String(b.displayName||''),favorite,followedAt:new Date().toISOString()});
+    else memory.professionalFollows.delete(key);
+    return json(res,200,{following,data:memory.professionalFollows.get(key)||null,source:'memory'});
+  }
+
+  if(req.method==='GET'&&p==='/v1/b2b/leads'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const r=await pool.query(`SELECT id,meeting_id AS "meetingId",event_brand AS "eventBrand",organisation_ref AS "organisationRef",
+        organisation_name AS "organisationName",counterpart_ref AS "counterpartRef",counterpart_name AS "counterpartName",
+        stage,next_action AS "nextAction",next_action_at AS "nextActionAt",notes,metadata,created_at AS "createdAt",updated_at AS "updatedAt"
+        FROM b2b_leads WHERE owner_user_id::text=$1 ORDER BY updated_at DESC`,[userId]);
+      return json(res,200,{data:r.rows,source:'postgres'});
+    }
+    return json(res,200,{data:[...memory.b2bLeads.values()].filter(x=>x.ownerUserId===String(userId)),source:'memory',demo:true});
+  }
+  if(req.method==='POST'&&p==='/v1/b2b/leads'){
+    const b=await readBody(req),userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const stage=String(b.stage||'interest');
+    const allowed=['interest','meeting_requested','meeting_confirmed','met','follow_up','qualified','won','lost'];
+    if(!allowed.includes(stage))return json(res,400,{error:'invalid_lead_stage'});
+    if(pool){
+      const r=await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,next_action_at,notes,metadata)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb)
+        ON CONFLICT(meeting_id) DO UPDATE SET stage=EXCLUDED.stage,next_action=EXCLUDED.next_action,next_action_at=EXCLUDED.next_action_at,
+          notes=EXCLUDED.notes,updated_at=now()
+        RETURNING id,meeting_id AS "meetingId",event_brand AS "eventBrand",organisation_ref AS "organisationRef",
+          organisation_name AS "organisationName",counterpart_ref AS "counterpartRef",counterpart_name AS "counterpartName",
+          stage,next_action AS "nextAction",next_action_at AS "nextActionAt",notes,created_at AS "createdAt",updated_at AS "updatedAt"`,
+        [b.meetingId||null,userId,String(b.eventBrand||'bfs'),String(b.organisationRef||'').slice(0,160)||null,
+         String(b.organisationName||'').slice(0,200)||null,String(b.counterpartRef||'').slice(0,160)||null,
+         String(b.counterpartName||'').slice(0,200)||null,stage,String(b.nextAction||'').slice(0,500)||null,
+         b.nextActionAt||null,String(b.notes||'').slice(0,2000)||null,JSON.stringify(b.metadata||{})]);
+      await track('b2b_lead_updated',{leadId:String(r.rows[0].id),stage},userId);
+      return json(res,201,{data:r.rows[0],source:'postgres'});
+    }
+    const id=String(b.id||('lead_'+crypto.randomBytes(6).toString('hex')));
+    const item={id,ownerUserId:String(userId),eventBrand:String(b.eventBrand||'bfs'),organisationRef:b.organisationRef||null,organisationName:b.organisationName||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,stage,nextAction:b.nextAction||null,nextActionAt:b.nextActionAt||null,notes:b.notes||null,updatedAt:new Date().toISOString(),demo:true};
+    memory.b2bLeads.set(id,item);return json(res,201,{data:item,source:'memory'});
+  }
+  if(req.method==='PATCH'&&p.startsWith('/v1/b2b/leads/')){
+    const id=p.split('/').pop(),b=await readBody(req),userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const stage=String(b.stage||''),allowed=['interest','meeting_requested','meeting_confirmed','met','follow_up','qualified','won','lost'];
+    if(!allowed.includes(stage))return json(res,400,{error:'invalid_lead_stage'});
+    if(pool){
+      const r=await pool.query(`UPDATE b2b_leads SET stage=$3,next_action=COALESCE($4,next_action),next_action_at=COALESCE($5,next_action_at),
+        notes=COALESCE($6,notes),updated_at=now() WHERE id::text=$1 AND owner_user_id::text=$2
+        RETURNING id,meeting_id AS "meetingId",event_brand AS "eventBrand",organisation_ref AS "organisationRef",
+          organisation_name AS "organisationName",counterpart_name AS "counterpartName",stage,next_action AS "nextAction",
+          next_action_at AS "nextActionAt",notes,updated_at AS "updatedAt"`,
+        [id,userId,stage,b.nextAction||null,b.nextActionAt||null,b.notes||null]);
+      if(!r.rowCount)return json(res,404,{error:'lead_not_found'});
+      await track('b2b_lead_stage_changed',{leadId:id,stage},userId);
+      return json(res,200,{data:r.rows[0],source:'postgres'});
+    }
+    const item=memory.b2bLeads.get(id);if(!item||item.ownerUserId!==String(userId))return json(res,404,{error:'lead_not_found'});
+    Object.assign(item,{stage,nextAction:b.nextAction??item.nextAction,nextActionAt:b.nextActionAt??item.nextActionAt,notes:b.notes??item.notes,updatedAt:new Date().toISOString()});
+    return json(res,200,{data:item,source:'memory'});
+  }
+
+  if(req.method==='GET'&&p==='/v1/meetings'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(pool){
+      const r=await pool.query(`SELECT m.id,COALESCE(e.external_key,e.id::text) AS "eventId",m.organisation,m.starts_at AS "startsAt",
+        m.status,m.note,m.metadata,m.created_at AS "createdAt",m.updated_at AS "updatedAt"
+        FROM b2b_meetings m LEFT JOIN events e ON e.id=m.event_id WHERE m.requester_user_id::text=$1 ORDER BY m.created_at DESC`,[userId]);
+      return json(res,200,{data:r.rows,source:'postgres'});
+    }
+    return json(res,200,{data:[...memory.meetings.values()].filter(x=>String(x.buyerId||x.requesterUserId)===String(userId)),source:'memory',demo:true});
+  }
+  if(req.method==='PATCH'&&p.startsWith('/v1/meetings/')&&!p.includes('/proposals')){
+    const id=p.split('/')[3],b=await readBody(req),userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const status=String(b.status||''),allowed=['requested','confirmed','reschedule_requested','completed','cancelled','declined'];
+    if(!allowed.includes(status))return json(res,400,{error:'invalid_meeting_status'});
+    if(pool){
+      const r=await pool.query(`UPDATE b2b_meetings SET status=$3,starts_at=COALESCE($4,starts_at),note=COALESCE($5,note),updated_at=now()
+        WHERE id::text=$1 AND requester_user_id::text=$2
+        RETURNING id,organisation,starts_at AS "startsAt",status,note,metadata,updated_at AS "updatedAt"`,
+        [id,userId,status,b.startsAt||null,b.note||null]);
+      if(!r.rowCount)return json(res,404,{error:'meeting_not_found'});
+      await pool.query('INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,$3,$4::jsonb)',[id,userId,status,JSON.stringify({startsAt:b.startsAt||null,note:b.note||null})]);
+      const stageMap={requested:'meeting_requested',confirmed:'meeting_confirmed',completed:'met'};
+      if(stageMap[status]){
+        const m=r.rows[0],meta=m.metadata||{};
+        await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
+          VALUES($1,$2,'bfs',$3,$4,$5,$6,$7,$8,$9::jsonb)
+          ON CONFLICT(meeting_id) DO UPDATE SET stage=EXCLUDED.stage,next_action=COALESCE(EXCLUDED.next_action,b2b_leads.next_action),updated_at=now()`,
+          [id,userId,meta.organisationRef||null,m.organisation||meta.organisationName||null,meta.counterpartRef||null,meta.counterpartName||null,
+           stageMap[status],status==='completed'?'Отправить follow-up после встречи':null,JSON.stringify({source:'meeting_state_machine'})]);
+      }
+      await track('meeting_status_changed',{meetingId:id,status},userId);
+      return json(res,200,{data:r.rows[0],source:'postgres'});
+    }
+    const m=memory.meetings.get(id);if(!m)return json(res,404,{error:'meeting_not_found'});
+    m.status=status;m.updatedAt=new Date().toISOString();return json(res,200,{data:m,source:'memory'});
+  }
+
   if(req.method==='POST'&&p==='/v1/meetings'){
     const b=await readBody(req);
     const requester=userSubject(req,b.buyerId||b.userId||'demo_buyer');
@@ -2757,7 +2895,7 @@ async function router(req,res){
       const saved=await pool.query(`INSERT INTO b2b_meetings(event_id,brand_id,requester_user_id,organisation,starts_at,status,note,source,metadata)
         VALUES($1,$2,$3,$4,$5,'requested',$6,'app',$7::jsonb)
         RETURNING id,event_id AS "eventStorageId",brand_id AS "brandStorageId",requester_user_id AS "requesterUserId",organisation,starts_at AS "startsAt",status,note,created_at AS "createdAt"`,
-        [eventStorageId,brandStorageId,user.rows[0].id,String(b.organisation||'').slice(0,200)||null,startsAt,String(b.note||'').slice(0,1000)||null,JSON.stringify({slot:b.slot||null})]);
+        [eventStorageId,brandStorageId,user.rows[0].id,String(b.organisation||'').slice(0,200)||null,startsAt,String(b.note||'').slice(0,1000)||null,JSON.stringify({slot:b.slot||null,organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'})]);
       const meeting=saved.rows[0];
       await pool.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null})]);
       await track('meeting_requested',{meetingId:String(meeting.id),brandId:b.brandId||null,eventId:b.eventId||null},requester);
