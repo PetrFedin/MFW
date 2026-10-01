@@ -4,6 +4,14 @@ saved:(function(){try{return JSON.parse(localStorage.getItem('bfsSavedSessions')
 followedProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFollowedProjects')||'{}')}catch(e){return {}}})(),
 favoriteProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFavoriteProjects')||'{}')}catch(e){return {}}})(),
 rewardStarted:(function(){try{return JSON.parse(localStorage.getItem('bfsRewardStarted')||'{}')}catch(e){return {}}})()};
+var AUTHORITY='https://mfw-authority.onrender.com';
+function token(){try{return localStorage.getItem('mfwAccessToken')||''}catch(e){return ''}}
+async function authority(path,options){
+ var opts=options||{},headers=Object.assign({'Content-Type':'application/json'},opts.headers||{}),t=token();if(t)headers.Authorization='Bearer '+t;
+ var r=await fetch(AUTHORITY+path,Object.assign({},opts,{headers:headers})),out=await r.json().catch(function(){return {}});
+ if(!r.ok)throw Object.assign(new Error(out.error||('HTTP '+r.status)),{status:r.status,data:out});return out;
+}
+
 var sessions=[
 {id:'s1',date:'28 сентября',time:'11:00–12:15',title:'Искусственный интеллект в творческом процессе: инструмент или соавтор?',hall:'Большой зал',tag:'Креативные индустрии',moderator:'Официальная программа BFS',participants:['Спикеры с официальной карточки сессии']},
 {id:'s2',date:'28 сентября',time:'12:30–13:45',title:'Мода как символический капитал города',hall:'Большой зал',tag:'Предпринимательство и инвестиции',moderator:'Официальная программа BFS',participants:['Спикеры с официальной карточки сессии']},
@@ -22,6 +30,8 @@ if(window.MFP_DATA&&window.MFP_DATA.bfs){
     return {id:s.id,date:s.date,time:s.time+(s.end?'–'+s.end:''),title:s.title,hall:s.hall,tag:s.topic||'Сессия',moderator:s.moderator||'',participants:s.speakers||[],source:'OFFICIAL'};
   });
   speakers=(window.MFP_DATA.bfs.speakers||[]).map(function(s){return [s.name,(s.role||'')+(s.org?' · '+s.org:'') ,s.id,s.org||'',s.role||''];});
+  var orgMap={};(window.MFP_DATA.bfs.organisations||[]).forEach(function(o){orgMap[o.name]=o;});
+  delegates=(window.MFP_DATA.bfs.speakers||[]).map(function(s){var o=orgMap[s.org]||{};return [o.country||'International',s.name,(s.role||'')+(s.org?' · '+s.org:''),s.id,s.org||''];}).slice(0,24);
 }
 
 function $(s){return document.querySelector(s)}function $$(s){return [].slice.call(document.querySelectorAll(s))}
