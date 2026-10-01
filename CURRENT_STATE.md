@@ -1,6 +1,6 @@
 # Current MFW/BFS project state
 
-Last consolidated state: **2026-09-30**
+Last consolidated state: **2026-10-01**
 
 ## Current product
 
@@ -112,7 +112,7 @@ Modelled metrics must not be presented as audited business valuation.
 
 ## PostgreSQL
 
-Current migrations: **001–019**.
+Current migrations: **001–020**.
 
 Latest schema layer:
 
@@ -153,3 +153,19 @@ Current account model:
 
 Current canonical authority URL:
 `https://mfw-authority.onrender.com`
+
+
+## Responsive device hardening
+
+Responsive usability is now part of the release gate for the shared MFW/BFS shell, MFW participant experience, BFS participant/professional experience, platform overlays and Admin Console.
+
+Automated device matrix:
+- 360×800 compact phone;
+- 375×667 compact iPhone;
+- 393×852 standard iPhone;
+- 430×932 large iPhone;
+- 744×1133 compact tablet;
+- 1024×1366 large tablet;
+- 1440×900 desktop control.
+
+The Playwright gate in `qa/responsive.spec.js` verifies viewport containment, document-level horizontal overflow, reachable navigation, modal/drawer fit and primary touch-target height.
