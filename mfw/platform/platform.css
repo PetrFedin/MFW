@@ -101,6 +101,7 @@ html,body{min-width:0;overscroll-behavior:none}
 .platform-actions{-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .platform-actions::-webkit-scrollbar{display:none}
 button,input,select,textarea{touch-action:manipulation}
+.event-button,.platform-actions>button{min-height:40px}
 @media (min-width:681px) and (max-width:1024px){
   .platform-bar{height:auto;min-height:92px;flex-wrap:wrap;align-content:center;row-gap:7px;padding:8px 12px}
   .platform-wordmark{min-width:88px}.event-switcher{margin-left:auto;margin-right:0}
