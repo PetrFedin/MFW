@@ -883,12 +883,13 @@ async function track(name,props={},userId=null){
   }
 }
 
-async function issueDemoUser(name,role){
+async function issueDemoUser(name,role,identityKey){
   if(pool){
     const client=await pool.connect();
     try{
       await client.query('BEGIN');
-      const syntheticPhone='+7999'+crypto.createHash('sha256').update(name+role).digest('hex').replace(/[a-f]/g,'').slice(0,7).padEnd(7,'0');
+      const identitySeed=String(identityKey||name||'mfw-demo-user').trim().toLowerCase();
+      const syntheticPhone='+7999'+crypto.createHash('sha256').update(identitySeed).digest('hex').replace(/[a-f]/g,'').slice(0,7).padEnd(7,'0');
       const u=await client.query(`INSERT INTO users(phone)
         VALUES($1)
         ON CONFLICT(phone) DO UPDATE SET updated_at=now()
@@ -901,7 +902,7 @@ async function issueDemoUser(name,role){
       return u.rows[0].id;
     }catch(err){await client.query('ROLLBACK');throw err;}finally{client.release();}
   }
-  const id='demo_'+crypto.createHash('sha256').update(name+role).digest('hex').slice(0,12);
+  const id='demo_'+crypto.createHash('sha256').update(String(identityKey||name||'mfw-demo-user').trim().toLowerCase()).digest('hex').slice(0,12);
   memory.users.set(id,{id,name,role});
   return id;
 }
@@ -2504,7 +2505,8 @@ async function router(req,res){
     const b=await readBody(req);
     const name=String(b.name||'Demo User').slice(0,120);
     const role=String(b.role||'Visitor').slice(0,40);
-    const userId=await issueDemoUser(name,role);
+    const identityKey=String(b.identityKey||b.email||b.phone||name).slice(0,200);
+    const userId=await issueDemoUser(name,role,identityKey);
     const sessionPayload={typ:'session',sub:userId,role,name,iat:Date.now(),exp:Date.now()+6*60*60*1000,demo:true};
     const session=signPayload(sessionPayload);
     memory.sessions.set(userId,{session,sessionPayload});
