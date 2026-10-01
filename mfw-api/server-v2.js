@@ -2669,6 +2669,14 @@ async function router(req,res){
     }else{
       favoriteRefs=new Set([...(memory.brandFavorites.get(String(userId))||new Set())]);
     }
+    let professionalSignals=[];
+    if(pool){
+      const pf=await pool.query(`SELECT entity_type AS "entityType",entity_ref AS "entityRef",display_name AS "displayName",favorite
+        FROM professional_follows WHERE user_id::text=$1 AND event_brand='bfs'`,[userId]);
+      professionalSignals=pf.rows;
+    }else{
+      professionalSignals=[...memory.professionalFollows.values()].filter(x=>x.userId===String(userId)&&x.eventBrand==='bfs');
+    }
     const rows=pool
       ? (await pool.query(`SELECT external_key id,title,event_type AS type,event_brand AS "eventBrand",starts_at AS "startsAt",ends_at AS "endsAt",metadata
           FROM events WHERE status IN ('published','live','delayed','completed') ORDER BY starts_at`)).rows
@@ -2695,11 +2703,19 @@ async function router(req,res){
       for(const [ref,name] of brandNames){
         if(name&&hay.includes(name)){score+=favoriteRefs.has(ref)?60:45;reasons.push((favoriteRefs.has(ref)?'favorite_brand:':'followed_brand:')+ref);}
       }
-      if(e.eventBrand==='bfs'&&interests.includes('business')){score+=8;reasons.push('bfs_business_context');}
+      if(e.eventBrand==='bfs'){
+        const speakers=Array.isArray(e.metadata&&e.metadata.speakerIds)?e.metadata.speakerIds.map(String):[];
+        for(const rel of professionalSignals){
+          const ref=String(rel.entityRef||rel.entity_ref||''),display=String(rel.displayName||rel.display_name||'').toLowerCase();
+          if(rel.entityType==='speaker'&&speakers.includes(ref)){score+=rel.favorite?45:30;reasons.push((rel.favorite?'favorite_speaker:':'followed_speaker:')+ref);}
+          else if(display&&hay.includes(display)){score+=rel.favorite?32:20;reasons.push((rel.favorite?'favorite_professional:':'followed_professional:')+ref);}
+        }
+        if(interests.includes('business')){score+=8;reasons.push('bfs_business_context');}
+      }
       if(e.eventBrand==='mfw'&&interests.includes('runway')&&String(e.type).includes('show')){score+=8;reasons.push('mfw_runway_context');}
       return {...e,score,reasons:reasons.length?reasons:['programme_relevance']};
     }).sort((a,b)=>b.score-a.score||String(a.startsAt).localeCompare(String(b.startsAt))).slice(0,12);
-    return json(res,200,{data:recommendations,signals:{interests,followedBrands:[...followed],favoriteBrands:[...favoriteRefs]},source:pool?'postgres':'memory'});
+    return json(res,200,{data:recommendations,signals:{interests,followedBrands:[...followed],favoriteBrands:[...favoriteRefs],professionalFollows:professionalSignals},source:pool?'postgres':'memory'});
   }
 
   if(req.method==='GET'&&p==='/v1/me/wallet'){
