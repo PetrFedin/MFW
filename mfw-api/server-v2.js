@@ -666,7 +666,8 @@ async function checkDatabaseSchema(){
     'loyalty_offer_requirements','loyalty_eligibility','loyalty_claims','brand_follows','brand_content_posts',
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
-    'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations'
+    'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations',
+    'professional_follows','b2b_leads'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
@@ -674,7 +675,7 @@ async function checkDatabaseSchema(){
   const missingTables=requiredTables.filter(x=>!tableSet.has(x));
 
   const requiredColumns=[
-    ['events','access_mode'],['event_registrations','source'],['streams','external_key'],['streams','provider_mode'],
+    ['events','access_mode'],['events','event_brand'],['events','source_url'],['events','official_updated_at'],['event_registrations','source'],['streams','external_key'],['streams','provider_mode'],
     ['brands','external_key'],['brand_social_channels','external_key'],['loyalty_offers','external_key'],
     ['event_registrations','registration_type'],['event_registrations','organisation'],['event_registrations','job_title'],['event_registrations','purpose'],['event_registrations','submitted_payload'],
     ['brand_content_posts','external_key'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at']
@@ -2588,16 +2589,117 @@ async function router(req,res){
     return json(res,200,{data:[...memory.eventRegistrations.values()].filter(x=>x.userId===userId),source:'memory',demo:true});
   }
 
+  if(req.method==='GET'&&p==='/v1/me/recommendations'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const interests=pool
+      ? (await pool.query('SELECT interest_key FROM user_interests WHERE user_id::text=$1 ORDER BY weight DESC',[userId])).rows.map(x=>x.interest_key)
+      : (memory.userInterests.get(String(userId))||[]).map(x=>typeof x==='string'?x:x.key);
+    const followed=await brand365Store.brandFollowRefs(userId);
+    let favoriteRefs=new Set();
+    if(pool){
+      const fav=await pool.query(`SELECT COALESCE(b.external_key,b.slug,b.id::text) ref
+        FROM brand_favorites f JOIN brands b ON b.id=f.brand_id WHERE f.user_id::text=$1`,[userId]);
+      favoriteRefs=new Set(fav.rows.map(x=>String(x.ref)));
+    }else{
+      favoriteRefs=new Set([...(memory.brandFavorites.get(String(userId))||new Set())]);
+    }
+    const rows=pool
+      ? (await pool.query(`SELECT external_key id,title,event_type AS type,event_brand AS "eventBrand",starts_at AS "startsAt",ends_at AS "endsAt",metadata
+          FROM events WHERE status IN ('published','live','delayed','completed') ORDER BY starts_at`)).rows
+      : memory.events.map(x=>({id:x.id,title:x.title,type:x.type,eventBrand:x.eventBrand||'mfw',startsAt:x.startsAt,endsAt:x.endsAt||null,metadata:x.metadata||{}}));
+    const interestWords={
+      runway:['show','показ'],emerging_brands:['локаль','молод','new names','скаутинг'],
+      womenswear:['womenswear','женск'],menswear:['menswear','мужск'],accessories:['аксессуар','jewelry','ювелир'],
+      sustainable:['устойчив','sustain'],business:['бизнес','эконом','инвест','предприним'],
+      retail:['retail','buying','маркет','продаж','шопинг'],technology:['технолог','ai','искусственн','цифров'],
+      international:['international','международ','global'],lectures:['talk','session','лекц','дискус'],
+      networking:['b2b','network','делегат','meeting']
+    };
+    const brandNames=new Map();
+    for(const ref of new Set([...followed,...favoriteRefs])){
+      const b=await brand365Store.brandByRef(ref).catch(()=>null);
+      if(b)brandNames.set(String(ref),String(b.name||'').toLowerCase());
+    }
+    const recommendations=rows.map(e=>{
+      let score=10;const reasons=[];const hay=(String(e.title||'')+' '+String(e.type||'')+' '+JSON.stringify(e.metadata||{})).toLowerCase();
+      for(const key of interests){
+        const words=interestWords[key]||[String(key).replace(/_/g,' ')];
+        if(words.some(w=>hay.includes(String(w).toLowerCase()))){score+=18;reasons.push('interest:'+key);}
+      }
+      for(const [ref,name] of brandNames){
+        if(name&&hay.includes(name)){score+=favoriteRefs.has(ref)?60:45;reasons.push((favoriteRefs.has(ref)?'favorite_brand:':'followed_brand:')+ref);}
+      }
+      if(e.eventBrand==='bfs'&&interests.includes('business')){score+=8;reasons.push('bfs_business_context');}
+      if(e.eventBrand==='mfw'&&interests.includes('runway')&&String(e.type).includes('show')){score+=8;reasons.push('mfw_runway_context');}
+      return {...e,score,reasons:reasons.length?reasons:['programme_relevance']};
+    }).sort((a,b)=>b.score-a.score||String(a.startsAt).localeCompare(String(b.startsAt))).slice(0,12);
+    return json(res,200,{data:recommendations,signals:{interests,followedBrands:[...followed],favoriteBrands:[...favoriteRefs]},source:pool?'postgres':'memory'});
+  }
+
+  if(req.method==='GET'&&p==='/v1/me/wallet'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const followed=[...(await brand365Store.brandFollowRefs(userId))];
+    const offers=[];
+    for(const brandRef of followed){
+      const sourceOffers=await brand365Store.offersForBrand(brandRef,{publishedOnly:true});
+      for(const offer of sourceOffers)offers.push({...offer,eligibility:await evaluateLoyaltyOfferAuthority(userId,offer)});
+    }
+    let claims=[];
+    if(pool){
+      const r=await pool.query(`SELECT c.id,c.status,c.issued_at AS "issuedAt",c.expires_at AS "expiresAt",c.redeemed_at AS "redeemedAt",
+        COALESCE(o.external_key,o.id::text) AS "offerId",o.title_ru AS "titleRu",o.title_en AS "titleEn",
+        o.reward_type AS "rewardType",o.reward_value AS "rewardValue",COALESCE(b.external_key,b.slug,b.id::text) AS "brandId",b.name AS "brandName"
+        FROM loyalty_claims c JOIN loyalty_offers o ON o.id=c.offer_id JOIN brands b ON b.id=o.brand_id
+        WHERE c.user_id::text=$1 ORDER BY c.issued_at DESC`,[userId]);
+      claims=r.rows;
+    }else{
+      claims=[...memory.loyaltyClaims.values()].filter(x=>String(x.userId)===String(userId)).map(x=>{
+        const offer=memory.loyaltyOffers.find(o=>o.id===x.offerId)||{};
+        const brand=memory.brands.find(b=>b.id===offer.brandId)||{};
+        return {...x,titleRu:offer.titleRu,titleEn:offer.titleEn,rewardType:offer.rewardType,rewardValue:offer.rewardValue,brandId:offer.brandId,brandName:brand.name};
+      });
+    }
+    return json(res,200,{data:{offers,claims,summary:{
+      followedBrands:followed.length,eligibleOffers:offers.filter(x=>x.eligibility&&x.eligibility.eligible).length,
+      issued:claims.filter(x=>x.status==='issued').length,redeemed:claims.filter(x=>x.status==='redeemed').length
+    }},source:pool?'postgres':'memory'});
+  }
+
+  if(req.method==='GET'&&p==='/v1/me/reminders'){
+    const userId=userSubject(req,url.searchParams.get('userId')||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    if(!pool)return json(res,200,{data:[],source:'memory',demo:true});
+    const r=await pool.query(`SELECT a.id AS "agendaId",COALESCE(e.external_key,e.id::text) AS "eventId",e.event_brand AS "eventBrand",
+      e.title,e.starts_at AS "startsAt",a.reminder_minutes AS "reminderMinutes",
+      e.starts_at-(a.reminder_minutes||' minutes')::interval AS "remindAt",
+      CASE WHEN now()>=e.starts_at THEN 'past'
+           WHEN now()>=e.starts_at-(a.reminder_minutes||' minutes')::interval THEN 'due'
+           ELSE 'scheduled' END state
+      FROM user_agenda a JOIN events e ON e.id=a.event_id
+      WHERE a.user_id::text=$1 AND a.reminder_enabled=true ORDER BY e.starts_at`,[userId]);
+    return json(res,200,{data:r.rows,next:r.rows.find(x=>x.state!=='past')||null,source:'postgres'});
+  }
+
   if(req.method==='POST'&&p==='/v1/passes/issue'){
     const b=await readBody(req);
-    const pass=await issuePass({
-      userId:String(b.userId||'demo_user'),
-      role:String(b.role||'Visitor'),
-      entitlements:b.entitlements,
-      eventId:b.eventId||null
-    });
-    await track('pass_issued',{jti:pass.payload.jti,eventId:pass.payload.eventId},pass.payload.sub);
-    return json(res,201,pass);
+    const userId=userSubject(req,b.userId||'demo_user');
+    if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
+    const eventBrand=b.eventBrand?String(b.eventBrand).toLowerCase():null;
+    let role=String(b.role||'Visitor');
+    if(pool&&eventBrand){
+      if(!['mfw','bfs'].includes(eventBrand))return json(res,400,{error:'invalid_event_brand'});
+      const reg=await pool.query(`SELECT registration_type,status FROM platform_registrations
+        WHERE user_id::text=$1 AND event_brand=$2 LIMIT 1`,[userId,eventBrand]);
+      if(!reg.rowCount)return json(res,403,{error:'platform_registration_required',eventBrand});
+      const row=reg.rows[0];
+      if(!['submitted','approved'].includes(row.status))return json(res,403,{error:'registration_not_credential_eligible',status:row.status,eventBrand});
+      role=String(row.registration_type||role);
+    }
+    const pass=await issuePass({userId,role,entitlements:b.entitlements,eventId:b.eventId||eventBrand||null});
+    await track('pass_issued',{jti:pass.payload.jti,eventId:pass.payload.eventId,eventBrand},pass.payload.sub);
+    return json(res,201,{...pass,eventBrand});
   }
   if(req.method==='POST'&&p==='/v1/passes/verify'){
     const b=await readBody(req);
