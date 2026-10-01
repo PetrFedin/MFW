@@ -3,18 +3,55 @@ const { test, expect } = require('@playwright/test');
 async function mockAuthorities(page) {
   const handler = async (route) => {
     const path = new URL(route.request().url()).pathname;
-    let data = [];
-    if (path === '/v1/auth/demo') data = { accessToken: 'qa-token', user: { id: 'qa-user', role: 'Organizer' } };
-    else if (path.includes('/profile')) data = { id: 'qa-user', firstName: 'QA', lastName: 'Agent', email: 'qa@example.test' };
-    else if (path.includes('/agenda')) data = { items: [], conflicts: [] };
-    else if (path.includes('/owner/')) data = {};
-    else if (path.includes('/wallet')) data = [];
-    else if (path.includes('/recommend')) data = [];
-    else if (path.includes('/platform-registrations')) data = [];
-    else if (path.includes('/b2b/leads')) data = [];
-    else if (path.includes('/v1/admin')) data = {};
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) });
+    let body;
+
+    if (path === '/v1/auth/demo') {
+      body = { session: 'qa-session', data: { user: { id: 'qa-user', role: 'Organizer' } } };
+    } else if (path === '/health') {
+      body = { status: 'ok', es256: true, duplicateCheckin: true, dataMode: 'qa' };
+    } else if (path === '/health/deep') {
+      body = { status: 'pass' };
+    } else if (path === '/v1/admin/overview') {
+      body = {
+        data: {
+          activeUsers: 1284,
+          programmeEngagementPct: 68,
+          buyerActions: 214,
+          live: { occupancyPct: 82, checkedIn: 641, waitlist: 27 }
+        }
+      };
+    } else if (path === '/v1/admin/events' || path === '/v1/admin/accreditations' || path === '/v1/admin/streams') {
+      body = { data: [] };
+    } else if (path.startsWith('/v1/admin/streams/') && path.endsWith('/control-plane')) {
+      body = { data: { sources: [], outputs: [], captions: [], replay: null, failover: [] } };
+    } else if (
+      path === '/v1/admin/commerce' ||
+      path === '/v1/admin/sponsors' ||
+      path === '/v1/admin/brand-growth' ||
+      path === '/v1/admin/retention' ||
+      path === '/v1/admin/native-readiness'
+    ) {
+      body = { data: {} };
+    } else if (path.includes('/profile')) {
+      body = { data: { id: 'qa-user', firstName: 'QA', lastName: 'Agent', email: 'qa@example.test' } };
+    } else if (path.includes('/agenda')) {
+      body = { data: { items: [], conflicts: [] } };
+    } else if (path.includes('/owner/')) {
+      body = { data: {} };
+    } else if (
+      path.includes('/wallet') ||
+      path.includes('/recommend') ||
+      path.includes('/platform-registrations') ||
+      path.includes('/b2b/leads')
+    ) {
+      body = { data: [] };
+    } else {
+      body = { data: [] };
+    }
+
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   };
+
   await page.route('https://mfw-authority.onrender.com/**', handler);
   await page.route('https://moscow-fashion-week-authority.onrender.com/**', handler);
 }
@@ -46,6 +83,10 @@ test('shared shell: event switcher and account remain reachable', async ({ page 
   await expectTarget(page.locator('[data-event="mfw"]'), 40);
   await expectTarget(page.locator('[data-event="bfs"]'), 40);
   await expectTarget(page.locator('#accountBtn'), 40);
+  const clippedActions = await page.locator('.platform-actions > button').evaluateAll((buttons) =>
+    buttons.filter((button) => button.scrollWidth > button.clientWidth + 1).map((button) => button.textContent.trim())
+  );
+  expect(clippedActions, 'Platform actions must not be visually clipped').toEqual([]);
   await page.screenshot({ path: testInfo.outputPath('platform-shell.png') });
 });
 
@@ -98,6 +139,9 @@ test('Admin Console navigation remains reachable on phone and tablet', async ({ 
   await page.goto('/admin/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.sidebar')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('.sidebar .nav')).toBeVisible();
+  await expect(page.getByText('Authority unavailable')).toHaveCount(0);
+  await expect(page.locator('.hero-title')).toBeVisible();
+  await expect(page.locator('.metric')).toHaveCount(4);
   await expectNoDocumentOverflow(page);
   await expectTarget(page.locator('.sidebar .nav button').first(), 40);
   await page.screenshot({ path: testInfo.outputPath('admin-console.png') });
