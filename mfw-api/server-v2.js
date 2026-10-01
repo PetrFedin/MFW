@@ -2972,7 +2972,16 @@ async function router(req,res){
       return json(res,200,{data:r.rows[0],source:'postgres'});
     }
     const m=memory.meetings.get(id);if(!m)return json(res,404,{error:'meeting_not_found'});
-    m.status=status;m.updatedAt=new Date().toISOString();return json(res,200,{data:m,source:'memory'});
+    m.status=status;m.updatedAt=new Date().toISOString();
+    const lead=[...memory.b2bLeads.values()].find(x=>String(x.meetingId)===String(id));
+    if(lead){
+      const stageMap={requested:'meeting_requested',confirmed:'meeting_confirmed',completed:'met'};
+      if(stageMap[status])lead.stage=stageMap[status];
+      if(status==='confirmed')lead.nextAction='Провести встречу';
+      if(status==='completed')lead.nextAction='Отправить follow-up после встречи';
+      lead.updatedAt=new Date().toISOString();
+    }
+    return json(res,200,{data:m,source:'memory'});
   }
 
   if(req.method==='POST'&&p==='/v1/meetings'){
