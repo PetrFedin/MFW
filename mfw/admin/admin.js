@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var API='https://moscow-fashion-week-authority.onrender.com';
+var API='https://mfw-authority.onrender.com';
 var state={tab:'overview',lang:localStorage.getItem('mfwAdminLang')||'ru',session:null,health:null,deep:null,overview:null,events:[],accreditations:[],streams:[],streamControl:null,commerce:null,sponsors:null,brandGrowth:null,retention:null,goldenPath:null,nativeReadiness:null};
 function T(ru,en){return state.lang==='en'?en:ru;}
 
