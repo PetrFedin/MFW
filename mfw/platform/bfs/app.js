@@ -6,8 +6,19 @@ favoriteProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFavo
 rewardStarted:(function(){try{return JSON.parse(localStorage.getItem('bfsRewardStarted')||'{}')}catch(e){return {}}})()};
 var AUTHORITY='https://mfw-authority.onrender.com';
 function token(){try{return localStorage.getItem('mfwAccessToken')||''}catch(e){return ''}}
+async function ensureAuthorityToken(){
+ var t=token();if(t)return t;
+ var p=state.account&&state.account.profile||{},name=((p.firstName||'Guest')+' '+(p.lastName||'')).trim();
+ var reg=state.account&&state.account.registrations&&state.account.registrations.bfs;
+ var identityKey=p.email||p.phone||name,role=reg&&reg.registrationType||'visitor';
+ var r=await fetch(AUTHORITY+'/v1/auth/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,role:role,identityKey:identityKey})});
+ var out=await r.json();if(!r.ok)throw new Error(out.error||'auth_failed');
+ try{localStorage.setItem('mfwAccessToken',out.session);localStorage.setItem('mfwUserId',out.user&&out.user.id||'');}catch(e){}
+ return out.session;
+}
 async function authority(path,options){
- var opts=options||{},headers=Object.assign({'Content-Type':'application/json'},opts.headers||{}),t=token();if(t)headers.Authorization='Bearer '+t;
+ var opts=options||{},headers=Object.assign({'Content-Type':'application/json'},opts.headers||{}),t=await ensureAuthorityToken();
+ if(t)headers.Authorization='Bearer '+t;
  var r=await fetch(AUTHORITY+path,Object.assign({},opts,{headers:headers})),out=await r.json().catch(function(){return {}});
  if(!r.ok)throw Object.assign(new Error(out.error||('HTTP '+r.status)),{status:r.status,data:out});return out;
 }
