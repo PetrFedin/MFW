@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 
 const PORT = Number(process.env.PORT || 10000);
-const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://moscow-fashion-week-preview.onrender.com';
+const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
 const PASS_SECRET = process.env.MFW_PASS_SECRET || 'demo-only-change-before-production';
 const VERSION = 'investor-api-v2';
 
