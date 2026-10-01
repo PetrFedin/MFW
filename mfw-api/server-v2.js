@@ -11,7 +11,7 @@ try { ({ Pool } = require('pg')); } catch (_) {}
 
 const PORT = Number(process.env.PORT || 10000);
 const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
-const VERSION = 'mfw-authority-v8';
+const VERSION = 'mfw-authority-v9-mvp-golden-path';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
@@ -45,6 +45,8 @@ const OFFICIAL_SNAPSHOT=loadOfficialSnapshot();
 function validateInvestorBuild(){
   const frontendPath=path.join(__dirname,'..','mfw','app.js');
   const adminPath=path.join(__dirname,'..','mfw','admin','admin.js');
+  const platformPath=path.join(__dirname,'..','mfw','platform','platform.js');
+  const bfsPath=path.join(__dirname,'..','mfw','platform','bfs','app.js');
   const nativeBridgePath=path.join(__dirname,'..','mfw','native-bridge.js');
   const nativePackagePath=path.join(__dirname,'..','mfw-native','package.json');
   const nativeConfigPath=path.join(__dirname,'..','mfw-native','capacitor.config.ts');
@@ -60,9 +62,12 @@ function validateInvestorBuild(){
   const migration010Path=path.join(__dirname,'migrations','010_social_auth_flows.sql');
   const migration011Path=path.join(__dirname,'migrations','011_social_auth_hardening.sql');
   const migration012Path=path.join(__dirname,'migrations','012_schema_reconciliation.sql');
+  const migration020Path=path.join(__dirname,'migrations','020_journey_closure.sql');
   const manifestPath=path.join(__dirname,'..','mfw','manifest.webmanifest');
   const frontend=fs.readFileSync(frontendPath,'utf8');
   const admin=fs.readFileSync(adminPath,'utf8');
+  const platformSource=fs.readFileSync(platformPath,'utf8');
+  const bfsSource=fs.readFileSync(bfsPath,'utf8');
   const nativeBridge=fs.readFileSync(nativeBridgePath,'utf8');
   const nativePackage=fs.readFileSync(nativePackagePath,'utf8');
   const nativeConfig=fs.readFileSync(nativeConfigPath,'utf8');
@@ -78,8 +83,11 @@ function validateInvestorBuild(){
   const migration010=fs.readFileSync(migration010Path,'utf8');
   const migration011=fs.readFileSync(migration011Path,'utf8');
   const migration012=fs.readFileSync(migration012Path,'utf8');
+  const migration020=fs.readFileSync(migration020Path,'utf8');
   new Function(frontend);
   new Function(admin);
+  new Function(platformSource);
+  new Function(bfsSource);
   new Function(nativeBridge);
   new Function(brand365StoreSource);
   new Function(socialProvidersSource);
@@ -116,6 +124,15 @@ function validateInvestorBuild(){
   }
   for(const required of ['reverify:social','check:foundation']){
     if(apiPackage.indexOf(required)<0)throw new Error('missing_foundation_script:'+required);
+  }
+  for(const required of ['/v1/me/recommendations','/v1/me/wallet','/v1/agenda/','syncPlatformRegistration','saveInterestsToAuthority']){
+    if(platformSource.indexOf(required)<0)throw new Error('missing_platform_golden_path_hook:'+required);
+  }
+  for(const required of ['/v1/professional/follows','/v1/meetings','/v1/b2b/leads','eventBrand:\'bfs\'','/v1/passes/issue']){
+    if(bfsSource.indexOf(required)<0)throw new Error('missing_bfs_golden_path_hook:'+required);
+  }
+  for(const required of ['professional_follows','b2b_leads','event_brand','official_updated_at']){
+    if(migration020.indexOf(required)<0)throw new Error('missing_journey_closure_migration:'+required);
   }
   for(const required of ["'waitlist'","'invite_only'"]){
     if(migration001.indexOf(required)<0)throw new Error('missing_core_access_mode_contract:'+required);
