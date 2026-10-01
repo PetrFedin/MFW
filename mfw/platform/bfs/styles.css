@@ -9,3 +9,30 @@
 .card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.speaker-links{display:grid;gap:6px;margin:8px 0}.speaker-links .small-action{text-align:left;white-space:normal}.session-detail h2{font-size:32px;line-height:1.02;margin:10px 0 12px}.session-detail h3{margin:22px 0 8px}.media-status{display:grid;gap:5px;margin:18px 0;padding:14px;border:1px solid #111;background:#f2eee5}.media-status b{font-size:10px;letter-spacing:.12em}.media-status span{font-size:11px;line-height:1.45}
 
 .schedule-alert{display:grid;gap:7px;margin:0 0 18px;padding:15px;border:2px solid #111;background:#fff06a}.schedule-alert b{font-size:11px;letter-spacing:.1em}.schedule-alert span{font-size:12px;line-height:1.35}.b2b-switch{display:flex;justify-content:flex-end;margin-bottom:12px}.b2b-switch button,.org-actions button{border:1px solid #111;background:#111;color:#fff;padding:10px 12px;font:inherit;font-size:10px;font-weight:800;letter-spacing:.06em}.org-person{display:grid;gap:2px;margin:8px 0}.org-person span{font-size:10px;opacity:.65}.lead-stage{display:inline-block;margin-top:8px;padding:5px 7px;border:1px solid #111;font-size:9px;font-weight:800;letter-spacing:.08em}.org-actions{display:flex;gap:6px;flex-wrap:wrap}.org-actions button+button{background:transparent;color:#111}
+
+/* BFS_RESPONSIVE_HARDENING_2026_10_01 */
+html,body{min-width:0;overflow-x:hidden}
+button,input,select,textarea{touch-action:manipulation}
+.nav{position:sticky;top:0;z-index:20;background:rgba(245,242,233,.96);backdrop-filter:blur(12px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button,.lang,.small-action,.delegate button,.meeting-card button,.org-actions button,.project-actions button{min-height:44px}
+.card h3,.delegate h3,.session-detail h2,.section-head h2{overflow-wrap:anywhere}
+.server-qr svg,.server-qr img{display:block;max-width:100%;height:auto}
+@media (min-width:681px) and (max-width:1024px){
+  .app{max-width:none}.hero{min-height:460px}.hero h1{font-size:clamp(76px,12vw,118px)}
+  #content{padding:24px 22px 96px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:680px){
+  .top{padding:max(12px,env(safe-area-inset-top)) 14px 12px}.hero{min-height:min(62dvh,500px)}
+  .hero-copy{padding:24px 14px 28px}.hero h1{font-size:clamp(52px,18vw,69px)}.hero-actions{flex-wrap:wrap}.hero-actions button{min-height:44px}
+  .nav button{min-height:46px;padding:12px 14px}#content{padding:18px 14px calc(82px + env(safe-area-inset-bottom))}
+  .section-head{align-items:flex-start;gap:8px;flex-direction:column}.section-head h2{font-size:clamp(27px,9vw,32px)}
+  .card{padding:16px}.card h3{font-size:clamp(23px,7vw,28px)}
+  .pass{width:100%;max-width:none;min-height:0;padding:18px}.pass h2{font-size:clamp(38px,13vw,48px)}
+  .qr{width:min(210px,68vw);height:min(210px,68vw);padding:10px}.delegate{flex-direction:column}.delegate button{align-self:flex-start}
+  .profile-row{gap:16px;align-items:flex-start}.profile-row span{text-align:right;overflow-wrap:anywhere}.b2b{padding:18px}.meeting-card{width:100%}
+}
+@media (max-width:380px){
+  .logo{font-size:21px}.hero h1{font-size:clamp(48px,17vw,62px)}.nav button{padding-left:11px;padding-right:11px}
+  #content{padding-left:12px;padding-right:12px}.project-actions button,.org-actions button{width:100%}
+}
