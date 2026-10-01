@@ -182,3 +182,11 @@ Next major layer:
 - audience asset bridge:
   `Opening → Acquired → Retained → Reactivated → Churned → Closing`
 - 12 / 24 / 36 month scenarios
+
+## Planned integration roadmap
+
+The canonical plan for the next external-capability integration waves is:
+
+- [docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md](./docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md)
+
+This document is a **planned implementation source**, not evidence that the listed capabilities are already live. It defines sequencing, authority boundaries, external references, dependencies and acceptance criteria. Future requests to integrate the full planned wave should cite this filename explicitly.
