@@ -268,7 +268,7 @@
       renderPassQR();return;
     }
     try{
-      var data=await api('/v1/passes/issue',{
+      var data=await userApi('/v1/passes/issue',{
         method:'POST',
         body:JSON.stringify({
           userId:state.userId||('demo_'+state.name.toLowerCase().replace(/[^a-z0-9а-я]+/gi,'_').slice(0,40)),
@@ -926,10 +926,10 @@
     var i=state.myEvents.indexOf(id);
     try{
       if(i>=0){
-        await api('/v1/events/'+encodeURIComponent(id)+'/cancel',{method:'POST',body:JSON.stringify({userId:state.userId||'demo_user'})});
+        await userApi('/v1/events/'+encodeURIComponent(id)+'/cancel',{method:'POST',body:JSON.stringify({registrationType:'visitor'})});
         state.myEvents.splice(i,1);toast(T('Удалено из программы','Removed from schedule'));
       }else{
-        var out=await api('/v1/events/'+encodeURIComponent(id)+'/register',{method:'POST',body:JSON.stringify({userId:state.userId||'demo_user'})});
+        var out=await userApi('/v1/events/'+encodeURIComponent(id)+'/register',{method:'POST',body:JSON.stringify({registrationType:'visitor'})});
         state.myEvents.push(id);toast(out.data.status==='waitlist'?T('Вы добавлены в лист ожидания','Added to waitlist'):T('Регистрация подтверждена','Registration confirmed'));
       }
       persist();closeSheet();render();track(i>=0?'event_removed':'event_registered',{eventId:id});
@@ -1414,10 +1414,17 @@
     openSheet('<div class="eyebrow">REQUEST MEETING</div><h1 style="font-size:40px">ВЫБЕРИТЕ<br>СЛОТ</h1><div class="action-row"><button class="action ghost" data-action="confirm-meeting">14:10</button><button class="action primary" data-action="confirm-meeting">14:30</button><button class="action ghost" data-action="confirm-meeting">15:20</button></div>');
   }
 
+  function sharedIdentityKey(){
+    try{
+      var x=JSON.parse(localStorage.getItem('mfp.account.v1')||'null'),p=x&&x.profile||{};
+      return p.email||p.phone||state.name;
+    }catch(e){return state.name;}
+  }
+
   async function ensureServerSession(roleOverride){
     var wanted=roleOverride||state.role;
     if(state.session&&state.sessionRole===wanted)return state.session;
-    var auth=await api('/v1/auth/demo',{method:'POST',body:JSON.stringify({name:state.name,role:wanted})});
+    var auth=await api('/v1/auth/demo',{method:'POST',body:JSON.stringify({name:state.name,role:wanted,identityKey:sharedIdentityKey()})});
     state.session=auth.session;state.userId=auth.user.id;state.sessionRole=wanted;state.authStatus='server';
     return state.session;
   }
