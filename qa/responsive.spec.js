@@ -81,6 +81,10 @@ test('platform overlays fit active viewport', async ({ page }, testInfo) => {
 });
 
 test('MFW participant experience keeps bottom navigation usable', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfwOpeningSeen', '1');
+    localStorage.setItem('mfwOnboarded', '1');
+  });
   await page.goto('/mfw/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.bottom-nav')).toBeVisible({ timeout: 10000 });
   await expectNoDocumentOverflow(page);
