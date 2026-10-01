@@ -15,6 +15,8 @@
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
   var AUTHORITY='https://mfw-authority.onrender.com';
+  function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
+  function formatWhen(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch(e){return String(v||'');}}
   function accessToken(){try{return localStorage.getItem('mfwAccessToken')||'';}catch(e){return '';}}
   function setAccessToken(v){try{if(v)localStorage.setItem('mfwAccessToken',v);else localStorage.removeItem('mfwAccessToken');}catch(e){}}
   function displayName(){return ((accountState.profile.firstName||'')+' '+(accountState.profile.lastName||'')).trim()||'MFW User';}
@@ -165,41 +167,54 @@
       bfsSaved:safeJson('bfsSavedSessions',{})
     };
   }
-  function renderForYou(){
-    var data=window.MFP_DATA||{mfw:{brands:[],events:[]},bfs:{sessions:[],speakers:[]}};
-    var interests=getInterestState();
-    var recs=[];
-    data.mfw.brands.forEach(function(b){
-      if(interests.mfwFavorites.indexOf(b.id)>=0||interests.mfwFollowed.indexOf(b.id)>=0){
-        var show=data.mfw.events.filter(function(e){return e.id===b.showId;})[0];
-        recs.push({type:'MFW · BRAND',title:b.name,body:(show?show.date+' · '+show.time+' · '+show.venue:'Следите за обновлениями бренда'),path:'Favorite / Follow → Show → Reminder → Replay → Reward',event:'mfw'});
-      }
-    });
-    Object.keys(interests.bfsSaved||{}).filter(function(k){return interests.bfsSaved[k];}).forEach(function(id){
-      var s=data.bfs.sessions.filter(function(x){return x.id===id;})[0];
-      if(s)recs.push({type:'BFS · SESSION',title:s.title,body:s.date+' · '+s.time+' · '+s.hall,path:'Saved session → Speaker → Follow → Meeting → Lead',event:'bfs'});
-    });
-    if(!recs.length){
-      recs.push({type:'MFW · START HERE',title:'Добавьте любимый бренд',body:'Откройте MFW → Бренды → выберите Follow или ♥ Favorite.',path:'Brand → Show → LIVE / Replay → Reward',event:'mfw'});
-      recs.push({type:'BFS · START HERE',title:'Сохраните интересную сессию',body:'Откройте BFS → Программа → добавьте сессию.',path:'Session → Speaker → Meeting → Lead',event:'bfs'});
+  async function renderForYou(){
+    var grid=document.getElementById('forYouGrid');
+    grid.innerHTML='<div class="hub-note">Собираем рекомендации из ваших интересов, подписок и любимых брендов…</div>';
+    var recs=[],server=false;
+    if(accessToken()){
+      try{
+        var out=await authorityFetch('/v1/me/recommendations',{method:'GET'});
+        recs=(out.data||[]).map(function(r){
+          var reason=(r.reasons||[]).map(function(x){return x.replace('interest:','интерес · ').replace('favorite_brand:','любимый бренд · ').replace('followed_brand:','подписка · ').replace(/_/g,' ');}).join(' · ');
+          return {type:String(r.eventBrand||'mfw').toUpperCase()+' · RECOMMENDED',title:r.title,body:formatWhen(r.startsAt)+' · '+(r.metadata&&r.metadata.venueLabel||r.metadata&&r.metadata.hall||''),path:reason||'programme relevance',event:r.eventBrand||'mfw',id:r.id,score:r.score};
+        });server=true;
+      }catch(e){}
     }
-    document.getElementById('forYouGrid').innerHTML=recs.slice(0,6).map(function(r){
-      return '<article class="rec-card"><div class="rec-type">'+r.type+'</div><h3>'+r.title+'</h3><p>'+r.body+'</p><div class="rec-path">'+r.path+'</div><div class="rec-actions"><button data-rec-event="'+r.event+'">ОТКРЫТЬ '+r.event.toUpperCase()+'</button></div></article>';
+    if(!recs.length){
+      var data=window.MFP_DATA||{mfw:{brands:[],events:[]},bfs:{sessions:[],speakers:[]}},interests=getInterestState();
+      (data.mfw.brands||[]).forEach(function(b){
+        if((interests.mfwFavorites||[]).indexOf(b.id)>=0||(interests.mfwFollowed||[]).indexOf(b.id)>=0){
+          var show=(data.mfw.events||[]).filter(function(e){return e.id===b.showId;})[0];
+          recs.push({type:'MFW · BRAND',title:b.name,body:show?(show.date+' · '+show.time+' · '+show.venue):'Следите за обновлениями бренда',path:'Favorite / Follow → Show → Reminder → Replay → Reward',event:'mfw'});
+        }
+      });
+      Object.keys(interests.bfsSaved||{}).filter(function(k){return interests.bfsSaved[k];}).forEach(function(id){
+        var ss=(data.bfs.sessions||[]).filter(function(x){return x.id===id;})[0];
+        if(ss)recs.push({type:'BFS · SESSION',title:ss.title,body:ss.date+' · '+ss.time+' · '+ss.hall,path:'Saved session → Speaker → Meeting → Lead',event:'bfs'});
+      });
+    }
+    if(!recs.length){
+      recs=[
+        {type:'MFW · START HERE',title:'Добавьте любимый бренд',body:'MFW → Бренды → Follow или ♥ Favorite',path:'Brand → Show → LIVE / Replay → Reward',event:'mfw'},
+        {type:'BFS · START HERE',title:'Сохраните интересную сессию',body:'BFS → Программа → добавьте сессию',path:'Session → Speaker → Meeting → Lead',event:'bfs'}
+      ];
+    }
+    grid.innerHTML=recs.slice(0,8).map(function(r){
+      return '<article class="rec-card"><div class="rec-type">'+h(r.type)+(server?' · SERVER':'')+'</div><h3>'+h(r.title)+'</h3><p>'+h(r.body)+'</p><div class="rec-path">'+h(r.path)+'</div><div class="rec-actions"><button data-rec-event="'+h(r.event)+'">ОТКРЫТЬ '+h(String(r.event).toUpperCase())+'</button>'+(r.id?'<button class="secondary" data-rec-agenda="'+h(r.id)+'" data-rec-kind="'+h(r.event)+'">В ПРОГРАММУ</button>':'')+'</div></article>';
     }).join('');
     [].slice.call(document.querySelectorAll('[data-rec-event]')).forEach(function(b){b.onclick=function(){forYouModal.classList.add('hidden');openEvent(b.dataset.recEvent);};});
-    var counts={
+    [].slice.call(document.querySelectorAll('[data-rec-agenda]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.recKind,b.dataset.recAgenda);};});
+    var interests=getInterestState(),counts={
       registered:(accountState.registrations.mfw?1:0)+(accountState.registrations.bfs?1:0),
       saved:(interests.mfwEvents||[]).length+Object.keys(interests.bfsSaved||{}).filter(function(k){return interests.bfsSaved[k];}).length,
       followed:(interests.mfwFollowed||[]).length+Object.keys(interests.bfsFollowed||{}).filter(function(k){return interests.bfsFollowed[k];}).length,
-      favorite:(interests.mfwFavorites||[]).length+Object.keys(interests.bfsFavorites||{}).filter(function(k){return interests.bfsFavorites[k];}).length,
-      reward:0,
-      meeting:localStorage.getItem('bfsMeetingRequested')==='1'?1:0
+      favorite:(interests.mfwFavorites||[]).length+Object.keys(interests.bfsFavorites||{}).filter(function(k){return interests.bfsFavorites[k];}).length
     };
-    document.getElementById('ownerFunnel').innerHTML='<h3>Ваш личный путь в demo</h3><div class="funnel-grid">'+
-      [['REGISTER',counts.registered],['SAVE',counts.saved],['FOLLOW',counts.followed],['FAVORITE',counts.favorite],['REWARD',counts.reward],['MEETING',counts.meeting]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
-      '</div><div class="funnel-note">Это только персональный demo-funnel текущего устройства, не aggregate KPI мероприятия. Production analytics должен считать реальные события серверно.</div>';
+    document.getElementById('ownerFunnel').innerHTML='<h3>Ваш путь</h3><div class="funnel-grid">'+
+      [['REGISTER',counts.registered],['SAVE',counts.saved],['FOLLOW',counts.followed],['FAVORITE',counts.favorite]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
+      '</div><div class="funnel-note">'+(server?'Рекомендации рассчитаны server-side из explicit interests + follows + favorites.':'Локальный fallback до появления server-сессии.')+'</div>';
   }
-  
+
   function agendaLoad(){return safeJson('mfpAgenda.v1',[]);}
   function agendaSave(items){try{localStorage.setItem('mfpAgenda.v1',JSON.stringify(items));}catch(e){}}
   function toMinutes(t){var p=String(t||'00:00').split(':');return Number(p[0])*60+Number(p[1]||0);}
@@ -221,23 +236,23 @@
     });
     return conflicts;
   }
-  function addAgenda(kind,id){
-    var data=window.MFP_DATA||{},entity=null,eventCode='';
-    if(kind==='mfw'){
-      entity=(data.mfw.events||[]).filter(function(x){return x.id===id;})[0];eventCode='MFW';
-    }else{
-      entity=(data.bfs.sessions||[]).filter(function(x){return x.id===id;})[0];eventCode='BFS';
-    }
-    if(!entity)return;
+  async function addAgenda(kind,id){
+    var data=window.MFP_DATA||{},entity=null,eventCode=String(kind||'').toLowerCase()==='bfs'?'BFS':'MFW';
+    if(String(kind).toLowerCase()==='mfw')entity=(data.mfw&&data.mfw.events||[]).filter(function(x){return x.id===id;})[0];
+    else entity=(data.bfs&&data.bfs.sessions||[]).filter(function(x){return x.id===id;})[0];
     var items=agendaLoad();
-    if(!items.some(function(x){return x.id===id&&x.kind===kind;})){
-      items.push(Object.assign({},entity,{kind:kind,eventCode:eventCode}));
-      agendaSave(items);
+    if(entity&&!items.some(function(x){return x.id===id&&x.kind===String(kind).toLowerCase();})){
+      items.push(Object.assign({},entity,{kind:String(kind).toLowerCase(),eventCode:eventCode}));agendaSave(items);
     }
+    try{
+      await ensureAuthoritySession('Visitor',false);
+      await authorityFetch('/v1/agenda/'+encodeURIComponent(id)+'/save',{method:'POST',body:JSON.stringify({reminderEnabled:true,reminderMinutes:20})});
+    }catch(e){}
     renderHub();
   }
-  function removeAgenda(kind,id){
+  async function removeAgenda(kind,id){
     agendaSave(agendaLoad().filter(function(x){return !(x.kind===kind&&x.id===id);}));
+    try{if(accessToken())await authorityFetch('/v1/agenda/'+encodeURIComponent(id),{method:'DELETE'});}catch(e){}
     renderHub();
   }
   function directoryEntities(){
@@ -276,33 +291,51 @@
     }
     document.getElementById('directorySearch').oninput=draw;document.getElementById('directoryFilter').onchange=draw;draw();
   }
-  function renderAgenda(){
-    var items=agendaLoad().slice().sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});
-    var conflicts=agendaConflicts(items);
-    var alert=conflicts.length?'<div class="agenda-alert"><b>Найдено пересечений: '+conflicts.length+'</b><br>'+conflicts.map(function(c){return c.date+': '+c.a.title+' ↔ '+c.b.title;}).join('<br>')+'<br><small>Для MFW без официальной длительности используется только демонстрационное planning window 45–60 минут; production должен брать реальные времена окончания и travel time.</small></div>':'<div class="agenda-alert agenda-ok"><b>Конфликтов в текущем planning view не найдено.</b></div>';
-    hubContent.innerHTML=alert+'<div class="agenda-list">'+items.map(function(x){return '<article class="agenda-item"><div class="agenda-time"><span class="agenda-event">'+x.eventCode+'</span><br>'+x.date+'<br>'+x.time+(x.end?'–'+x.end:'')+'</div><div><h3>'+x.title+'</h3><p>'+(x.venue||x.hall||'')+' · '+(x.type||x.topic||'')+'</p></div><button class="agenda-action" data-remove-kind="'+x.kind+'" data-remove-id="'+x.id+'">УБРАТЬ</button></article>';}).join('')+'</div>'+(items.length?'':'<div class="hub-note">Добавьте показы MFW и сессии BFS из каталога — здесь появится единый маршрут.</div>');
+  async function renderAgenda(){
+    var items=agendaLoad().slice(),serverConflicts=null,server=false;
+    if(accessToken()){
+      try{
+        var out=await authorityFetch('/v1/agenda',{method:'GET'});
+        if(out.source==='postgres'){
+          items=(out.data||[]).map(function(x){return {id:x.eventId,kind:x.eventBrand,eventCode:String(x.eventBrand||'mfw').toUpperCase(),title:x.title,startsAt:x.startsAt,endsAt:x.endsAt,reminderMinutes:x.reminderMinutes,venue:x.metadata&&x.metadata.venueLabel||''};});
+          var co=await authorityFetch('/v1/agenda/conflicts',{method:'GET'});serverConflicts=co.data||[];server=true;
+        }
+      }catch(e){}
+    }
+    var conflicts=server?serverConflicts:agendaConflicts(items);
+    var alert=conflicts&&conflicts.length?'<div class="agenda-alert"><b>Найдено пересечений: '+conflicts.length+'</b><br>'+conflicts.map(function(x){return server?(h(x.titleA)+' ↔ '+h(x.titleB)):(h(x.date)+': '+h(x.a.title)+' ↔ '+h(x.b.title));}).join('<br>')+'</div>':'<div class="agenda-alert agenda-ok"><b>Конфликтов не найдено.</b> '+(server?'SERVER CHECK':'LOCAL PLANNING')+'</div>';
+    hubContent.innerHTML=alert+'<div class="agenda-list">'+items.map(function(x){
+      var when=x.startsAt?formatWhen(x.startsAt):(h(x.date)+'<br>'+h(x.time)+(x.end?'–'+h(x.end):''));
+      return '<article class="agenda-item"><div class="agenda-time"><span class="agenda-event">'+h(x.eventCode||String(x.kind||'').toUpperCase())+'</span><br>'+when+'</div><div><h3>'+h(x.title)+'</h3><p>'+h(x.venue||x.hall||'')+(x.reminderMinutes!=null?' · reminder '+h(x.reminderMinutes)+' min':'')+'</p></div><button class="agenda-action" data-remove-kind="'+h(x.kind)+'" data-remove-id="'+h(x.id)+'">УБРАТЬ</button></article>';
+    }).join('')+'</div>'+(items.length?'':'<div class="hub-note">Добавьте показы MFW и сессии BFS — здесь появится единый маршрут.</div>');
     [].slice.call(document.querySelectorAll('[data-remove-id]')).forEach(function(b){b.onclick=function(){removeAgenda(b.dataset.removeKind,b.dataset.removeId);};});
   }
-  function rewardDays(start){if(!start)return 0;return Math.min(30,Math.max(0,Math.floor((Date.now()-Number(start))/86400000)));}
-  function renderWallet(){
-    var i=getInterestState(), bfsStarts=safeJson('bfsRewardStarted',{}), cards=[];
-    (window.MFP_DATA.mfw.brands||[]).forEach(function(b){
-      if((i.mfwFollowed||[]).indexOf(b.id)>=0){
-        cards.push({name:b.name,event:'MFW',days:0,note:'Eligibility MFW Club должен подтверждаться серверной loyalty authority и подключёнными соцсетями.'});
-      }
-    });
-    Object.keys(i.bfsFollowed||{}).filter(function(k){return i.bfsFollowed[k];}).forEach(function(k){
-      cards.push({name:k.replace(/-/g,' '),event:'BFS',days:rewardDays(bfsStarts[k]),note:'Prototype 30-day counter. Production требует серверной непрерывной верификации подписки.'});
-    });
-    hubContent.innerHTML='<div class="wallet-grid">'+cards.map(function(x){var pct=Math.round(x.days/30*100),eligible=x.days>=30;return '<article class="wallet-card '+(eligible?'':'locked')+'"><div class="kind">'+x.event+' · '+(eligible?'ELIGIBLE':'LOCKED')+'</div><h3>'+x.name+'</h3><div class="days">'+x.days+' / 30</div><div class="wallet-progress"><i style="width:'+pct+'%"></i></div><small>'+x.note+'</small>'+(eligible?'<button class="wallet-action">ОТКРЫТЬ НАГРАДУ</button>':'')+'</article>';}).join('')+'</div>'+(cards.length?'':'<div class="hub-note">Подпишитесь на бренд MFW или проект/спикера BFS — здесь появится прогресс привилегий.</div>');
+  async function renderWallet(){
+    if(accessToken()){
+      try{
+        var out=await authorityFetch('/v1/me/wallet',{method:'GET'}),d=out.data||{},offers=d.offers||[],claims=d.claims||[];
+        var offerCards=offers.map(function(o){
+          var e=o.eligibility||{},progress=e.progress||[],days=progress.reduce(function(m,x){return Math.max(m,Number(x.currentDays||0));},0);
+          return '<article class="wallet-card '+(e.eligible?'':'locked')+'"><div class="kind">MFW · '+(e.eligible?'ELIGIBLE':'PROGRESS')+'</div><h3>'+h(o.titleRu||o.titleEn||'Reward')+'</h3><div class="days">'+h(days)+' / '+h(o.minContinuousDays||30)+'</div><div class="wallet-progress"><i style="width:'+Math.min(100,Math.round(days/Math.max(1,Number(o.minContinuousDays||30))*100))+'%"></i></div><small>'+h((progress.filter(function(x){return !x.ok;})[0]||{}).detail||'Условия выполнены')+'</small>'+(e.eligible?'<button class="wallet-action" data-claim-offer="'+h(o.id)+'">ПОЛУЧИТЬ НАГРАДУ</button>':'')+'</article>';
+        }).join('');
+        var claimCards=claims.map(function(x){return '<article class="wallet-card"><div class="kind">CLAIM · '+h(String(x.status).toUpperCase())+'</div><h3>'+h(x.titleRu||x.titleEn||x.brandName||'Reward')+'</h3><small>'+h(x.brandName||'')+'</small>'+(x.status==='issued'?'<button class="wallet-action" data-wallet-qr="'+h(x.id)+'">ОТКРЫТЬ QR</button>':'')+'</article>';}).join('');
+        hubContent.innerHTML='<div class="wallet-summary">'+h(d.summary&&d.summary.eligibleOffers||0)+' eligible · '+h(d.summary&&d.summary.issued||0)+' issued · '+h(d.summary&&d.summary.redeemed||0)+' redeemed</div><div class="wallet-grid">'+offerCards+claimCards+'</div>'+(offerCards||claimCards?'':'<div class="hub-note">Подпишитесь на бренд MFW и выполните условия loyalty campaign.</div>');
+        [].slice.call(document.querySelectorAll('[data-claim-offer]')).forEach(function(b){b.onclick=async function(){try{await authorityFetch('/v1/loyalty/offers/'+encodeURIComponent(b.dataset.claimOffer)+'/claim',{method:'POST',body:'{}'});renderWallet();}catch(e){alert(e.message);}};});
+        [].slice.call(document.querySelectorAll('[data-wallet-qr]')).forEach(function(b){b.onclick=async function(){try{var q=await authorityFetch('/v1/loyalty/claims/'+encodeURIComponent(b.dataset.walletQr)+'/qr',{method:'POST',body:'{}'});hubContent.innerHTML='<div class="wallet-qr-view"><button class="wallet-action" id="walletBack">← WALLET</button><h3>Одноразовая привилегия</h3><img alt="Reward QR" src="'+h(q.data.qrDataUrl)+'"><small>QR короткоживущий и повторно проверяется сервером при redemption.</small></div>';document.getElementById('walletBack').onclick=renderWallet;}catch(e){alert(e.message);}};});
+        return;
+      }catch(e){}
+    }
+    var i=getInterestState(),cards=[];
+    (window.MFP_DATA.mfw.brands||[]).forEach(function(b){if((i.mfwFollowed||[]).indexOf(b.id)>=0)cards.push({name:b.name,event:'MFW'});});
+    hubContent.innerHTML='<div class="wallet-grid">'+cards.map(function(x){return '<article class="wallet-card locked"><div class="kind">'+x.event+' · SERVER VERIFICATION REQUIRED</div><h3>'+h(x.name)+'</h3><small>После подключения server session здесь появится verified 30-day eligibility.</small></article>';}).join('')+'</div>'+(cards.length?'':'<div class="hub-note">Подпишитесь на бренд MFW — здесь появятся условия привилегий.</div>');
   }
+
   function money(v){return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(Number(v||0));}
   function pct(v){return Math.round(Number(v||0)*100)+'%';}
   async function renderOwner(){
     hubContent.innerHTML='<div class="hub-note">Загружаем Owner Control Tower…</div>';
     try{
-      var headers={},token=localStorage.getItem('mfwAccessToken')||localStorage.getItem('mfw_access_token')||'';if(token)headers.Authorization='Bearer '+token;
-      var res=await fetch('/v1/owner/control-tower',{headers:headers}),out=await res.json();if(!res.ok)throw new Error(out.error||'owner_unavailable');
+      var out=await authorityFetch('/v1/owner/control-tower',{method:'GET'});
       var x=out.data||{},s=x.summary||{},brands=x.brands||[],cohorts=x.cohorts||[],migration=x.migration||[],acq=x.acquisitionMix||[],scenarios=x.scenarios||[],ce=x.crossEvent||{},cb=x.crossBrand||{};
       var brandRows=brands.slice(0,10).map(function(b){return '<div class="tower-row"><b>'+b.name+'</b><span>'+b.customers+' customers</span><span>'+money(b.attributableGmv)+' attr. GMV</span><span>'+money(b.incrementalGmv)+' incr. GMV</span><span>'+money(b.predictedClv)+' CLV</span></div>';}).join('');
       var cohortRows=cohorts.slice(0,8).map(function(q){return '<div class="cohort-row"><b>'+q.cohort+'</b><span>'+q.customers+'</span><span>'+pct(q.customers?q.m1/q.customers:0)+'</span><span>'+pct(q.customers?q.m3/q.customers:0)+'</span><span>'+pct(q.customers?q.m6/q.customers:0)+'</span></div>';}).join('');
