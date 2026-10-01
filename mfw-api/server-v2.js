@@ -2999,15 +2999,35 @@ async function router(req,res){
         VALUES($1,$2,$3,$4,$5,'requested',$6,'app',$7::jsonb)
         RETURNING id,event_id AS "eventStorageId",brand_id AS "brandStorageId",requester_user_id AS "requesterUserId",organisation,starts_at AS "startsAt",status,note,created_at AS "createdAt"`,
         [eventStorageId,brandStorageId,user.rows[0].id,String(b.organisation||'').slice(0,200)||null,startsAt,String(b.note||'').slice(0,1000)||null,JSON.stringify({slot:b.slot||null,organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'})]);
-      const meeting=saved.rows[0];
-      await pool.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null})]);
-      await track('meeting_requested',{meetingId:String(meeting.id),brandId:b.brandId||null,eventId:b.eventId||null},requester);
+      const meeting=saved.rows[0],meetingMeta={
+        organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,
+        counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'
+      };
+      await pool.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null,...meetingMeta})]);
+      if(String(b.eventBrand||'bfs')==='bfs'){
+        await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
+          VALUES($1,$2,'bfs',$3,$4,$5,$6,'meeting_requested','Подтвердить встречу',$7::jsonb)
+          ON CONFLICT(meeting_id) DO UPDATE SET stage='meeting_requested',organisation_ref=EXCLUDED.organisation_ref,
+            organisation_name=EXCLUDED.organisation_name,counterpart_ref=EXCLUDED.counterpart_ref,counterpart_name=EXCLUDED.counterpart_name,
+            next_action='Подтвердить встречу',updated_at=now()`,
+          [meeting.id,user.rows[0].id,meetingMeta.organisationRef,meetingMeta.organisationName,meetingMeta.counterpartRef,meetingMeta.counterpartName,JSON.stringify({source:'meeting_request'})]);
+      }
+      await track('meeting_requested',{meetingId:String(meeting.id),brandId:b.brandId||null,eventId:b.eventId||null,eventBrand:b.eventBrand||'bfs'},requester);
       return json(res,201,{data:meeting,source:'postgres'});
     }
     const id='mtg_'+crypto.randomBytes(8).toString('hex');
-    const meeting={id,brandId:String(b.brandId||'b1'),buyerId:requester,slot:String(b.slot||'14:30'),status:'confirmed',createdAt:new Date().toISOString(),demo:true};
+    const meeting={id,brandId:b.brandId?String(b.brandId):null,buyerId:requester,organisation:b.organisation||null,
+      organisationRef:b.organisationRef||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,
+      startsAt:b.startsAt||null,slot:String(b.slot||'14:30'),status:'requested',createdAt:new Date().toISOString(),demo:true};
     memory.meetings.set(id,meeting);
-    await track('meeting_confirmed',meeting,meeting.buyerId);
+    if(String(b.eventBrand||'bfs')==='bfs'){
+      const leadId='lead_'+crypto.randomBytes(6).toString('hex');
+      memory.b2bLeads.set(leadId,{id:leadId,meetingId:id,ownerUserId:String(requester),eventBrand:'bfs',
+        organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,
+        counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,stage:'meeting_requested',
+        nextAction:'Подтвердить встречу',updatedAt:new Date().toISOString(),demo:true});
+    }
+    await track('meeting_requested',meeting,meeting.buyerId);
     return json(res,201,{data:meeting,source:'memory'});
   }
   if(req.method==='POST'&&p==='/v1/analytics/track'){
