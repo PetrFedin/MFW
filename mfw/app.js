@@ -273,7 +273,8 @@
         body:JSON.stringify({
           userId:state.userId||('demo_'+state.name.toLowerCase().replace(/[^a-z0-9а-я]+/gi,'_').slice(0,40)),
           role:state.role,
-          eventId:'e1',
+          eventId:'mfw-2026',
+          eventBrand:'mfw',
           entitlements:[entitlementText()]
         })
       });
@@ -581,11 +582,17 @@
     openSheet('<div class="eyebrow">'+esc(e.dateRu||'')+' · '+e.time+' · '+esc(eventField(e,'type'))+' · '+esc(e.format||'')+'</div><h1 style="font-size:42px">'+esc(eventField(e,'name'))+'</h1><p class="sub">'+esc(eventField(e,'venue'))+' · '+esc(eventField(e,'access'))+'</p>'+badge(e.status)+'<div class="action-row">'+eventPrimaryAction(e,mine)+'<button class="action ghost" data-action="route">'+t('route')+'</button></div><h2>'+T('Доступ','Access')+'</h2><div class="card"><b>Credential → Entitlement → Event</b><p class="sub">'+T('Решение о входе принимает серверная модель прав, а не название роли пользователя.','Admission is decided by server-side entitlements, not by the user’s role label.')+'</p></div>');
   }
 
-  function toggleFavoriteBrand(id){
-    var i=state.favoriteBrands.indexOf(id);
-    if(i>=0){state.favoriteBrands.splice(i,1);toast(T('Убрано из любимых','Removed from favorites'));}
-    else{state.favoriteBrands.push(id);toast(T('Бренд добавлен в любимые','Brand added to favorites'));}
-    persist();openBrand(id);
+  async function toggleFavoriteBrand(id){
+    var i=state.favoriteBrands.indexOf(id),favorite=i<0;
+    if(favorite)state.favoriteBrands.push(id);else state.favoriteBrands.splice(i,1);
+    persist();
+    try{
+      await userApi('/v1/brands/'+encodeURIComponent(id)+'/favorite',{method:'POST',body:JSON.stringify({action:favorite?'save':'remove'})});
+      toast(favorite?T('Бренд добавлен в любимые','Brand added to favorites'):T('Убрано из любимых','Removed from favorites'));
+    }catch(_){
+      toast(T('Изменение сохранено локально — сервер временно недоступен','Saved locally — server temporarily unavailable'));
+    }
+    openBrand(id);
   }
 
   function openBrand(id){
