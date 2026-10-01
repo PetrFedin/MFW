@@ -114,8 +114,8 @@ button,input,select,textarea{touch-action:manipulation}
   .platform-wordmark{display:none}
   .event-switcher{order:1;width:100%;margin:0;display:grid;grid-template-columns:70px minmax(0,1fr);border-radius:16px}
   .event-button{min-width:0;min-height:42px;padding:8px 10px;overflow:hidden;text-overflow:ellipsis}
-  .platform-actions{order:2;width:100%;display:flex;gap:6px;overflow-x:auto;padding:0 0 2px}
-  .platform-actions>button{display:block!important;flex:0 0 auto;min-height:42px;padding:8px 11px;font-size:9px}
+  .platform-actions{order:2;width:100%;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;overflow:visible;padding:0 0 2px}
+  .platform-actions>button{display:block!important;width:100%;min-width:0;min-height:42px;padding:8px 2px;font-size:8px;letter-spacing:.03em;white-space:nowrap;overflow:hidden}
   .experience{height:calc(100vh - 106px);height:calc(100dvh - 106px)}
   .event-note{display:none}
   .account-drawer,.registration-modal,.investor-modal,.value-modal,.for-you-modal,.hub-modal{padding:0;align-items:flex-end}
@@ -129,6 +129,6 @@ button,input,select,textarea{touch-action:manipulation}
 }
 @media (max-width:380px){
   .platform-bar{padding-left:8px;padding-right:8px}.event-button{font-size:8px;padding-left:7px;padding-right:7px}
-  .platform-actions>button{padding-left:9px;padding-right:9px}
+  .platform-actions>button{padding-left:1px;padding-right:1px;font-size:7.5px;letter-spacing:.02em}
   .drawer-card,.registration-card,.investor-card,.value-card,.for-you-card,.hub-card{padding-left:13px!important;padding-right:13px!important}
 }
