@@ -23,7 +23,18 @@ var delegates=[];
 var organisations=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations)||[];
 var leadState=(function(){try{return JSON.parse(localStorage.getItem('bfsLeadState')||'{}')}catch(e){return {}}})();
 function saveLeads(){try{localStorage.setItem('bfsLeadState',JSON.stringify(leadState))}catch(e){}}
-function leadStage(id,stage){leadState[id]={stage:stage,updatedAt:new Date().toISOString()};saveLeads();render();}
+function orgById(id){return (organisations||[]).filter(function(o){return o.id===id})[0]||null}
+async function leadStage(id,stage){
+ var old=leadState[id]||{},org=orgById(id),normalized=stage==='qualified_lead'?'qualified':stage;
+ leadState[id]=Object.assign({},old,{stage:normalized,updatedAt:new Date().toISOString()});saveLeads();render();
+ try{
+   var body={eventBrand:'bfs',organisationRef:id,organisationName:org&&org.name||id,stage:normalized,nextAction:normalized==='met'?'Отправить follow-up':''};
+   var out=old.serverId
+     ?await authority('/v1/b2b/leads/'+encodeURIComponent(old.serverId),{method:'PATCH',body:JSON.stringify(body)})
+     :await authority('/v1/b2b/leads',{method:'POST',body:JSON.stringify(body)});
+   if(out.data&&out.data.id){leadState[id].serverId=out.data.id;leadState[id].stage=out.data.stage;saveLeads();}
+ }catch(e){}
+}
 
 if(window.MFP_DATA&&window.MFP_DATA.bfs){
   sessions=(window.MFP_DATA.bfs.sessions||[]).map(function(s){
