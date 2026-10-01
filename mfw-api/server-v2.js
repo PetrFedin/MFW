@@ -2,6 +2,7 @@ const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const QRCode = require('qrcode');
 const { Brand365Store } = require('./brand365-store');
 const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMembership } = require('./social-providers');
@@ -9,7 +10,7 @@ let Pool = null;
 try { ({ Pool } = require('pg')); } catch (_) {}
 
 const PORT = Number(process.env.PORT || 10000);
-const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://moscow-fashion-week-preview.onrender.com';
+const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
 const VERSION = 'mfw-authority-v8';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
@@ -19,7 +20,7 @@ const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_WEBHOOK_SECRET = process.env.MFW_TELEGRAM_WEBHOOK_SECRET || '';
 const VK_SERVICE_TOKEN = process.env.MFW_VK_SERVICE_TOKEN || '';
 const VK_API_VERSION = process.env.MFW_VK_API_VERSION || '5.199';
-const PUBLIC_BASE_URL = process.env.MFW_PUBLIC_BASE_URL || 'https://moscow-fashion-week-authority.onrender.com';
+const PUBLIC_BASE_URL = process.env.MFW_PUBLIC_BASE_URL || 'https://mfw-authority.onrender.com';
 const TELEGRAM_LOGIN_CLIENT_ID = process.env.MFW_TELEGRAM_LOGIN_CLIENT_ID || '';
 const TELEGRAM_LOGIN_CLIENT_SECRET = process.env.MFW_TELEGRAM_LOGIN_CLIENT_SECRET || '';
 const TELEGRAM_LOGIN_REDIRECT_URI = process.env.MFW_TELEGRAM_LOGIN_REDIRECT_URI || (PUBLIC_BASE_URL+'/v1/social/auth/telegram/callback');
@@ -27,6 +28,19 @@ const VK_APP_ID = process.env.MFW_VK_APP_ID || '';
 const VK_LOGIN_REDIRECT_URI = process.env.MFW_VK_LOGIN_REDIRECT_URI || (PUBLIC_BASE_URL+'/v1/social/auth/vk/callback');
 const REVERIFY_INTERVAL_MINUTES = Math.max(60,Number(process.env.MFW_REVERIFY_INTERVAL_MINUTES || 360));
 const REVERIFY_BATCH_SIZE = Math.max(1,Math.min(1000,Number(process.env.MFW_REVERIFY_BATCH_SIZE || 250)));
+
+function loadOfficialSnapshot(){
+  try{
+    const source=fs.readFileSync(path.join(__dirname,'..','mfw','platform','event-data.js'),'utf8');
+    const sandbox={window:{}};
+    vm.runInNewContext(source,sandbox,{timeout:1000});
+    return sandbox.window.MFP_DATA||null;
+  }catch(err){
+    console.warn(JSON.stringify({event:'official_snapshot_load_failed',error:String(err&&err.message||err)}));
+    return null;
+  }
+}
+const OFFICIAL_SNAPSHOT=loadOfficialSnapshot();
 
 function validateInvestorBuild(){
   const frontendPath=path.join(__dirname,'..','mfw','app.js');
@@ -381,6 +395,8 @@ const memory={
   meetingProposals:new Map(),
   eventRegistrations:new Map(),
   userInterests:new Map(),
+  professionalFollows:new Map(),
+  b2bLeads:new Map(),
   appInstallations:new Map(),
   socialConnections:new Map(),
   socialMemberships:new Map(),
@@ -541,6 +557,50 @@ const memory={
   failoverEvents:[]
 };
 
+function moscowIso(date,time){
+  if(!date||!time)return null;
+  return String(date)+'T'+String(time)+':00+03:00';
+}
+function accessModeFromLabel(label){
+  const x=String(label||'').toLowerCase();
+  if(x.includes('регистра'))return 'registration';
+  if(x.includes('приглаш'))return 'invite_only';
+  return 'open';
+}
+function mergeOfficialSnapshotIntoMemory(){
+  if(!OFFICIAL_SNAPSHOT)return;
+  const syncedAt=OFFICIAL_SNAPSHOT.syncedAt||null;
+  const mfw=OFFICIAL_SNAPSHOT.mfw||{},bfs=OFFICIAL_SNAPSHOT.bfs||{};
+  for(const e of (mfw.events||[])){
+    if(memory.events.some(x=>x.id===e.id))continue;
+    memory.events.push({
+      id:e.id,season:'SS27',title:e.title,type:String(e.type||'').toLowerCase().includes('показ')?'show':'talk',
+      venue:e.venue||mfw.meta&&mfw.meta.venue||'MFW',startsAt:moscowIso(e.date,e.time),endsAt:e.end?moscowIso(e.date,e.end):null,
+      status:'published',accessMode:accessModeFromLabel(e.access),capacity:null,checkedIn:0,waitlist:0,eventBrand:'mfw',
+      sourceUrl:OFFICIAL_SNAPSHOT.sources&&OFFICIAL_SNAPSHOT.sources.mfw&&OFFICIAL_SNAPSHOT.sources.mfw.url||null,
+      officialUpdatedAt:syncedAt,metadata:{official:true,eventCode:'mfw',city:e.city||null,media:e.media||{},sourceSyncedAt:syncedAt}
+    });
+  }
+  for(const e of (bfs.sessions||[])){
+    if(memory.events.some(x=>x.id===e.id))continue;
+    memory.events.push({
+      id:e.id,season:'SS27',title:e.title,type:'session',venue:(bfs.meta&&bfs.meta.venue||'BFS')+(e.hall?' · '+e.hall:''),
+      startsAt:moscowIso(e.date,e.time),endsAt:e.end?moscowIso(e.date,e.end):null,status:'published',accessMode:'registration',
+      capacity:null,checkedIn:0,waitlist:0,eventBrand:'bfs',
+      sourceUrl:OFFICIAL_SNAPSHOT.sources&&OFFICIAL_SNAPSHOT.sources.bfs&&OFFICIAL_SNAPSHOT.sources.bfs.program||null,
+      officialUpdatedAt:syncedAt,metadata:{official:true,eventCode:'bfs',hall:e.hall||null,topic:e.topic||null,speakerIds:e.speakerIds||[],plenary:!!e.plenary,media:e.media||{},sourceSyncedAt:syncedAt}
+    });
+  }
+  for(const b of (mfw.brands||[])){
+    if(memory.brands.some(x=>x.id===b.id||x.slug===b.id))continue;
+    memory.brands.push({
+      id:b.id,slug:b.id,name:b.name,city:b.city||'',country:'',segment:(b.tags||[]).join(', '),
+      description:'Official MFW participant',metadata:{official:true,tags:b.tags||[],showId:b.showId||null,sourceSyncedAt:syncedAt},demo:false
+    });
+  }
+}
+mergeOfficialSnapshotIntoMemory();
+
 const brand365Store=new Brand365Store({pool,memory});
 let databaseSchemaReadiness={
   configured:!!pool,
@@ -651,26 +711,37 @@ async function checkDatabaseSchema(){
 
 async function bootstrapDemoData(){
   if(!pool) return;
-  const venue=await pool.query(`INSERT INTO venues(code,name,address)
-    VALUES('MANEGE','Manege','Moscow')
-    ON CONFLICT(code) DO UPDATE SET name=EXCLUDED.name
-    RETURNING id`);
-  const venueId=venue.rows[0].id;
-  const zone=await pool.query(`INSERT INTO zones(venue_id,code,name,capacity)
-    VALUES($1,'HALL1','Hall 1',500)
-    ON CONFLICT(venue_id,code) DO UPDATE SET capacity=EXCLUDED.capacity
-    RETURNING id`,[venueId]);
+  const venueDefs=[
+    {code:'MANEGE',name:'ЦВЗ «Манеж»',address:'Манежная площадь, 1'},
+    {code:'ZARYADYE',name:'МКЗ «Зарядье»',address:'Москва'}
+  ];
+  const venueIds={};
+  for(const v of venueDefs){
+    const q=await pool.query(`INSERT INTO venues(code,name,address)
+      VALUES($1,$2,$3)
+      ON CONFLICT(code) DO UPDATE SET name=EXCLUDED.name,address=EXCLUDED.address
+      RETURNING id`,[v.code,v.name,v.address]);
+    venueIds[v.code]=q.rows[0].id;
+  }
   for(const e of memory.events){
-    await pool.query(`INSERT INTO events(external_key,season,title,event_type,venue_id,zone_id,starts_at,status,access_mode,capacity,metadata)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-      ON CONFLICT(external_key) DO UPDATE SET title=EXCLUDED.title,starts_at=EXCLUDED.starts_at,status=EXCLUDED.status,access_mode=EXCLUDED.access_mode,capacity=EXCLUDED.capacity,updated_at=now()`,
-      [e.id,e.season,e.title,e.type,venueId,zone.rows[0].id,e.startsAt,e.status,e.accessMode,e.capacity,JSON.stringify({demo:true})]);
+    const eventBrand=String(e.eventBrand||'mfw');
+    const venueId=venueIds[eventBrand==='bfs'?'ZARYADYE':'MANEGE'];
+    const metadata={...(e.metadata||{}),venueLabel:e.venue||null,demo:!!e.demo};
+    await pool.query(`INSERT INTO events(external_key,season,title,event_type,venue_id,zone_id,starts_at,ends_at,status,access_mode,capacity,metadata,event_brand,source_url,official_updated_at)
+      VALUES($1,$2,$3,$4,$5,NULL,$6,$7,$8,$9,$10,$11::jsonb,$12,$13,$14)
+      ON CONFLICT(external_key) DO UPDATE SET title=EXCLUDED.title,event_type=EXCLUDED.event_type,venue_id=EXCLUDED.venue_id,
+        starts_at=EXCLUDED.starts_at,ends_at=EXCLUDED.ends_at,status=EXCLUDED.status,access_mode=EXCLUDED.access_mode,
+        capacity=EXCLUDED.capacity,metadata=EXCLUDED.metadata,event_brand=EXCLUDED.event_brand,source_url=EXCLUDED.source_url,
+        official_updated_at=EXCLUDED.official_updated_at,updated_at=now()`,
+      [e.id,e.season||'SS27',e.title,e.type||'event',venueId,e.startsAt,e.endsAt||null,e.status||'published',
+       e.accessMode||'open',e.capacity==null?null:e.capacity,JSON.stringify(metadata),eventBrand,e.sourceUrl||null,e.officialUpdatedAt||null]);
   }
   for(const b of memory.brands){
-    await pool.query(`INSERT INTO brands(slug,name,city,status,metadata)
-      VALUES($1,$2,$3,'published',$4)
-      ON CONFLICT(slug) DO UPDATE SET name=EXCLUDED.name,city=EXCLUDED.city,updated_at=now()`,
-      [b.slug,b.name,b.city,JSON.stringify({segment:b.segment,demo:true})]);
+    await pool.query(`INSERT INTO brands(external_key,slug,name,city,country,status,metadata)
+      VALUES($1,$2,$3,$4,$5,'published',$6::jsonb)
+      ON CONFLICT(slug) DO UPDATE SET external_key=COALESCE(brands.external_key,EXCLUDED.external_key),name=EXCLUDED.name,
+        city=EXCLUDED.city,country=EXCLUDED.country,metadata=brands.metadata||EXCLUDED.metadata,updated_at=now()`,
+      [b.id,b.slug||b.id,b.name,b.city||'',b.country||'',JSON.stringify({segment:b.segment||'',...(b.metadata||{}),demo:!!b.demo})]);
   }
   await brand365Store.seedDemo();
 }
@@ -1422,11 +1493,19 @@ async function router(req,res){
     return json(res,200,{generatedAt:new Date().toISOString(),revoked,demo:true});
   }
   if(req.method==='GET'&&p==='/v1/events'){
+    const eventBrand=String(url.searchParams.get('eventBrand')||'mfw').toLowerCase();
+    const all=url.searchParams.get('all')==='1';
+    if(!all&&!['mfw','bfs'].includes(eventBrand))return json(res,400,{error:'invalid_event_brand'});
     if(pool){
-      const r=await pool.query(`SELECT external_key AS id,season,title,event_type AS type,starts_at AS "startsAt",status,access_mode AS "accessMode",capacity,metadata FROM events ORDER BY starts_at`);
-      return json(res,200,{data:r.rows,demo:true,source:'postgres'});
+      const params=all?[]:[eventBrand];
+      const where=all?'':'WHERE event_brand=$1';
+      const r=await pool.query(`SELECT external_key AS id,season,title,event_type AS type,starts_at AS "startsAt",ends_at AS "endsAt",
+        status,access_mode AS "accessMode",capacity,event_brand AS "eventBrand",source_url AS "sourceUrl",official_updated_at AS "officialUpdatedAt",metadata
+        FROM events ${where} ORDER BY starts_at`,params);
+      return json(res,200,{data:r.rows,source:'postgres'});
     }
-    return json(res,200,{data:memory.events,demo:true,source:'memory'});
+    const rows=memory.events.filter(x=>all||String(x.eventBrand||'mfw')===eventBrand).map(x=>({...x,eventBrand:x.eventBrand||'mfw'}));
+    return json(res,200,{data:rows,source:'memory',demo:true});
   }
   if(req.method==='GET'&&p==='/v1/streams'){
     return json(res,200,{data:memory.streams,demo:true});
@@ -2599,8 +2678,7 @@ async function router(req,res){
     if(pool){
       const r=await pool.query(`SELECT a.id,COALESCE(e.external_key,e.id::text) AS "eventId",e.title,e.event_type AS "eventType",
         e.starts_at AS "startsAt",e.ends_at AS "endsAt",e.status,
-        CASE WHEN lower(COALESCE(e.metadata->>'eventCode',e.metadata->>'event_code',e.external_key,e.title,'')) LIKE '%bfs%'
-          OR lower(COALESCE(e.metadata->>'eventCode',e.metadata->>'event_code',e.external_key,e.title,'')) LIKE '%brics%' THEN 'bfs' ELSE 'mfw' END AS "eventBrand",
+        e.event_brand AS "eventBrand",
         a.reminder_enabled AS "reminderEnabled",a.reminder_minutes AS "reminderMinutes",a.source
         FROM user_agenda a JOIN events e ON e.id=a.event_id
         WHERE a.user_id::text=$1 ORDER BY e.starts_at`,[userId]);
