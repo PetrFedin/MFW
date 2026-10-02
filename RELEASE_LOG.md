@@ -177,3 +177,19 @@ Durability remains **BLOCKED**, not failed:
 
 Next gate:
 `secure DB binding -> MFW_REQUIRE_POSTGRES=true -> migrations 001-020 -> schema PASS -> /ready 200 -> PostgreSQL Golden Paths -> reverification active`.
+
+### Stateless rollout boundary
+
+Implemented from Master Plan §11.3 without bypassing the Phase 0 durability gate.
+
+Added:
+- native OpenFeature-compatible boolean evaluation boundary;
+- deterministic percentage rollout by stable targeting key;
+- explicit MFW/BFS and server-session role scoping;
+- provider-error fallback;
+- fail-closed defaults;
+- hard prohibition on rollout flags for QR/check-in, credentials/revocation, consent, authorization, eligibility, payment and financial/attribution truth;
+- `GET /v1/features` marked as UI rollout only / not authorization;
+- module and live-authority API regression tests.
+
+No external flag provider is authoritative. No new persistent state was introduced.
