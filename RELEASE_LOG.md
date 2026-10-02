@@ -216,3 +216,20 @@ Master-plan review performed against the commits adding:
 Those additions remain roadmap-approved but dependency-gated.
 
 Phase 0 remains blocked only by secure injection of the existing `mfw-postgres` connection into the already-created `mfw-authority` runtime.
+
+## 2026-10-02 — Third ecosystem: «Сделано в Москве»
+
+Implemented as a third branded direction of Moscow Fashion Platform:
+
+- shared switcher: MFW ↔ BFS ↔ Сделано в Москве;
+- shared account access without a second consumer profile;
+- dedicated responsive Made in Moscow partner experience;
+- six-module product surface: Verified / Hub / Digital Market / Buyer Bridge / Brand365 / Evidence;
+- investor route updated from two to three ecosystem directions;
+- MFW brand-card support for a verified Made in Moscow badge;
+- badge is fail-closed: no verified roster means no real-brand badge;
+- migration 021 adds generic partner-program membership plus scoped service-application moderation;
+- public aggregate endpoints prepared for Made in Moscow overview and verified brands;
+- responsive QA extended to the third experience.
+
+Production truth remains gated by Phase 0 PostgreSQL admission and an approved external roster/data contract.
