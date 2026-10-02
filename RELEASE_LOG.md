@@ -234,3 +234,22 @@ Implemented as a third branded direction of Moscow Fashion Platform:
 - responsive QA extended to the third experience.
 
 Production truth remains gated by Phase 0 PostgreSQL admission and an approved external roster/data contract.
+
+## 2026-10-03 — Premium participant companion / PWA
+
+Added a pre-Phase-0-safe participant layer:
+
+- global Discover over published MFW/BFS snapshot entities and verified Made in Moscow roster projection;
+- Plan / Discover / Connect / Access companion routes;
+- Ctrl/Cmd+K command access to Discover;
+- direct PWA shortcuts for all three ecosystem directions;
+- network-state indicator;
+- branded offline fallback;
+- service-worker public-shell caching only;
+- no offline authority for registration, QR/pass, LIVE, meetings, wallet or Verified state;
+- new responsive/device contract.
+
+Evidence:
+- Phase 0 fail-closed contract: PASS;
+- responsive/device agents: **56/56 PASS**;
+- tested viewports: 360×800, 375×667, 393×852, 430×932, 744×1133, 1024×1366, 1440×900.
