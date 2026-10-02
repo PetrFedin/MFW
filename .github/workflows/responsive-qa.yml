@@ -28,6 +28,7 @@ jobs:
           node --check mfw/platform/platform.js
           node --check mfw/platform/bfs/app.js
           node --check mfw/platform/made-in-moscow/app.js
+          node --check mfw/sw.js
       - name: Install Chromium
         working-directory: qa
         run: npx playwright install --with-deps chromium
