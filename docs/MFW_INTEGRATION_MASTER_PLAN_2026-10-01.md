@@ -893,3 +893,120 @@ FLASHIN already operates Meilisearch in the portfolio. Reuse deployment/health/i
 
 **Dependency note:** use only a currently permitted Meilisearch edition/features; re-check license/edition terms before production upgrades.
 
+## 14. Additional integration wave — live audience Q&A, polls and moderated interaction
+
+This wave strengthens the live participant experience, especially for BFS sessions, without introducing a parallel identity, messaging or programme system.
+
+### Live Session Interaction Authority — ADOPT
+
+Create native session-linked entities:
+
+- interaction_session;
+- question;
+- poll;
+- poll_option;
+- response;
+- upvote;
+- moderation_state;
+- stage_display_state;
+- closed_at;
+- result_snapshot.
+
+Canonical flow:
+
+participant -> eligible session -> submit question / answer poll -> moderation -> stage display -> presenter/moderator action -> final result -> replay/session archive
+
+All interactions reference the authoritative MFW/BFS session and participant identity/registration state where required.
+
+### Moderated Q&A Queue — ADOPT
+
+Support:
+
+- anonymous-to-audience but authenticated-to-platform question submission where policy allows;
+- moderator approve/reject;
+- duplicate question merge/link;
+- participant upvote;
+- pin/promote to stage;
+- answered/unanswered state;
+- moderation reason/audit;
+- optional speaker assignment.
+
+Do not implement a free-form chat room as part of this feature. Q&A is a structured session workflow.
+
+### Polling / Audience Response — ADOPT
+
+Poll types may include:
+
+- single choice;
+- multiple choice;
+- rating;
+- yes/no;
+- short bounded text where moderation is appropriate.
+
+Each poll stores:
+
+- session;
+- creator/moderator;
+- open/close times;
+- eligibility;
+- response mode;
+- result visibility;
+- result snapshot/version.
+
+Results shown on stage are derived aggregates. Raw participant responses remain governed by consent/privacy rules.
+
+### ARSnova / Particify-style reference — REFERENCE
+
+Reference implementation source:
+
+https://github.com/arsnova-dev/arsnova.eu
+
+The verified repository is active and MIT-licensed, but should be used as a UX/domain reference rather than adopted as a second event platform.
+
+Useful patterns to study:
+
+- audience-response interaction;
+- question/poll presentation;
+- live moderation;
+- session-oriented participation;
+- presenter/audience separation.
+
+MFW must keep its own session/identity/analytics authority.
+
+### Interaction-to-Replay bridge — ADOPT
+
+After a session ends, allow approved interaction records to become replay context:
+
+- poll result chapter marker;
+- answered Q&A item linked to transcript time range;
+- highlighted audience question;
+- follow-up editorial content.
+
+Machine transcript matching may suggest the answer time range, but an approved replay marker remains reviewable/versioned.
+
+### Interaction Analytics — ADOPT
+
+Measure:
+
+- participation rate;
+- question submission/upvote;
+- poll response;
+- answered-question rate;
+- interaction by session/topic;
+- downstream replay/follow action.
+
+Do not use participant interaction to infer political, health or other sensitive personal attributes.
+
+### Additional acceptance
+
+- only eligible participants/staff can submit/moderate where the session policy requires it;
+- moderation history is auditable;
+- duplicate retries cannot double-count poll responses/upvotes;
+- result snapshots are reproducible from authoritative responses;
+- interaction layer failure does not break programme, agenda, QR or stream playback;
+- replay publication uses approved interaction state only.
+
+**Sequencing:** session/programme authority + durable jobs first -> Q&A/polls -> stage display -> replay bridge -> analytics.
+
+**Dependency note:** ARSnova is a reference implementation only; do not introduce a second participant/event database.
+
