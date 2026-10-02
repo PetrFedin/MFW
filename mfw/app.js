@@ -58,7 +58,8 @@
         city:e.city||'',
         moderator:e.moderator||'',
         participants:e.participants||[],
-        source:'OFFICIAL'
+        source:'OFFICIAL',
+        madeInMoscowVerified:!!b.madeInMoscowVerified
       };
     });
     brands=(officialMfw.brands||[]).map(function(b){
@@ -423,7 +424,7 @@
       '<div class="editorial-brand-grid">'+brands.map(function(b,i){
         var img=[VISUALS.designer,VISUALS.runway,VISUALS.backstage,VISUALS.street][i%4];
         var fav=state.favoriteBrands.indexOf(b.id)>=0;
-        return '<button class="editorial-brand-card" data-action="brand" data-id="'+b.id+'" style="background-image:linear-gradient(180deg,transparent 20%,rgba(0,0,0,.84)),url('+img+')"><span class="brand-tag">'+esc(b.tag)+'</span>'+(fav?'<span class="brand-favorite">♥</span>':'')+'<div><h3>'+esc(b.name)+'</h3><div class="sub">'+esc(brandCity(b))+'</div></div></button>';
+        return '<button class="editorial-brand-card" data-action="brand" data-id="'+b.id+'" style="background-image:linear-gradient(180deg,transparent 20%,rgba(0,0,0,.84)),url('+img+')"><span class="brand-tag">'+esc(b.tag)+'</span>'+(b.madeInMoscowVerified?'<span class="made-verified">СДЕЛАНО В МОСКВЕ · VERIFIED</span>':'')+(fav?'<span class="brand-favorite">♥</span>':'')+'<div><h3>'+esc(b.name)+'</h3><div class="sub">'+esc(brandCity(b))+'</div></div></button>';
       }).join('')+'</div>';
     } else if(state.discoverTab==='speakers'){
       content='<div class="speaker-card"><div class="speaker-photo" style="background-image:url('+VISUALS.designer+')"></div><div class="speaker-copy"><div class="eyebrow">RETAIL · BUYING</div><div class="event-name">Анна · Buyer Perspective</div><div class="sub">Как байер принимает решение о бренде и коллекции.</div><div class="action-row"><button class="action primary" data-action="questions">Live Q&A</button><button class="action ghost" data-action="toggle-event" data-id="e3">В программу</button></div></div></div>'+
@@ -602,7 +603,7 @@
     var pro=(state.role==='Buyer'||state.role==='Media');
     var linkedShow=b.showId?demoEvents.filter(function(e){return e.id===b.showId;})[0]:null;
     openSheet('<div class="brand-editorial-hero" style="background-image:linear-gradient(180deg,transparent,rgba(0,0,0,.84)),url('+VISUALS.runway+')"><div><div class="eyebrow">'+esc(brandCity(b))+' · '+esc(b.tag)+'</div><h1>'+esc(b.name)+'</h1><p>Moscow Fashion Week · OFFICIAL</p></div></div>'+
-      '<div class="brand-story"><div><div class="eyebrow">OFFICIAL PARTICIPANT</div><h2>'+T('Бренд в программе<br>Moscow Fashion Week.','Brand in the<br>Moscow Fashion Week programme.')+'</h2><p class="sub">'+esc(brandDesc(b))+'</p></div><div class="designer-portrait" style="background-image:url('+VISUALS.designer+')"><span>DESIGNER</span></div></div>'+
+      '<div class="brand-story"><div><div class="eyebrow">OFFICIAL PARTICIPANT</div>'+(b.madeInMoscowVerified?'<div class="made-verified-detail">СДЕЛАНО В МОСКВЕ · VERIFIED</div>':'')+'<h2>'+T('Бренд в программе<br>Moscow Fashion Week.','Brand in the<br>Moscow Fashion Week programme.')+'</h2><p class="sub">'+esc(brandDesc(b))+'</p></div><div class="designer-portrait" style="background-image:url('+VISUALS.designer+')"><span>DESIGNER</span></div></div>'+
       '<div class="action-row"><button class="action primary" data-action="save-brand" data-id="'+b.id+'">'+(saved?'✓ '+T('Подписан в MFW','Following in MFW'):T('Подписаться в MFW','Follow in MFW'))+'</button><button class="action ghost" data-action="favorite-brand" data-id="'+b.id+'">'+(favorite?'♥ '+T('Любимый','Favorite'):'♡ '+T('В любимые','Favorite'))+'</button><button class="action ghost" data-action="brand-loyalty" data-id="'+b.id+'">✦ '+t('club')+'</button><button class="action ghost" data-action="brand-365" data-id="'+b.id+'">'+t('brand365')+'</button></div>'+
       (linkedShow?'<div class="section-head"><h2>'+T('Связанный показ','Linked show')+'</h2><span class="link">OFFICIAL</span></div><div class="card"><div class="eyebrow">'+esc(linkedShow.dateRu||'')+' · '+esc(linkedShow.time)+'</div><b>'+esc(eventField(linkedShow,'name'))+'</b><p class="sub">'+esc(eventField(linkedShow,'venue'))+' · '+esc(eventField(linkedShow,'access'))+'</p><button class="action primary" data-action="event" data-id="'+linkedShow.id+'">'+T('Открыть показ','Open show')+'</button></div>':'<div class="card"><b>'+T('Показ не привязан в текущем официальном snapshot','No linked show in the current official snapshot')+'</b></div>')+
       '<div class="brand-meta-grid"><div><span>STATUS</span><b>OFFICIAL 2026</b></div><div><span>CITY</span><b>'+esc(brandCity(b))+'</b></div><div><span>FOLLOW</span><b>'+T('Для ленты и rewards','Feed & rewards')+'</b></div></div>'+
