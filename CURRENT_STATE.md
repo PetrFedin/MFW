@@ -183,3 +183,24 @@ The repository now has an explicit production-readiness boundary:
 - `mfw-api/check-production-admission.js` verifies live exact-SHA PostgreSQL admission.
 
 The dedicated free `mfw-postgres` exists in Frankfurt on PostgreSQL 17. The remaining Phase 0 blocker is secure binding of that existing database to the direct-created `mfw-authority` service. Phase 1 stateful integrations are not production-admitted until `/ready` is green.
+
+## Rollout / feature-evaluation boundary
+
+A stateless OpenFeature-compatible feature-evaluation boundary now exists for **non-critical preview/product rollout only**.
+
+Current guarded preview flags:
+- Programme Production preview;
+- venue map preview;
+- unified discovery search preview;
+- contextual survey prompt preview;
+- replay search preview.
+
+Safety rules:
+- all flags default to false;
+- provider failure falls back deterministically;
+- role comes from the signed MFW session, not query parameters;
+- MFW/BFS event scope is explicit;
+- flag keys involving QR/check-in, credentials/revocation, consent, authorization, eligibility, payment or financial/attribution truth are rejected;
+- `GET /v1/features` is explicitly marked `securityBoundary=not_authorization`.
+
+This is a stateless rollout boundary only. No external flag provider has been made authoritative and no persistent Phase 1 module is production-admitted while PostgreSQL Phase 0 remains blocked.
