@@ -55,6 +55,7 @@ A user has one platform identity across all three directions. MFW/BFS retain eve
 - Brand365 continuity;
 - partner Evidence Dashboard;
 - cross-platform brand badge support for MFW surfaces;
+- BFS organisation/speaker badge projection requires an explicit canonical `brandRef`; name matching is forbidden;
 - cross-moderation schema prepared behind the PostgreSQL production gate.
 
 ### Shared platform
