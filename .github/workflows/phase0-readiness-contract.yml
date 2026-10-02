@@ -9,6 +9,9 @@ on:
       - ".github/workflows/phase0-readiness-contract.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: mfw-phase0-readiness-${{ github.ref }}
   cancel-in-progress: true
