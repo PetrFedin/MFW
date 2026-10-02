@@ -710,7 +710,8 @@ async function checkDatabaseSchema(){
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
     'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations',
-    'professional_follows','b2b_leads'
+    'professional_follows','b2b_leads',
+    'partner_programs','brand_program_memberships','partner_service_applications'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
@@ -721,7 +722,9 @@ async function checkDatabaseSchema(){
     ['events','access_mode'],['events','event_brand'],['events','source_url'],['events','official_updated_at'],['event_registrations','source'],['streams','external_key'],['streams','provider_mode'],
     ['brands','external_key'],['brand_social_channels','external_key'],['loyalty_offers','external_key'],
     ['event_registrations','registration_type'],['event_registrations','organisation'],['event_registrations','job_title'],['event_registrations','purpose'],['event_registrations','submitted_payload'],
-    ['brand_content_posts','external_key'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at']
+    ['brand_content_posts','external_key'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at'],
+    ['brand_program_memberships','status'],['brand_program_memberships','moderation_status'],['brand_program_memberships','external_ref'],
+    ['partner_service_applications','service_code'],['partner_service_applications','status'],['partner_service_applications','event_brand']
   ];
   const cols=await pool.query(`SELECT table_name,column_name FROM information_schema.columns
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[[...new Set(requiredColumns.map(x=>x[0]))]]);
@@ -1489,7 +1492,7 @@ async function startReverificationScheduler(){
   try{
     lastCompletedAt=await latestCompletedReverificationAt();
     catchupDue=shouldRunReverificationCatchup(lastCompletedAt,REVERIFY_INTERVAL_MINUTES);
-    if(catchupDue)setImmediate(()=>{launchReverification('startup_catchup');});
+    if(catchupDue)setImmediate(()=>{launchReverification('startup');});
   }catch(err){
     catchupError=String(err&&err.message||err);
     console.error(JSON.stringify({event:'mfw_reverification_catchup_check',status:'failed',error:catchupError}));
@@ -1660,13 +1663,52 @@ async function router(req,res){
     if(!stream)return json(res,404,{error:'stream_not_found'});
     return json(res,200,{data:stream,demo:true});
   }
+  if(req.method==='GET'&&p==='/v1/made-in-moscow/overview'){
+    let verifiedBrands=0,approvedServiceApplications=0;
+    if(pool){
+      const stats=await pool.query(`SELECT
+        (SELECT count(*)::int FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+          WHERE pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved') AS "verifiedBrands",
+        (SELECT count(*)::int FROM partner_service_applications psa JOIN partner_programs pp ON pp.id=psa.program_id
+          WHERE pp.external_key='made_in_moscow' AND psa.status='approved') AS "approvedServiceApplications"`);
+      verifiedBrands=stats.rows[0].verifiedBrands||0;
+      approvedServiceApplications=stats.rows[0].approvedServiceApplications||0;
+    }
+    return json(res,200,{data:{
+      programKey:'made_in_moscow',
+      accessModel:'shared_platform_identity',
+      verifiedBrandAuthority:'approved_roster_or_reviewed_evidence',
+      crossModeration:true,
+      verifiedBrands,
+      approvedServiceApplications,
+      persistence:pool?'postgres':'memory_demo',
+      productionAdmitted:!!(pool&&databaseSchemaReadiness.ready&&REQUIRE_POSTGRES)
+    }});
+  }
+  if(req.method==='GET'&&p==='/v1/made-in-moscow/brands'){
+    if(!pool)return json(res,200,{data:[],source:'memory',demo:true,reason:'verified_roster_requires_postgres'});
+    const r=await pool.query(`SELECT COALESCE(b.external_key,b.slug,b.id::text) AS id,b.slug,b.name,b.city,b.country,b.description,
+      bpm.external_ref AS "externalRef",bpm.verified_at AS "verifiedAt"
+      FROM brand_program_memberships bpm
+      JOIN partner_programs pp ON pp.id=bpm.program_id
+      JOIN brands b ON b.id=bpm.brand_id
+      WHERE pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved' AND b.status='published'
+      ORDER BY b.name`);
+    return json(res,200,{data:r.rows,source:'postgres',badge:'made_in_moscow_verified'});
+  }
   if(req.method==='GET'&&p==='/v1/brands'){
     if(pool){
-      const r=await pool.query(`SELECT COALESCE(external_key,slug,id::text) AS id,slug,name,city,country,description,status,metadata
-        FROM brands WHERE status=$1 ORDER BY name`,['published']);
-      return json(res,200,{data:r.rows,demo:true,source:'postgres'});
+      const r=await pool.query(`SELECT COALESCE(b.external_key,b.slug,b.id::text) AS id,b.slug,b.name,b.city,b.country,b.description,b.status,b.metadata,
+        COALESCE(bool_or(pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved'),false) AS "madeInMoscowVerified"
+        FROM brands b
+        LEFT JOIN brand_program_memberships bpm ON bpm.brand_id=b.id
+        LEFT JOIN partner_programs pp ON pp.id=bpm.program_id
+        WHERE b.status=$1
+        GROUP BY b.id,b.external_key,b.slug,b.name,b.city,b.country,b.description,b.status,b.metadata
+        ORDER BY b.name`,['published']);
+      return json(res,200,{data:r.rows,demo:false,source:'postgres'});
     }
-    return json(res,200,{data:memory.brands,demo:true,source:'memory'});
+    return json(res,200,{data:memory.brands.map(x=>({...x,madeInMoscowVerified:false})),demo:true,source:'memory'});
   }
   if(req.method==='GET'&&p.startsWith('/v1/brands/')&&p.endsWith('/analytics')){
     const brandId=p.split('/')[3];
@@ -1692,7 +1734,18 @@ async function router(req,res){
     const brand=await brand365Store.brandByRef(brandId);
     if(!brand)return json(res,404,{error:'brand_not_found'});
     const collections=memory.collections.filter(x=>x.brandId===brand.id);
-    return json(res,200,{data:{...brand,collections}});
+    let partnerPrograms=[];
+    if(pool){
+      const membership=await pool.query(`SELECT pp.external_key AS "programKey",pp.name,bpm.status,bpm.moderation_status AS "moderationStatus",
+        bpm.external_ref AS "externalRef",bpm.source_url AS "sourceUrl",bpm.verified_at AS "verifiedAt"
+        FROM brand_program_memberships bpm
+        JOIN partner_programs pp ON pp.id=bpm.program_id
+        JOIN brands b ON b.id=bpm.brand_id
+        WHERE (b.external_key=$1 OR b.slug=$1 OR b.id::text=$1)
+        ORDER BY pp.external_key`,[String(brandId)]);
+      partnerPrograms=membership.rows;
+    }
+    return json(res,200,{data:{...brand,collections,partnerPrograms,madeInMoscowVerified:partnerPrograms.some(x=>x.programKey==='made_in_moscow'&&x.status==='verified'&&x.moderationStatus==='approved')}});
   }
   if(req.method==='GET'&&p==='/v1/collections'){
     const brandId=url.searchParams.get('brandId');
