@@ -82,6 +82,7 @@ test('shared shell: event switcher and account remain reachable', async ({ page 
   await expectNoDocumentOverflow(page);
   await expectTarget(page.locator('[data-event="mfw"]'), 40);
   await expectTarget(page.locator('[data-event="bfs"]'), 40);
+  await expectTarget(page.locator('[data-event="made"]'), 40);
   await expectTarget(page.locator('#accountBtn'), 40);
   const clippedActions = await page.locator('.platform-actions > button').evaluateAll((buttons) =>
     buttons.filter((button) => button.scrollWidth > button.clientWidth + 1).map((button) => button.textContent.trim())
@@ -99,6 +100,20 @@ test('BFS switch: programme stays readable without page overflow', async ({ page
   const overflow = await frame.locator('body').evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(2);
   await page.screenshot({ path: testInfo.outputPath('bfs-programme.png') });
+});
+
+test('Made in Moscow switch keeps third ecosystem readable and connected', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-event="made"]').click();
+  const frame = page.frameLocator('#eventFrame');
+  await expect(frame.locator('.made-brand')).toBeVisible();
+  await expect(frame.getByText('МОСКОВСКИЕ', { exact: false }).first()).toBeVisible();
+  await expect(frame.getByText('Made in Moscow', { exact: false }).first()).toBeVisible();
+  const overflow = await frame.locator('body').evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+  await frame.locator('[data-section="verified"]').first().click();
+  await expect(frame.getByText('Made in Moscow', { exact: false }).first()).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
 test('platform overlays fit active viewport', async ({ page }, testInfo) => {
