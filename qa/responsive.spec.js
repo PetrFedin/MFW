@@ -132,6 +132,50 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
+test('premium companion Discover stays usable across the platform', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  const hub = page.locator('.hub-card');
+  await expect(hub).toBeVisible();
+  await expect(page.locator('[data-companion-route]')).toHaveCount(4);
+  for (const button of await page.locator('[data-companion-route]').all()) {
+    await expectTarget(button, 44);
+  }
+  const search = page.locator('#directorySearch');
+  await expect(search).toBeVisible();
+  await search.fill('fashion');
+  await expectNoDocumentOverflow(page);
+  const hubBox = await hub.boundingBox();
+  expect(hubBox.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
+  expect(hubBox.height).toBeLessThanOrEqual(page.viewportSize().height + 1);
+  await page.screenshot({ path: testInfo.outputPath('platform-discover.png') });
+
+  await page.locator('#hubClose').click();
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+  await expect(page.locator('#directorySearch')).toBeFocused();
+});
+
+test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) => {
+  const manifestResponse = await page.request.get('/manifest.webmanifest');
+  expect(manifestResponse.ok()).toBeTruthy();
+  const manifest = await manifestResponse.json();
+  expect(manifest.name).toBe('Moscow Fashion Platform');
+  expect(manifest.start_url).toBe('/platform/index.html');
+  expect(manifest.shortcuts.map((x) => x.url)).toEqual(expect.arrayContaining([
+    '/platform/index.html?event=mfw',
+    '/platform/index.html?event=bfs',
+    '/platform/index.html?event=made'
+  ]));
+
+  const swResponse = await page.request.get('/sw.js');
+  expect(swResponse.ok()).toBeTruthy();
+  expect(await swResponse.text()).toContain('PUBLIC');
+
+  await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
+  await expect(page.locator('#eventFrame')).toHaveAttribute('src', './made-in-moscow/index.html');
+});
+
 test('platform overlays fit active viewport', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
