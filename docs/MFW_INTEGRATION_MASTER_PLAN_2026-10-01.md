@@ -18,6 +18,19 @@ must be interpreted as: execute this plan in the sequence, boundaries and accept
 
 This plan is **not evidence that any integration is already implemented**.
 
+### Implementation-control discipline
+
+Before every development/integration wave:
+
+1. Re-read this **entire file from current `main` HEAD**, not a cached copy or previous conversation summary.
+2. Inspect the newest commits that modified this document and identify newly added capabilities, changed dependencies, sequencing constraints and explicit prohibitions.
+3. Reconcile new proposals with the current production gate before writing code.
+4. Do not move a newly discovered persistent capability ahead of its prerequisite durable-authority/job/policy layers.
+5. After implementation, update this document where implementation status materially changed, plus `CURRENT_STATE.md`, `RENDER_STATE.md` when runtime changes, and `RELEASE_LOG.md`.
+
+**Latest implementation review — 2026-10-02:** Sections 13 (Unified Discovery Search + agenda calendar portability) and 14 (live moderated Q&A/polls) were explicitly re-read from the commits that introduced them. They remain accepted roadmap items but are sequenced after durable PostgreSQL and the required durable job/outbox foundations.
+
+
 ## 2. Verified baseline
 
 Current repository state already includes:
@@ -100,6 +113,9 @@ Legend:
 8. Record exact SHA/deploy evidence in `RENDER_STATE.md` and `RELEASE_LOG.md`.
 
 **Acceptance:** no production feature in later phases may depend on in-memory-only state.
+
+**Free-contour operational note — 2026-10-02:** do not provision a dedicated Render Cron Job solely for social reverification while the project is constrained to zero paid Render resources. The authority owns an in-process interval plus a stale-aware startup catch-up. Because a free web service can sleep, this provides eventual catch-up after wake/restart but does **not** claim strict wall-clock execution while the service is asleep. Phase 1 durable PostgreSQL jobs supersede this temporary free-tier execution pattern when the durable job layer is admitted.
+
 
 ---
 
