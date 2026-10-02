@@ -610,6 +610,25 @@ This document is considered fully executed only when:
 15. MFW-INT-14 Email delivery.
 16. MFW-INT-15 Optional notification/public-analytics adapters.
 
+### Extended issue order for additional waves
+
+These items were added after the original MFW-INT-00…15 list and are now part of the same dependency-controlled backlog:
+
+17. **MFW-INT-16 OpenTelemetry tracing** — after MFW-INT-00; instrument PostgreSQL/jobs/providers as each becomes real.
+18. **MFW-INT-17 OpenFeature rollout boundary** — native stateless boundary exists; external provider remains optional/deferred until required.
+19. **MFW-INT-18 Privileged passkeys / step-up auth** — after stable durable identity and formal policy.
+20. **MFW-INT-19 Searchable replay transcript pipeline** — after real replay/media provider + durable jobs.
+21. **MFW-INT-20 Runway Look Timeline** — after stable replay assets and canonical look IDs.
+22. **MFW-INT-21 Media Rights / Embargo authority** — may start with editorial authoring, requires durable audit/state.
+23. **MFW-INT-22 Venue Operations authority** — after durable PostgreSQL/jobs and existing check-in authority.
+24. **MFW-INT-23 Unified Discovery Search** — after durable PostgreSQL + outbox/indexing jobs; Meilisearch remains rebuildable projection.
+25. **MFW-INT-24 Agenda iCalendar portability** — after durable programme/agenda; external calendars remain projections.
+26. **MFW-INT-25 Live moderated Q&A / polls** — after durable session/programme authority + jobs/policy.
+27. **MFW-INT-26 Interaction-to-Replay bridge** — after MFW-INT-19 and MFW-INT-25, using approved interaction state only.
+
+**Current execution pointer:** MFW-INT-00 remains the blocking issue. MFW-INT-17 has a safe native boundary implemented but is not allowed to pull any persistent issue ahead of MFW-INT-00.
+
+
 ---
 
 **Implementation instruction:** preserve the current MFW authority model. Integrate external capabilities at explicit boundaries; never call a feature complete because an external service has been connected. Completion requires MFW-owned state transitions, tests, failure handling and release evidence.
