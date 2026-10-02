@@ -3,10 +3,6 @@ name: Phase 0 Readiness Contract
 on:
   push:
     branches: [main]
-    paths:
-      - "mfw-api/**"
-      - "render.yaml"
-      - ".github/workflows/phase0-readiness-contract.yml"
   workflow_dispatch:
 
 permissions:
