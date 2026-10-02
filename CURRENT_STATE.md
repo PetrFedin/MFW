@@ -1,6 +1,6 @@
 # Current MFW/BFS project state
 
-Last consolidated state: **2026-10-02**
+Last consolidated state: **2026-10-03**
 
 ## Current product
 
@@ -244,3 +244,22 @@ Latest reviewed additions:
 - Section 14 — live moderated Q&A / polling / replay bridge.
 
 Both remain dependency-gated behind durable PostgreSQL and the durable jobs/outbox foundation.
+
+## Premium participant companion / PWA
+
+Implemented as a stateless/read-only wave that does not bypass Phase 0:
+
+- one global Discover surface across MFW + BFS + Made in Moscow;
+- MFW brands/shows and BFS speakers/sessions come from the current published snapshot;
+- Made in Moscow entries appear only from verified roster authority;
+- four participant routes: Plan / Discover / Connect / Access;
+- Ctrl/Cmd+K opens global Discover and focuses search;
+- PWA manifest now represents Moscow Fashion Platform rather than only MFW;
+- install shortcuts open MFW, BFS or Made in Moscow directly;
+- branded offline shell added;
+- service worker caches only public shell/assets;
+- offline mode explicitly does not claim registration, QR, LIVE, meetings, wallet or Verified truth;
+- online/offline state is visible in the shared shell;
+- responsive QA expanded from 42 to 56 tests across 7 device profiles.
+
+Latest exact responsive evidence: 56/56 PASS on commit `d9966a579e1d7ebe5ede5af41758eec935e43f93`.
