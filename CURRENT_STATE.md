@@ -263,3 +263,54 @@ Implemented as a stateless/read-only wave that does not bypass Phase 0:
 - responsive QA expanded from 42 to 56 tests across 7 device profiles.
 
 Latest exact responsive evidence: 56/56 PASS on commit `d9966a579e1d7ebe5ede5af41758eec935e43f93`.
+
+## Buyer / Brand Deal Room preview
+
+A non-persistent commercial-workflow preview is implemented inside the shared Hub.
+
+Current preview chain:
+
+`confirmed meeting -> look/collection shortlist -> structured buyer request -> brand response -> external handoff`
+
+Included preview contracts:
+- bilateral relationship gate;
+- canonical look/collection IDs only;
+- request taxonomy for line sheet / wholesale price / availability / MOQ / delivery / sample / showroom / distribution;
+- private-document categories;
+- outcome evidence classes: Observed / Reported / Verified;
+- explicit no-silent-order / external-commerce handoff boundary.
+
+Safety boundary:
+- request controls are disabled;
+- no writable commercial input exists in the preview;
+- no price, MOQ, order, request, document or commercial outcome is persisted;
+- production Deal Room remains gated by durable PostgreSQL + formal policy/ACL + audit/idempotency.
+
+Responsive Deal Room agent coverage: all 7 device profiles passed in the 63-test wave.
+
+## Lifecycle-aware participant mode
+
+The shared Hub now contains `Сейчас` / Now.
+
+Lifecycle is derived from the published MFW/BFS programme dates:
+
+`Before -> Live Days -> After Event`
+
+Current behavior:
+- Before: registration/profile, Discover, agenda and interests are prioritised;
+- Live: today's MFW/BFS programme is composed and can route items into agenda;
+- After: relationship continuation, saved items, Deal Room follow-up and Made in Moscow / Brand365 become primary;
+- replay count is based only on explicitly confirmed replay state;
+- follow-up/Deal Room activity is never represented as a sale without separate outcome evidence.
+
+The lifecycle engine is read-only; it does not mutate access, agenda or commercial truth by itself.
+
+Agent verification covers both:
+- real current post-event state;
+- a frozen 2026-09-29 live-event state;
+across the complete 7-device matrix.
+
+## PWA cache release
+
+The participant companion shell is on cache revision `mfp-shell-2026-10-03-p2`.
+Platform JS/CSS use the matching `20261003p2` asset revision so mobile/CDN clients do not mix old companion code with the new lifecycle UI.
