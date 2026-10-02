@@ -6,6 +6,7 @@ const vm = require('vm');
 const QRCode = require('qrcode');
 const { Brand365Store } = require('./brand365-store');
 const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMembership } = require('./social-providers');
+const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
 let Pool = null;
 try { ({ Pool } = require('pg')); } catch (_) {}
 
@@ -29,6 +30,7 @@ const VK_APP_ID = process.env.MFW_VK_APP_ID || '';
 const VK_LOGIN_REDIRECT_URI = process.env.MFW_VK_LOGIN_REDIRECT_URI || (PUBLIC_BASE_URL+'/v1/social/auth/vk/callback');
 const REVERIFY_INTERVAL_MINUTES = Math.max(60,Number(process.env.MFW_REVERIFY_INTERVAL_MINUTES || 360));
 const REVERIFY_BATCH_SIZE = Math.max(1,Math.min(1000,Number(process.env.MFW_REVERIFY_BATCH_SIZE || 250)));
+const featureEvaluator=new FeatureEvaluator({env:process.env});
 
 function loadOfficialSnapshot(){
   try{
@@ -1479,6 +1481,22 @@ async function router(req,res){
   const url=new URL(req.url,'http://localhost');
   const p=url.pathname;
 
+  if(req.method==='GET'&&p==='/v1/features'){
+    const eventBrand=String(url.searchParams.get('eventBrand')||'mfw').toLowerCase();
+    if(!['mfw','bfs'].includes(eventBrand))return json(res,400,{error:'invalid_event_brand'});
+    const session=sessionFromRequest(req);
+    const role=String(session&&session.role||'Visitor');
+    const userId=String(session&&session.sub||'anonymous');
+    const flags=await featureEvaluator.snapshot({targetingKey:userId,userId,role,eventBrand});
+    return json(res,200,{
+      data:flags,
+      eventBrand,
+      role,
+      authority:'ui_rollout_only',
+      securityBoundary:'not_authorization',
+      defaultsFailClosed:true
+    });
+  }
   if(req.method==='GET'&&p==='/v1/native/readiness') return json(res,200,{data:{
     shell:{status:'prepared',runtime:'Capacitor v8',bundleId:'placeholder'},
     haptics:{client:'prepared',activation:'native_shell'},
@@ -1499,6 +1517,7 @@ async function router(req,res){
     databaseSchema:databaseSchemaReadiness,
     productionGuard:{requirePostgres:REQUIRE_POSTGRES,satisfied:!REQUIRE_POSTGRES||!!pool},
     productionAdmission:productionAdmission(),
+    featureRollout:{boundary:'openfeature_compatible',provider:'deterministic_fallback',safety:'non_critical_only',flags:Object.keys(FEATURE_DEFINITIONS)},
     socialAuthFlow:{singleUseState:true,pkceSecretScrub:true,pendingTtlMinutes:10,terminalRetentionHours:24},
     socialProviders:{
       telegram:{
