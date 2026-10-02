@@ -389,11 +389,46 @@
       hubContent.innerHTML='<div class="hub-note">Owner Control Tower требует авторизованную owner-сессию и server-side данные. Локальные demo-метрики намеренно не подменяют агрегаты экосистемы.</div>';
     }
   }
+  function renderDealRoomPreview(){
+    var data=window.MFP_DATA||{mfw:{brands:[]}},interest=getInterestState();
+    var preferredId=(interest.mfwFavorites||[])[0]||(interest.mfwFollowed||[])[0]||null;
+    var preferred=(data.mfw.brands||[]).filter(function(x){return x.id===preferredId;})[0]||null;
+    var context=preferred?preferred.name:'Выбранный бренд после подтверждённой встречи';
+    hubContent.innerHTML=
+      '<div class="dealroom-preview-banner"><b>PREVIEW · NO COMMERCIAL DATA SAVED</b><span>Workflow демонстрируется до durable PostgreSQL + ACL/policy. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
+      '<div class="dealroom-hero"><div><div class="drawer-kicker">BUYER / BRAND DEAL ROOM</div><h3>Из встречи — в структурированный коммерческий follow-up.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>MEETING</span><i>→</i><span>SHORTLIST</span><i>→</i><span>REQUEST</span><i>→</i><span>RESPONSE</span><i>→</i><span>HANDOFF</span></div></div>'+
+      '<div class="dealroom-stage-grid">'+
+        '<article><small>01 · RELATIONSHIP GATE</small><h4>Confirmed meeting</h4><p>Deal Room открывается только для авторизованной bilateral relationship.</p><span class="deal-status locked">SERVER ACL REQUIRED</span></article>'+
+        '<article><small>02 · BUYER SHORTLIST</small><h4>Looks / collection</h4><p>Look, collection, replay timecode, buyer note и interest level.</p><span class="deal-status">CANONICAL IDS ONLY</span></article>'+
+        '<article><small>03 · STRUCTURED REQUEST</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">AUDITABLE</span></article>'+
+        '<article><small>04 · BRAND RESPONSE</small><h4>Response evidence</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">PRIVATE SCOPE</span></article>'+
+        '<article><small>05 · HANDOFF</small><h4>External commerce</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">NO SILENT ORDER</span></article>'+
+      '</div>'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>REQUEST TYPES</small><h4>Структурированный buyer intent</h4></div><span>DEMO TAXONOMY</span></div><div class="request-chip-grid">'+
+        ['LINE SHEET','WHOLESALE PRICE','AVAILABILITY','MOQ','DELIVERY WINDOW','SAMPLE','SHOWROOM APPOINTMENT','DISTRIBUTION / MARKET'].map(function(x){return '<button disabled>'+x+'</button>';}).join('')+
+      '</div></section>'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>PRIVATE DOCUMENTS</small><h4>Контролируемый обмен</h4></div><span>ACL BEFORE DOWNLOAD</span></div><div class="deal-doc-grid">'+
+        '<article><b>Line sheet</b><span>versioned · buyer-scoped</span><em>LOCKED PREVIEW</em></article>'+
+        '<article><b>Lookbook</b><span>approved collection assets</span><em>LOCKED PREVIEW</em></article>'+
+        '<article><b>Brand deck</b><span>commercial presentation</span><em>LOCKED PREVIEW</em></article>'+
+        '<article><b>Sample / shipping</b><span>operational information</span><em>LOCKED PREVIEW</em></article>'+
+      '</div></section>'+
+      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>COMMERCIAL EVIDENCE</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
+        '<div><b>OBSERVED</b><span>meeting / request / response inside MFW</span></div>'+
+        '<div><b>REPORTED</b><span>commercial outcome voluntarily reported by partner</span></div>'+
+        '<div><b>VERIFIED</b><span>outcome confirmed by admitted external integration</span></div>'+
+      '</div></section>'+
+      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ BFS NETWORKING</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ MFW BRANDS</button></div>'+
+      '<div class="hub-note">PREVIEW boundary: Deal Room показывает будущий product contract. Production lifecycle, ACL, documents, due dates, idempotency и audit допускаются только после Phase 0 PostgreSQL и formal policy.</div>';
+    [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
+  }
+
   function renderHub(){
     [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.classList.toggle('active',b.dataset.hubTab===hubTab);});
     if(hubTab==='directory')renderDirectory();
     else if(hubTab==='agenda')renderAgenda();
     else if(hubTab==='wallet')renderWallet();
+    else if(hubTab==='dealroom')renderDealRoomPreview();
     else renderOwner();
   }
   function updateNetworkStatus(){
@@ -504,7 +539,7 @@
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
   document.getElementById('investorClose').onclick=function(){investorModal.classList.add('hidden');};
-  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){openEvent('made');narrative.textContent='Один brand graph связывает подтверждённый статус бренда с MFW/BFS, buyer intent и 365-дневным продолжением.';}};});
+  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}};});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
   accountDrawer.addEventListener('click',function(e){if(e.target===accountDrawer)closeAccount();});
