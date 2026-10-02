@@ -665,6 +665,9 @@ GrowthBook may later act as an experimentation/flag provider, but MFW code consu
 
 Flags must never control security invariants, consent validity, QR signature verification or financial truth.
 
+
+**Implementation note — 2026-10-02:** the native provider boundary is now present as an OpenFeature-compatible boolean-evaluation interface with deterministic environment/default fallback. Initial preview flags all default off, critical/security/consent/QR/financial flag names are rejected, and the public evaluation endpoint cannot override role context supplied by the signed MFW session. A third-party provider (for example GrowthBook later) has **not** been adopted yet; MFW remains fully functional with no provider.
+
 ### 11.4 Operational acceptance
 
 Before this additional wave is complete:
