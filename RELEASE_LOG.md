@@ -227,6 +227,7 @@ Implemented as a third branded direction of Moscow Fashion Platform:
 - six-module product surface: Verified / Hub / Digital Market / Buyer Bridge / Brand365 / Evidence;
 - investor route updated from two to three ecosystem directions;
 - MFW brand-card support for a verified Made in Moscow badge;
+- BFS organisation/speaker/delegate surfaces can project the badge only through explicit `brandRef` to a canonical verified Brand; no name-based inference;
 - badge is fail-closed: no verified roster means no real-brand badge;
 - migration 021 adds generic partner-program membership plus scoped service-application moderation;
 - public aggregate endpoints prepared for Made in Moscow overview and verified brands;
