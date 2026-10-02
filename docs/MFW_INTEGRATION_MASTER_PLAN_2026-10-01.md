@@ -625,6 +625,7 @@ These items were added after the original MFW-INT-00…15 list and are now part 
 25. **MFW-INT-24 Agenda iCalendar portability** — after durable programme/agenda; external calendars remain projections.
 26. **MFW-INT-25 Live moderated Q&A / polls** — after durable session/programme authority + jobs/policy.
 27. **MFW-INT-26 Interaction-to-Replay bridge** — after MFW-INT-19 and MFW-INT-25, using approved interaction state only.
+28. **MFW-INT-27 Made in Moscow ecosystem integration** — after durable PostgreSQL + jobs/policy; verified residency projection -> partner hub/showroom -> B2B/Brand365 continuity -> scoped evidence dashboard.
 
 **Current execution pointer:** MFW-INT-00 remains the blocking issue. MFW-INT-17 has a safe native boundary implemented but is not allowed to pull any persistent issue ahead of MFW-INT-00.
 
@@ -1048,3 +1049,153 @@ Do not use participant interaction to infer political, health or other sensitive
 
 **Dependency note:** ARSnova is a reference implementation only; do not introduce a second participant/event database.
 
+## 15. Additional integration wave — Made in Moscow ecosystem partnership
+
+This wave reflects the **existing real-world role** of the city project «Сделано в Москве» / Made in Moscow in Moscow Fashion Week and converts that offline partnership into a bounded digital capability.
+
+Verified public baseline (reviewed 2026-10-02):
+- «Сделано в Москве» is already a co-organizer of the MFW market/showroom;
+- the September–October 2026 market/showroom included more than 90 brands;
+- MFW programme/gallery includes a dedicated «Сделано в Москве» fashion show;
+- the programme is operated as a Moscow local-brand promotion/support mechanism, not as MFW domain authority.
+
+Official public references:
+- https://moscowfashion.ru/2026/market
+- https://www.moscowfashion.ru/news/seventh-mfw
+- https://www.moscowfashion.ru/news/seventh-mfw-opening
+- https://www.moscowfashion.ru/news/mfw-day-five
+
+### 15.1 Partnership role — ADOPT
+
+Model «Сделано в Москве» primarily as an **institutional ecosystem / local-brand growth partner**, not as a second event platform.
+
+MFW remains authority for:
+- participant identity;
+- MFW/BFS registration;
+- programme/session state;
+- QR/admission;
+- buyer meetings;
+- platform CRM/Brand365 state;
+- analytics/evidence contracts.
+
+The Made in Moscow integration may own or provide:
+- verified programme residency/reference status;
+- approved local-brand catalogue input;
+- campaign/editorial collections;
+- partner-specific activation configuration;
+- bounded partner reporting exports.
+
+Do not copy the programme's internal administrative system into MFW.
+
+### 15.2 Verified residency badge and brand projection — ADOPT
+
+Add a bounded projection to canonical MFW Brand:
+
+- `made_in_moscow_status`: verified / not_verified / unknown;
+- `made_in_moscow_verified_at`;
+- `made_in_moscow_source_ref`;
+- optional public programme URL;
+- residency badge visible on approved brand surfaces.
+
+The status must come from an approved roster/import/API or reviewed evidence. A brand must not self-assert the badge.
+
+### 15.3 Made in Moscow Hub — ADOPT
+
+Create a dedicated partner surface inside the existing platform, not a standalone app:
+
+- curated Made in Moscow brands;
+- MFW participating brands;
+- runway/show participation;
+- market/showroom location;
+- product/editorial highlights where publication rights exist;
+- buyer-facing filters;
+- follow/favorite/save actions routed into existing Brand365 authority;
+- post-event discovery rather than event-only exposure.
+
+The hub must preserve the visual identity boundary between MFW and the programme while remaining inside the one-platform account model.
+
+### 15.4 Market / Showroom digital layer — ADOPT
+
+Extend the existing venue/brand/agenda model with:
+
+- booth / showroom location reference;
+- opening hours;
+- brand-to-location mapping;
+- participant save-to-route;
+- buyer shortlist;
+- QR/deep-link from physical stand to canonical brand page;
+- optional approved offer/coupon routed through existing reward/evidence rules;
+- no independent POS truth inside MFW unless a formal provider integration is admitted.
+
+This should later compose with Venue Operations (MFW-INT-22) and venue mapping.
+
+### 15.5 Buyer and B2B bridge — ADOPT
+
+Use the existing MFW buyer/meeting authority to make the partnership commercially measurable:
+
+Made in Moscow brand -> buyer discovery -> shortlist -> meeting/request -> follow-up -> lead state -> evidence.
+
+Partner views may expose only approved aggregate or scoped brand-level metrics.
+
+Do not provide unrestricted access to participant CRM data.
+
+### 15.6 Brand365 continuity — ADOPT
+
+The strategic value is not just six event days.
+
+For participating Made in Moscow brands, allow approved Brand365 continuity:
+
+- follow;
+- favorite/save;
+- verified loyalty eligibility where configured;
+- editorial updates;
+- approved campaigns;
+- replay/runway context;
+- buyer follow-up;
+- retention analytics.
+
+The programme becomes an acquisition/curation source; Brand365 remains MFW-owned state.
+
+### 15.7 Partner evidence dashboard — ADOPT
+
+Create a scoped partner evidence view with privacy-safe metrics such as:
+
+- verified participating brands;
+- profile/product/content opens;
+- market/showroom route saves;
+- QR/deep-link opens;
+- follows/favorites;
+- buyer shortlist / meeting requests;
+- completed B2B follow-ups;
+- approved reward/redemption evidence;
+- post-event 7/30-day engagement;
+- attributable campaign outcomes where an admitted evidence contract exists.
+
+This is reporting/evidence, not ownership of the underlying MFW CRM.
+
+### 15.8 Commercial / funding posture
+
+Treat three relationships separately:
+
+1. **Institutional ecosystem partner** — existing operational fit; highest-priority integration posture.
+2. **Module/activation co-funder or commissioning partner** — potentially appropriate for a bounded Made in Moscow digital showroom / Brand365 / buyer-evidence layer, subject to the actual public procurement/support mechanism.
+3. **Equity / venture investor in the MFW platform** — do not assume this role. The public programme's documented mandate is local-brand promotion/support, not venture ownership of MFW software.
+
+Any funding route must be verified with the responsible programme/legal/procurement authority before being represented as available.
+
+### 15.9 Additional acceptance
+
+- no self-asserted Made in Moscow residency badge;
+- roster sync/import is idempotent and auditable;
+- programme status never grants MFW admission/authorization by itself;
+- partner hub resolves to canonical MFW Brand IDs;
+- participant CRM data is not exposed beyond scoped/approved contracts;
+- post-event engagement remains available after the physical market closes;
+- buyer outcomes can be measured without creating a second lead database;
+- if external programme data is unavailable, core MFW remains fully functional.
+
+**Sequencing:** Phase 0 durable PostgreSQL -> pg-boss/outbox/formal policy -> verified Made in Moscow roster projection -> hub/showroom layer -> B2B/Brand365 continuity -> partner evidence dashboard.
+
+### 15.10 Current decision
+
+Made in Moscow should be actively integrated into the MFW digital product as an institutional/growth partner. It should **not** be modelled as the primary platform investor by default. A bounded co-funded/commissioned digital module is a more structurally aligned funding hypothesis and must be legally/operationally verified before outreach.
