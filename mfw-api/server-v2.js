@@ -14,6 +14,7 @@ const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.
 const VERSION = 'mfw-authority-v9-mvp-golden-path';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
+const RELEASE_SHA = String(process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
 const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
@@ -629,6 +630,22 @@ let databaseSchemaReadiness={
   missingColumns:[],
   contractErrors:[]
 };
+
+function productionAdmission(){
+  const blockers=[];
+  if(!pool)blockers.push('postgres_not_configured');
+  if(pool&&!databaseSchemaReadiness.ready)blockers.push('database_schema_not_ready');
+  if(!REQUIRE_POSTGRES)blockers.push('postgres_guard_not_enabled');
+  return {
+    ready:blockers.length===0,
+    releaseSha:RELEASE_SHA,
+    dataMode:pool?'postgres':'memory',
+    requirePostgres:REQUIRE_POSTGRES,
+    databaseConfigured:!!pool,
+    databaseSchemaReady:!!(pool&&databaseSchemaReadiness.ready),
+    blockers
+  };
+}
 
 async function query(sql,params=[]){
   if(!pool) return null;
@@ -1471,12 +1488,17 @@ async function router(req,res){
     wallet:{clientBridge:'prepared',gateCredentialReuse:false,activation:'pass_type_id_and_signing_certificate_required'},
     testflight:{status:'blocked_by_credentials',requires:['Apple Developer Team','final bundle identifier','App Store Connect record','signing/provisioning']}
   }});
+  if(req.method==='GET'&&p==='/ready'){
+    const admission=productionAdmission();
+    return json(res,admission.ready?200:503,{status:admission.ready?'ready':'blocked',service:'mfw-api',version:VERSION,...admission,databaseSchema:databaseSchemaReadiness});
+  }
   if(req.method==='GET'&&p==='/health') return json(res,200,{
-    status:'ok',service:'mfw-api',version:VERSION,dataMode:pool?'postgres':'memory',
+    status:'ok',service:'mfw-api',version:VERSION,releaseSha:RELEASE_SHA,dataMode:pool?'postgres':'memory',
     es256:true,qr:true,offlineVerification:true,duplicateCheckin:true,revocation:true,streamAuthority:true,streamingBoundary:true,commerceAuthority:true,networkingAuthority:true,loyalty365Authority:true,localeAuthority:true,sponsorAuthority:true,
     brand365Persistence:{configured:!!pool,mode:pool?'postgres':'memory_demo',migrations:['009_brand365_persistence.sql','010_social_auth_flows.sql','011_social_auth_hardening.sql','012_schema_reconciliation.sql']},
     databaseSchema:databaseSchemaReadiness,
     productionGuard:{requirePostgres:REQUIRE_POSTGRES,satisfied:!REQUIRE_POSTGRES||!!pool},
+    productionAdmission:productionAdmission(),
     socialAuthFlow:{singleUseState:true,pkceSecretScrub:true,pendingTtlMinutes:10,terminalRetentionHours:24},
     socialProviders:{
       telegram:{
