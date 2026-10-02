@@ -36,3 +36,6 @@ button,input,select,textarea{touch-action:manipulation}
   .logo{font-size:21px}.hero h1{font-size:clamp(48px,17vw,62px)}.nav button{padding-left:11px;padding-right:11px}
   #content{padding-left:12px;padding-right:12px}.project-actions button,.org-actions button{width:100%}
 }
+
+/* MADE_IN_MOSCOW_CROSS_PLATFORM_BADGE_2026_10_02 */
+.made-verified-bfs{display:inline-flex;align-items:center;margin:6px 0 4px;padding:5px 7px;background:#ff4a43;color:#fff;font-size:7px;font-weight:950;letter-spacing:.07em;line-height:1.1;border-radius:2px}@media(max-width:680px){.made-verified-bfs{font-size:6.5px;max-width:190px}}
