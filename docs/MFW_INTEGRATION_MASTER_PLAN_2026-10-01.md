@@ -1201,3 +1201,95 @@ Any funding route must be verified with the responsible programme/legal/procurem
 ### 15.10 Current decision
 
 Made in Moscow should be actively integrated into the MFW digital product as an institutional/growth partner. It should **not** be modelled as the primary platform investor by default. A bounded co-funded/commissioned digital module is a more structurally aligned funding hypothesis and must be legally/operationally verified before outreach.
+
+## 15. Premium innovation wave — multilingual live interpretation and B2B meeting intelligence
+
+This wave is designed as a premium internationalisation layer for MFW/BFS. It is intentionally positioned after stable LIVE/replay, programme and B2B meeting authorities.
+
+### Multilingual Live Interpretation — CONDITIONAL SIDECAR
+
+Research candidate: https://github.com/facebookresearch/seamless_communication
+
+Target flow:
+
+live audio -> speech recognition/alignment -> source transcript -> translated text and/or translated speech -> participant-selected language -> reviewed replay transcript
+
+Persist in MFW:
+
+- session ID;
+- source/target language;
+- provider/model/version;
+- source segment start/end;
+- machine transcript;
+- translated segment;
+- processing latency/health;
+- human-reviewed corrected form;
+- publication status.
+
+The participant UI must make it explicit whether a channel is original audio, human interpretation, machine interpretation or captions.
+
+Machine translation is not an authoritative speaker quote until reviewed.
+
+### Human Interpreter Channel Boundary — ADOPT
+
+Use the same language selector to route to:
+
+- original audio;
+- human interpretation channel;
+- machine translation channel;
+- captions-only mode.
+
+Store provider/channel metadata so replay provenance remains explicit.
+
+### Multilingual Replay Intelligence — ADOPT
+
+For approved replays support:
+
+- original transcript;
+- approved translated transcript;
+- language-specific chapters;
+- language-specific search indexing;
+- quote anchor to source timestamp;
+- bilingual session summary.
+
+Only approved translations enter public search/recommendation.
+
+### B2B Meeting Intelligence Brief — ADOPT/ADAPT
+
+Create a source-linked pre-meeting brief for confirmed buyer/delegate meetings.
+
+Allowed inputs:
+
+- authoritative participant role/organisation;
+- explicit interests;
+- saved/followed brands;
+- programme/session activity allowed by policy;
+- public brand/company profile already in MFW;
+- meeting objective;
+- previous MFW/BFS interactions allowed by consent/policy.
+
+Output:
+
+- counterpart overview;
+- why meeting may be relevant;
+- shared topics;
+- selected brands/sessions;
+- suggested questions;
+- source links/reason codes.
+
+Typed-agent patterns from https://github.com/pydantic/pydantic-ai may be used for tool/result validation, but generative output cannot mutate CRM/profile/lead truth.
+
+### Additional acceptance
+
+- interpretation mode is visible to the participant;
+- translated segments preserve source timestamps;
+- provider failure degrades to original audio/captions;
+- factual meeting-brief statements resolve to canonical MFW source IDs;
+- no hidden/sensitive attributes are inferred;
+- no brief auto-sends messages or creates leads;
+- external speech/model providers remain replaceable.
+
+**Sequencing:** stable LIVE/replay -> multilingual caption pilot -> interpretation channel -> reviewed translated replay -> B2B meeting brief.
+
+**Commercial note:** Seamless Communication is a research candidate only until code/model-weight/commercial-use terms are explicitly approved.
+
