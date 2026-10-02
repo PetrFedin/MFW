@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+<rect width="192" height="192" rx="42" fill="#070707"/>
+<rect x="25" y="25" width="142" height="17" rx="5" fill="#c8ff00"/>
+<rect x="25" y="50" width="108" height="17" rx="5" fill="#d4b448"/>
+<rect x="25" y="75" width="81" height="17" rx="5" fill="#ff4a43"/>
+<text x="25" y="134" fill="#f4f4ee" font-family="Arial,Helvetica,sans-serif" font-size="29" font-weight="900" letter-spacing="-1">MFP</text>
+<text x="25" y="154" fill="#8e8e88" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="700">MOSCOW FASHION PLATFORM</text>
+</svg>
