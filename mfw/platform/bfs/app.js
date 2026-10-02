@@ -32,9 +32,20 @@ var sessions=[
 var speakers=[['Елена Ахмадуллина','Основатель бренда Alena Akhmadullina'],['Антон Алиханов','Министр промышленности и торговли РФ'],['Мустафа Джем Алтан','International Apparel Federation'],['Мадонна Мур','Основатель Fashion Paper']];
 var delegates=[];
 var organisations=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations)||[];
+var madeVerifiedByBrandRef={};
 var leadState=(function(){try{return JSON.parse(localStorage.getItem('bfsLeadState')||'{}')}catch(e){return {}}})();
 function saveLeads(){try{localStorage.setItem('bfsLeadState',JSON.stringify(leadState))}catch(e){}}
 function orgById(id){return (organisations||[]).filter(function(o){return o.id===id})[0]||null}
+function orgByName(name){return (organisations||[]).filter(function(o){return o.name===name})[0]||null}
+function madeBadgeForOrganisation(o){return o&&o.brandRef&&madeVerifiedByBrandRef[String(o.brandRef)]?'<span class="made-verified-bfs">СДЕЛАНО В МОСКВЕ · VERIFIED</span>':''}
+async function hydrateMadeVerified(){
+ try{
+  var out=await authority('/v1/made-in-moscow/brands',{method:'GET'}),rows=out&&Array.isArray(out.data)?out.data:[];
+  madeVerifiedByBrandRef={};rows.forEach(function(row){madeVerifiedByBrandRef[String(row.id)]=true;});
+  organisations.forEach(function(o){o.madeInMoscowVerified=!!(o.brandRef&&madeVerifiedByBrandRef[String(o.brandRef)]);});
+  render();
+ }catch(e){}
+}
 async function leadStage(id,stage){
  var old=leadState[id]||{},org=orgById(id),normalized=stage==='qualified_lead'?'qualified':stage;
  leadState[id]=Object.assign({},old,{stage:normalized,updatedAt:new Date().toISOString()});saveLeads();render();
@@ -105,7 +116,7 @@ function programme(){
  $('#content').innerHTML=alert+'<div class="section-head"><h2>Business programme</h2><span>GRAND · CHAMBER · OPEN HALL</span></div>'+cards();bindSessionActions()
 }
 function showSpeakers(){
- $('#content').innerHTML='<div class="b2b-switch"><button id="orgDirectory">ОРГАНИЗАЦИИ</button></div><div class="section-head"><h2>Спикеры</h2><span>OFFICIAL DIRECTORY</span></div>'+speakers.map(function(s){var src=(window.MFP_DATA&&window.MFP_DATA.bfs.speakers||[]).filter(function(x){return x.id===s[2]})[0]||{};var linked=(src.sessionIds||[]).map(function(id){return sessions.filter(function(x){return x.id===id})[0]}).filter(Boolean);return '<div class="speaker"><div class="avatar"></div><div><b>'+s[0]+'</b><span>'+s[1]+'</span>'+(linked.length?'<div class="speaker-links">'+linked.map(function(x){return '<button class="small-action" data-open-session="'+x.id+'">'+x.time+' · '+x.title+'</button>'}).join(''):'<div class="meta">Связанные сессии ещё не подтверждены в текущем snapshot.</div>')+projectActions(s[0])+'</div></div>'}).join('');
+ $('#content').innerHTML='<div class="b2b-switch"><button id="orgDirectory">ОРГАНИЗАЦИИ</button></div><div class="section-head"><h2>Спикеры</h2><span>OFFICIAL DIRECTORY</span></div>'+speakers.map(function(s){var src=(window.MFP_DATA&&window.MFP_DATA.bfs.speakers||[]).filter(function(x){return x.id===s[2]})[0]||{};var linked=(src.sessionIds||[]).map(function(id){return sessions.filter(function(x){return x.id===id})[0]}).filter(Boolean);var speakerOrg=orgByName(s[3]);return '<div class="speaker"><div class="avatar"></div><div><b>'+s[0]+'</b>'+madeBadgeForOrganisation(speakerOrg)+'<span>'+s[1]+'</span>'+(linked.length?'<div class="speaker-links">'+linked.map(function(x){return '<button class="small-action" data-open-session="'+x.id+'">'+x.time+' · '+x.title+'</button>'}).join(''):'<div class="meta">Связанные сессии ещё не подтверждены в текущем snapshot.</div>')+projectActions(s[0])+'</div></div>'}).join('');
  bindProjectActions();$('[data-open-session]').forEach(function(btn){btn.onclick=function(){openSession(btn.dataset.openSession)}})
 }
 function openSession(id){
@@ -141,7 +152,7 @@ async function requestMeeting(input){
 }
 function delegateDiscovery(){
  $('#content').innerHTML='<div class="section-head"><h2>Делегаты и спикеры</h2><span>OFFICIAL PEOPLE DIRECTORY</span></div>'+
-  delegates.map(function(d,i){return '<article class="delegate"><div><span class="tag">'+d[0]+'</span><h3>'+d[1]+'</h3><p>'+d[2]+'</p>'+projectActions(d[1])+'</div><button data-meet="'+i+'">ЗАПРОСИТЬ ВСТРЕЧУ</button></article>'}).join('');
+  delegates.map(function(d,i){var org=orgByName(d[4]);return '<article class="delegate"><div><span class="tag">'+d[0]+'</span><h3>'+d[1]+'</h3>'+madeBadgeForOrganisation(org)+'<p>'+d[2]+'</p>'+projectActions(d[1])+'</div><button data-meet="'+i+'">ЗАПРОСИТЬ ВСТРЕЧУ</button></article>'}).join('');
  bindProjectActions();
  $$('[data-meet]').forEach(function(b){b.onclick=function(){var d=delegates[Number(b.dataset.meet)];requestMeeting({counterpartRef:d[3],counterpartName:d[1],organisationName:d[4]});};});
 }
@@ -150,7 +161,7 @@ function organisationDirectory(){
   organisations.map(function(o){
    var people=(window.MFP_DATA.bfs.speakers||[]).filter(function(p){return (o.people||[]).indexOf(p.id)>=0});
    var lead=leadState[o.id]||{stage:'interest'};
-   return '<article class="delegate"><div><span class="tag">'+o.type+'</span><h3>'+o.name+'</h3><p>'+o.country+'</p>'+
+   return '<article class="delegate"><div><span class="tag">'+o.type+'</span><h3>'+o.name+'</h3>'+madeBadgeForOrganisation(o)+'<p>'+o.country+'</p>'+
     people.map(function(p){return '<div class="org-person"><b>'+p.name+'</b><span>'+p.role+'</span></div>'}).join('')+
     projectActions(o.name)+'<div class="lead-stage">CRM · '+String(lead.stage||'interest').toUpperCase()+'</div></div>'+
     '<div class="org-actions"><button data-org-meet="'+o.id+'">ЗАПРОСИТЬ ВСТРЕЧУ</button><button data-org-lead="'+o.id+'">QUALIFY LEAD</button></div></article>';
@@ -220,7 +231,7 @@ function pass(){
 }
 function profile(){
  var p=state.account&&state.account.profile||{};var r=registration();
- $('#content').innerHTML='<div class="section-head"><h2>Personal account</h2><span>ONE PLATFORM ID</span></div><div class="profile-row"><b>'+((p.firstName||'Guest')+' '+(p.lastName||''))+'</b><span>GLOBAL PROFILE</span></div><div class="profile-row"><b>BFS</b><span>'+(r?r.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>MFW</b><span>'+(state.account&&state.account.registrations&&state.account.registrations.mfw?state.account.registrations.mfw.status:'NOT REGISTERED')+'</span></div><button class="small-action" id="manageAccount">MANAGE ACCOUNT & REGISTRATIONS</button>';
+ $('#content').innerHTML='<div class="section-head"><h2>Personal account</h2><span>ONE PLATFORM ID</span></div><div class="profile-row"><b>'+((p.firstName||'Guest')+' '+(p.lastName||''))+'</b><span>GLOBAL PROFILE</span></div><div class="profile-row"><b>BFS</b><span>'+(r?r.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>MFW</b><span>'+(state.account&&state.account.registrations&&state.account.registrations.mfw?state.account.registrations.mfw.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>СДЕЛАНО В МОСКВЕ</b><span>SHARED ID · BRAND STATUS SEPARATE</span></div><button class="small-action" id="manageAccount">MANAGE ACCOUNT & REGISTRATIONS</button>';
  $('#manageAccount').onclick=function(){parent.postMessage({type:'mfp-open-account'},'*')};
 }
 function render(){$$('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===state.view)});({today:today,programme:programme,speakers:showSpeakers,b2b:b2b,pass:pass,profile:profile}[state.view]||today)()}
@@ -228,5 +239,5 @@ $$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.
 $('.lang').onclick=function(){state.lang=state.lang==='ru'?'en':'ru';$('.lang').textContent=state.lang==='ru'?'RU / EN':'EN / RU';};
 window.addEventListener('message',function(e){if(e.data&&e.data.type==='mfp-account-state'){state.account=e.data.payload;render();}});
 try{var savedMeeting=JSON.parse(localStorage.getItem('bfsMeetingState')||'null');if(savedMeeting)state.meeting=savedMeeting;}catch(e){}
-parent.postMessage({type:'mfp-request-account-state'},'*');render();
+parent.postMessage({type:'mfp-request-account-state'},'*');render();hydrateMadeVerified();
 })();
