@@ -802,3 +802,94 @@ Staff/admin gets incident timeline, escalation and resolution evidence.
 
 **Dependency hygiene:** pin runtime versions and review each external project's current LICENSE/security posture before adoption. ResourceSpace/WhisperX remain replaceable providers/components, not MFW domain authorities.
 
+## 13. Additional integration wave — unified discovery search and agenda portability
+
+This wave improves participant discovery after the programme, Brand 365, replay and editorial objects are already authoritative.
+
+### 13.1 Unified Discovery Search — ADOPT/SIDECAR
+
+Reference: https://github.com/meilisearch/meilisearch
+
+Use a dedicated MFW Meilisearch Community Edition index/read model for:
+
+- brands and designers;
+- shows and collections;
+- BFS sessions/topics;
+- speakers and organisations;
+- venues;
+- approved editorial/Brand 365 content;
+- reviewed replay transcripts/chapters;
+- optionally public sponsor/partner entities.
+
+Index flow:
+
+authoritative MFW event/outbox -> indexing job -> Meilisearch document -> search result ID -> MFW entity lookup/render
+
+The search engine never owns publication state, access rights, agenda state or CRM profile truth.
+
+Every indexed document should carry only bounded search projection fields such as entity type, canonical ID, title, language, tags/topics, public status, event brand and searchable text.
+
+Private/unpublished entities must not be indexed into a public index.
+
+### 13.2 Search Relevance Governance — ADOPT
+
+Keep relevance configuration in versioned MFW configuration, including:
+
+- searchable attributes;
+- filters/facets;
+- synonyms;
+- language-specific normalization;
+- curated promoted result overrides where product/editorial policy requires them;
+- deprecated term mappings;
+- fallback behavior.
+
+A curated override points to canonical entity IDs and expires/version-controls like other content configuration.
+
+Track privacy-safe search analytics:
+
+- query count;
+- zero-result queries;
+- filter usage;
+- result click/open;
+- downstream add-to-agenda/follow/replay actions.
+
+Do not use raw search logs as CRM facts without an explicit approved analytics mapping.
+
+### 13.3 Personal Agenda Calendar Export — ADOPT
+
+Reference: https://github.com/kewisch/ical.js
+
+Generate standards-based iCalendar output from the canonical MFW/BFS agenda.
+
+Support:
+
+- download .ics for an agenda;
+- individual event add-to-calendar;
+- stable UID per programme item;
+- timezone-safe start/end;
+- location;
+- last-modified / sequence behavior;
+- cancellation or moved-session updates;
+- event deep link.
+
+Optional subscription feeds may use a high-entropy revocable token. A calendar feed token is not an authentication credential for the rest of the account.
+
+External calendar copies are projections. MFW remains the source for programme changes and agenda conflict logic.
+
+### 13.4 Cross-project reuse
+
+FLASHIN already operates Meilisearch in the portfolio. Reuse deployment/health/indexing lessons where applicable, but do not share FLASHIN indexes, credentials or business data with MFW.
+
+### 13.5 Additional acceptance
+
+- deleting/unpublishing an entity removes it from discoverable search within a bounded indexing SLA;
+- search results resolve back to canonical MFW IDs;
+- index rebuild from PostgreSQL is deterministic;
+- zero-result analytics contain no unnecessary personal data;
+- ICS UIDs remain stable across non-identity programme edits;
+- schedule moves/cancellations produce correct calendar updates without turning the external calendar into programme authority.
+
+**Sequencing:** durable PostgreSQL + pg-boss/outbox first -> search projections -> replay transcript indexing -> agenda calendar export/subscription.
+
+**Dependency note:** use only a currently permitted Meilisearch edition/features; re-check license/edition terms before production upgrades.
+
