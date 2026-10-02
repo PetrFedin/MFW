@@ -1,8 +1,8 @@
-const CACHE='mfp-shell-2026-10-03-p1';
+const CACHE='mfp-shell-2026-10-03-p2';
 const CORE=[
   '/platform/index.html',
-  '/platform/platform.css?v=20261003p1',
-  '/platform/platform.js?v=20261003p1',
+  '/platform/platform.css?v=20261003p2',
+  '/platform/platform.js?v=20261003p2',
   '/platform/event-data.js',
   '/platform/bfs/index.html',
   '/platform/made-in-moscow/index.html',
