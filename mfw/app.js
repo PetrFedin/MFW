@@ -58,8 +58,7 @@
         city:e.city||'',
         moderator:e.moderator||'',
         participants:e.participants||[],
-        source:'OFFICIAL',
-        madeInMoscowVerified:!!b.madeInMoscowVerified
+        source:'OFFICIAL'
       };
     });
     brands=(officialMfw.brands||[]).map(function(b){
@@ -73,7 +72,8 @@
         descRu:'Участник официального каталога Московской недели моды 2026.',
         descEn:'Official Moscow Fashion Week 2026 participant.',
         showId:b.showId||null,
-        source:'OFFICIAL'
+        source:'OFFICIAL',
+        madeInMoscowVerified:!!b.madeInMoscowVerified
       };
     });
   }
