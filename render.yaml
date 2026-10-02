@@ -47,11 +47,27 @@ services:
         fromDatabase:
           name: mfw-postgres
           property: connectionString
-      - key: MFW_JWT_SECRET
+      - key: MFW_ALLOWED_ORIGIN
+        value: https://mfw-platform.onrender.com
+      - key: MFW_PUBLIC_BASE_URL
+        value: https://mfw-authority.onrender.com
+      - key: MFW_REVERIFY_INTERVAL_MINUTES
+        value: "360"
+      - key: MFW_REVERIFY_BATCH_SIZE
+        value: "250"
+      - key: MFW_ADMIN_TOKEN
         generateValue: true
-      - key: TELEGRAM_BOT_TOKEN
+      - key: MFW_ES256_SEED
+        generateValue: true
+      - key: MFW_TELEGRAM_BOT_TOKEN
         sync: false
-      - key: VK_CLIENT_ID
+      - key: MFW_TELEGRAM_WEBHOOK_SECRET
         sync: false
-      - key: VK_CLIENT_SECRET
+      - key: MFW_TELEGRAM_LOGIN_CLIENT_ID
+        sync: false
+      - key: MFW_TELEGRAM_LOGIN_CLIENT_SECRET
+        sync: false
+      - key: MFW_VK_SERVICE_TOKEN
+        sync: false
+      - key: MFW_VK_APP_ID
         sync: false
