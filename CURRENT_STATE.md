@@ -4,12 +4,13 @@ Last consolidated state: **2026-10-02**
 
 ## Current product
 
-The platform is a dual-event fashion ecosystem:
+The platform is a three-direction fashion ecosystem:
 
 - Moscow Fashion Week (MFW)
 - BRICS+ Fashion Summit (BFS)
+- «Сделано в Москве» ecosystem partner experience
 
-A user has one platform identity but registers separately for each event.
+A user has one platform identity across all three directions. MFW/BFS retain event-specific participation rules; «Сделано в Москве» consumer/buyer access reuses the shared identity while brand residency/verification is a separate authoritative status.
 
 ## Implemented areas
 
@@ -42,11 +43,25 @@ A user has one platform identity but registers separately for each event.
 - reminders
 - schedule-change notifications
 
+### Сделано в Москве
+
+- third branded platform experience in official red/white-inspired visual language;
+- one-platform account access without a repeated consumer profile;
+- Made in Moscow Verified badge contract;
+- verified-roster-only badge rule;
+- dedicated Hub;
+- Digital Market / Showroom concept;
+- Buyer Bridge;
+- Brand365 continuity;
+- partner Evidence Dashboard;
+- cross-platform brand badge support for MFW surfaces;
+- cross-moderation schema prepared behind the PostgreSQL production gate.
+
 ### Shared platform
 
 - identity/account
-- separate MFW/BFS registration
-- event switcher
+- separate MFW/BFS registration where required
+- three-direction switcher: MFW / BFS / Сделано в Москве
 - combined agenda foundation
 - official event-data snapshot and change detection
 - notifications/reminders
@@ -112,7 +127,7 @@ Modelled metrics must not be presented as audited business valuation.
 
 ## PostgreSQL
 
-Current migrations: **001–020**.
+Current migrations: **001–021**.
 
 Latest schema layer:
 
