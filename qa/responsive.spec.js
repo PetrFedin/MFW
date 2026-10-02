@@ -155,6 +155,26 @@ test('premium companion Discover stays usable across the platform', async ({ pag
   await expect(page.locator('#directorySearch')).toBeFocused();
 });
 
+test('Deal Room preview is read-only and viewport safe', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="dealroom"]').click();
+  await expect(page.getByText('PREVIEW · NO COMMERCIAL DATA SAVED')).toBeVisible();
+  await expect(page.locator('.dealroom-stage-grid article')).toHaveCount(5);
+  const requestButtons = page.locator('.request-chip-grid button');
+  await expect(requestButtons).toHaveCount(8);
+  for (const button of await requestButtons.all()) {
+    await expect(button).toBeDisabled();
+  }
+  await expect(page.locator('#hubContent input, #hubContent textarea, #hubContent select')).toHaveCount(0);
+  await expectNoDocumentOverflow(page);
+  const hub = page.locator('.hub-card');
+  const box = await hub.boundingBox();
+  expect(box.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
+  expect(box.height).toBeLessThanOrEqual(page.viewportSize().height + 1);
+  await page.screenshot({ path: testInfo.outputPath('deal-room-preview.png') });
+});
+
 test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) => {
   const manifestResponse = await page.request.get('/manifest.webmanifest');
   expect(manifestResponse.ok()).toBeTruthy();
