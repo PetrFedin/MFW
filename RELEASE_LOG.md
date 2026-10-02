@@ -253,3 +253,26 @@ Evidence:
 - Phase 0 fail-closed contract: PASS;
 - responsive/device agents: **56/56 PASS**;
 - tested viewports: 360×800, 375×667, 393×852, 430×932, 744×1133, 1024×1366, 1440×900.
+
+## 2026-10-03 — Deal Room preview + lifecycle participant mode
+
+Implemented without bypassing the PostgreSQL production gate:
+
+- Buyer / Brand Deal Room read-only preview;
+- five-stage commercial follow-up path;
+- eight structured buyer request types;
+- private-document categories;
+- Observed / Reported / Verified commercial evidence classes;
+- no writable commercial form and no persisted wholesale/order state;
+- lifecycle-aware Now: Before / Live Days / After Event;
+- post-event continuation into Discover, Brand365 and commercial follow-up;
+- replay shown as confirmed only from explicit media state;
+- lifecycle agent tested in both current post-event and frozen live-day states.
+
+Evidence before final cache rotation:
+- Phase 0 fail-closed contract: PASS;
+- Deal Room responsive wave: 63/63 PASS;
+- lifecycle responsive wave: 77/77 PASS;
+- complete matrix: 360×800, 375×667, 393×852, 430×932, 744×1133, 1024×1366, 1440×900.
+
+Final participant shell cache revision: `mfp-shell-2026-10-03-p2`.
