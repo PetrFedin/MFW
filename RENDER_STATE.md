@@ -126,7 +126,7 @@ Until `DATABASE_URL` is securely bound:
 Admission sequence:
 1. securely bind existing `mfw-postgres` as `DATABASE_URL`;
 2. set `MFW_REQUIRE_POSTGRES=true`;
-3. authority startup applies migrations 001–020 transactionally;
+3. authority startup applies migrations 001–021 transactionally;
 4. verify schema reconciliation;
 5. verify `dataMode=postgres`;
 6. verify social reverification;
