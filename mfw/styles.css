@@ -272,3 +272,8 @@ button,.action,.icon-btn,.nav-btn,.role-btn,.chip{touch-action:manipulation}
   .grid2,.editorial-brand-grid,.brand-look-grid,.street-feed{grid-template-columns:1fr}
   .street-post.tall{grid-row:auto;min-height:320px}.stat-grid{grid-template-columns:1fr 1fr}.passport{grid-template-columns:1fr}.hero-title{max-width:280px}
 }
+
+/* MADE_IN_MOSCOW_VERIFIED_BADGE_2026_10_02 */
+.made-verified{position:absolute;left:12px;top:42px;z-index:3;background:#ff4a43;color:#fff;padding:6px 8px;font-size:7px;font-weight:950;letter-spacing:.06em;border-radius:2px}
+.made-verified-detail{display:inline-block;background:#ff4a43;color:#fff;padding:7px 9px;margin:8px 0 12px;font-size:8px;font-weight:950;letter-spacing:.08em}
+@media(max-width:430px){.made-verified{left:10px;top:38px;font-size:6.5px;max-width:150px}}
