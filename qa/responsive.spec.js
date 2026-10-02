@@ -107,8 +107,24 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.locator('[data-event="made"]').click();
   const frame = page.frameLocator('#eventFrame');
   await expect(frame.locator('.made-brand')).toBeVisible();
-  await expect(frame.getByText('МОСКОВСКИЕ', { exact: false }).first()).toBeVisible();
+  const heroTitle = frame.locator('.hero h1');
+  await expect(heroTitle).toBeVisible();
   await expect(frame.getByText('Made in Moscow', { exact: false }).first()).toBeVisible();
+  const heroGeometry = await heroTitle.evaluate((el) => {
+    const title = el.getBoundingClientRect();
+    const column = el.closest('.hero-copy').getBoundingClientRect();
+    return {
+      titleLeft: title.left,
+      titleRight: title.right,
+      columnLeft: column.left,
+      columnRight: column.right,
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth
+    };
+  });
+  expect(heroGeometry.titleLeft).toBeGreaterThanOrEqual(heroGeometry.columnLeft - 1);
+  expect(heroGeometry.titleRight).toBeLessThanOrEqual(heroGeometry.columnRight + 1);
+  expect(heroGeometry.scrollWidth).toBeLessThanOrEqual(heroGeometry.clientWidth + 1);
   const overflow = await frame.locator('body').evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(2);
   await frame.locator('[data-section="verified"]').first().click();
