@@ -47,7 +47,7 @@ Current repository state already includes:
 - buyer/delegate B2B flows;
 - notification/reminder engine;
 - Owner Control Tower;
-- PostgreSQL schema through migrations 001–020.
+- PostgreSQL schema through migrations 001–021.
 
 The current production blocker recorded in `RENDER_STATE.md` is durable PostgreSQL admission. New persistent modules in this plan must not be declared production-ready while the authority is running in memory mode.
 
@@ -104,7 +104,7 @@ Legend:
 **Do this before every new persistent integration.**
 
 1. Provision/wire dedicated MFW PostgreSQL.
-2. Apply and verify migrations 001–020.
+2. Apply and verify migrations 001–021.
 3. Prove schema reconciliation and exact migration set.
 4. Prove `dataMode=postgres`.
 5. Re-run current identity/registration/agenda/loyalty golden paths.
@@ -1050,6 +1050,8 @@ Do not use participant interaction to infer political, health or other sensitive
 **Dependency note:** ARSnova is a reference implementation only; do not introduce a second participant/event database.
 
 ## 15. Additional integration wave — Made in Moscow ecosystem partnership
+
+**Implementation status — 2026-10-02:** third platform experience, shared-account entry, investor route, responsive QA coverage, Verified badge rendering contract and migration 021 partner-program/cross-moderation schema are implemented in repository. Real residency badges remain empty until an approved roster/import/API is connected; no brand is inferred as a resident from city or MFW participation.
 
 This wave reflects the **existing real-world role** of the city project «Сделано в Москве» / Made in Moscow in Moscow Fashion Week and converts that offline partnership into a bounded digital capability.
 
