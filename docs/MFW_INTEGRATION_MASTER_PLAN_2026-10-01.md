@@ -1295,6 +1295,9 @@ Typed-agent patterns from https://github.com/pydantic/pydantic-ai may be used fo
 
 ## 16. Premium commercial wave — Buyer / Brand Deal Room
 
+**Implementation status — 2026-10-03: Deal Room preview.** A stateless/read-only product preview now demonstrates the bounded chain `meeting -> shortlist -> structured request -> response -> external handoff`, private-document categories and Observed/Reported/Verified outcome classes. All request controls are disabled and no commercial value is persisted. This does **not** admit the persistent Deal Room: ACL, requests, documents, due dates, responses, handoffs and outcome evidence remain gated by Phase 0 durable PostgreSQL plus formal policy/audit/idempotency.
+
+
 This wave closes the gap between networking and measurable commercial follow-up. MFW/BFS should not stop at "meeting happened"; an authorised buyer/brand pair can continue in a structured deal workspace.
 
 ### Portfolio pattern source — REUSE/ADAPT
@@ -1418,3 +1421,15 @@ Do not claim GMV/revenue merely because a meeting or request occurred.
 
 **Commercial framing:** sell this as the layer that converts an event platform into a persistent B2B fashion business network.
 
+### Participant lifecycle projection — IMPLEMENTED / STATELESS
+
+The shared participant Hub now derives `Before / Live / After` from the published programme dates.
+
+Purpose:
+- before the event, prioritise registration, Discover and agenda;
+- during event days, prioritise today's programme;
+- after the event, prioritise saved relationships, follow-up, Brand365, verified replay availability and the Deal Room boundary.
+
+This projection is read-only and rebuildable. It does not become programme, agenda, media, CRM or commercial authority.
+
+Replay is surfaced as confirmed only when the underlying media state explicitly says so. Deal Room/follow-up activity is not interpreted as revenue without separate outcome evidence.
