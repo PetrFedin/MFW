@@ -174,3 +174,27 @@ Authority at that release:
 - deep self-test PASS;
 - `dataMode=memory`;
 - PostgreSQL admission still blocked by missing runtime binding.
+
+## 2026-10-02 free-contour correction
+
+User constraint: **no paid Render resources**.
+
+Canonical Blueprint corrections:
+
+- removed `mfw-social-reverification` Render Cron from `render.yaml`;
+- authority now performs stale-aware startup catch-up plus in-process interval reverification;
+- this is deliberately eventual while the free web service can sleep; it is not represented as strict six-hour wall-clock execution;
+- `DATABASE_URL` remains a `fromDatabase: mfw-postgres / connectionString` reference;
+- `MFW_REQUIRE_POSTGRES=true` remains the production target;
+- Blueprint secret names were reconciled with the actual authority runtime:
+  - `MFW_TELEGRAM_BOT_TOKEN`;
+  - `MFW_TELEGRAM_WEBHOOK_SECRET`;
+  - `MFW_TELEGRAM_LOGIN_CLIENT_ID`;
+  - `MFW_TELEGRAM_LOGIN_CLIENT_SECRET`;
+  - `MFW_VK_SERVICE_TOKEN`;
+  - `MFW_VK_APP_ID`;
+  - `MFW_ADMIN_TOKEN`;
+  - `MFW_ES256_SEED`.
+- `MFW_REVERIFY_INTERVAL_MINUTES=360` and `MFW_REVERIFY_BATCH_SIZE=250` are explicit non-secret config.
+
+Current live blocker remains unchanged: the direct-created authority still needs the existing free PostgreSQL connection securely injected by Render. The MCP update-env action can set literal values but does not expose/apply the generated `fromDatabase` secret reference, so the credential is not reconstructed outside Render.
