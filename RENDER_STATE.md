@@ -1,6 +1,6 @@
 # Render deployment state
 
-Snapshot date: **2026-09-30**
+Snapshot date: **2026-10-02**
 
 ## Legacy live contour
 
@@ -106,24 +106,34 @@ All three canonical services now source `PetrFedin/MFW:main` directly and have `
 
 ## Remaining production-persistence blocker
 
-There is currently no dedicated MFW PostgreSQL instance in the Render workspace.
+Dedicated PostgreSQL now exists:
 
-Do **not** reuse `renova-review-db`; it belongs to another project.
+- name: `mfw-postgres`
+- id: `dpg-daugci8jo6nc738akc10-a`
+- plan: Free
+- PostgreSQL: 17
+- region: Frankfurt
+- status: available
 
-Until a dedicated MFW PostgreSQL is provisioned and `DATABASE_URL` is wired:
-- authority can run and self-test in memory mode;
+The blocker is **not database provisioning**. The direct-created `mfw-authority` service has not inherited the Blueprint `fromDatabase` binding, so its runtime still reports `dataMode=memory`.
+
+Until `DATABASE_URL` is securely bound:
 - persistence across service restarts is not production-grade;
 - server-side social reverification remains disabled;
-- `MFW_REQUIRE_POSTGRES` remains `false`.
+- `MFW_REQUIRE_POSTGRES` remains false in the live direct-created service;
+- `GET /ready` must return 503 after the readiness-contract release.
 
-After PostgreSQL is available:
-1. wire `DATABASE_URL`;
-2. run migrations 001–016;
-3. verify schema reconciliation;
-4. verify `dataMode=postgres`;
-5. verify social reverification;
-6. set `MFW_REQUIRE_POSTGRES=true`;
-7. record exact deploy in this file and `RELEASE_LOG.md`.
+Admission sequence:
+1. securely bind existing `mfw-postgres` as `DATABASE_URL`;
+2. set `MFW_REQUIRE_POSTGRES=true`;
+3. authority startup applies migrations 001–020 transactionally;
+4. verify schema reconciliation;
+5. verify `dataMode=postgres`;
+6. verify social reverification;
+7. verify `GET /ready` = 200;
+8. record exact deploy in this file and `RELEASE_LOG.md`.
+
+Do not expose or reconstruct the generated database credential outside Render.
 
 
 ## 2026-09-30 exact-head MVP identity wave
@@ -141,3 +151,26 @@ Authority deep self-test: PASS.
 Persistence remains blocked only by secure `DATABASE_URL` wiring from `mfw-postgres` to the direct-created authority service. Current mode: `memory`.
 
 Auto-deploy defect is confirmed: commits did not produce deployments automatically even though `autoDeploy=yes`; until fixed, exact-head verification requires explicit deploy trigger.
+
+
+## 2026-10-02 responsive exact-head recovery
+
+Workspace: `ME` / `tea-dagitrp5efls73apuv50`.
+
+Auto-deploy remains operationally unproven despite `autoDeploy=yes`. Render had stopped creating new deploys after 2026-09-30, so the canonical contour was explicitly redeployed.
+
+Exact deployed commit before the Phase 0 readiness wave:
+`850a13bbce33a720a9bff635f606e3e4fbc6f19d`
+
+Deploy evidence:
+- `mfw-platform`: `dep-davfr91srm7s73brfahg` — LIVE;
+- `mfw-authority`: `dep-davg00k9v7es73flrcr0` — LIVE;
+- `mfw-api`: `dep-davg016k1f9s73a6ckag` — LIVE.
+
+Public platform now serves responsive asset revision `platform.css?v=20261001r3`.
+
+Authority at that release:
+- version `mfw-authority-v9-mvp-golden-path`;
+- deep self-test PASS;
+- `dataMode=memory`;
+- PostgreSQL admission still blocked by missing runtime binding.
