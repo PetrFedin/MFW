@@ -135,3 +135,45 @@ Auto-deploy:
 
 Current persistence gate:
 `mfw-postgres → DATABASE_URL → migrations 001-019 → schema PASS → dataMode=postgres → PostgreSQL Golden Paths → social reverification → MFW_REQUIRE_POSTGRES=true`.
+
+## 2026-10-02 — Responsive exact-head recovery and Phase 0 admission contract
+
+### Responsive live recovery
+
+Verified exact responsive commit:
+`850a13bbce33a720a9bff635f606e3e4fbc6f19d`
+
+Render workspace: `ME`.
+
+Forced exact-head deploys were required because no automatic Render deploys had been created after 2026-09-30 despite `autoDeploy=yes`.
+
+Deploys:
+- platform: `dep-davfr91srm7s73brfahg` — LIVE;
+- authority: `dep-davg00k9v7es73flrcr0` — LIVE;
+- API: `dep-davg016k1f9s73a6ckag` — LIVE.
+
+Verification:
+- public platform serves responsive CSS revision `r3`;
+- responsive device matrix: 35/35 PASS;
+- authority deep self-test: PASS;
+- API and authority both reached LIVE on exact responsive SHA.
+
+### Phase 0 production admission hardening
+
+Added:
+- fail-closed `GET /ready`;
+- Render release SHA projection;
+- memory-mode readiness regression test;
+- strict-mode missing-DB regression test;
+- exact-SHA production-admission checker;
+- Phase 0 CI workflow;
+- dedicated admission runbook.
+
+Durability remains **BLOCKED**, not failed:
+- existing `mfw-postgres` is available;
+- direct-created authority still lacks secure `DATABASE_URL` binding;
+- current live authority therefore remains `dataMode=memory`;
+- social reverification remains inactive.
+
+Next gate:
+`secure DB binding -> MFW_REQUIRE_POSTGRES=true -> migrations 001-020 -> schema PASS -> /ready 200 -> PostgreSQL Golden Paths -> reverification active`.
