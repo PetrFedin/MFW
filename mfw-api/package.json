@@ -8,9 +8,10 @@
     "check": "node --check server-v2.js",
     "migrate": "node migrate.js",
     "reverify:social": "node reverify-social.js",
-    "check:foundation": "node --check server-v2.js && node --check brand365-store.js && node --check social-providers.js && node --check reverify-social.js && node --check readiness-contract.test.js && node --check check-production-admission.js && node readiness-contract.test.js",
+    "check:foundation": "node --check server-v2.js && node --check brand365-store.js && node --check social-providers.js && node --check reverify-social.js && node --check readiness-contract.test.js && node --check check-production-admission.js && node --check feature-flags.js && node --check feature-flags.test.js && node --check feature-rollout-api.test.js && node readiness-contract.test.js && node feature-flags.test.js && node feature-rollout-api.test.js",
     "test:readiness": "node readiness-contract.test.js",
-    "check:production-admission": "node check-production-admission.js"
+    "check:production-admission": "node check-production-admission.js",
+    "test:feature-flags": "node feature-flags.test.js && node feature-rollout-api.test.js"
   },
   "dependencies": {
     "pg": "^8.16.3",
