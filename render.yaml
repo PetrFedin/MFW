@@ -55,25 +55,3 @@ services:
         sync: false
       - key: VK_CLIENT_SECRET
         sync: false
-
-  - type: cron
-    name: mfw-social-reverification
-    runtime: node
-    repo: https://github.com/PetrFedin/MFW
-    branch: main
-    plan: free
-    region: frankfurt
-    schedule: "17 3 * * *"
-    buildCommand: cd mfw-api && npm install --omit=dev
-    startCommand: cd mfw-api && node reverify-social.js
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: mfw-postgres
-          property: connectionString
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: VK_CLIENT_ID
-        sync: false
-      - key: VK_CLIENT_SECRET
-        sync: false
