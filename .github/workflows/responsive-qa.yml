@@ -22,6 +22,12 @@ jobs:
       - name: Install QA dependencies
         working-directory: qa
         run: npm install --no-audit --no-fund
+      - name: Check browser JavaScript syntax
+        run: |
+          node --check mfw/app.js
+          node --check mfw/platform/platform.js
+          node --check mfw/platform/bfs/app.js
+          node --check mfw/platform/made-in-moscow/app.js
       - name: Install Chromium
         working-directory: qa
         run: npx playwright install --with-deps chromium
