@@ -20,71 +20,71 @@ body.bfs-mode .hub-button{background:#111;color:#fff;border-color:#111}
 @media(max-width:760px){.hub-button{display:block}.hub-card{padding:24px 16px}.hub-card>h2{font-size:37px}.directory-grid{grid-template-columns:1fr}.agenda-item{grid-template-columns:74px 1fr}.agenda-item>.agenda-action{grid-column:2}.wallet-grid{grid-template-columns:1fr}.analytics-grid{grid-template-columns:repeat(2,1fr)}.analytics-stat:nth-child(2){border-right:0}.analytics-stat:nth-child(-n+2){border-bottom:1px solid #111}.kpi-row{grid-template-columns:1fr}.hub-tabs button{padding:10px 11px}}
 
 /* Event-context theming: shared capabilities inherit the active event brand. */
-body:not(.bfs-mode) .hub-card,
-body:not(.bfs-mode) .for-you-card,
-body:not(.bfs-mode) .value-card{background:#070707;color:#f4f4ee;border:1px solid #2b2b2b}
-body:not(.bfs-mode) .hub-card .drawer-kicker,
-body:not(.bfs-mode) .for-you-card .drawer-kicker,
-body:not(.bfs-mode) .value-card .drawer-kicker{color:#c8ff00}
-body:not(.bfs-mode) .hub-tabs,
-body:not(.bfs-mode) .hub-tabs button,
-body:not(.bfs-mode) .directory-card,
-body:not(.bfs-mode) .directory-search,
-body:not(.bfs-mode) .directory-filter,
-body:not(.bfs-mode) .agenda-list,
-body:not(.bfs-mode) .agenda-item,
-body:not(.bfs-mode) .wallet-card,
-body:not(.bfs-mode) .analytics-grid,
-body:not(.bfs-mode) .analytics-stat,
-body:not(.bfs-mode) .kpi-map,
-body:not(.bfs-mode) .kpi-row,
-body:not(.bfs-mode) .rec-card,
-body:not(.bfs-mode) .value-grid,
-body:not(.bfs-mode) .value-grid>div,
-body:not(.bfs-mode) .value-funnel{border-color:#343434}
-body:not(.bfs-mode) .hub-tabs button,
-body:not(.bfs-mode) .directory-search,
-body:not(.bfs-mode) .directory-filter,
-body:not(.bfs-mode) .directory-card,
-body:not(.bfs-mode) .wallet-card{background:#0e0e0e;color:#f4f4ee}
-body:not(.bfs-mode) .hub-tabs button.active,
-body:not(.bfs-mode) .directory-actions button,
-body:not(.bfs-mode) .agenda-action,
-body:not(.bfs-mode) .wallet-action,
-body:not(.bfs-mode) .rec-actions button{background:#c8ff00;color:#050505;border-color:#c8ff00}
-body:not(.bfs-mode) .directory-actions button.secondary{background:transparent;color:#c8ff00;border-color:#c8ff00}
-body:not(.bfs-mode) .directory-card p,
-body:not(.bfs-mode) .hub-note,
-body:not(.bfs-mode) .agenda-item p,
-body:not(.bfs-mode) .wallet-card small,
-body:not(.bfs-mode) .value-card p,
-body:not(.bfs-mode) .rec-card p{color:#aaa}
-body:not(.bfs-mode) .rec-path{background:#c8ff00;color:#050505}
-body:not(.bfs-mode) .wallet-progress{background:#252525}
-body:not(.bfs-mode) .wallet-progress i{background:#c8ff00}
-body:not(.bfs-mode) .agenda-alert{background:#171717;color:#f4f4ee;border-color:#c8ff00}
-body:not(.bfs-mode) .agenda-alert.agenda-ok{background:#0e1600}
-body:not(.bfs-mode) .value-card h2,
-body:not(.bfs-mode) .for-you-card h2,
-body:not(.bfs-mode) .hub-card>h2,
-body:not(.bfs-mode) .directory-card h3,
-body:not(.bfs-mode) .rec-card h3,
-body:not(.bfs-mode) .value-grid b,
-body:not(.bfs-mode) .owner-funnel h3,
-body:not(.bfs-mode) .agenda-item h3,
-body:not(.bfs-mode) .analytics-stat b,
-body:not(.bfs-mode) .wallet-card .days{font-family:Arial,Helvetica,sans-serif;font-weight:900;letter-spacing:-.04em}
-body:not(.bfs-mode) .drawer-close{color:#c8ff00;border-color:#c8ff00;background:#070707}
-body:not(.bfs-mode) .value-funnel span,
-body:not(.bfs-mode) .funnel-step span{color:#ddd}
-body:not(.bfs-mode) .funnel-step{border-color:#343434}
+body:not(.bfs-mode):not(.made-mode) .hub-card,
+body:not(.bfs-mode):not(.made-mode) .for-you-card,
+body:not(.bfs-mode):not(.made-mode) .value-card{background:#070707;color:#f4f4ee;border:1px solid #2b2b2b}
+body:not(.bfs-mode):not(.made-mode) .hub-card .drawer-kicker,
+body:not(.bfs-mode):not(.made-mode) .for-you-card .drawer-kicker,
+body:not(.bfs-mode):not(.made-mode) .value-card .drawer-kicker{color:#c8ff00}
+body:not(.bfs-mode):not(.made-mode) .hub-tabs,
+body:not(.bfs-mode):not(.made-mode) .hub-tabs button,
+body:not(.bfs-mode):not(.made-mode) .directory-card,
+body:not(.bfs-mode):not(.made-mode) .directory-search,
+body:not(.bfs-mode):not(.made-mode) .directory-filter,
+body:not(.bfs-mode):not(.made-mode) .agenda-list,
+body:not(.bfs-mode):not(.made-mode) .agenda-item,
+body:not(.bfs-mode):not(.made-mode) .wallet-card,
+body:not(.bfs-mode):not(.made-mode) .analytics-grid,
+body:not(.bfs-mode):not(.made-mode) .analytics-stat,
+body:not(.bfs-mode):not(.made-mode) .kpi-map,
+body:not(.bfs-mode):not(.made-mode) .kpi-row,
+body:not(.bfs-mode):not(.made-mode) .rec-card,
+body:not(.bfs-mode):not(.made-mode) .value-grid,
+body:not(.bfs-mode):not(.made-mode) .value-grid>div,
+body:not(.bfs-mode):not(.made-mode) .value-funnel{border-color:#343434}
+body:not(.bfs-mode):not(.made-mode) .hub-tabs button,
+body:not(.bfs-mode):not(.made-mode) .directory-search,
+body:not(.bfs-mode):not(.made-mode) .directory-filter,
+body:not(.bfs-mode):not(.made-mode) .directory-card,
+body:not(.bfs-mode):not(.made-mode) .wallet-card{background:#0e0e0e;color:#f4f4ee}
+body:not(.bfs-mode):not(.made-mode) .hub-tabs button.active,
+body:not(.bfs-mode):not(.made-mode) .directory-actions button,
+body:not(.bfs-mode):not(.made-mode) .agenda-action,
+body:not(.bfs-mode):not(.made-mode) .wallet-action,
+body:not(.bfs-mode):not(.made-mode) .rec-actions button{background:#c8ff00;color:#050505;border-color:#c8ff00}
+body:not(.bfs-mode):not(.made-mode) .directory-actions button.secondary{background:transparent;color:#c8ff00;border-color:#c8ff00}
+body:not(.bfs-mode):not(.made-mode) .directory-card p,
+body:not(.bfs-mode):not(.made-mode) .hub-note,
+body:not(.bfs-mode):not(.made-mode) .agenda-item p,
+body:not(.bfs-mode):not(.made-mode) .wallet-card small,
+body:not(.bfs-mode):not(.made-mode) .value-card p,
+body:not(.bfs-mode):not(.made-mode) .rec-card p{color:#aaa}
+body:not(.bfs-mode):not(.made-mode) .rec-path{background:#c8ff00;color:#050505}
+body:not(.bfs-mode):not(.made-mode) .wallet-progress{background:#252525}
+body:not(.bfs-mode):not(.made-mode) .wallet-progress i{background:#c8ff00}
+body:not(.bfs-mode):not(.made-mode) .agenda-alert{background:#171717;color:#f4f4ee;border-color:#c8ff00}
+body:not(.bfs-mode):not(.made-mode) .agenda-alert.agenda-ok{background:#0e1600}
+body:not(.bfs-mode):not(.made-mode) .value-card h2,
+body:not(.bfs-mode):not(.made-mode) .for-you-card h2,
+body:not(.bfs-mode):not(.made-mode) .hub-card>h2,
+body:not(.bfs-mode):not(.made-mode) .directory-card h3,
+body:not(.bfs-mode):not(.made-mode) .rec-card h3,
+body:not(.bfs-mode):not(.made-mode) .value-grid b,
+body:not(.bfs-mode):not(.made-mode) .owner-funnel h3,
+body:not(.bfs-mode):not(.made-mode) .agenda-item h3,
+body:not(.bfs-mode):not(.made-mode) .analytics-stat b,
+body:not(.bfs-mode):not(.made-mode) .wallet-card .days{font-family:Arial,Helvetica,sans-serif;font-weight:900;letter-spacing:-.04em}
+body:not(.bfs-mode):not(.made-mode) .drawer-close{color:#c8ff00;border-color:#c8ff00;background:#070707}
+body:not(.bfs-mode):not(.made-mode) .value-funnel span,
+body:not(.bfs-mode):not(.made-mode) .funnel-step span{color:#ddd}
+body:not(.bfs-mode):not(.made-mode) .funnel-step{border-color:#343434}
 @media(max-width:680px){
- body:not(.bfs-mode) .hub-card,
- body:not(.bfs-mode) .for-you-card,
- body:not(.bfs-mode) .value-card{width:calc(100vw - 20px);max-width:none;max-height:calc(100dvh - 84px);box-sizing:border-box;padding:22px 16px}
- body:not(.bfs-mode) .hub-card>h2,
- body:not(.bfs-mode) .for-you-card h2,
- body:not(.bfs-mode) .value-card h2{font-size:36px;line-height:.92}
+ body:not(.bfs-mode):not(.made-mode) .hub-card,
+ body:not(.bfs-mode):not(.made-mode) .for-you-card,
+ body:not(.bfs-mode):not(.made-mode) .value-card{width:calc(100vw - 20px);max-width:none;max-height:calc(100dvh - 84px);box-sizing:border-box;padding:22px 16px}
+ body:not(.bfs-mode):not(.made-mode) .hub-card>h2,
+ body:not(.bfs-mode):not(.made-mode) .for-you-card h2,
+ body:not(.bfs-mode):not(.made-mode) .value-card h2{font-size:36px;line-height:.92}
 }
 
 .source-badge{display:inline-block;margin-left:6px;padding:3px 5px;border:1px solid currentColor;border-radius:99px;font-size:7px;letter-spacing:.08em;vertical-align:middle;opacity:.72}
@@ -112,7 +112,7 @@ button,input,select,textarea{touch-action:manipulation}
 @media (max-width:680px){
   .platform-bar{height:auto;min-height:106px;flex-wrap:wrap;align-content:center;gap:7px;padding:max(8px,env(safe-area-inset-top)) 10px 7px}
   .platform-wordmark{display:none}
-  .event-switcher{order:1;width:100%;margin:0;display:grid;grid-template-columns:70px minmax(0,1fr);border-radius:16px}
+  .event-switcher{order:1;width:100%;margin:0;display:grid;grid-template-columns:60px minmax(0,1fr) minmax(0,1fr);border-radius:16px}
   .event-button{min-width:0;min-height:42px;padding:8px 10px;overflow:hidden;text-overflow:ellipsis}
   .platform-actions{order:2;width:100%;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;overflow:visible;padding:0 0 2px}
   .platform-actions>button{display:block!important;width:100%;min-width:0;min-height:42px;padding:8px 2px;font-size:8px;letter-spacing:.03em;white-space:nowrap;overflow:hidden}
@@ -132,3 +132,21 @@ button,input,select,textarea{touch-action:manipulation}
   .platform-actions>button{padding-left:1px;padding-right:1px;font-size:7.5px;letter-spacing:.02em}
   .drawer-card,.registration-card,.investor-card,.value-card,.for-you-card,.hub-card{padding-left:13px!important;padding-right:13px!important}
 }
+
+/* MADE_IN_MOSCOW_PLATFORM_MODE_2026_10_02 */
+body.made-mode .platform-bar{background:#fff;color:#151515;border-bottom-color:#e8e8e8}
+body.made-mode .event-switcher{border-color:#dedede;background:#f7f7f4}
+body.made-mode .event-button{color:#6b6b6b}
+body.made-mode .event-button.active{background:#ff4a43;color:#fff}
+body.made-mode .account{color:#555}
+body.made-mode .event-note{background:rgba(255,255,255,.94);color:#e43c36;border:1px solid #eee}
+body.made-mode .hub-button,body.made-mode .for-you-button,body.made-mode .value-button{border-color:#ddd;background:#fff;color:#222}
+body.made-mode .investor-button{border-color:#ff4a43;background:#ff4a43;color:#fff}
+body.made-mode .account-drawer .drawer-card,body.made-mode .registration-card,body.made-mode .hub-card,body.made-mode .for-you-card,body.made-mode .value-card{background:#fff;color:#171717}
+body.made-mode .drawer-kicker{color:#e43c36}
+body.made-mode .drawer-close{border-color:#e43c36;color:#e43c36;background:#fff}
+body.made-mode .registration-item{border-color:#dedede}
+body.made-mode .made-access-item{border:2px solid #ff4a43;background:#fff8f7}
+body.made-mode .reg-actions button{background:#ff4a43;border-color:#ff4a43}
+body.made-mode .reg-actions button.secondary{background:#fff;color:#e43c36;border-color:#e43c36}
+@media(max-width:680px){body.made-mode .event-button{font-size:7.25px;line-height:1.05;padding:7px 3px;white-space:normal}}
