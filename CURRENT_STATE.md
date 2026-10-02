@@ -169,3 +169,17 @@ Automated device matrix:
 - 1440×900 desktop control.
 
 The Playwright gate in `qa/responsive.spec.js` verifies viewport containment, document-level horizontal overflow, reachable navigation, modal/drawer fit and primary touch-target height.
+
+## Phase 0 durable authority admission
+
+The repository now has an explicit production-readiness boundary:
+
+- `/health` is liveness/capability diagnostics;
+- `/ready` is fail-closed production admission;
+- memory mode is never production-ready;
+- readiness requires PostgreSQL, reconciled schema and `MFW_REQUIRE_POSTGRES=true`;
+- Render release SHA is projected through `RENDER_GIT_COMMIT`;
+- `mfw-api/readiness-contract.test.js` guards memory and strict-mode behavior;
+- `mfw-api/check-production-admission.js` verifies live exact-SHA PostgreSQL admission.
+
+The dedicated free `mfw-postgres` exists in Frankfurt on PostgreSQL 17. The remaining Phase 0 blocker is secure binding of that existing database to the direct-created `mfw-authority` service. Phase 1 stateful integrations are not production-admitted until `/ready` is green.
