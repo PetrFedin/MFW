@@ -194,6 +194,22 @@
     return data;
   }
 
+  async function hydrateMadeInMoscowBadges(){
+    try{
+      var out=await api('/v1/brands');
+      var rows=out&&Array.isArray(out.data)?out.data:[];
+      var byId={};
+      rows.forEach(function(row){byId[String(row.id)]=row;});
+      var changed=false;
+      brands.forEach(function(brand){
+        var row=byId[String(brand.id)];
+        var next=!!(row&&row.madeInMoscowVerified);
+        if(brand.madeInMoscowVerified!==next){brand.madeInMoscowVerified=next;changed=true;}
+      });
+      if(changed)render();
+    }catch(_){}
+  }
+
   function updateBackendIndicator(){
     var el=document.getElementById('backend-status');
     if(!el)return;
@@ -1747,6 +1763,7 @@
   document.documentElement.lang=state.lang;
   if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
   render();
+  hydrateMadeInMoscowBadges();
   checkBackend();
   setTimeout(handleSocialAuthReturn,50);
 })();
