@@ -155,6 +155,38 @@ test('premium companion Discover stays usable across the platform', async ({ pag
   await expect(page.locator('#directorySearch')).toBeFocused();
 });
 
+test('lifecycle Now reflects post-event truth after the published programme', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="today"]').click();
+  await expect(page.locator('.today-hero')).toHaveAttribute('data-phase', 'after');
+  await expect(page.getByText('POST-EVENT TRUTH')).toBeVisible();
+  await expect(page.locator('.today-action-grid button')).toHaveCount(4);
+  await expect(page.locator('.today-programme article')).toHaveCount(0);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('platform-now-after.png') });
+});
+
+test('lifecycle Now switches to live programme on an event day', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    const NativeDate = Date;
+    const fixed = NativeDate.parse('2026-09-29T10:00:00Z');
+    class FixedDate extends NativeDate {
+      constructor(...args) { super(...(args.length ? args : [fixed])); }
+      static now() { return fixed; }
+    }
+    window.Date = FixedDate;
+  });
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="today"]').click();
+  await expect(page.locator('.today-hero')).toHaveAttribute('data-phase', 'live');
+  await expect(page.locator('.today-programme article').first()).toBeVisible();
+  await expect(page.locator('.today-programme article')).not.toHaveCount(0);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('platform-now-live.png') });
+});
+
 test('Deal Room preview is read-only and viewport safe', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
