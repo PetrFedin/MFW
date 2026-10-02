@@ -193,3 +193,26 @@ Added:
 - module and live-authority API regression tests.
 
 No external flag provider is authoritative. No new persistent state was introduced.
+
+## 2026-10-02 — Free-tier reverification and Blueprint contract
+
+**Constraint:** no paid Render resources.
+
+Completed:
+
+- removed the dedicated Render social-reverification Cron from the canonical Blueprint;
+- added `reverification-catchup.js` with stale-aware restart/wake policy;
+- authority now serialises reverification execution to prevent overlapping interval/catch-up runs;
+- startup checks the latest persisted completed run before deciding whether catch-up is due;
+- added catch-up regression contract to the foundation CI;
+- aligned Blueprint env names with the variables actually read by `server-v2.js`;
+- removed obsolete/mismatched secret names;
+- added a Render Blueprint regression contract that fails if a dedicated Cron is reintroduced or env contracts drift.
+
+Master-plan review performed against the commits adding:
+- Section 13 — unified discovery + ICS agenda portability;
+- Section 14 — moderated Q&A/polls + replay bridge.
+
+Those additions remain roadmap-approved but dependency-gated.
+
+Phase 0 remains blocked only by secure injection of the existing `mfw-postgres` connection into the already-created `mfw-authority` runtime.
