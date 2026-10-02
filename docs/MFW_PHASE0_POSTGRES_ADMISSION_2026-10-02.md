@@ -101,3 +101,32 @@ After secure binding:
 13. record exact Render deploy evidence in `RENDER_STATE.md` and `RELEASE_LOG.md`.
 
 No Phase 1 stateful integration is production-admitted before this sequence is green.
+
+## Free-tier reverification execution
+
+A dedicated Render Cron is intentionally **not** part of the zero-paid-resource contour.
+
+Authority behavior after PostgreSQL admission:
+
+1. start the ordinary in-process reverification interval;
+2. read the latest completed persisted `social_reverification_runs.completed_at`;
+3. if no successful/completed history exists or the last completion is older than the configured interval, queue one `startup_catchup`;
+4. collapse concurrent interval/catch-up triggers behind a single in-process execution promise;
+5. persist each run through the existing `social_reverification_runs` authority.
+
+Limitation: when a free web service is asleep, JavaScript timers do not execute. Therefore this is **eventual catch-up on wake/restart**, not strict wall-clock scheduling. The later durable job phase replaces this execution mechanism without changing the social-membership domain authority.
+
+## Blueprint secret contract
+
+Use the exact runtime names consumed by `server-v2.js`:
+
+- `MFW_TELEGRAM_BOT_TOKEN`
+- `MFW_TELEGRAM_WEBHOOK_SECRET`
+- `MFW_TELEGRAM_LOGIN_CLIENT_ID`
+- `MFW_TELEGRAM_LOGIN_CLIENT_SECRET`
+- `MFW_VK_SERVICE_TOKEN`
+- `MFW_VK_APP_ID`
+- `MFW_ADMIN_TOKEN`
+- `MFW_ES256_SEED`
+
+Do not use the obsolete Blueprint-only aliases `TELEGRAM_BOT_TOKEN`, `VK_CLIENT_ID`, `VK_CLIENT_SECRET` or `MFW_JWT_SECRET`.
