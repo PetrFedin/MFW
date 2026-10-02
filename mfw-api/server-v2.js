@@ -7,6 +7,7 @@ const QRCode = require('qrcode');
 const { Brand365Store } = require('./brand365-store');
 const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMembership } = require('./social-providers');
 const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
+const { shouldRunReverificationCatchup } = require('./reverification-catchup');
 let Pool = null;
 try { ({ Pool } = require('pg')); } catch (_) {}
 
@@ -57,6 +58,7 @@ function validateInvestorBuild(){
   const brand365StorePath=path.join(__dirname,'brand365-store.js');
   const socialProvidersPath=path.join(__dirname,'social-providers.js');
   const reverifyRunnerPath=path.join(__dirname,'reverify-social.js');
+  const reverificationCatchupPath=path.join(__dirname,'reverification-catchup.js');
   const apiPackagePath=path.join(__dirname,'package.json');
   const migration001Path=path.join(__dirname,'migrations','001_init.sql');
   const migration005Path=path.join(__dirname,'migrations','005_streaming_pipeline.sql');
@@ -78,6 +80,7 @@ function validateInvestorBuild(){
   const brand365StoreSource=fs.readFileSync(brand365StorePath,'utf8');
   const socialProvidersSource=fs.readFileSync(socialProvidersPath,'utf8');
   const reverifyRunnerSource=fs.readFileSync(reverifyRunnerPath,'utf8');
+  const reverificationCatchupSource=fs.readFileSync(reverificationCatchupPath,'utf8');
   const apiPackage=fs.readFileSync(apiPackagePath,'utf8');
   const migration001=fs.readFileSync(migration001Path,'utf8');
   const migration005=fs.readFileSync(migration005Path,'utf8');
@@ -95,6 +98,7 @@ function validateInvestorBuild(){
   new Function(brand365StoreSource);
   new Function(socialProvidersSource);
   new Function(reverifyRunnerSource);
+  new Function(reverificationCatchupSource);
   JSON.parse(nativePackage);
   JSON.parse(apiPackage);
   JSON.parse(fs.readFileSync(manifestPath,'utf8'));
@@ -124,6 +128,9 @@ function validateInvestorBuild(){
   }
   for(const required of ['DATABASE_URL is required','activeMembershipCandidates','revokeIssuedClaimsIfIneligible','social_reverification_cron']){
     if(reverifyRunnerSource.indexOf(required)<0)throw new Error('missing_reverification_runner_contract:'+required);
+  }
+  for(const required of ['shouldRunReverificationCatchup','normalizeIntervalMinutes']){
+    if(reverificationCatchupSource.indexOf(required)<0)throw new Error('missing_reverification_catchup_contract:'+required);
   }
   for(const required of ['reverify:social','check:foundation']){
     if(apiPackage.indexOf(required)<0)throw new Error('missing_foundation_script:'+required);
@@ -1429,16 +1436,78 @@ async function runSocialReverification(triggerSource='manual'){
 }
 
 let reverifyTimer=null;
-function startReverificationScheduler(){
+let reverifyRunPromise=null;
+
+async function latestCompletedReverificationAt(){
+  if(!pool)return null;
+  const r=await pool.query(`SELECT completed_at FROM social_reverification_runs
+    WHERE completed_at IS NOT NULL
+    ORDER BY completed_at DESC
+    LIMIT 1`);
+  return r.rowCount?r.rows[0].completed_at:null;
+}
+
+async function runSocialReverificationExclusive(triggerSource){
+  if(reverifyRunPromise)return reverifyRunPromise;
+  reverifyRunPromise=runSocialReverification(triggerSource)
+    .finally(()=>{reverifyRunPromise=null;});
+  return reverifyRunPromise;
+}
+
+function logReverificationResult(trigger,result){
+  console.log(JSON.stringify({
+    event:'mfw_social_reverification',
+    trigger,
+    status:'completed',
+    checked:result.checked,
+    inactive:result.inactive,
+    skipped:result.skipped,
+    errors:result.errors.length
+  }));
+}
+
+function launchReverification(trigger){
+  return runSocialReverificationExclusive(trigger)
+    .then(result=>logReverificationResult(trigger,result))
+    .catch(err=>console.error(JSON.stringify({
+      event:'mfw_social_reverification',
+      trigger,
+      status:'failed',
+      error:String(err&&err.message||err)
+    })));
+}
+
+async function startReverificationScheduler(){
   if(reverifyTimer||!pool)return {active:false,reason:pool?'already_started':'postgres_required'};
   const ms=REVERIFY_INTERVAL_MINUTES*60000;
-  reverifyTimer=setInterval(()=>{
-    runSocialReverification('interval')
-      .then(result=>console.log(JSON.stringify({event:'mfw_social_reverification',status:'completed',checked:result.checked,inactive:result.inactive,skipped:result.skipped,errors:result.errors.length})))
-      .catch(err=>console.error(JSON.stringify({event:'mfw_social_reverification',status:'failed',error:String(err&&err.message||err)})));
-  },ms);
+  reverifyTimer=setInterval(()=>{launchReverification('interval');},ms);
   if(reverifyTimer.unref)reverifyTimer.unref();
-  return {active:true,intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE};
+
+  let lastCompletedAt=null;
+  let catchupDue=false;
+  let catchupError=null;
+  try{
+    lastCompletedAt=await latestCompletedReverificationAt();
+    catchupDue=shouldRunReverificationCatchup(lastCompletedAt,REVERIFY_INTERVAL_MINUTES);
+    if(catchupDue)setImmediate(()=>{launchReverification('startup_catchup');});
+  }catch(err){
+    catchupError=String(err&&err.message||err);
+    console.error(JSON.stringify({event:'mfw_reverification_catchup_check',status:'failed',error:catchupError}));
+  }
+
+  return {
+    active:true,
+    strategy:'in_process_interval_with_startup_catchup',
+    intervalMinutes:REVERIFY_INTERVAL_MINUTES,
+    batchSize:REVERIFY_BATCH_SIZE,
+    catchup:{
+      checked:!catchupError,
+      due:catchupDue,
+      lastCompletedAt:lastCompletedAt?new Date(lastCompletedAt).toISOString():null,
+      error:catchupError
+    },
+    externalCronRequired:false
+  };
 }
 
 function overview(){
@@ -1533,9 +1602,9 @@ async function router(req,res){
         apiVersion:VK_API_VERSION
       }
     },
-    reverification:{active:!!(pool&&reverifyTimer),intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE,requiresPostgres:!pool},
+    reverification:{active:!!(pool&&reverifyTimer),strategy:'in_process_interval_with_startup_catchup',intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE,requiresPostgres:!pool,catchupOnStart:true,externalCronRequired:false},
     acceleratedGoldenPath:{available:true,phases:['fresh_follow_locked','31d_eligible','unfollow_revoked'],days:31,twoAccountFlow:true,postgresCapable:true},
-    cronReverification:{entrypoint:'node reverify-social.js',recommendedSchedule:'0 */6 * * *',requires:['DATABASE_URL'],providerCredentialsOptional:true}
+    cronReverification:{status:'not_used_on_free_contour',entrypoint:'node reverify-social.js',reason:'dedicated_render_cron_has_monthly_minimum_charge',providerCredentialsOptional:true}
   });
   if(req.method==='GET'&&p==='/health/deep'){
     const result=await runDeepSelfTest();
@@ -3448,7 +3517,7 @@ async function main(){
   const selfTest=await runDeepSelfTest();
   console.log(JSON.stringify({event:'mfw_deep_self_test',...selfTest}));
   if(!selfTest.ok)throw new Error('deep_self_test_failed');
-  const scheduler=startReverificationScheduler();
+  const scheduler=await startReverificationScheduler();
   console.log(JSON.stringify({event:'mfw_reverification_scheduler',...scheduler}));
   const server=http.createServer((req,res)=>router(req,res).catch(err=>{
     console.error(err);
