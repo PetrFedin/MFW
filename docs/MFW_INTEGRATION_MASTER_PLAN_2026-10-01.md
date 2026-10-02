@@ -1293,3 +1293,128 @@ Typed-agent patterns from https://github.com/pydantic/pydantic-ai may be used fo
 
 **Commercial note:** Seamless Communication is a research candidate only until code/model-weight/commercial-use terms are explicitly approved.
 
+## 16. Premium commercial wave — Buyer / Brand Deal Room
+
+This wave closes the gap between networking and measurable commercial follow-up. MFW/BFS should not stop at "meeting happened"; an authorised buyer/brand pair can continue in a structured deal workspace.
+
+### Portfolio pattern source — REUSE/ADAPT
+
+Reuse the domain/UX concepts already proven in:
+
+https://github.com/PetrFedin/synth-v2
+
+The Synth-v2 canonical chain explicitly ends with:
+
+Campaign -> Collection -> Showroom -> Selection -> Order Builder -> Order -> Confirmation -> DealSpace
+
+MFW must **reuse patterns, not databases or order authority**.
+
+### Deal Room Authority — ADOPT
+
+Create a bounded MFW B2B workspace linked to:
+
+- confirmed meeting;
+- buyer/delegate;
+- brand/designer;
+- event/show/collection;
+- authorised participants;
+- room lifecycle/status.
+
+Possible room states:
+
+opened -> information requested -> brand responded -> follow-up active -> external commercial handoff / closed / declined
+
+MFW remains owner of the event/relationship/follow-up state. It does not become the brand's ERP or wholesale order system.
+
+### Look / Collection Shortlist — ADOPT
+
+Buyer may save/share within the room:
+
+- collection;
+- look;
+- product/line-sheet reference;
+- replay timecode;
+- buyer note;
+- interest level;
+- request type.
+
+This creates a durable bridge:
+
+runway/showroom/replay -> selected look -> buyer request -> brand response
+
+### Structured Buyer Requests — ADOPT
+
+Request types may include:
+
+- line sheet;
+- wholesale price list;
+- availability;
+- MOQ;
+- delivery window;
+- sample request;
+- showroom appointment;
+- distribution/market discussion;
+- follow-up meeting.
+
+Every request has owner, due date, status and response evidence.
+
+Do not expose confidential wholesale information outside the authorised room.
+
+### Shared Commercial Documents — ADOPT
+
+Allow controlled sharing of:
+
+- line sheets;
+- approved wholesale materials;
+- lookbooks;
+- brand decks;
+- sample/shipping information;
+- meeting notes approved for sharing.
+
+Documents inherit Deal Room ACL and can have expiry/revocation.
+
+### Commercial Handoff — ADOPT
+
+If both parties want to continue outside MFW:
+
+Deal Room -> approved handoff -> external CRM/PLM/wholesale system reference
+
+Where Synth-v2 is used, create an explicit integration/handoff contract rather than sharing DB state.
+
+Store:
+
+- destination/provider;
+- external reference;
+- handoff time;
+- scope;
+- actor;
+- status.
+
+### Deal Funnel Evidence — ADOPT
+
+Track event-commercial progression:
+
+meeting -> Deal Room -> request -> response -> sample/showroom -> handoff -> externally confirmed commercial outcome where voluntarily reported/integrated
+
+Distinguish:
+
+- observed MFW event;
+- partner-reported outcome;
+- externally verified outcome.
+
+Do not claim GMV/revenue merely because a meeting or request occurred.
+
+### Additional acceptance
+
+- Deal Room requires bilateral/authorised relationship;
+- room ACL protects wholesale/private materials;
+- look shortlist resolves to canonical MFW collection/look IDs;
+- request lifecycle is auditable and idempotent;
+- MFW cannot silently create an external order;
+- commercial outcomes retain evidence class: observed / reported / verified;
+- room can export/handoff without locking users into Synth-v2.
+
+**Sequencing:** B2B meeting authority -> Meeting Intelligence Brief -> Deal Room -> structured requests/documents -> external handoff -> outcome attribution.
+
+**Commercial framing:** sell this as the layer that converts an event platform into a persistent B2B fashion business network.
+
