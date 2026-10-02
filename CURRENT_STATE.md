@@ -1,6 +1,6 @@
 # Current MFW/BFS project state
 
-Last consolidated state: **2026-10-01**
+Last consolidated state: **2026-10-02**
 
 ## Current product
 
@@ -204,3 +204,27 @@ Safety rules:
 - `GET /v1/features` is explicitly marked `securityBoundary=not_authorization`.
 
 This is a stateless rollout boundary only. No external flag provider has been made authoritative and no persistent Phase 1 module is production-admitted while PostgreSQL Phase 0 remains blocked.
+
+## Free-tier infrastructure hardening
+
+The canonical free Render contour has been tightened:
+
+- dedicated Render Cron was removed from `render.yaml` because the zero-paid-resource constraint is authoritative;
+- social reverification now uses the authority's in-process interval plus stale-aware startup catch-up;
+- catch-up consults the latest completed persisted reverification run and executes after wake/restart only when stale;
+- overlapping in-process reverification runs are collapsed behind one promise;
+- the Blueprint now uses the exact environment-variable names consumed by `server-v2.js`;
+- obsolete `TELEGRAM_BOT_TOKEN`, `VK_CLIENT_ID`, `VK_CLIENT_SECRET` and unused `MFW_JWT_SECRET` Blueprint keys were removed;
+- `mfw-api/render-blueprint-contract.test.js` prevents reintroducing paid cron or mismatched secret names.
+
+This is still not Phase 0 production admission: the existing direct-created `mfw-authority` service remains blocked until the existing free `mfw-postgres` is securely bound as `DATABASE_URL`.
+
+## Master-plan review discipline
+
+Before every following implementation wave, the current `docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md` is re-read from repository HEAD and its newest modifying commits are inspected.
+
+Latest reviewed additions:
+- Section 13 — Unified Discovery Search / Meilisearch + agenda ICS portability;
+- Section 14 — live moderated Q&A / polling / replay bridge.
+
+Both remain dependency-gated behind durable PostgreSQL and the durable jobs/outbox foundation.
