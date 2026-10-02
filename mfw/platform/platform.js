@@ -363,11 +363,12 @@
     else renderOwner();
   }
   function openEvent(event){
-    var mfw=event==='mfw';
-    document.body.classList.toggle('bfs-mode',!mfw);
+    var mfw=event==='mfw',bfs=event==='bfs',made=event==='made';
+    document.body.classList.toggle('bfs-mode',bfs);
+    document.body.classList.toggle('made-mode',made);
     buttons.forEach(function(b){b.classList.toggle('active',b.dataset.event===event);});
-    frame.src=mfw?'../mfw/index.html':'./bfs/index.html';
-    note.textContent=mfw?'MFW · ORIGINAL EXPERIENCE':'BFS · OFFICIAL-BRAND EXPERIENCE';
+    frame.src=mfw?'../mfw/index.html':bfs?'./bfs/index.html':'./made-in-moscow/index.html';
+    note.textContent=mfw?'MFW · ORIGINAL EXPERIENCE':bfs?'BFS · OFFICIAL-BRAND EXPERIENCE':'СДЕЛАНО В МОСКВЕ · ECOSYSTEM PARTNER EXPERIENCE';
     try{localStorage.setItem('mfp.activeEvent',event);}catch(e){}
   }
   function fillProfile(){
@@ -388,9 +389,14 @@
       '<div class="reg-actions"><button data-register="'+code+'">'+(reg?'ПРОВЕРИТЬ / ИЗМЕНИТЬ':'ЗАРЕГИСТРИРОВАТЬСЯ')+'</button>'+
       (otherReg&&!reg?'<button class="secondary" data-copy="'+code+'">СКОПИРОВАТЬ ДАННЫЕ ИЗ '+EVENT_CONFIG[other].short+'</button>':'')+
       '</div></section>';
-    }).join('');
+    }).join('')+
+      '<section class="registration-item made-access-item"><div class="registration-item-head"><h3>Сделано в Москве</h3><span class="reg-status">ЕДИНЫЙ ID</span></div>'+
+      '<p class="registration-copy">Покупатель, гость и байер используют общий профиль без повторной анкеты. Для бренда badge <b>Made in Moscow Verified</b> появляется только после подтверждения официального roster/status.</p>'+
+      '<div class="reg-actions"><button type="button" data-open-made>ОТКРЫТЬ РАЗДЕЛ</button><button type="button" class="secondary" data-made-account>КАК РАБОТАЕТ VERIFIED</button></div></section>';
     [].slice.call(registrationGrid.querySelectorAll('[data-register]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.register,false);};});
     [].slice.call(registrationGrid.querySelectorAll('[data-copy]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.copy,true);};});
+    var openMade=registrationGrid.querySelector('[data-open-made]');if(openMade)openMade.onclick=function(){closeAccount();openEvent('made');};
+    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made');setTimeout(function(){try{frame.contentWindow.postMessage({type:'made-open-section',section:'verified'},'*');}catch(e){}},250);};
   }
   function openAccount(){
     fillProfile();renderRegistrations();renderInterestPicker();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
@@ -448,7 +454,7 @@
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
   document.getElementById('investorClose').onclick=function(){investorModal.classList.add('hidden');};
-  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW сохранён без редизайна: показы, LIVE, Discover, pass, buyer и networking.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS открывается как самостоятельный бренд с business programme, speakers, exhibition и B2B.';}if(step==='3'){investorModal.classList.add('hidden');openAccount();}if(step==='4'){openEvent('bfs');narrative.textContent='В BFS показаны programme save, отдельная регистрация, QR credential и delegate meeting flow.';}if(step==='5'){narrative.textContent='Shared identity и event-scoped authorities позволяют подключать следующие события без унификации их бренда.';}};});
+  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){openEvent('made');narrative.textContent='Один brand graph связывает подтверждённый статус бренда с MFW/BFS, buyer intent и 365-дневным продолжением.';}};});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
   accountDrawer.addEventListener('click',function(e){if(e.target===accountDrawer)closeAccount();});
@@ -463,9 +469,10 @@
     if(!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-open-account')openAccount();
     if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
+    if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });
   frame.addEventListener('load',notifyFrame);
   var saved='mfw';try{saved=localStorage.getItem('mfp.activeEvent')||'mfw';}catch(e){}
-  openEvent(saved==='bfs'?'bfs':'mfw');
+  openEvent(saved==='bfs'?'bfs':saved==='made'?'made':'mfw');
 })();
