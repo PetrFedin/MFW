@@ -279,6 +279,67 @@
     var s=(window.MFP_DATA&&window.MFP_DATA.sources||{})[event==='MFW'?'mfw':'bfs'];
     return s?'<span class="source-badge">OFFICIAL · '+h(window.MFP_DATA.syncedAt||'')+'</span>':'';
   }
+  function isoDay(d){
+    var x=d instanceof Date?d:new Date(d);
+    var y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),day=String(x.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  function ecosystemLifecycle(now){
+    var data=window.MFP_DATA||{mfw:{events:[]},bfs:{sessions:[]}};
+    var days=[].concat((data.mfw.events||[]).map(function(x){return x.date;}),(data.bfs.sessions||[]).map(function(x){return x.date;})).filter(Boolean).sort();
+    var start=days[0]||null,end=days[days.length-1]||null,today=isoDay(now||new Date());
+    var phase=!start?'unknown':today<start?'before':today>end?'after':'live';
+    return {phase:phase,start:start,end:end,today:today};
+  }
+  function renderToday(){
+    var data=window.MFP_DATA||{mfw:{events:[],brands:[]},bfs:{sessions:[]}},life=ecosystemLifecycle(new Date()),interest=getInterestState();
+    var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
+    var followed=(interest.mfwFollowed||[]).length+Object.keys(interest.bfsFollowed||{}).filter(function(k){return interest.bfsFollowed[k];}).length;
+    var favorites=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
+    var replayConfirmed=[].concat(data.mfw.events||[],data.bfs.sessions||[]).filter(function(x){return x.media&&['available','replay','published'].indexOf(String(x.media.replay||'').toLowerCase())>=0;}).length;
+    var phaseLabel=life.phase==='before'?'BEFORE EVENT':life.phase==='live'?'LIVE DAYS':life.phase==='after'?'AFTER EVENT':'PROGRAMME STATE';
+    var phaseCopy=life.phase==='before'?'Соберите программу и интересы до начала событий.':life.phase==='live'?'Платформа приоритизирует события сегодняшнего дня и следующий шаг.':life.phase==='after'?'Событийная неделя завершена. Продолжаем отношения, контент и коммерческий follow-up.':'Даты программы ещё не определены.';
+    var phaseCards='';
+    if(life.phase==='live'){
+      var todayRows=[].concat(
+        (data.mfw.events||[]).filter(function(x){return x.date===life.today;}).map(function(x){return {...x,eventCode:'MFW',kind:'mfw'};}),
+        (data.bfs.sessions||[]).filter(function(x){return x.date===life.today;}).map(function(x){return {...x,eventCode:'BFS',kind:'bfs'};})
+      ).sort(function(a,b){return toMinutes(a.time)-toMinutes(b.time);}).slice(0,8);
+      phaseCards='<div class="today-programme">'+todayRows.map(function(x){return '<article><span>'+h(x.eventCode)+' · '+h(x.time)+'</span><b>'+h(x.title)+'</b><small>'+h(x.venue||x.hall||'')+'</small><button data-today-agenda="'+h(x.id)+'" data-today-kind="'+h(x.kind)+'">В КАЛЕНДАРЬ</button></article>';}).join('')+'</div>';
+      if(!todayRows.length)phaseCards='<div class="hub-note">На сегодня в текущем snapshot нет опубликованных событий.</div>';
+    }else if(life.phase==='before'){
+      phaseCards='<div class="today-action-grid">'+
+        '<button data-today-action="access"><b>01</b><span>Проверить профиль и регистрации</span></button>'+
+        '<button data-today-action="discover"><b>02</b><span>Найти бренды, показы и сессии</span></button>'+
+        '<button data-today-action="agenda"><b>03</b><span>Собрать персональный план</span></button>'+
+        '<button data-today-action="foryou"><b>04</b><span>Настроить интересы и рекомендации</span></button>'+
+      '</div>';
+    }else{
+      phaseCards='<div class="today-action-grid">'+
+        '<button data-today-action="discover"><b>'+h(followed+favorites)+'</b><span>relationships · продолжить Discover</span></button>'+
+        '<button data-today-action="foryou"><b>'+h(saved)+'</b><span>saved items · открыть «Для вас»</span></button>'+
+        '<button data-today-action="dealroom"><b>B2B</b><span>meeting → request → handoff preview</span></button>'+
+        '<button data-today-action="made"><b>365</b><span>Made in Moscow + Brand365 continuity</span></button>'+
+      '</div>';
+    }
+    hubContent.innerHTML=
+      '<section class="today-hero" data-phase="'+h(life.phase)+'"><div><div class="drawer-kicker">'+h(phaseLabel)+' · '+h(life.start||'—')+' → '+h(life.end||'—')+'</div><h3>'+h(phaseCopy)+'</h3><p>Lifecycle определяется опубликованными датами MFW/BFS, а не вручную выбранным demo-state.</p></div><div class="lifecycle-rail"><span class="'+(life.phase==='before'?'active':'done')+'">BEFORE</span><i>→</i><span class="'+(life.phase==='live'?'active':life.phase==='after'?'done':'')+'">LIVE</span><i>→</i><span class="'+(life.phase==='after'?'active':'')+'">AFTER</span></div></section>'+
+      '<div class="today-kpis"><div><b>'+h(saved)+'</b><span>saved</span></div><div><b>'+h(followed)+'</b><span>followed</span></div><div><b>'+h(favorites)+'</b><span>favorites</span></div><div><b>'+h(replayConfirmed)+'</b><span>confirmed replay assets</span></div></div>'+
+      phaseCards+
+      (life.phase==='after'?'<div class="today-truth"><b>POST-EVENT TRUTH</b><span>Replay показывается как доступный только при подтверждённом media state. Follow-up и Deal Room не считаются продажей без отдельного outcome evidence.</span></div>':'')+
+      '<div class="hub-note">«Сейчас» — read-only lifecycle projection. Она не меняет agenda, access или коммерческую truth без соответствующего server action.</div>';
+    [].slice.call(document.querySelectorAll('[data-today-agenda]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.todayKind,b.dataset.todayAgenda);};});
+    [].slice.call(document.querySelectorAll('[data-today-action]')).forEach(function(b){b.onclick=function(){
+      var a=b.dataset.todayAction;
+      if(a==='discover'){hubTab='directory';renderHub();return;}
+      if(a==='agenda'){hubTab='agenda';renderHub();return;}
+      if(a==='dealroom'){hubTab='dealroom';renderHub();return;}
+      if(a==='access'){hubModal.classList.add('hidden');openAccount();return;}
+      if(a==='made'){hubModal.classList.add('hidden');openEvent('made');return;}
+      if(a==='foryou'){hubModal.classList.add('hidden');renderForYou();forYouModal.classList.remove('hidden');}
+    };});
+  }
+
   function renderDirectory(){
     hubContent.innerHTML=
       '<div class="companion-routes">'+
@@ -425,7 +486,8 @@
 
   function renderHub(){
     [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.classList.toggle('active',b.dataset.hubTab===hubTab);});
-    if(hubTab==='directory')renderDirectory();
+    if(hubTab==='today')renderToday();
+    else if(hubTab==='directory')renderDirectory();
     else if(hubTab==='agenda')renderAgenda();
     else if(hubTab==='wallet')renderWallet();
     else if(hubTab==='dealroom')renderDealRoomPreview();
