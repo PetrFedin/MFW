@@ -49,3 +49,34 @@ Scoped partner reporting for engagement, buyer intent and approved outcomes with
 No persistent Made in Moscow module is production-admitted before:
 
 `PostgreSQL Phase 0 -> durable jobs/outbox -> formal policy -> verified roster contract`.
+
+## Implemented product layer
+
+The repository now contains a third Moscow Fashion Platform experience:
+
+`MFW <-> BFS <-> Сделано в Москве`
+
+Implemented in repository:
+- shared platform switcher;
+- one shared identity/profile entry point;
+- separate visual shell inspired by the programme's light/airy visual system and balloon metaphor;
+- Verified trust layer;
+- Made in Moscow Hub;
+- Digital Market / Showroom;
+- Buyer Bridge;
+- Brand365 continuity;
+- Partner Evidence Dashboard;
+- investor/partner demonstration route;
+- migration 021 for partner-program membership and scoped cross-service moderation;
+- MFW brand-card rendering contract for verified programme badges;
+- responsive device QA for the third experience.
+
+### Truth boundary
+
+No real brand is labelled as a verified programme member from Moscow location, MFW participation or editorial inference.
+
+Badge condition:
+
+`partner_program=made_in_moscow AND membership=verified AND moderation=approved`
+
+Until an approved roster/import/API is connected, real-brand verified results remain empty.
