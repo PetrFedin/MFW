@@ -15,6 +15,8 @@
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
   var AUTHORITY='https://mfw-authority.onrender.com';
+  var madeVerifiedBrands=[];
+  var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function formatWhen(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch(e){return String(v||'');}}
   function accessToken(){try{return localStorage.getItem('mfwAccessToken')||'';}catch(e){return '';}}
@@ -158,6 +160,13 @@
     try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},'*');}catch(e){}
   }
   function safeJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
+  async function hydrateMadeDirectory(){
+    try{
+      var out=await authorityFetch('/v1/made-in-moscow/brands',{method:'GET'});
+      madeVerifiedBrands=Array.isArray(out&&out.data)?out.data:[];
+      if(!hubModal.classList.contains('hidden')&&hubTab==='directory')renderDirectory();
+    }catch(e){madeVerifiedBrands=[];}
+  }
   function getInterestState(){
     return {
       mfwFollowed:safeJson('mfwSavedBrands',[]),
@@ -258,39 +267,64 @@
   }
   function directoryEntities(){
     var data=window.MFP_DATA||{mfw:{brands:[],events:[]},bfs:{speakers:[],sessions:[]}}, out=[];
-    (data.mfw.brands||[]).forEach(function(x){out.push({kind:'mfw-brand',event:'MFW',id:x.id,title:x.name,subtitle:x.city,meta:(x.tags||[]).join(' · '),showId:x.showId});});
-    (data.mfw.events||[]).forEach(function(x){out.push({kind:'mfw-event',event:'MFW',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.type+' · '+x.venue});});
-    (data.bfs.speakers||[]).forEach(function(x){out.push({kind:'bfs-speaker',event:'BFS',id:x.id,title:x.name,subtitle:x.role,meta:x.org});});
-    (data.bfs.sessions||[]).forEach(function(x){out.push({kind:'bfs-session',event:'BFS',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.topic+' · '+x.hall});});
+    (data.mfw.brands||[]).forEach(function(x){out.push({kind:'mfw-brand',event:'MFW',openEvent:'mfw',id:x.id,title:x.name,subtitle:x.city,meta:(x.tags||[]).join(' · '),showId:x.showId});});
+    (data.mfw.events||[]).forEach(function(x){out.push({kind:'mfw-event',event:'MFW',openEvent:'mfw',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.type+' · '+x.venue});});
+    (data.bfs.speakers||[]).forEach(function(x){out.push({kind:'bfs-speaker',event:'BFS',openEvent:'bfs',id:x.id,title:x.name,subtitle:x.role,meta:x.org});});
+    (data.bfs.sessions||[]).forEach(function(x){out.push({kind:'bfs-session',event:'BFS',openEvent:'bfs',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.topic+' · '+x.hall});});
+    madeVerifiedBrands.forEach(function(x){out.push({kind:'made-brand',event:'MADE',openEvent:'made',id:x.id,title:x.name,subtitle:x.city||'Москва',meta:'Made in Moscow Verified · canonical MFW brand'});});
     return out;
   }
   function sourceBadge(event){
+    if(event==='MADE')return '<span class="source-badge made-source">VERIFIED ROSTER</span>';
     var s=(window.MFP_DATA&&window.MFP_DATA.sources||{})[event==='MFW'?'mfw':'bfs'];
-    return s?'<span class="source-badge">OFFICIAL · '+(window.MFP_DATA.syncedAt||'')+'</span>':'';
+    return s?'<span class="source-badge">OFFICIAL · '+h(window.MFP_DATA.syncedAt||'')+'</span>':'';
   }
   function renderDirectory(){
-    hubContent.innerHTML='<div class="directory-tools"><input class="directory-search" id="directorySearch" placeholder="Бренд, спикер, сессия, показ"><select class="directory-filter" id="directoryFilter"><option value="all">Все</option><option value="MFW">MFW</option><option value="BFS">BFS</option><option value="brand">Бренды</option><option value="speaker">Спикеры</option><option value="programme">Программа</option></select></div><div class="directory-grid" id="directoryGrid"></div><div class="hub-note">Данные программы и участников импортированы из официальных сайтов MFW и BRICS+ Fashion Summit; дата синхронизации указана на карточках. Production-версия должна перейти с snapshot на автоматическую CMS/API-синхронизацию.</div>';
+    hubContent.innerHTML=
+      '<div class="companion-routes">'+
+        '<button data-companion-route="plan"><b>PLAN</b><span>единый календарь MFW + BFS</span><i>01</i></button>'+
+        '<button class="active" data-companion-route="discover"><b>DISCOVER</b><span>бренды, показы, сессии, спикеры</span><i>02</i></button>'+
+        '<button data-companion-route="connect"><b>CONNECT</b><span>buyer / delegate / B2B контур</span><i>03</i></button>'+
+        '<button data-companion-route="access"><b>ACCESS</b><span>профиль, регистрации и статусы</span><i>04</i></button>'+
+      '</div>'+
+      '<div class="discover-head"><div><div class="drawer-kicker">GLOBAL DISCOVERY · PUBLIC SNAPSHOTS + VERIFIED ROSTER</div><h3>Ищите по всей платформе</h3></div><kbd>⌘ / Ctrl + K</kbd></div>'+
+      '<div class="directory-tools"><input class="directory-search" id="directorySearch" autocomplete="off" placeholder="Бренд, спикер, сессия, показ"><select class="directory-filter" id="directoryFilter"><option value="all">Все направления</option><option value="MFW">MFW</option><option value="BFS">BFS</option><option value="MADE">Сделано в Москве</option><option value="brand">Бренды</option><option value="speaker">Спикеры</option><option value="programme">Программа</option></select></div>'+
+      '<div class="directory-summary" id="directorySummary"></div><div class="directory-grid" id="directoryGrid"></div>'+
+      '<div class="hub-note">Discover — rebuildable read-only projection. MFW/BFS берутся из опубликованных snapshot-данных; «Сделано в Москве» появляется только из verified roster authority. Результаты поиска не меняют registration, access, CRM или Verified truth.</div>';
     function draw(){
-      var q=(document.getElementById('directorySearch').value||'').toLowerCase(),f=document.getElementById('directoryFilter').value;
+      var input=document.getElementById('directorySearch'),filter=document.getElementById('directoryFilter');
+      var q=(input.value||'').trim().toLowerCase(),f=filter.value;
       var rows=directoryEntities().filter(function(x){
         var text=(x.title+' '+x.subtitle+' '+x.meta).toLowerCase();
-        var okF=f==='all'||x.event===f||(f==='brand'&&x.kind==='mfw-brand')||(f==='speaker'&&x.kind==='bfs-speaker')||(f==='programme'&&(x.kind==='mfw-event'||x.kind==='bfs-session'));
+        var okF=f==='all'||x.event===f||(f==='brand'&&(x.kind==='mfw-brand'||x.kind==='made-brand'))||(f==='speaker'&&x.kind==='bfs-speaker')||(f==='programme'&&(x.kind==='mfw-event'||x.kind==='bfs-session'));
         return okF&&(!q||text.indexOf(q)>=0);
       });
-      document.getElementById('directoryGrid').innerHTML=rows.map(function(x){
-        var action='';
-        if(x.kind==='mfw-event')action='<button data-agenda-kind="mfw" data-agenda-id="'+x.id+'">В КАЛЕНДАРЬ</button>';
-        if(x.kind==='bfs-session')action='<button data-agenda-kind="bfs" data-agenda-id="'+x.id+'">В КАЛЕНДАРЬ</button>';
-        if(x.kind==='mfw-brand'&&x.showId)action='<button class="secondary" data-link-show="'+x.showId+'">СВЯЗАННЫЙ ПОКАЗ</button>';
-        return '<article class="directory-card"><div class="kind">'+x.event+' · '+x.kind.replace('-',' ').toUpperCase()+' '+sourceBadge(x.event)+'</div><h3>'+x.title+'</h3><p>'+x.subtitle+'</p><div class="entity-meta">'+x.meta+'</div><div class="directory-actions">'+action+'</div></article>';
-      }).join('')||'<div class="hub-note">Ничего не найдено.</div>';
+      var counts=rows.reduce(function(m,x){m[x.event]=(m[x.event]||0)+1;return m;},{});
+      document.getElementById('directorySummary').innerHTML='<span>'+rows.length+' результатов</span><span>MFW '+(counts.MFW||0)+'</span><span>BFS '+(counts.BFS||0)+'</span><span>MADE '+(counts.MADE||0)+'</span>';
+      document.getElementById('directoryGrid').innerHTML=rows.slice(0,60).map(function(x){
+        var action='<button data-open-result="'+h(x.openEvent)+'">ОТКРЫТЬ '+h(x.event==='MADE'?'РАЗДЕЛ':x.event)+'</button>';
+        if(x.kind==='mfw-event')action+='<button class="secondary" data-agenda-kind="mfw" data-agenda-id="'+h(x.id)+'">В КАЛЕНДАРЬ</button>';
+        if(x.kind==='bfs-session')action+='<button class="secondary" data-agenda-kind="bfs" data-agenda-id="'+h(x.id)+'">В КАЛЕНДАРЬ</button>';
+        if(x.kind==='mfw-brand'&&x.showId)action+='<button class="secondary" data-link-show="'+h(x.showId)+'">СВЯЗАННЫЙ ПОКАЗ</button>';
+        return '<article class="directory-card '+(x.event==='MADE'?'made-directory-card':'')+'"><div class="kind">'+h(x.event)+' · '+h(x.kind.replace('-',' ').toUpperCase())+' '+sourceBadge(x.event)+'</div><h3>'+h(x.title)+'</h3><p>'+h(x.subtitle)+'</p><div class="entity-meta">'+h(x.meta)+'</div><div class="directory-actions">'+action+'</div></article>';
+      }).join('')||'<div class="hub-note empty-result">Ничего не найдено. Попробуйте название бренда, тему или имя спикера.</div>';
       [].slice.call(document.querySelectorAll('[data-agenda-kind]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.agendaKind,b.dataset.agendaId);};});
+      [].slice.call(document.querySelectorAll('[data-open-result]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.openResult);};});
       [].slice.call(document.querySelectorAll('[data-link-show]')).forEach(function(b){b.onclick=function(){
         var id=b.dataset.linkShow,e=(window.MFP_DATA.mfw.events||[]).filter(function(x){return x.id===id;})[0];
-        if(e){document.getElementById('directorySearch').value=e.title;draw();}
+        if(e){input.value=e.title;filter.value='MFW';draw();}
       };});
     }
-    document.getElementById('directorySearch').oninput=draw;document.getElementById('directoryFilter').onchange=draw;draw();
+    [].slice.call(document.querySelectorAll('[data-companion-route]')).forEach(function(b){b.onclick=function(){
+      var route=b.dataset.companionRoute;
+      if(route==='plan'){hubTab='agenda';renderHub();return;}
+      if(route==='discover'){document.getElementById('directorySearch').focus();return;}
+      if(route==='connect'){hubModal.classList.add('hidden');openEvent('bfs');return;}
+      if(route==='access'){hubModal.classList.add('hidden');openAccount();}
+    };});
+    document.getElementById('directorySearch').oninput=draw;
+    document.getElementById('directoryFilter').onchange=draw;
+    draw();
   }
   async function renderAgenda(){
     var items=agendaLoad().slice(),serverConflicts=null,server=false;
@@ -362,6 +396,21 @@
     else if(hubTab==='wallet')renderWallet();
     else renderOwner();
   }
+  function updateNetworkStatus(){
+    var el=document.getElementById('networkStatus');if(!el)return;
+    var online=navigator.onLine!==false;
+    el.textContent=online?'ONLINE':'OFFLINE · PUBLIC CACHE ONLY';
+    el.classList.toggle('offline',!online);
+    document.body.classList.toggle('offline-mode',!online);
+  }
+  function registerServiceWorker(){
+    if(!('serviceWorker' in navigator))return;
+    window.addEventListener('load',function(){navigator.serviceWorker.register('../sw.js',{scope:'/'}).catch(function(e){console.warn('service worker registration failed',e);});});
+  }
+  function openDiscover(focusSearch){
+    hubTab='directory';renderHub();hubModal.classList.remove('hidden');
+    if(focusSearch)setTimeout(function(){var input=document.getElementById('directorySearch');if(input)input.focus();},0);
+  }
   function openEvent(event){
     var mfw=event==='mfw',bfs=event==='bfs',made=event==='made';
     document.body.classList.toggle('bfs-mode',bfs);
@@ -369,6 +418,7 @@
     buttons.forEach(function(b){b.classList.toggle('active',b.dataset.event===event);});
     frame.src=mfw?'../mfw/index.html':bfs?'./bfs/index.html':'./made-in-moscow/index.html';
     note.textContent=mfw?'MFW · ORIGINAL EXPERIENCE':bfs?'BFS · OFFICIAL-BRAND EXPERIENCE':'СДЕЛАНО В МОСКВЕ · ECOSYSTEM PARTNER EXPERIENCE';
+    var theme=document.querySelector('meta[name="theme-color"]');if(theme)theme.setAttribute('content',mfw?'#070707':bfs?'#d4b448':'#ff4a43');
     try{localStorage.setItem('mfp.activeEvent',event);}catch(e){}
   }
   function fillProfile(){
@@ -449,7 +499,7 @@
   document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');};
   document.getElementById('valueBtn').onclick=function(){valueModal.classList.remove('hidden');};
   document.getElementById('forYouBtn').onclick=function(){renderForYou();forYouModal.classList.remove('hidden');};
-  document.getElementById('hubBtn').onclick=function(){renderHub();hubModal.classList.remove('hidden');};
+  document.getElementById('hubBtn').onclick=function(){openDiscover(true);};
   document.getElementById('hubClose').onclick=function(){hubModal.classList.add('hidden');};
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
@@ -465,6 +515,16 @@
   hubModal.addEventListener('click',function(e){if(e.target===hubModal)hubModal.classList.add('hidden');});
   [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.onclick=function(){hubTab=b.dataset.hubTab;renderHub();};});
   buttons.forEach(function(b){b.addEventListener('click',function(){openEvent(b.dataset.event);});});
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstallPrompt=e;document.body.classList.add('installable');});
+  window.addEventListener('appinstalled',function(){deferredInstallPrompt=null;document.body.classList.remove('installable');});
+  window.addEventListener('online',updateNetworkStatus);
+  window.addEventListener('offline',updateNetworkStatus);
+  document.addEventListener('keydown',function(e){
+    if((e.metaKey||e.ctrlKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();openDiscover(true);return;}
+    if(e.key==='Escape'){
+      [hubModal,forYouModal,valueModal,investorModal,registrationModal,accountDrawer].forEach(function(el){if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');});
+    }
+  });
   window.addEventListener('message',function(e){
     if(!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-open-account')openAccount();
@@ -473,6 +533,11 @@
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });
   frame.addEventListener('load',notifyFrame);
+  updateNetworkStatus();
+  registerServiceWorker();
+  hydrateMadeDirectory();
   var saved='mfw';try{saved=localStorage.getItem('mfp.activeEvent')||'mfw';}catch(e){}
-  openEvent(saved==='bfs'?'bfs':saved==='made'?'made':'mfw');
+  var requested=null;try{requested=new URLSearchParams(location.search).get('event');}catch(e){}
+  var initial=['mfw','bfs','made'].indexOf(requested)>=0?requested:(saved==='bfs'?'bfs':saved==='made'?'made':'mfw');
+  openEvent(initial);
 })();
