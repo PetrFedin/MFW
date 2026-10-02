@@ -36,9 +36,8 @@ services:
     region: frankfurt
     autoDeployTrigger: commit
     buildCommand: cd mfw-api && npm install --omit=dev
-    preDeployCommand: cd mfw-api && npm run migrate
     startCommand: cd mfw-api && node server-v2.js
-    healthCheckPath: /health
+    healthCheckPath: /ready
     envVars:
       - key: NODE_ENV
         value: production
