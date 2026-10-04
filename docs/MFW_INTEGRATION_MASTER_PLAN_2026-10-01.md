@@ -1433,3 +1433,105 @@ Purpose:
 This projection is read-only and rebuildable. It does not become programme, agenda, media, CRM or commercial authority.
 
 Replay is surfaced as confirmed only when the underlying media state explicitly says so. Deal Room/follow-up activity is not interpreted as revenue without separate outcome evidence.
+
+## Premium enterprise wave — intelligent B2B matchmaking and meeting-slot optimization
+
+This wave upgrades MFW/BFS networking from passive discovery to a governed optimization layer that proposes the highest-value feasible meetings without taking control away from delegates, buyers or brands.
+
+### Match Candidate Authority — ADOPT
+
+Create a candidate record derived from explicit/authorised facts:
+
+- participant A / participant B;
+- role/organisation;
+- declared interests/objectives;
+- brand/category/topic relevance;
+- saved/followed entities;
+- previous accepted/declined meeting context where policy allows;
+- mutual eligibility;
+- reason codes;
+- score components;
+- status.
+
+Do not infer sensitive personal traits or hidden commercial intent.
+
+### Matchmaking Scoring — ADOPT
+
+Use transparent weighted components such as:
+
+- mutual stated objective;
+- category/topic overlap;
+- buyer-market relevance;
+- brand/distribution fit;
+- shared session/show interests;
+- prior explicit follow/favorite.
+
+Expose score components internally; do not hide one opaque AI score behind the recommendation.
+
+### Meeting Slot Optimizer — ADAPT
+
+Reference:
+
+https://github.com/google/or-tools
+
+Use OR-Tools as a scenario solver over:
+
+- participant availability;
+- confirmed programme/agenda;
+- existing meetings;
+- venue/room capacity;
+- meeting duration;
+- travel/buffer time;
+- bilateral eligibility;
+- match relevance.
+
+Output:
+
+- feasible meeting proposals;
+- conflict-free slot;
+- alternates;
+- reason for skipped high-value match.
+
+The solver never writes a confirmed meeting directly.
+
+### Bilateral Acceptance — REQUIRED
+
+match proposal -> participant A accepts/declines -> participant B accepts/declines -> slot hold -> conflict recheck -> confirmed meeting
+
+No meeting is confirmed until existing MFW/BFS meeting authority records the bilateral result.
+
+### Fairness / Diversity Guard — ADOPT
+
+Possible controls:
+
+- max recommendations/meetings per participant;
+- opportunity floor for qualified new entrants;
+- sponsor/commercial priority only when explicitly disclosed/configured;
+- deterministic tie-break;
+- manual organiser override with audit.
+
+### Match Outcome Learning — ADOPT
+
+Use only observed outcomes:
+
+- proposal accepted/declined;
+- meeting held/no-show;
+- Deal Room opened;
+- follow-up/request created.
+
+These signals may improve ranking weights but cannot fabricate commercial success.
+
+### Additional acceptance
+
+- every recommendation exposes reason codes;
+- impossible calendar conflicts cannot become confirmed meetings;
+- solver output is reproducible from input snapshot/config;
+- bilateral acceptance remains mandatory;
+- organiser overrides are audited;
+- sensitive attributes never enter scoring;
+- Deal Room/lead outcomes remain downstream evidence.
+
+**Sequencing:** registration + recommendation + agenda/conflict authority -> candidate generation -> slot optimization -> bilateral confirmation -> Deal Room/outcome learning.
+
+**Commercial framing:** AI-assisted international business matchmaking that turns event participation into measurable B2B opportunities.
+
