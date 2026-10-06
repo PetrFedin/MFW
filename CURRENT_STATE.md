@@ -738,3 +738,50 @@ Proposal state is in-memory demo state only:
 DRAFT -> IN_REVIEW -> APPROVED_DEMO.
 
 This handoff does not create commitments, accounting entries or corporate approvals. Production implementation requires server-side actors, immutable proposal/approval history, approval authority and linkage to programme commitment records.
+
+## Server-side Capital Authority — 2026-10-06
+
+Capital governance now has a durable server-side authority contract in mfw-api.
+
+Migration 022 adds capital_ledger_events as an append-only PostgreSQL ledger.
+
+Capital events now have:
+
+- aggregate sequence;
+- authenticated non-demo actor;
+- actor role;
+- occurred_at + server recorded_at;
+- evidence references;
+- idempotency key;
+- request id;
+- previous event hash;
+- event hash.
+
+Database mutation protection rejects UPDATE / DELETE / TRUNCATE.
+
+The API exposes:
+
+- POST /v1/capital/events;
+- GET /v1/capital/ledger;
+- GET /v1/capital/projection;
+- GET /v1/capital/verify.
+
+There is no memory fallback. Capital endpoints fail closed without PostgreSQL.
+
+Capital writes require a non-demo Organizer/Staff session.
+
+Server-side invariants reject:
+
+- approval > requested;
+- commitment > approved;
+- release > unspent commitment;
+- spend > net commitment;
+- measurement before spend;
+- measurement without metric/measuredValue;
+- decision before measurement;
+- invalid decision outside SCALE / ITERATE / STOP;
+- evidence-gated events without evidence refs.
+
+Hash chains can be independently replayed by /v1/capital/verify.
+
+The frontend Programme Capital Control remains explicitly MODELLED/DEMO until PostgreSQL production admission and a real authority-backed UI projection are green.
