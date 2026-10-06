@@ -5,6 +5,7 @@ followedProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFoll
 favoriteProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFavoriteProjects')||'{}')}catch(e){return {}}})(),
 rewardStarted:(function(){try{return JSON.parse(localStorage.getItem('bfsRewardStarted')||'{}')}catch(e){return {}}})()};
 var AUTHORITY='https://mfw-authority.onrender.com';
+var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems&&window.MFP_MEDIA.ecosystems.bfs||{};
 function token(){try{return localStorage.getItem('mfwAccessToken')||''}catch(e){return ''}}
 async function ensureAuthorityToken(){
  var t=token();if(t)return t;
@@ -67,6 +68,17 @@ if(window.MFP_DATA&&window.MFP_DATA.bfs){
   delegates=(window.MFP_DATA.bfs.speakers||[]).map(function(s){var o=orgMap[s.org]||{};return [o.country||'International',s.name,(s.role||'')+(s.org?' · '+s.org:''),s.id,s.org||''];}).slice(0,24);
 }
 
+function renderMediaDeck(){
+ var root=document.getElementById('bfsMediaDeck');if(!root)return;
+ var images=MEDIA.images||{},videos=Array.isArray(MEDIA.videos)?MEDIA.videos:[];
+ var cards=[
+  {label:'GLOBAL FORUM',title:'Business programme',image:images.hero},
+  {label:'INDUSTRY',title:'Fashion dialogue',image:images.forum},
+  {label:'NETWORK',title:'Delegations & B2B',image:images.network}
+ ];
+ root.innerHTML=cards.map(function(x){return '<article class="bfs-media-card"'+(x.image?' style="background-image:linear-gradient(180deg,rgba(3,7,14,.04),rgba(3,7,14,.84)),url(\''+x.image+'\')"':'')+'><span>'+x.label+'</span><b>'+x.title+'</b></article>';}).join('')+
+  (videos[0]?'<a class="bfs-video-card" href="'+videos[0].url+'" target="_blank" rel="noopener"><span>VIDEO</span><b>'+videos[0].label+'</b><small>Открыть ↗</small></a>':'');
+}
 function $(s){return document.querySelector(s)}function $$(s){return [].slice.call(document.querySelectorAll(s))}
 function registration(){return state.account&&state.account.registrations&&state.account.registrations.bfs}
 function projectKey(name){return String(name||'').toLowerCase().replace(/[^a-z0-9а-я]+/gi,'-')}
@@ -239,5 +251,5 @@ $$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.
 $('.lang').onclick=function(){state.lang=state.lang==='ru'?'en':'ru';$('.lang').textContent=state.lang==='ru'?'RU / EN':'EN / RU';};
 window.addEventListener('message',function(e){if(e.data&&e.data.type==='mfp-account-state'){state.account=e.data.payload;render();}});
 try{var savedMeeting=JSON.parse(localStorage.getItem('bfsMeetingState')||'null');if(savedMeeting)state.meeting=savedMeeting;}catch(e){}
-parent.postMessage({type:'mfp-request-account-state'},'*');render();hydrateMadeVerified();
+parent.postMessage({type:'mfp-request-account-state'},'*');renderMediaDeck();render();hydrateMadeVerified();
 })();
