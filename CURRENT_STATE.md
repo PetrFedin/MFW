@@ -861,3 +861,18 @@ Truth classes recognised by the gate:
 - INCREMENTAL.
 
 Production write workflow for tranche release remains gated by durable PostgreSQL admission, formal authorization policy and durable jobs/outbox.
+## Russian-first interface contract — 2026-10-06
+
+Russian is now explicitly treated as the primary MFW interface language.
+
+Investor, Capital, Organisation Network, Partner, Brand, Trust and Deal Room surfaces are being normalised so that the Russian locale contains minimal English outside:
+- product/brand names;
+- protocol/standard names;
+- machine identifiers;
+- accepted abbreviations.
+
+Visible machine states are mapped separately from API/storage enums, so localisation does not mutate authority contracts.
+
+Abbreviations receive accessible explanations where practical, including KPI, CRM, B2B, API, ARR/MRR, GMV, CLV, CAC and ROI.
+
+Responsive QA now runs qa/russian-first-contract.test.js before browser device tests.
