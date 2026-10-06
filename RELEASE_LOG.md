@@ -397,3 +397,20 @@ Added a modelled investment decision layer to Comparison Mode:
 - QA asserting three recommendations and exactly 100 allocated points.
 
 The allocation is a transparent scenario model, not a monetary budget or realised ROI forecast.
+
+## 2026-10-06 — Investment Committee Workspace
+
+Added the final governance loop to the investor MVP:
+
+- recommendation opens directly into a mini business case;
+- owner / budget request / baseline / modelled target / evidence plan;
+- demo approval and pilot state machine;
+- deterministic synthetic measured result;
+- SCALE / ITERATE / STOP decision logic;
+- evidence-completeness gating;
+- current-session decision log;
+- guided investor route extended through the committee workspace;
+- PWA cache rotated to p2;
+- QA updated to use scoped/exact selectors after Russian-first UI changes.
+
+Committee actions are demo-only and are not production corporate approvals.
