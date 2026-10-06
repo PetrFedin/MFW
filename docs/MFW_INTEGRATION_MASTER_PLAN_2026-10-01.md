@@ -1763,3 +1763,124 @@ Entitlements remain explicit organisation-scoped permissions.
 
 **Commercial framing:** MFW/BFS becomes an ecosystem platform whose data and capabilities can power media, sponsors, city partners and brand systems, increasing switching costs and recurring B2B revenue.
 
+## Defensibility wave — Fashion Network Trust Passport and portable professional credentials
+
+This wave creates a governed trust layer for the persistent MFW/BFS professional network. It is not a social popularity score.
+
+### Network Trust Passport — ADOPT
+
+Create a passport projection for eligible professional entities:
+
+- brand/designer;
+- buyer;
+- organisation;
+- speaker/delegate;
+- media/partner;
+- approved service provider.
+
+Passport dimensions may include:
+
+- identity/organisation verification;
+- role verification;
+- event participation history;
+- meeting attendance/reliability;
+- Deal Room response/completion history;
+- submitted/approved company profile;
+- verified commercial outcome where voluntarily evidenced;
+- current credential/status;
+- policy incidents/suspensions where legally appropriate and visible only to authorised operators.
+
+Every dimension exposes source class, period and freshness.
+
+### No universal reputation score — REQUIRED
+
+Do not reduce trust to one opaque number.
+
+Show explainable dimensions such as:
+
+- identity verified;
+- meeting reliability: numerator/denominator/period;
+- response reliability;
+- verified event participation;
+- organisation membership;
+- credential status.
+
+Do not infer creditworthiness, wealth, politics, ethnicity or hidden buyer intent.
+
+### Portable Professional Credential — ADAPT
+
+Reference standard:
+
+https://github.com/w3c/vc-data-model
+
+Where useful, issue W3C Verifiable Credential-compatible attestations such as:
+
+- MFW Verified Buyer;
+- MFW Verified Brand Representative;
+- BFS Speaker;
+- Verified Organisation;
+- Deal Room Integration Partner.
+
+Each credential declares:
+
+- issuer;
+- subject;
+- credential type;
+- exact scope;
+- evidence reference;
+- issued_at;
+- expiry/review date;
+- status/revocation endpoint.
+
+Credential proves the stated attestation only; it is not an endorsement of commercial quality.
+
+### Credential Signature / Verification — ADAPT
+
+Use cryptographic signing/status mechanisms appropriate to the chosen VC implementation.
+
+For software/integration artefacts, Sigstore/Cosign-style signatures may be used:
+
+https://github.com/sigstore/cosign
+
+Do not reuse software-signing identities as participant identities.
+
+### Verified Network Directory — ADOPT
+
+Create a searchable directory where authorised users can filter by:
+
+- verified role;
+- organisation;
+- market/category/topic;
+- event participation;
+- opted-in meeting availability;
+- credential status.
+
+Private contact/commercial data remains hidden until the existing relationship/meeting flow permits it.
+
+### Trust-informed Matchmaking — ADOPT
+
+The matchmaking engine may use bounded trust dimensions such as verified identity and demonstrated meeting attendance.
+
+It must not penalise new participants simply for lacking history.
+
+New verified entrants receive a neutral/no-history state rather than a low score.
+
+### Credential Portability / Handoff — CONDITIONAL
+
+Where a partner system can verify VC-compatible credentials, allow selected credentials to be presented externally.
+
+The external verifier receives only the minimum claim required.
+
+### Additional acceptance
+
+- every trust dimension resolves to evidence and period;
+- no opaque universal reputation score exists;
+- new users are not treated as untrustworthy solely for lacking history;
+- credentials have scope, issuer, status and revocation;
+- private Deal Room content never enters the public trust passport;
+- credential revocation does not rewrite historical event participation.
+
+**Sequencing:** verified identity/org + meeting/Deal Room history -> trust dimensions -> credential issuer/status registry -> verified directory -> trust-aware matchmaking.
+
+**Moat:** repeated event participation creates a longitudinal professional trust graph that is difficult to reproduce without the network's verified history.
+
