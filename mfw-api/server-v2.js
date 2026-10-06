@@ -340,7 +340,7 @@ function json(res,status,data,extraHeaders={}) {
     'Content-Type':'application/json; charset=utf-8',
     'Content-Length':Buffer.byteLength(body),
     'Access-Control-Allow-Origin':ORIGIN,
-    'Access-Control-Allow-Headers':'Content-Type, Authorization, X-MFW-Admin',
+    'Access-Control-Allow-Headers':'Content-Type, Authorization, X-MFW-Admin, Idempotency-Key, X-Request-Id',
     'Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS',
     'Vary':'Origin',
     'Cache-Control':'no-store',
@@ -2469,7 +2469,7 @@ async function router(req,res){
   }
 
   if(p==='/v1/admin/capital/operators'&&req.method==='GET'){
-    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission'});
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
     if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
     const r=await pool.query(`SELECT cog.user_id AS "userId",cog.operator_role AS "operatorRole",cog.status,cog.approved_by AS "approvedBy",
       cog.approved_at AS "approvedAt",cog.expires_at AS "expiresAt",cog.evidence_refs AS "evidenceRefs",cog.reason,
@@ -2479,7 +2479,7 @@ async function router(req,res){
     return json(res,200,{data:r.rows,authority:'capital_operator_admission'});
   }
   if(p==='/v1/admin/capital/operators'&&req.method==='POST'){
-    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission'});
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
     if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
     const body=await readBody(req),userId=String(body.userId||''),role=String(body.operatorRole||'');
     if(!/^[0-9a-f-]{36}$/i.test(userId))return json(res,400,{error:'valid_user_id_required'});
@@ -2499,7 +2499,7 @@ async function router(req,res){
     return json(res,201,{data:r.rows[0],authority:'capital_operator_admission'});
   }
   if(req.method==='PATCH'&&p.startsWith('/v1/admin/capital/operators/')){
-    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission'});
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
     if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
     const userId=decodeURIComponent(p.slice('/v1/admin/capital/operators/'.length)),body=await readBody(req);
     const status=String(body.status||'');
@@ -2512,7 +2512,7 @@ async function router(req,res){
     return json(res,200,{data:r.rows[0],authority:'capital_operator_admission'});
   }
   if(p==='/v1/admin/capital/operator-session'&&req.method==='POST'){
-    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission'});
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
     if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
     const body=await readBody(req);
     try{
