@@ -1177,20 +1177,20 @@
     var step=Number(simulatorPolicy().step||10),map=candidateMapForBudget(budget),out=[];
     for(var m=0;m<=budget;m+=step){
       for(var b=0;b<=budget-m;b+=step){
-        var md=budget-m-b;
-        var alloc={mfw:m,bfs:b,made:md};
-        var reserve=0,eligible=true,conditional=false;
-        ['mfw','bfs','made'].forEach(function(id){
-          var cand=map[id];
-          if(!cand){reserve+=alloc[id];alloc[id]=0;return;}
-          if(cand.gate==='HOLD'&&alloc[id]>0){eligible=false;}
-          if(cand.gate==='CONDITIONAL'&&alloc[id]>0){conditional=true;}
-          var cap=Math.min(Number(cand.absorptionCap||0),Number(programmeTotals().reallocationCapacity||0));
-          if(alloc[id]>cap){reserve+=alloc[id]-cap;alloc[id]=cap;}
-        });
-        if(!eligible)continue;
-        var used=alloc.mfw+alloc.bfs+alloc.made;
-        reserve+=Math.max(0,budget-used-reserve);
+        for(var md=0;md<=budget-m-b;md+=step){
+          var alloc={mfw:m,bfs:b,made:md};
+          var reserve=Math.max(0,budget-m-b-md),eligible=true,conditional=false;
+          ['mfw','bfs','made'].forEach(function(id){
+            var cand=map[id];
+            if(!cand){reserve+=alloc[id];alloc[id]=0;return;}
+            if(cand.gate==='HOLD'&&alloc[id]>0){eligible=false;}
+            if(cand.gate==='CONDITIONAL'&&alloc[id]>0){conditional=true;}
+            var cap=Math.min(Number(cand.absorptionCap||0),Number(programmeTotals().reallocationCapacity||0));
+            if(alloc[id]>cap){reserve+=alloc[id]-cap;alloc[id]=cap;}
+          });
+          if(!eligible)continue;
+          var used=alloc.mfw+alloc.bfs+alloc.made;
+          reserve=Math.max(reserve,budget-used);
         var riskRelief=0,kpi=0,evidenceWeighted=0,evidenceWeight=0,active=0;
         ['mfw','bfs','made'].forEach(function(id){
           var pts=alloc[id],cand=map[id];if(!cand||pts<=0)return;
@@ -1208,9 +1208,12 @@
         var maxKpi=(optimizerPolicy().candidates||[]).reduce(function(s,x){return s+Number(x.maxKpiLift||0);},0)||1;
         var w=simulatorPolicy().weights||{};
         var score=100*((Number(w.riskReduction||.3)*(riskRelief/maxRisk))+(Number(w.kpiLeverage||.25)*(kpi/maxKpi))+(Number(w.evidenceConfidence||.2)*evidence)+(Number(w.diversification||.1)*diversification)+(Number(w.optionality||.15)*optionality));
-        out.push({alloc:alloc,reserve:reserve,riskRelief:riskRelief,kpi:kpi,evidence:evidence,diversification:diversification,optionality:optionality,conditional:conditional,score:Math.round(score*10)/10});
+          out.push({alloc:alloc,reserve:reserve,riskRelief:riskRelief,kpi:kpi,evidence:evidence,diversification:diversification,optionality:optionality,conditional:conditional,score:Math.round(score*10)/10});
+        }
       }
     }
+    var seen={};
+    out=out.filter(function(x){var key=[x.alloc.mfw,x.alloc.bfs,x.alloc.made,x.reserve].join('|');if(seen[key])return false;seen[key]=true;return true;});
     return out.sort(function(a,b){return b.score-a.score;});
   }
   function scenarioLabelMix(x){
