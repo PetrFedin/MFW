@@ -8,13 +8,14 @@
     "check": "node --check server-v2.js",
     "migrate": "node migrate.js",
     "reverify:social": "node reverify-social.js",
-    "check:foundation": "node --check server-v2.js && node --check brand365-store.js && node --check social-providers.js && node --check reverify-social.js && node --check readiness-contract.test.js && node --check check-production-admission.js && node --check feature-flags.js && node --check feature-flags.test.js && node --check feature-rollout-api.test.js && node --check reverification-catchup.js && node --check reverification-catchup.test.js && node --check render-blueprint-contract.test.js && node --check made-in-moscow-contract.test.js && node readiness-contract.test.js && node feature-flags.test.js && node feature-rollout-api.test.js && node reverification-catchup.test.js && node render-blueprint-contract.test.js && node made-in-moscow-contract.test.js",
+    "check:foundation": "node --check server-v2.js && node --check brand365-store.js && node --check social-providers.js && node --check reverify-social.js && node --check readiness-contract.test.js && node --check check-production-admission.js && node --check feature-flags.js && node --check feature-flags.test.js && node --check feature-rollout-api.test.js && node --check reverification-catchup.js && node --check reverification-catchup.test.js && node --check render-blueprint-contract.test.js && node --check made-in-moscow-contract.test.js && node --check organisation-registry.js && node --check organisation-registry.test.js && node readiness-contract.test.js && node feature-flags.test.js && node feature-rollout-api.test.js && node reverification-catchup.test.js && node render-blueprint-contract.test.js && node made-in-moscow-contract.test.js && node organisation-registry.test.js",
     "test:readiness": "node readiness-contract.test.js",
     "check:production-admission": "node check-production-admission.js",
     "test:feature-flags": "node feature-flags.test.js && node feature-rollout-api.test.js",
     "test:reverification-catchup": "node reverification-catchup.test.js",
     "test:render-blueprint": "node render-blueprint-contract.test.js",
-    "test:made-in-moscow": "node made-in-moscow-contract.test.js"
+    "test:made-in-moscow": "node made-in-moscow-contract.test.js",
+    "test:organisation-registry": "node organisation-registry.test.js"
   },
   "dependencies": {
     "pg": "^8.16.3",
