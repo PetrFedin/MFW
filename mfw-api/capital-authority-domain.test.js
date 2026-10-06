@@ -145,7 +145,7 @@ assert.strictEqual(scaleGate.eligible,true);
 assert.strictEqual(scaleGate.targetMet,true);
 assert.strictEqual(scaleGate.truthClass,'OBSERVED');
 
-const holdTruth=capitalDecisionGate([{...measurementBase,payload:{metric:'buyer_conversion',measuredValue:12.4,truthClass:'MODELLED'}}],{metric:'buyer_conversion',direction:'increase',target:10,minimumEvidenceClass:'OBSERVED'});
+const holdTruth=capitalDecisionGate([...rows.slice(0,5),{...measurementBase,payload:{metric:'buyer_conversion',measuredValue:12.4,truthClass:'MODELLED'}}],{metric:'buyer_conversion',direction:'increase',target:10,minimumEvidenceClass:'OBSERVED'});
 assert.strictEqual(holdTruth.status,'HOLD');
 assert(holdTruth.reasonCodes.includes('evidence_class_below_policy'));
 
@@ -153,7 +153,7 @@ const missingMeasurement=capitalDecisionGate(rows.slice(0,5),{metric:'buyer_conv
 assert.strictEqual(missingMeasurement.status,'HOLD');
 assert(missingMeasurement.reasonCodes.includes('measurement_missing'));
 
-const iterateGate=capitalDecisionGate([{...measurementBase,payload:{metric:'buyer_conversion',measuredValue:7.5,truthClass:'ATTRIBUTED'}}],{metric:'buyer_conversion',direction:'increase',target:10,minimumEvidenceClass:'OBSERVED'});
+const iterateGate=capitalDecisionGate([...rows.slice(0,5),{...measurementBase,payload:{metric:'buyer_conversion',measuredValue:7.5,truthClass:'ATTRIBUTED'}}],{metric:'buyer_conversion',direction:'increase',target:10,minimumEvidenceClass:'OBSERVED'});
 assert.strictEqual(iterateGate.status,'ITERATE');
 assert.strictEqual(iterateGate.targetMet,false);
 
