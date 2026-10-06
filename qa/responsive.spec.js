@@ -323,6 +323,33 @@ test('Comparison Mode compares synthetic slices side by side in Russian by defau
   await page.screenshot({ path: testInfo.outputPath('comparison-mode-ru.png') });
 });
 
+test('Opportunity Explanation decomposes scenario gap and links representative evidence', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  await expect(page.getByText(/OPPORTUNITY EXPLANATION/)).toBeVisible();
+  await expect(page.locator('.gap-waterfall article')).toHaveCount(6);
+  await expect(page.locator('.explain-dimension')).toHaveCount(2);
+  await expect(page.locator('.retention-compare article')).toHaveCount(3);
+  await expect(page.getByText(/composition\/mix effect/i)).toBeVisible();
+  await expect(page.getByText(/не causal attribution/i)).toBeVisible();
+
+  await page.locator('[data-comparison-preset="new-returning"]').click();
+  await expect(page.getByText(/Новые/).first()).toBeVisible();
+  await expect(page.getByText(/Возвращающиеся/).first()).toBeVisible();
+
+  const dossierButtons = page.locator('[data-explanation-dossier]');
+  if (await dossierButtons.count()) {
+    await dossierButtons.first().click();
+    await expect(page.locator('.dossier-timeline article')).toHaveCount(12);
+  }
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('opportunity-explanation.png') });
+});
+
 test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
