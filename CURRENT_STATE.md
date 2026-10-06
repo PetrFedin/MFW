@@ -448,3 +448,28 @@ Important truth boundary:
 - the aggregate cohort count remains synthetic scenario data;
 - representative dossiers are examples, not a fabricated row-level list of every synthetic journey;
 - opening a representative dossier never implies that all members of the aggregate cohort exist as materialised production records.
+
+## Filterable Portfolio Control Tower — 2026-10-06
+
+Portfolio View now supports simultaneous filters over the deterministic synthetic cohort cube:
+
+- period;
+- ecosystem (MFW / BFS / Made in Moscow);
+- buyer market;
+- brand category;
+- new / returning buyer;
+- evidence class;
+- retention horizon (D30 / D90 / D365);
+- revenue surface.
+
+The same filtered cohort recomputes:
+
+- Audience -> Engagement -> Qualified Buyer -> Meeting -> Intent -> Deal -> Retention -> Revenue Evidence;
+- ecosystem contribution;
+- selected retention horizon and all D30/D90/D365 comparison values;
+- revenue-surface touch counts;
+- stage drill-down and representative dossier eligibility.
+
+The synthetic cube contains 12 deterministic cohorts whose unfiltered total preserves the 1,200-journey demo portfolio.
+
+If a filter combination has no cohort, the UI returns an explicit zero state. It does not substitute a nearby cohort or estimate missing values.
