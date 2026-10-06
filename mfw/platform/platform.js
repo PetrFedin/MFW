@@ -794,6 +794,7 @@
     if(step==='9'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='10'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='11'){hubTab='economics';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='12'){investorModal.classList.add('hidden');valueModal.classList.remove('hidden');}
   };});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
