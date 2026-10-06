@@ -76,6 +76,56 @@
       "evidence": [
         "CURRENT_STATE.md"
       ]
+    },
+    {
+      "id": "cross_event_identity_graph",
+      "claim": "One platform subject is projected across MFW, BFS and Made in Moscow while event registrations, credentials and Made brand verification remain scoped.",
+      "status": "implemented_preview",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/index.html"
+      ]
+    },
+    {
+      "id": "investor_proof_layer",
+      "claim": "The investor MVP exposes a nine-stage evidence chain with separate live and synthetic modes.",
+      "status": "implemented_preview",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "partner_console",
+      "claim": "Partner/Sponsor Console maps package through settlement and keeps recognised revenue behind evidence gates.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "brand_cockpit",
+      "claim": "Brand Cockpit maps exposure through commercial outcome and shows D30/D90/D365 continuity.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "economics_dashboard",
+      "claim": "Economics maps payer, product, formula and revenue-recognition gate without factual ARR/MRR placeholders.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
     }
   ],
   "rules": [
@@ -83,5 +133,23 @@
     "Observed, reported, verified, modelled and synthetic evidence remain distinct.",
     "Synthetic demo cases are not production KPI evidence.",
     "Production access/credential/commercial claims remain authority-gated."
-  ]
+  ],
+  "guidedInvestorRoute": {
+    "steps": 13,
+    "scope": [
+      "MFW",
+      "BFS",
+      "Made in Moscow",
+      "One ID",
+      "Identity Graph",
+      "Investor Proof",
+      "Partner Console",
+      "Brand Cockpit",
+      "Deal Room",
+      "Trust Passport",
+      "Economics",
+      "Owner Value"
+    ],
+    "status": "implemented_preview"
+  }
 }
