@@ -179,6 +179,28 @@
         "mfw/platform/platform.js",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "comparison_scenario_mode",
+      "claim": "Evidence Control Tower supports side-by-side A/B scenario comparison across the same synthetic cohort dimensions with percentage-point deltas.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "russian_default_ui",
+      "claim": "The shared investor and Evidence Control Tower UI uses Russian as the default surface language.",
+      "status": "implemented",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/index.html",
+        "mfw/platform/platform.js",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -242,6 +264,27 @@
       "retention horizon",
       "revenue surface"
     ],
-    "filterBoundary": "Filters recompute only deterministic synthetic cohorts. Unsupported combinations produce zero state; no imputation or nearest-cohort substitution."
+    "filterBoundary": "Filters recompute only deterministic synthetic cohorts. Unsupported combinations produce zero state; no imputation or nearest-cohort substitution.",
+    "comparison": {
+      "presets": [
+        "MFW vs BFS",
+        "CIS vs GCC",
+        "new vs returning"
+      ],
+      "metrics": [
+        "Audience to Qualified Buyer",
+        "Qualified Buyer to Meeting",
+        "Meeting to Intent",
+        "Intent to Deal-stage",
+        "Intent to D30/D90/D365 retention",
+        "Deal-stage to Revenue Evidence"
+      ],
+      "boundary": "Descriptive synthetic comparison only; no causal attribution or monetary uplift inference."
+    }
+  },
+  "language": {
+    "default": "ru",
+    "secondary": "en",
+    "scope": "shared investor/control-tower shell"
   }
 }
