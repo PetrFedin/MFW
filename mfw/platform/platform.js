@@ -487,6 +487,23 @@
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
   }
 
+  function renderTrustPassportPreview(){
+    hubContent.innerHTML=
+      '<div class="trust-preview-banner"><b>TRUST PASSPORT · READ-ONLY PREVIEW</b><span>Explainable trust dimensions only. No universal reputation score and no inferred private attributes.</span></div>'+
+      '<section class="trust-hero"><div><div class="drawer-kicker">NETWORK TRUST PASSPORT</div><h3>Доверие как проверяемые факты, а не «магический рейтинг».</h3><p>Каждый статус связан с источником, периодом и возможностью ревокации. Новому участнику без истории показывается neutral / no-history, а не низкая оценка.</p></div><div class="trust-credential"><span>DEMO CREDENTIAL</span><b>MFW VERIFIED BUYER</b><small>issuer · scope · issued_at · review date · status</small></div></section>'+
+      '<div class="trust-dimension-grid">'+
+        '<article><small>IDENTITY</small><b>Verified identity</b><span>Source: registration authority</span><em>DEMO / EXPLAINABLE</em></article>'+
+        '<article><small>ROLE</small><b>Buyer role</b><span>Source: event accreditation</span><em>EVENT-SCOPED</em></article>'+
+        '<article><small>PARTICIPATION</small><b>Event history</b><span>MFW / BFS participation only when evidenced</span><em>HISTORICAL</em></article>'+
+        '<article><small>MEETINGS</small><b>Reliability</b><span>Shown as numerator / denominator / period</span><em>NO OPAQUE SCORE</em></article>'+
+        '<article><small>ORGANISATION</small><b>Verified affiliation</b><span>Organisation membership with freshness</span><em>REVOCABLE</em></article>'+
+        '<article><small>COMMERCIAL</small><b>Outcome evidence</b><span>Observed / Reported / Verified remain separate</span><em>NO CREDIT INFERENCE</em></article>'+
+      '</div>'+
+      '<section class="trust-rules"><div><b>WHAT THIS ENABLES</b><span>Verified directory · trust-aware matchmaking · portable credential handoff</span></div><div><b>WHAT IT NEVER DOES</b><span>No wealth, creditworthiness, politics, ethnicity, hidden intent or universal reputation score.</span></div></section>'+
+      '<div class="trust-flow"><span>IDENTITY / ORG</span><i>→</i><span>EVENT HISTORY</span><i>→</i><span>MEETING EVIDENCE</span><i>→</i><span>CREDENTIAL</span><i>→</i><span>VERIFIED DIRECTORY</span></div>'+
+      '<div class="hub-note">Preview only: production issuer/status registry, revocation and portable credentials remain dependency-gated behind durable identity, PostgreSQL history and policy review.</div>';
+  }
+
   function renderHub(){
     [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.classList.toggle('active',b.dataset.hubTab===hubTab);});
     if(hubTab==='today')renderToday();
@@ -494,6 +511,7 @@
     else if(hubTab==='agenda')renderAgenda();
     else if(hubTab==='wallet')renderWallet();
     else if(hubTab==='dealroom')renderDealRoomPreview();
+    else if(hubTab==='trust')renderTrustPassportPreview();
     else renderOwner();
   }
   function updateNetworkStatus(){
@@ -518,7 +536,8 @@
     {title:'03 · Сделано в Москве',copy:'Verified layer, digital showroom, Buyer Bridge и Brand365 — городской брендовый контур.',action:function(){closeSharedOverlays();openEvent('made');}},
     {title:'04 · One ID / separate rights',copy:'Профиль общий, но регистрации, роли, QR и Verified-права остаются раздельными.',action:function(){closeSharedOverlays();openAccount();}},
     {title:'05 · Cross-platform Deal Room',copy:'Interest → shortlist → meeting → request → external handoff → evidence. Без выдуманного заказа.',action:function(){closeSharedOverlays();hubTab='dealroom';renderHub();hubModal.classList.remove('hidden');}},
-    {title:'06 · Owner value',copy:'Сквозная воронка и 365-day relationship layer показывают инвестору, за что платит владелец платформы.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
+    {title:'06 · Trust Passport',copy:'Explainable credentials, verified roles and evidence history create defensibility without an opaque social score.',action:function(){closeSharedOverlays();hubTab='trust';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'07 · Owner value',copy:'Сквозная воронка и 365-day relationship layer показывают инвестору, за что платит владелец платформы.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
   ];
   function closeSharedOverlays(){
     [accountDrawer,registrationModal,investorModal,valueModal,forYouModal,hubModal].forEach(function(el){if(el)el.classList.add('hidden');});
@@ -657,7 +676,7 @@
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
   document.getElementById('investorClose').onclick=function(){investorModal.classList.add('hidden');};
-  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}};});
+  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}if(step==='6'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Trust Passport показывает проверяемые роли, историю и credential-status без универсального рейтинга.';}};});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
   accountDrawer.addEventListener('click',function(e){if(e.target===accountDrawer)closeAccount();});
