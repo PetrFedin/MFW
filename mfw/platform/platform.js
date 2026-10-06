@@ -15,6 +15,7 @@
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
   var AUTHORITY='https://mfw-authority.onrender.com';
+  var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
@@ -508,6 +509,16 @@
     hubTab='directory';renderHub();hubModal.classList.remove('hidden');
     if(focusSearch)setTimeout(function(){var input=document.getElementById('directorySearch');if(input)input.focus();},0);
   }
+  function renderInvestorGallery(){
+    var root=document.getElementById('investorEcosystemGallery');if(!root)return;
+    var cards=[
+      {event:'mfw',label:'MFW',title:'MOSCOW FASHION WEEK',copy:'Runway · city culture · brands · buyer journey',image:MEDIA.mfw&&MEDIA.mfw.images&&MEDIA.mfw.images.hero},
+      {event:'bfs',label:'BFS',title:'BRICS+ FASHION SUMMIT',copy:'Business programme · delegates · international B2B',image:MEDIA.bfs&&MEDIA.bfs.images&&MEDIA.bfs.images.hero},
+      {event:'made',label:'MADE',title:'СДЕЛАНО В МОСКВЕ',copy:'Verified · digital showroom · Buyer Bridge · Brand365',image:MEDIA.made&&MEDIA.made.images&&MEDIA.made.images.hero}
+    ];
+    root.innerHTML=cards.map(function(x){var style=x.image?' style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.86)),url(\''+h(x.image)+'\')"':'';return '<button class="investor-ecosystem-card" data-gallery-event="'+x.event+'"'+style+'><span>'+x.label+'</span><b>'+x.title+'</b><small>'+x.copy+'</small></button>';}).join('');
+    [].slice.call(root.querySelectorAll('[data-gallery-event]')).forEach(function(b){b.onclick=function(){openEvent(b.dataset.galleryEvent);};});
+  }
   function openEvent(event){
     var mfw=event==='mfw',bfs=event==='bfs',made=event==='made';
     document.body.classList.toggle('bfs-mode',bfs);
@@ -593,7 +604,7 @@
   };
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
-  document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');};
+  document.getElementById('investorBtn').onclick=function(){renderInvestorGallery();investorModal.classList.remove('hidden');};
   document.getElementById('valueBtn').onclick=function(){valueModal.classList.remove('hidden');};
   document.getElementById('forYouBtn').onclick=function(){renderForYou();forYouModal.classList.remove('hidden');};
   document.getElementById('hubBtn').onclick=function(){openDiscover(true);};
@@ -633,6 +644,7 @@
   updateNetworkStatus();
   registerServiceWorker();
   hydrateMadeDirectory();
+  renderInvestorGallery();
   var saved='mfw';try{saved=localStorage.getItem('mfp.activeEvent')||'mfw';}catch(e){}
   var requested=null;try{requested=new URLSearchParams(location.search).get('event');}catch(e){}
   var initial=['mfw','bfs','made'].indexOf(requested)>=0?requested:(saved==='bfs'?'bfs':saved==='made'?'made':'mfw');
