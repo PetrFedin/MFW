@@ -314,3 +314,17 @@ across the complete 7-device matrix.
 
 The participant companion shell is on cache revision `mfp-shell-2026-10-03-p2`.
 Platform JS/CSS use the matching `20261003p2` asset revision so mobile/CDN clients do not mix old companion code with the new lifecycle UI.
+
+## Investor media system — 2026-10-06
+
+A stateless investor-demo media layer now connects the three ecosystem directions without changing authority boundaries:
+
+- MFW: current-season runway/editorial imagery plus official external video references;
+- BFS: separate international/business media deck;
+- «Сделано в Москве»: separate brand-growth/editorial media layer;
+- shared investor gallery shows all three experiences together and routes directly into each;
+- a central media manifest records source pages, asset URLs and the non-licence boundary;
+- major hero/story slots are assigned distinct media rather than reusing one image repeatedly;
+- new responsive QA asserts that the three investor ecosystem cards use three distinct backgrounds.
+
+No event access, Verified status, commercial outcome, analytics KPI or production-readiness claim is inferred from media. Phase 0 PostgreSQL admission remains unchanged.
