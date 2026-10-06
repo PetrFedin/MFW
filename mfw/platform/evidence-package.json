@@ -1,0 +1,87 @@
+{
+  "packageVersion": "2026-10-06-proof-v1",
+  "project": "Moscow Fashion Platform",
+  "scope": "Investor MVP evidence index",
+  "generatedFor": "demo",
+  "claims": [
+    {
+      "id": "three_ecosystems",
+      "claim": "MFW, BRICS+ Fashion Summit and Made in Moscow are connected by one platform shell.",
+      "status": "implemented",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/index.html",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "one_identity",
+      "claim": "The shared shell maintains one profile with event-scoped MFW/BFS registrations and separate Made in Moscow brand verification.",
+      "status": "implemented_demo",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "cross_event_discovery",
+      "claim": "Discover and agenda can span MFW and BFS; Made brands appear only from the verified roster authority.",
+      "status": "implemented",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "deal_room",
+      "claim": "Deal Room lifecycle is represented as a read-only product contract preview.",
+      "status": "preview_only",
+      "evidenceClass": "not_evidenced",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "trust_passport",
+      "claim": "Trust Passport is an explainable read-only preview without a universal reputation score.",
+      "status": "preview_only",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "revenue_architecture",
+      "claim": "Five monetisation surfaces and evidence gates are represented without claiming realised ARR/MRR.",
+      "status": "modelled",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/index.html"
+      ]
+    },
+    {
+      "id": "remote_media_rights",
+      "claim": "Remote public media is source-owned and is not treated as a commercial-use licence.",
+      "status": "boundary_recorded",
+      "evidenceClass": "observed",
+      "evidence": [
+        "docs/MFW_INVESTOR_MEDIA_SOURCES_2026-10-06.md"
+      ]
+    },
+    {
+      "id": "production_postgres",
+      "claim": "This investor UI wave does not itself prove production PostgreSQL readiness.",
+      "status": "not_claimed",
+      "evidenceClass": "not_evidenced",
+      "evidence": [
+        "CURRENT_STATE.md"
+      ]
+    }
+  ],
+  "rules": [
+    "No meeting or request is counted as revenue.",
+    "Observed, reported, verified, modelled and synthetic evidence remain distinct.",
+    "Synthetic demo cases are not production KPI evidence.",
+    "Production access/credential/commercial claims remain authority-gated."
+  ]
+}
