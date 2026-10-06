@@ -132,6 +132,18 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
+test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#investorBtn').click();
+  const cards = page.locator('.investor-ecosystem-card');
+  await expect(cards).toHaveCount(3);
+  const backgrounds = await cards.evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
+  expect(new Set(backgrounds).size).toBe(3);
+  expect(backgrounds.every((x) => x && x !== 'none')).toBeTruthy();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investor-three-ecosystems.png') });
+});
+
 test('premium companion Discover stays usable across the platform', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
@@ -221,7 +233,7 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toContain('mfp-shell-2026-10-03-p2');
+  expect(await swResponse.text()).toContain('mfp-shell-2026-10-06-i1');
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
