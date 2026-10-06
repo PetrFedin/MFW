@@ -29,6 +29,7 @@
   var programmeReallocationTarget='mfw';
   var programmeOptimizerTranche=10;
   var programmeScenarioBudget=30;
+  var programmeScenarioProposal=null;
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
@@ -1072,7 +1073,12 @@
     committeeSelectedId=rec.intervention.id;
     var state=ensureCommitteeCase(rec),ev=committeeEvidenceState(rec,state),decision=state.decision||committeeDecision(rec,state),policy=committeePolicy();
     var measured=state.measured===null?'—':(Math.round(state.measured*10)/10+'%');
-    hubContent.innerHTML=
+    var proposalHtml='';
+    if(programmeScenarioProposal){
+      var ps=programmeScenarioProposal,sc=ps.scenario||{};
+      proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' pts · score '+h(sc.score)+' · risk relief '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ps.status)+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
+    }
+    hubContent.innerHTML=proposalHtml+
       '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO / SYNTHETIC WORKSPACE</b><span>Все approvals, pilot status и measured results ниже существуют только в текущей demo-сессии и не являются реальными корпоративными решениями.</span></div>'+
       '<div class="committee-recommendations">'+recs.map(function(x){return '<button data-committee-select="'+h(x.intervention.id)+'" class="'+(x.intervention.id===committeeSelectedId?'active':'')+'"><span>'+h(x.points)+' pts</span><b>'+h(x.intervention.action)+'</b><small>'+h(x.intervention.stage)+'</small></button>';}).join('')+'</div>'+
       '<section class="committee-case-head"><div><div class="drawer-kicker">MINI BUSINESS CASE</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>STATUS</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' modelled budget points</small></div></section>'+
@@ -1090,6 +1096,14 @@
       '<div class="committee-actions">'+committeeActionButton(rec,state)+'<button class="secondary" data-committee-action="reset" data-committee-id="'+h(rec.intervention.id)+'">RESET DEMO</button></div>'+
       '<section class="committee-history"><div class="drawer-kicker">DECISION LOG · CURRENT SESSION</div>'+state.history.map(function(x){return '<div><b>'+h(committeeStatusLabel(x.state))+'</b><span>'+h(x.label)+'</span></div>';}).join('')+'</section>'+
       '<div class="hub-note">Workspace демонстрирует governance contract. Реальный approval должен жить в серверной authority с actor identity, timestamps, immutable decision/evidence history и role-based permissions.</div>';
+    [].slice.call(document.querySelectorAll('[data-portfolio-proposal-action]')).forEach(function(b){b.onclick=function(){
+      if(!programmeScenarioProposal)return;
+      var a=b.dataset.portfolioProposalAction;
+      if(a==='submit'&&programmeScenarioProposal.status==='DRAFT'){programmeScenarioProposal.status='IN_REVIEW';programmeScenarioProposal.history.push({state:'IN_REVIEW',label:'Portfolio allocation отправлен на review'});}
+      else if(a==='approve'&&programmeScenarioProposal.status==='IN_REVIEW'){programmeScenarioProposal.status='APPROVED_DEMO';programmeScenarioProposal.history.push({state:'APPROVED_DEMO',label:'Portfolio allocation одобрен только в demo workspace'});}
+      else if(a==='reset'){programmeScenarioProposal=null;}
+      renderInvestmentCommittee();
+    };});
     [].slice.call(document.querySelectorAll('[data-committee-select]')).forEach(function(b){b.onclick=function(){committeeSelectedId=b.dataset.committeeSelect;renderInvestmentCommittee();};});
     [].slice.call(document.querySelectorAll('[data-committee-action]')).forEach(function(b){b.onclick=function(){committeeAction(b.dataset.committeeId,b.dataset.committeeAction);};});
   }
@@ -1231,7 +1245,7 @@
       '<div class="simulator-budgets">'+(policy.budgets||[10,20,30]).map(function(x){return '<button data-sim-budget="'+h(x)+'" class="'+(Number(x)===Number(programmeScenarioBudget)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
       '<div class="simulator-table"><div class="simulator-row head"><b>SCENARIO</b><b>SCORE</b><b>RISK ↓</b><b>KPI ↑</b><b>EVIDENCE</b><b>DIVERSIFICATION</b><b>OPTIONALITY</b><b>GATE</b></div>'+
       top.map(function(x,i){return '<div class="simulator-row '+(i===0?'best':'')+'"><span>#0'+(i+1)+' · '+h(scenarioLabelMix(x))+'</span><b>'+h(x.score)+'</b><b>'+Math.round(x.riskRelief*10)/10+'</b><b>+'+Math.round(x.kpi*10)/10+' п.п.</b><b>'+Math.round(x.evidence*100)+'%</b><b>'+Math.round(x.diversification*100)+'%</b><b>'+Math.round(x.optionality*100)+'%</b><em>'+(x.conditional?'CONDITIONAL':'READY')+'</em></div>';}).join('')+'</div>'+
-      '<div class="simulator-recommendation"><div><span>BEST MIX</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · risk relief '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>WHY</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+
+      '<div class="simulator-recommendation"><div><span>BEST MIX</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · risk relief '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>WHY</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+(best?'<button class="simulator-submit" data-sim-propose>ПЕРЕДАТЬ BEST MIX В INVESTMENT COMMITTEE →</button>':'')+
       '<div class="simulator-method"><b>Правила</b><span>'+Object.keys(policy.rules||{}).map(function(k){return h(policy.rules[k]);}).join(' · ')+'</span></div>'+
     '</section>';
   }
@@ -1276,6 +1290,11 @@
     [].slice.call(document.querySelectorAll('[data-programme-release]')).forEach(function(b){b.onclick=function(){programmeRelease(b.dataset.programmeRelease);};});
     [].slice.call(document.querySelectorAll('[data-optimizer-tranche]')).forEach(function(b){b.onclick=function(){programmeOptimizerTranche=Number(b.dataset.optimizerTranche||10);renderProgrammeCapital();};});
     [].slice.call(document.querySelectorAll('[data-sim-budget]')).forEach(function(b){b.onclick=function(){programmeScenarioBudget=Number(b.dataset.simBudget||30);renderProgrammeCapital();};});
+    var propose=document.querySelector('[data-sim-propose]');if(propose)propose.onclick=function(){
+      var top=scenarioMixes(programmeScenarioBudget)[0];if(!top)return;
+      programmeScenarioProposal={budget:programmeScenarioBudget,scenario:top,status:'DRAFT',history:[{state:'DRAFT',label:'Portfolio allocation proposal создан из simulator'}]};
+      hubTab='committee';renderHub();
+    };
   }
 
   function renderTrustPassportPreview(){
