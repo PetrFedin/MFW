@@ -216,7 +216,7 @@ Responsive QA now runs mfw-api npm run check:foundation before browser/device te
 Capital Authority is not production-admitted until all of the following are green:
 
 1. secure DATABASE_URL binding;
-2. migrations 001-023 applied;
+2. migrations 001-024 applied;
 3. /ready = 200;
 4. dataMode = postgres;
 5. missingMigrations = [];
@@ -230,3 +230,44 @@ Capital Authority is not production-admitted until all of the following are gree
 13. exact release SHA is recorded in deployment evidence.
 
 Until then the investor cockpit continues to label programme-capital values as MODELLED / DEMO.
+
+## Capital Operator Admission
+
+Migration 024_capital_operator_admission.sql adds durable human operator grants.
+
+A Capital Authority operator must satisfy all of the following on every request:
+
+- signed MFW session;
+- demo=false;
+- operator=true;
+- role is Organizer or Staff;
+- matching active capital_operator_grants row;
+- active user record;
+- non-expired grant;
+- non-expired, non-revoked persisted session.
+
+Grant states:
+
+- active;
+- suspended;
+- revoked.
+
+Grant creation/reactivation requires:
+
+- PostgreSQL;
+- explicitly configured MFW_ADMIN_TOKEN;
+- the default demo admin token is rejected for this bootstrap path;
+- existing active user;
+- Organizer/Staff operator role;
+- appointment evidence reference.
+
+Suspending or revoking an operator also revokes all active persisted sessions for that user.
+
+Bootstrap endpoints:
+
+- GET /v1/admin/capital/operators
+- POST /v1/admin/capital/operators
+- PATCH /v1/admin/capital/operators/:userId
+- POST /v1/admin/capital/operator-session
+
+This shared-secret bootstrap is an MVP operator-admission mechanism, not the final enterprise IAM target. SSO/MFA or an equivalent corporate identity provider should replace bootstrap session issuance before broad production rollout.
