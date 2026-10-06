@@ -376,3 +376,33 @@ body.bfs-mode .investor-ecosystem-card,body.made-mode .investor-ecosystem-card{c
 .revenue-rule{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:10px;padding:12px;border-radius:13px;background:#171717;border:1px solid #292929}.revenue-rule b{font-size:8px;letter-spacing:.09em;color:#d7ff39}.revenue-rule span{font-size:8px;line-height:1.45;color:#8d8d8d}
 @media(max-width:900px){.revenue-grid{grid-template-columns:repeat(2,1fr)}.revenue-grid article:last-child{grid-column:1/-1}}
 @media(max-width:520px){.revenue-grid{grid-template-columns:1fr}.revenue-grid article:last-child{grid-column:auto}.revenue-grid article{min-height:125px}.revenue-rule{grid-template-columns:1fr}}
+
+
+/* Investor proof operating layer · 2026-10-06 */
+.proof-head,.operating-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;border-top:1px solid rgba(127,127,127,.24);border-bottom:1px solid rgba(127,127,127,.24);padding:18px 0}
+.proof-head h3,.operating-hero h3,.economics-hero h3{font-size:clamp(28px,4vw,48px);line-height:.92;letter-spacing:-.05em;margin:0 0 10px}
+.proof-head p,.operating-hero p,.economics-hero p{font-size:9px;line-height:1.55;max-width:760px;opacity:.65;margin:0}
+.proof-mode-toggle{display:flex;border:1px solid currentColor;border-radius:999px;overflow:hidden}
+.proof-mode-toggle button{border:0;background:transparent;color:inherit;padding:9px 11px;font-size:7px;font-weight:950;letter-spacing:.08em;white-space:nowrap}
+.proof-mode-toggle button.active{background:currentColor;color:#f4f0e7}
+body:not(.bfs-mode):not(.made-mode) .proof-mode-toggle button.active{background:#c8ff00;color:#050505}
+.proof-chain{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.proof-chain article{min-height:142px;border:1px solid rgba(127,127,127,.28);border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:9px}
+.proof-stage{display:flex;justify-content:space-between;gap:8px}.proof-stage span{font-size:8px;font-weight:950;letter-spacing:.1em}.proof-stage i{font-style:normal;font-size:8px;opacity:.48}
+.proof-chain article>b{font-size:14px;line-height:1.2}
+.evidence-badge{margin-top:auto;align-self:flex-start;border:1px solid currentColor;border-radius:999px;padding:5px 7px;font-size:6.5px;font-weight:950;letter-spacing:.08em}
+.evidence-observed{color:#0c6}.evidence-verified{color:#0a7}.evidence-reported{color:#bb7a00}.evidence-modelled{color:#7b62ff}.evidence-synthetic{color:#d85cff}.evidence-not_evidenced{color:#888;border-style:dashed}
+.proof-rules{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:15px}.proof-rules span{border:1px solid rgba(127,127,127,.22);padding:10px;font-size:8px;line-height:1.45}
+.proof-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.proof-actions button,.proof-actions a{border:1px solid currentColor;background:transparent;color:inherit;padding:10px 12px;font-size:8px;font-weight:950;text-decoration:none;letter-spacing:.06em}
+.partner-flow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:16px}
+.partner-flow article{min-height:170px;border:1px solid rgba(127,127,127,.25);padding:12px;display:flex;flex-direction:column;gap:8px}
+.partner-flow span{font-size:7px;font-weight:950;letter-spacing:.08em}.partner-flow b{font-size:12px}.partner-flow small{font-size:8px;line-height:1.4;opacity:.62}.partner-flow em{margin-top:auto;font-style:normal;font-size:7px;font-weight:950}
+.console-boundary{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:14px;padding:12px;border:1px solid rgba(127,127,127,.25)}.console-boundary b{font-size:8px;letter-spacing:.08em}.console-boundary span{font-size:8px;line-height:1.45;opacity:.66}
+.brand-funnel{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;margin-top:16px}.brand-funnel article{min-height:145px;border:1px solid rgba(127,127,127,.25);padding:11px;display:flex;flex-direction:column;gap:7px}.brand-funnel span{font-size:7px;font-weight:950;letter-spacing:.08em}.brand-funnel b{font-size:10px;line-height:1.25}
+.continuity-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.continuity-grid article{border:1px solid rgba(127,127,127,.25);padding:14px;min-height:130px}.continuity-grid span{font-size:9px;font-weight:950}.continuity-grid b{display:block;font-size:16px;margin:12px 0 6px}.continuity-grid small{font-size:8px;line-height:1.4;opacity:.62}
+.economics-hero{padding:18px 0;border-top:1px solid rgba(127,127,127,.24);border-bottom:1px solid rgba(127,127,127,.24)}
+.economics-table{display:grid;margin-top:16px;border-top:1px solid rgba(127,127,127,.25)}.economics-row{display:grid;grid-template-columns:1fr 1.1fr 1.2fr 1.4fr;gap:10px;padding:12px 0;border-bottom:1px solid rgba(127,127,127,.25);align-items:start}.economics-row.head{font-size:7px;letter-spacing:.1em}.economics-row span,.economics-row code,.economics-row em{font-size:8px;line-height:1.45}.economics-row code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.economics-row em{font-style:normal}
+.economics-proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:15px}.economics-proof-grid article{border:1px solid rgba(127,127,127,.25);padding:12px}.economics-proof-grid b{font-size:9px}.economics-proof-grid span{display:block;font-size:8px;line-height:1.4;opacity:.62;margin-top:6px}
+@media(max-width:980px){.partner-flow{grid-template-columns:repeat(2,1fr)}.partner-flow article:last-child{grid-column:1/-1}.brand-funnel{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.proof-head,.operating-hero{grid-template-columns:1fr}.proof-chain{grid-template-columns:1fr 1fr}.proof-rules{grid-template-columns:1fr}.economics-row{grid-template-columns:1fr}.economics-row.head{display:none}.economics-proof-grid{grid-template-columns:1fr 1fr}.console-boundary{grid-template-columns:1fr}}
+@media(max-width:430px){.proof-chain,.partner-flow,.brand-funnel,.continuity-grid,.economics-proof-grid{grid-template-columns:1fr}.partner-flow article:last-child{grid-column:auto}.proof-mode-toggle{width:100%}.proof-mode-toggle button{flex:1}}
