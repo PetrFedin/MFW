@@ -801,7 +801,7 @@ This keeps investor demonstration separate from corporate authority while making
 
 ## Capital Operator Admission — 2026-10-06
 
-Migration 024 adds durable Capital Authority operator grants.
+Migration 024 adds durable Capital Authority operator grants. Migration 025 adds the organisation credential revocation ledger.
 
 Capital access is no longer based on signed claims alone. Every capital request now re-checks:
 
