@@ -18,6 +18,7 @@ const {
   capitalProjectionFromRows,
   capitalProjectionBreakdown,
   capitalProjectionForType,
+  capitalDecisionGate,
   validateCapitalTransition,
   verifyCapitalChainRows
 } = require('./capital-authority');
@@ -2566,6 +2567,29 @@ async function router(req,res){
       FROM capital_ledger_events WHERE programme_key=$1 ORDER BY aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
     const verification=verifyCapitalChainRows(r.rows);
     return json(res,verification.ok?200:409,{data:{programmeKey,...verification},authority:'capital_ledger'});
+  }
+
+  if(p==='/v1/capital/decision-gate'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const aggregateType=String(url.searchParams.get('aggregateType')||'programme');
+    const aggregateId=String(url.searchParams.get('aggregateId')||'').trim();
+    const metric=String(url.searchParams.get('metric')||'').trim();
+    const direction=String(url.searchParams.get('direction')||'increase').trim().toLowerCase();
+    const target=Number(url.searchParams.get('target'));
+    const nextTranchePoints=Number(url.searchParams.get('nextTranchePoints')||0);
+    const minimumEvidenceClass=String(url.searchParams.get('minimumEvidenceClass')||'OBSERVED').trim().toUpperCase();
+    const onTargetMiss=String(url.searchParams.get('onTargetMiss')||'ITERATE').trim().toUpperCase();
+    if(!CAPITAL_AGGREGATE_TYPES.has(aggregateType))return json(res,400,{error:'invalid_capital_aggregate_type'});
+    if(!aggregateId)return json(res,400,{error:'aggregate_id_required'});
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,points,payload,
+      actor_subject,actor_role,occurred_at,recorded_at,evidence_refs,event_hash,previous_event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 AND aggregate_type=$2 AND aggregate_id=$3
+      ORDER BY aggregate_seq ASC`,[programmeKey,aggregateType,aggregateId]);
+    const gate=capitalDecisionGate(r.rows,{metric,direction,target,nextTranchePoints,minimumEvidenceClass,onTargetMiss});
+    return json(res,200,{data:{programmeKey,aggregateType,aggregateId,gate},authority:'capital_ledger',writeAuthority:false,
+      decisionBoundary:'recommendation_only_no_approval_no_release'});
   }
 
   if(p==='/v1/capital/projection'&&req.method==='GET'){
