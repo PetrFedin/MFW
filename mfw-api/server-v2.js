@@ -1646,6 +1646,12 @@ async function router(req,res){
       return json(res,200,{data,source:pool?'postgres':'memory_demo',authority:'persistent_organisation_registry'});
     }catch(err){return json(res,400,{error:String(err&&err.message||err)});}
   }
+  if(req.method==='GET'&&p.startsWith('/v1/network/organisations/')&&p.endsWith('/portable-proof')){
+    const raw=p.slice('/v1/network/organisations/'.length,-'/portable-proof'.length);
+    const id=decodeURIComponent(raw);
+    const data=await organisationRegistry.portableProof(id);
+    return data?json(res,200,{data,authority:'persistent_organisation_registry'}):json(res,404,{error:'organisation_not_found'});
+  }
   if(req.method==='GET'&&p.startsWith('/v1/network/organisations/')){
     const id=decodeURIComponent(p.slice('/v1/network/organisations/'.length));
     const data=await organisationRegistry.get(id);
