@@ -532,3 +532,32 @@ The decomposition is symmetric:
 - their sum reproduces the aggregate A-B rate gap up to rounding.
 
 This is descriptive accounting decomposition only. It is not causal attribution, and it does not infer monetary uplift without real contract/billing/payment evidence.
+
+## Recommendation / Capital Allocation Layer — 2026-10-06
+
+Comparison / Scenario Mode now includes a modelled Recommendation / Capital Allocation layer.
+
+The engine:
+
+- maps the ranked scenario gaps to a fixed intervention catalog;
+- scores candidate interventions from:
+  - absolute percentage-point gap;
+  - affected denominator cohort scale;
+  - explicit leverage assumption;
+  - explicit effort assumption;
+- selects the top three interventions;
+- normalizes their relative scores into exactly 100 modelled pilot-budget points;
+- identifies the weaker scenario and strongest market/category driver;
+- names the KPI expected to move;
+- creates an explicitly MODELLED pilot target;
+- declares evidence required before an intervention can be treated as successful;
+- links representative dossiers where materialised demo evidence exists;
+- includes a Pilot -> Measure -> Verify -> Scale/Stop governance path.
+
+Priority score:
+
+|gap pp| x sqrt(affected denominator / max scenario population) x leverage / effort.
+
+The 100 points are not currency and are not an approved budget. Real capital allocation requires intervention costs, capacity, contractual constraints, risk limits and investment-committee approval.
+
+Pilot targets are scenario assumptions only. No recommendation is represented as guaranteed uplift.
