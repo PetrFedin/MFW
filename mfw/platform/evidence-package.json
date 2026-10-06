@@ -236,6 +236,18 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "programme_capital_control",
+      "claim": "The investor MVP includes portfolio-level modelled capital governance across requested, approved, committed, spent, measured, scaled and stopped states, with MFW/BFS/Made allocation, blockers, evidence completeness and explicit release before STOP commitments become reallocatable.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -245,7 +257,7 @@
     "Production access/credential/commercial claims remain authority-gated."
   ],
   "guidedInvestorRoute": {
-    "steps": 14,
+    "steps": 15,
     "scope": [
       "MFW",
       "BFS",
@@ -366,6 +378,28 @@
         "auditable evidence links"
       ],
       "boundary": "No demo approval, pilot status or measured result is a production corporate decision."
+    },
+    "programmeCapital": {
+      "envelopePoints": 150,
+      "baseline": {
+        "requested": 128,
+        "approved": 100,
+        "committed": 85,
+        "spent": 58,
+        "measured": 46,
+        "scaled": 22,
+        "stopped": 6,
+        "uncommittedReserve": 50,
+        "committedUnspent": 27
+      },
+      "reallocationRule": "Only uncommitted reserve plus explicitly released STOP/closed commitments are reallocatable.",
+      "releaseExample": {
+        "intervention": "deal-room-sla",
+        "releasedPoints": 3,
+        "reallocationCapacityBefore": 50,
+        "reallocationCapacityAfter": 53
+      },
+      "boundary": "Modelled pilot points only; not currency, actual accounting spend or approved corporate capital."
     }
   },
   "language": {
