@@ -364,3 +364,18 @@ Added side-by-side investor scenario comparison:
 - Russian-first Control Tower labels and filters.
 
 All comparison outputs remain deterministic synthetic scenario metrics, not production KPI or causal conclusions.
+
+## 2026-10-06 — Opportunity Explanation Engine
+
+Added decision-support explanations to Comparison Mode:
+
+- largest funnel gap detection;
+- six-stage gap ranking;
+- category and market decomposition;
+- composition/mix vs within-segment contributions;
+- D30/D90/D365 retention explanation;
+- representative dossier evidence links;
+- explicit inspect-next recommendation for the selected bottleneck;
+- responsive QA for the explanation layer.
+
+All outputs are synthetic descriptive analysis, not causal claims or realised economic impact.
