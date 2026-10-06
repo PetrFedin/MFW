@@ -343,3 +343,17 @@ Implemented from the newest defensibility/trust section of the master plan as a 
 - guided investor route now includes Trust Passport before Owner value.
 
 Production credential issuer/status registry and revocation remain gated behind durable identity/history, PostgreSQL and formal policy review.
+
+## Investor revenue architecture — 2026-10-06
+
+The shared investor value layer now shows five monetisation surfaces without presenting hypothetical figures as actual revenue:
+
+- partner / sponsor product;
+- Brand365 / brand CRM tooling;
+- professional B2B / Deal Room;
+- privacy-safe fashion intelligence;
+- partner API / enterprise integrations.
+
+Each surface is labelled by the evidence required before it can be treated as a commercial result. The UI explicitly states that engagement, meetings and structured requests are not revenue.
+
+This remains a product/commercial architecture preview. Actual ARR/MRR, unit economics and realised revenue require production contracts, billing/payment evidence and production analytics.
