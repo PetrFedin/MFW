@@ -682,3 +682,36 @@ For each 10/20/30-point scenario the UI shows:
 The optimizer does not approve capital. It only produces a candidate decision for Investment Committee review.
 
 Reallocation capacity remains constrained by Programme Capital rules: uncommitted reserve + explicit releases only.
+
+## Portfolio Scenario Simulator — 2026-10-06
+
+Programme Capital Control now includes a Portfolio Scenario Simulator above the single-destination reallocation optimizer.
+
+For a selected 10 / 20 / 30-point next-quarter budget, the simulator enumerates eligible mixes across:
+
+- MFW;
+- BRICS+ Fashion Summit;
+- Made in Moscow;
+- explicit Reserve.
+
+Scenario step: 10 points.
+
+Ranking dimensions:
+
+- 30% capital-at-risk reduction;
+- 25% modelled KPI leverage;
+- 20% evidence confidence;
+- 10% diversification;
+- 15% optionality / reserve.
+
+Governance constraints apply before ranking:
+
+- HOLD candidates cannot receive new capital;
+- CONDITIONAL allocations remain committee-gated;
+- vertical allocations cannot exceed absorption caps or available programme reallocation capacity;
+- unallocated budget remains Reserve by design and is scored as optionality;
+- the simulator ranks mixes but does not approve or commit capital.
+
+The simulator shows the top five eligible mixes for 20/30-point budgets and all available mixes for a 10-point budget. A pure Reserve scenario is included, so optionality is an explicit portfolio decision rather than an accidental capacity remainder.
+
+All risk reduction and KPI values are model assumptions. They are not guaranteed outcomes, currency or ROI.
