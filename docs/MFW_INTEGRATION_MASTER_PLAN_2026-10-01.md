@@ -2277,3 +2277,16 @@ Capital Decision Gate boundary:
 
 Next dependency-controlled sequence:
 Phase 0 admission -> branch/CI reconciliation -> pg-boss/outbox -> formal policy -> governed tranche command workflow -> external/committee integrations.
+## 2026-10-06 localisation rule — Russian-first product UI
+
+Russian is the default and primary interface language for the MFW platform.
+
+Rules:
+- when Russian locale is active, user-facing copy should be Russian by default;
+- English remains acceptable for proper product/brand names, standards, protocol names, machine identifiers and widely recognised abbreviations;
+- common abbreviations such as KPI, CRM, B2B, API, ARR/MRR, GMV, CLV, CAC and ROI should expose a Russian explanation via title/tooltip or equivalent accessible help where practical;
+- internal API enums/state codes must not be translated in transport or persistence; translate only their visible presentation;
+- MFW / BFS / Made visual identities stay distinct, but language policy is shared;
+- the English locale remains supported and must not be broken by RU-first copy changes.
+
+CI now includes a Russian-first UI contract covering core Investor / Capital / Organisation surfaces.
