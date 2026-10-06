@@ -16,6 +16,8 @@ const {
   capitalEventEnvelope,
   capitalHash,
   capitalProjectionFromRows,
+  capitalProjectionBreakdown,
+  capitalProjectionForType,
   validateCapitalTransition,
   verifyCapitalChainRows
 } = require('./capital-authority');
@@ -2564,10 +2566,15 @@ async function router(req,res){
     if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
     const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
     const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const aggregateType=String(url.searchParams.get('aggregateType')||'').trim();
+    if(aggregateType&&!CAPITAL_AGGREGATE_TYPES.has(aggregateType))return json(res,400,{error:'invalid_capital_aggregate_type'});
     const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,points,payload,
       actor_subject,actor_role,occurred_at,recorded_at,evidence_refs,event_hash,previous_event_hash
       FROM capital_ledger_events WHERE programme_key=$1 ORDER BY recorded_at ASC,aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
-    return json(res,200,{data:{programmeKey,projection:capitalProjectionFromRows(r.rows),events:r.rowCount,latest:r.rows[r.rows.length-1]||null},authority:'capital_ledger'});
+    const breakdown=capitalProjectionBreakdown(r.rows);
+    const projection=aggregateType?capitalProjectionForType(r.rows,aggregateType):null;
+    return json(res,200,{data:{programmeKey,aggregateType:aggregateType||null,projection,breakdown,events:r.rowCount,latest:r.rows[r.rows.length-1]||null,
+      projectionRule:aggregateType?'single_aggregate_type':'mixed_hierarchy_no_single_total'},authority:'capital_ledger'});
   }
 
   if(req.method==='GET'&&p==='/v1/owner/control-tower'){
