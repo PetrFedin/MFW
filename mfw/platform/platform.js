@@ -76,17 +76,17 @@
   }
   async function loadOrganisationNetworkProof(){
     var root=document.getElementById('organisationNetworkProof');if(!root)return;
-    root.innerHTML='<span>ORGANISATION NETWORK · loading authority…</span>';
+    root.innerHTML='<span>СЕТЬ ОРГАНИЗАЦИЙ · ЗАГРУЗКА ДАННЫХ ИЗ РЕЕСТРА…</span>';
     try{
       var out=await authorityFetch('/v1/network/organisations/summary',{method:'GET'}),d=out.data||{};
       root.innerHTML=
-        '<div><strong>'+Number(d.activeOrganisations||0)+'</strong><span>active organisations</span></div>'+
-        '<div><strong>'+Number(d.verifiedOrganisations||0)+'</strong><span>verified</span></div>'+
-        '<div><strong>'+Number(d.activeRepresentatives||0)+'</strong><span>representatives</span></div>'+
-        '<div><strong>'+Number(d.crossEventOrganisations||0)+'</strong><span>cross-event</span></div>'+
-        '<small>MFW '+Number(d.mfwOrganisations||0)+' · BFS '+Number(d.bfsOrganisations||0)+' · MADE '+Number(d.madeOrganisations||0)+' · '+Number(d.participationRecords||0)+' participation records · '+h(out.source||'authority')+'</small>';
+        '<div><strong>'+Number(d.activeOrganisations||0)+'</strong><span>активных организаций</span></div>'+
+        '<div><strong>'+Number(d.verifiedOrganisations||0)+'</strong><span>подтверждено</span></div>'+
+        '<div><strong>'+Number(d.activeRepresentatives||0)+'</strong><span>представителей</span></div>'+
+        '<div><strong>'+Number(d.crossEventOrganisations||0)+'</strong><span>между событиями</span></div>'+
+        '<small>MFW '+Number(d.mfwOrganisations||0)+' · BFS '+Number(d.bfsOrganisations||0)+' · MADE '+Number(d.madeOrganisations||0)+' · '+Number(d.participationRecords||0)+' записей об участии · '+h(out.source||'authority')+'</small>';
     }catch(e){
-      root.innerHTML='<span>ORGANISATION NETWORK · authority unavailable</span>';
+      root.innerHTML='<span>СЕТЬ ОРГАНИЗАЦИЙ · СЕРВЕРНЫЙ РЕЕСТР НЕДОСТУПЕН</span>';
     }
   }
   function eventRoleMode(code,roleId){
@@ -145,8 +145,8 @@
       ? '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+' · '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4><p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p><small>'+h((current.relationship&&current.relationship.relationshipRole)||'representative')+(current.relationship&&current.relationship.roleTitle?' · '+h(current.relationship.roleTitle):'')+'</small><div class="organisation-proof"><span>'+h(current.activeRepresentativeCount||1)+' representatives</span><span>'+h(current.participationCount||0)+' participation records</span></div></article>'
       : '<p class="organisation-empty">Привяжите профиль к организации. Это создаёт persistent identity, но не подтверждает организацию автоматически.</p>';
     var rows=(organisationState.items||[]).slice(0,12);
-    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' shown</span></div>'+
-      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' history</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
+    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' показано</span></div>'+
+      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' записей истории</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
   }
   async function loadOrganisationRegistry(){
     if(organisationState.loading)return;
@@ -183,12 +183,12 @@
     {id:'menswear',label:'Мужская мода'},
     {id:'accessories',label:'Аксессуары'},
     {id:'sustainable',label:'Устойчивая мода'},
-    {id:'business',label:'Fashion business'},
-    {id:'retail',label:'Retail / Buying'},
-    {id:'technology',label:'Fashion Tech / AI'},
+    {id:'business',label:'Модный бизнес'},
+    {id:'retail',label:'Ретейл / закупки'},
+    {id:'technology',label:'Модные технологии / ИИ'},
     {id:'international',label:'Международные рынки'},
     {id:'lectures',label:'Лекторий / дискуссии'},
-    {id:'networking',label:'B2B / networking'}
+    {id:'networking',label:'B2B / деловые связи'}
   ];
   function selectedInterests(){return safeJson('mfpInterests.v1',[]);}
   function setSelectedInterests(v){try{localStorage.setItem('mfpInterests.v1',JSON.stringify(v));}catch(e){}}
@@ -282,7 +282,7 @@
         var out=await authorityFetch('/v1/me/recommendations',{method:'GET'});
         recs=(out.data||[]).map(function(r){
           var reason=(r.reasons||[]).map(function(x){return x.replace('interest:','интерес · ').replace('favorite_brand:','любимый бренд · ').replace('followed_brand:','подписка · ').replace(/_/g,' ');}).join(' · ');
-          return {type:String(r.eventBrand||'mfw').toUpperCase()+' · RECOMMENDED',title:r.title,body:formatWhen(r.startsAt)+' · '+(r.metadata&&r.metadata.venueLabel||r.metadata&&r.metadata.hall||''),path:reason||'programme relevance',event:r.eventBrand||'mfw',id:r.id,score:r.score};
+          return {type:String(r.eventBrand||'mfw').toUpperCase()+' · РЕКОМЕНДУЕМ',title:r.title,body:formatWhen(r.startsAt)+' · '+(r.metadata&&r.metadata.venueLabel||r.metadata&&r.metadata.hall||''),path:reason||'релевантность программе',event:r.eventBrand||'mfw',id:r.id,score:r.score};
         });server=true;
       }catch(e){}
     }
@@ -291,22 +291,22 @@
       (data.mfw.brands||[]).forEach(function(b){
         if((interests.mfwFavorites||[]).indexOf(b.id)>=0||(interests.mfwFollowed||[]).indexOf(b.id)>=0){
           var show=(data.mfw.events||[]).filter(function(e){return e.id===b.showId;})[0];
-          recs.push({type:'MFW · BRAND',title:b.name,body:show?(show.date+' · '+show.time+' · '+show.venue):'Следите за обновлениями бренда',path:'Favorite / Follow → Show → Reminder → Replay → Reward',event:'mfw'});
+          recs.push({type:'MFW · БРЕНД',title:b.name,body:show?(show.date+' · '+show.time+' · '+show.venue):'Следите за обновлениями бренда',path:'Избранное / подписка → показ → напоминание → запись → награда',event:'mfw'});
         }
       });
       Object.keys(interests.bfsSaved||{}).filter(function(k){return interests.bfsSaved[k];}).forEach(function(id){
         var ss=(data.bfs.sessions||[]).filter(function(x){return x.id===id;})[0];
-        if(ss)recs.push({type:'BFS · SESSION',title:ss.title,body:ss.date+' · '+ss.time+' · '+ss.hall,path:'Saved session → Speaker → Meeting → Lead',event:'bfs'});
+        if(ss)recs.push({type:'BFS · СЕССИЯ',title:ss.title,body:ss.date+' · '+ss.time+' · '+ss.hall,path:'Сохранённая сессия → спикер → встреча → лид',event:'bfs'});
       });
     }
     if(!recs.length){
       recs=[
-        {type:'MFW · START HERE',title:'Добавьте любимый бренд',body:'MFW → Бренды → Follow или ♥ Favorite',path:'Brand → Show → LIVE / Replay → Reward',event:'mfw'},
-        {type:'BFS · START HERE',title:'Сохраните интересную сессию',body:'BFS → Программа → добавьте сессию',path:'Session → Speaker → Meeting → Lead',event:'bfs'}
+        {type:'MFW · НАЧАТЬ ЗДЕСЬ',title:'Добавьте любимый бренд',body:'MFW → Бренды → подписаться или добавить в избранное',path:'Бренд → показ → прямой эфир / запись → награда',event:'mfw'},
+        {type:'BFS · НАЧАТЬ ЗДЕСЬ',title:'Сохраните интересную сессию',body:'BFS → Программа → добавьте сессию',path:'Сессия → спикер → встреча → лид',event:'bfs'}
       ];
     }
     grid.innerHTML=recs.slice(0,8).map(function(r){
-      return '<article class="rec-card"><div class="rec-type">'+h(r.type)+(server?' · SERVER':'')+'</div><h3>'+h(r.title)+'</h3><p>'+h(r.body)+'</p><div class="rec-path">'+h(r.path)+'</div><div class="rec-actions"><button data-rec-event="'+h(r.event)+'">ОТКРЫТЬ '+h(String(r.event).toUpperCase())+'</button>'+(r.id?'<button class="secondary" data-rec-agenda="'+h(r.id)+'" data-rec-kind="'+h(r.event)+'">В ПРОГРАММУ</button>':'')+'</div></article>';
+      return '<article class="rec-card"><div class="rec-type">'+h(r.type)+(server?' · СЕРВЕР':'')+'</div><h3>'+h(r.title)+'</h3><p>'+h(r.body)+'</p><div class="rec-path">'+h(r.path)+'</div><div class="rec-actions"><button data-rec-event="'+h(r.event)+'">ОТКРЫТЬ '+h(String(r.event).toUpperCase())+'</button>'+(r.id?'<button class="secondary" data-rec-agenda="'+h(r.id)+'" data-rec-kind="'+h(r.event)+'">В ПРОГРАММУ</button>':'')+'</div></article>';
     }).join('');
     [].slice.call(document.querySelectorAll('[data-rec-event]')).forEach(function(b){b.onclick=function(){forYouModal.classList.add('hidden');openEvent(b.dataset.recEvent);};});
     [].slice.call(document.querySelectorAll('[data-rec-agenda]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.recKind,b.dataset.recAgenda);};});
@@ -317,7 +317,7 @@
       favorite:(interests.mfwFavorites||[]).length+Object.keys(interests.bfsFavorites||{}).filter(function(k){return interests.bfsFavorites[k];}).length
     };
     document.getElementById('ownerFunnel').innerHTML='<h3>Ваш путь</h3><div class="funnel-grid">'+
-      [['REGISTER',counts.registered],['SAVE',counts.saved],['FOLLOW',counts.followed],['FAVORITE',counts.favorite]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
+      [['РЕГИСТРАЦИИ',counts.registered],['СОХРАНЕНО',counts.saved],['ПОДПИСКИ',counts.followed],['ИЗБРАННОЕ',counts.favorite]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
       '</div><div class="funnel-note">'+(server?'Рекомендации рассчитаны server-side из explicit interests + follows + favorites.':'Локальный fallback до появления server-сессии.')+'</div>';
   }
 
@@ -367,13 +367,13 @@
     (data.mfw.events||[]).forEach(function(x){out.push({kind:'mfw-event',event:'MFW',openEvent:'mfw',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.type+' · '+x.venue});});
     (data.bfs.speakers||[]).forEach(function(x){out.push({kind:'bfs-speaker',event:'BFS',openEvent:'bfs',id:x.id,title:x.name,subtitle:x.role,meta:x.org});});
     (data.bfs.sessions||[]).forEach(function(x){out.push({kind:'bfs-session',event:'BFS',openEvent:'bfs',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.topic+' · '+x.hall});});
-    madeVerifiedBrands.forEach(function(x){out.push({kind:'made-brand',event:'MADE',openEvent:'made',id:x.id,title:x.name,subtitle:x.city||'Москва',meta:'Made in Moscow Verified · canonical MFW brand'});});
+    madeVerifiedBrands.forEach(function(x){out.push({kind:'made-brand',event:'MADE',openEvent:'made',id:x.id,title:x.name,subtitle:x.city||'Москва',meta:'Подтверждено «Сделано в Москве» · канонический бренд MFW'});});
     return out;
   }
   function sourceBadge(event){
-    if(event==='MADE')return '<span class="source-badge made-source">VERIFIED ROSTER</span>';
+    if(event==='MADE')return '<span class="source-badge made-source">ПОДТВЕРЖДЁННЫЙ РЕЕСТР</span>';
     var s=(window.MFP_DATA&&window.MFP_DATA.sources||{})[event==='MFW'?'mfw':'bfs'];
-    return s?'<span class="source-badge">OFFICIAL · '+h(window.MFP_DATA.syncedAt||'')+'</span>':'';
+    return s?'<span class="source-badge">ОФИЦИАЛЬНЫЙ ИСТОЧНИК · '+h(window.MFP_DATA.syncedAt||'')+'</span>':'';
   }
   function isoDay(d){
     var x=d instanceof Date?d:new Date(d);
@@ -495,10 +495,10 @@
       }catch(e){}
     }
     var conflicts=server?serverConflicts:agendaConflicts(items);
-    var alert=conflicts&&conflicts.length?'<div class="agenda-alert"><b>Найдено пересечений: '+conflicts.length+'</b><br>'+conflicts.map(function(x){return server?(h(x.titleA)+' ↔ '+h(x.titleB)):(h(x.date)+': '+h(x.a.title)+' ↔ '+h(x.b.title));}).join('<br>')+'</div>':'<div class="agenda-alert agenda-ok"><b>Конфликтов не найдено.</b> '+(server?'SERVER CHECK':'LOCAL PLANNING')+'</div>';
+    var alert=conflicts&&conflicts.length?'<div class="agenda-alert"><b>Найдено пересечений: '+conflicts.length+'</b><br>'+conflicts.map(function(x){return server?(h(x.titleA)+' ↔ '+h(x.titleB)):(h(x.date)+': '+h(x.a.title)+' ↔ '+h(x.b.title));}).join('<br>')+'</div>':'<div class="agenda-alert agenda-ok"><b>Конфликтов не найдено.</b> '+(server?'ПРОВЕРКА СЕРВЕРОМ':'ЛОКАЛЬНОЕ ПЛАНИРОВАНИЕ')+'</div>';
     hubContent.innerHTML=alert+'<div class="agenda-list">'+items.map(function(x){
       var when=x.startsAt?formatWhen(x.startsAt):(h(x.date)+'<br>'+h(x.time)+(x.end?'–'+h(x.end):''));
-      return '<article class="agenda-item"><div class="agenda-time"><span class="agenda-event">'+h(x.eventCode||String(x.kind||'').toUpperCase())+'</span><br>'+when+'</div><div><h3>'+h(x.title)+'</h3><p>'+h(x.venue||x.hall||'')+(x.reminderMinutes!=null?' · reminder '+h(x.reminderMinutes)+' min':'')+'</p></div><button class="agenda-action" data-remove-kind="'+h(x.kind)+'" data-remove-id="'+h(x.id)+'">УБРАТЬ</button></article>';
+      return '<article class="agenda-item"><div class="agenda-time"><span class="agenda-event">'+h(x.eventCode||String(x.kind||'').toUpperCase())+'</span><br>'+when+'</div><div><h3>'+h(x.title)+'</h3><p>'+h(x.venue||x.hall||'')+(x.reminderMinutes!=null?' · напоминание '+h(x.reminderMinutes)+' мин':'')+'</p></div><button class="agenda-action" data-remove-kind="'+h(x.kind)+'" data-remove-id="'+h(x.id)+'">УБРАТЬ</button></article>';
     }).join('')+'</div>'+(items.length?'':'<div class="hub-note">Добавьте показы MFW и сессии BFS — здесь появится единый маршрут.</div>');
     [].slice.call(document.querySelectorAll('[data-remove-id]')).forEach(function(b){b.onclick=function(){removeAgenda(b.dataset.removeKind,b.dataset.removeId);};});
   }
@@ -508,10 +508,10 @@
         var out=await authorityFetch('/v1/me/wallet',{method:'GET'}),d=out.data||{},offers=d.offers||[],claims=d.claims||[];
         var offerCards=offers.map(function(o){
           var e=o.eligibility||{},progress=e.progress||[],days=progress.reduce(function(m,x){return Math.max(m,Number(x.currentDays||0));},0);
-          return '<article class="wallet-card '+(e.eligible?'':'locked')+'"><div class="kind">MFW · '+(e.eligible?'ELIGIBLE':'PROGRESS')+'</div><h3>'+h(o.titleRu||o.titleEn||'Reward')+'</h3><div class="days">'+h(days)+' / '+h(o.minContinuousDays||30)+'</div><div class="wallet-progress"><i style="width:'+Math.min(100,Math.round(days/Math.max(1,Number(o.minContinuousDays||30))*100))+'%"></i></div><small>'+h((progress.filter(function(x){return !x.ok;})[0]||{}).detail||'Условия выполнены')+'</small>'+(e.eligible?'<button class="wallet-action" data-claim-offer="'+h(o.id)+'">ПОЛУЧИТЬ НАГРАДУ</button>':'')+'</article>';
+          return '<article class="wallet-card '+(e.eligible?'':'locked')+'"><div class="kind">MFW · '+(e.eligible?'ДОСТУПНО':'ПРОГРЕСС')+'</div><h3>'+h(o.titleRu||o.titleEn||'Reward')+'</h3><div class="days">'+h(days)+' / '+h(o.minContinuousDays||30)+'</div><div class="wallet-progress"><i style="width:'+Math.min(100,Math.round(days/Math.max(1,Number(o.minContinuousDays||30))*100))+'%"></i></div><small>'+h((progress.filter(function(x){return !x.ok;})[0]||{}).detail||'Условия выполнены')+'</small>'+(e.eligible?'<button class="wallet-action" data-claim-offer="'+h(o.id)+'">ПОЛУЧИТЬ НАГРАДУ</button>':'')+'</article>';
         }).join('');
-        var claimCards=claims.map(function(x){return '<article class="wallet-card"><div class="kind">CLAIM · '+h(String(x.status).toUpperCase())+'</div><h3>'+h(x.titleRu||x.titleEn||x.brandName||'Reward')+'</h3><small>'+h(x.brandName||'')+'</small>'+(x.status==='issued'?'<button class="wallet-action" data-wallet-qr="'+h(x.id)+'">ОТКРЫТЬ QR</button>':'')+'</article>';}).join('');
-        hubContent.innerHTML='<div class="wallet-summary">'+h(d.summary&&d.summary.eligibleOffers||0)+' eligible · '+h(d.summary&&d.summary.issued||0)+' issued · '+h(d.summary&&d.summary.redeemed||0)+' redeemed</div><div class="wallet-grid">'+offerCards+claimCards+'</div>'+(offerCards||claimCards?'':'<div class="hub-note">Подпишитесь на бренд MFW и выполните условия loyalty campaign.</div>');
+        var claimCards=claims.map(function(x){return '<article class="wallet-card"><div class="kind">CLAIM · '+h(String(x.status).toUpperCase())+'</div><h3>'+h(x.titleRu||x.titleEn||x.brandName||'Награда')+'</h3><small>'+h(x.brandName||'')+'</small>'+(x.status==='issued'?'<button class="wallet-action" data-wallet-qr="'+h(x.id)+'">ОТКРЫТЬ QR</button>':'')+'</article>';}).join('');
+        hubContent.innerHTML='<div class="wallet-summary">'+h(d.summary&&d.summary.eligibleOffers||0)+' доступно · '+h(d.summary&&d.summary.issued||0)+' выдано · '+h(d.summary&&d.summary.redeemed||0)+' redeemed</div><div class="wallet-grid">'+offerCards+claimCards+'</div>'+(offerCards||claimCards?'':'<div class="hub-note">Подпишитесь на бренд MFW и выполните условия loyalty campaign.</div>');
         [].slice.call(document.querySelectorAll('[data-claim-offer]')).forEach(function(b){b.onclick=async function(){try{await authorityFetch('/v1/loyalty/offers/'+encodeURIComponent(b.dataset.claimOffer)+'/claim',{method:'POST',body:'{}'});renderWallet();}catch(e){alert(e.message);}};});
         [].slice.call(document.querySelectorAll('[data-wallet-qr]')).forEach(function(b){b.onclick=async function(){try{var q=await authorityFetch('/v1/loyalty/claims/'+encodeURIComponent(b.dataset.walletQr)+'/qr',{method:'POST',body:'{}'});hubContent.innerHTML='<div class="wallet-qr-view"><button class="wallet-action" id="walletBack">← WALLET</button><h3>Одноразовая привилегия</h3><img alt="Reward QR" src="'+h(q.data.qrDataUrl)+'"><small>QR короткоживущий и повторно проверяется сервером при redemption.</small></div>';document.getElementById('walletBack').onclick=renderWallet;}catch(e){alert(e.message);}};});
         return;
@@ -529,15 +529,15 @@
     try{
       var out=await authorityFetch('/v1/owner/control-tower',{method:'GET'});
       var x=out.data||{},s=x.summary||{},brands=x.brands||[],cohorts=x.cohorts||[],migration=x.migration||[],acq=x.acquisitionMix||[],scenarios=x.scenarios||[],ce=x.crossEvent||{},cb=x.crossBrand||{};
-      var brandRows=brands.slice(0,10).map(function(b){return '<div class="tower-row"><b>'+b.name+'</b><span>'+b.customers+' customers</span><span>'+money(b.attributableGmv)+' attr. GMV</span><span>'+money(b.incrementalGmv)+' incr. GMV</span><span>'+money(b.predictedClv)+' CLV</span></div>';}).join('');
+      var brandRows=brands.slice(0,10).map(function(b){return '<div class="tower-row"><b>'+b.name+'</b><span>'+b.customers+' клиентов</span><span>'+money(b.attributableGmv)+' attr. GMV</span><span>'+money(b.incrementalGmv)+' incr. GMV</span><span>'+money(b.predictedClv)+' CLV</span></div>';}).join('');
       var cohortRows=cohorts.slice(0,8).map(function(q){return '<div class="cohort-row"><b>'+q.cohort+'</b><span>'+q.customers+'</span><span>'+pct(q.customers?q.m1/q.customers:0)+'</span><span>'+pct(q.customers?q.m3/q.customers:0)+'</span><span>'+pct(q.customers?q.m6/q.customers:0)+'</span></div>';}).join('');
       var migrationRows=migration.slice(0,6).map(function(m){return '<div class="migration-row"><span>'+m.from+'</span><i>→</i><span>'+m.to+'</span><b>'+m.users+'</b></div>';}).join('');
-      var acqRows=acq.slice(0,6).map(function(a){return '<div class="tower-row"><b>'+a.source+'</b><span>'+a.acquired+' acquired</span><span>CAC '+(a.cac==null?'—':money(a.cac))+'</span><span>ROI '+(a.roi==null?'—':pct(a.roi))+'</span><span>'+money(a.revenue)+' revenue</span></div>';}).join('');
+      var acqRows=acq.slice(0,6).map(function(a){return '<div class="tower-row"><b>'+a.source+'</b><span>'+a.acquired+' привлечено</span><span>CAC '+(a.cac==null?'—':money(a.cac))+'</span><span>ROI '+(a.roi==null?'—':pct(a.roi))+'</span><span>'+money(a.revenue)+' выручка</span></div>';}).join('');
       var scenarioRows=scenarios.map(function(v){return '<div class="scenario-card"><span>MODELLED · '+v.label+'</span><b>'+money(v.illustrativeValue)+'</b><small>illustrative ecosystem value</small><em>GMV uplift '+pct(v.gmvUplift)+' · retention uplift '+pct(v.retentionUplift)+' · CLV realization '+pct(v.clvRealization)+'</em></div>';}).join('');
       hubContent.innerHTML='<div class="drawer-kicker">OWNER CONTROL TOWER · SERVER AUTHORITY</div><h3 class="tower-title">MFW Audience → Commercial Asset</h3>'+
         '<div class="metric-legend"><span>OBSERVED</span><span>ATTRIBUTED</span><span>INCREMENTAL</span><span>MODELLED</span></div>'+
         '<div class="analytics-grid">'+
-        [['BRANDS',s.brands||0],['CUSTOMERS',s.customers||0],['RETENTION',pct(s.ecosystemRetention)],['ATTR. GMV',money(s.attributableGmv)],['INCR. GMV',money(s.incrementalGmv)],['PREDICTED CLV',money(s.predictedClv)]].map(function(a){return '<div class="analytics-stat"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>';}).join('')+'</div>'+
+        [['BRANDS',s.brands||0],['CUSTOMERS',s.customers||0],['УДЕРЖАНИЕ',pct(s.ecosystemRetention)],['ATTR. GMV',money(s.attributableGmv)],['INCR. GMV',money(s.incrementalGmv)],['PREDICTED CLV',money(s.predictedClv)]].map(function(a){return '<div class="analytics-stat"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>';}).join('')+'</div>'+
         '<div class="tower-section"><h3>Brand-by-brand contribution</h3><div class="tower-table">'+(brandRows||'<div class="hub-note">Нет коммерческих данных брендов.</div>')+'</div></div>'+
         '<div class="tower-split"><section><h3>Cohort retention</h3><div class="cohort-head"><b>COHORT</b><span>N</span><span>M1</span><span>M3</span><span>M6</span></div>'+(cohortRows||'<div class="hub-note">Нужна история покупок.</div>')+'</section><section><h3>Cross-brand migration</h3><div class="tower-mini"><b>'+pct(cb.migrationRate)+'</b><span>multi-brand buyers</span><small>'+Number(cb.avgBrandsPerBuyer||0).toFixed(1)+' brands / buyer</small></div>'+(migrationRows||'<div class="hub-note">Переходов пока нет.</div>')+'</section></div>'+
         '<div class="tower-split"><section><h3>MFW ↔ BFS cross-event</h3><div class="cross-event-ring"><b>'+pct(ce.overlapRate)+'</b><span>cross-event overlap</span></div><div class="tower-foot">'+(ce.mfwUsers||0)+' MFW · '+(ce.bfsUsers||0)+' BFS · '+(ce.crossEventUsers||0)+' both</div></section><section><h3>Acquisition-source mix</h3><div class="tower-table">'+(acqRows||'<div class="hub-note">Добавьте server acquisition events.</div>')+'</div></section></div>'+
@@ -696,7 +696,7 @@
       {stage:'MEETING',count:sumField(rows,'meeting'),evidence:'synthetic'},
       {stage:'INTENT',count:sumField(rows,'intent'),evidence:'synthetic'},
       {stage:'DEAL',count:sumField(rows,'deal'),evidence:'synthetic'},
-      {stage:'RETENTION',count:rows.reduce(function(s,x){return s+Number((x.retention||{})[ret]||0);},0),evidence:'synthetic'},
+      {stage:'УДЕРЖАНИЕ',count:rows.reduce(function(s,x){return s+Number((x.retention||{})[ret]||0);},0),evidence:'synthetic'},
       {stage:'REVENUE EVIDENCE',count:sumField(rows,'revenueEvidence'),evidence:'synthetic'}
     ];
     var ecosystems=['mfw','bfs','made'].map(function(id){
@@ -764,9 +764,9 @@
       meetingRate:pct(by['MEETING']||0,meetingBase),
       intentRate:pct(by['INTENT']||0,intentBase),
       dealRate:pct(by['DEAL']||0,dealBase),
-      retentionRate:pct(by['RETENTION']||0,by['INTENT']||0),
+      retentionRate:pct(by['УДЕРЖАНИЕ']||0,by['INTENT']||0),
       revenueEvidenceRate:pct(by['REVENUE EVIDENCE']||0,revBase),
-      intent:by['INTENT']||0,deal:by['DEAL']||0,retention:by['RETENTION']||0,revenueEvidence:by['REVENUE EVIDENCE']||0
+      intent:by['INTENT']||0,deal:by['DEAL']||0,retention:by['УДЕРЖАНИЕ']||0,revenueEvidence:by['REVENUE EVIDENCE']||0
     };
   }
   function scenarioSelect(side,key,label,values){
@@ -990,7 +990,7 @@
     if(!row)return null;
     var rows=fp.rows||[],breakdown={mfw:0,bfs:0,made:0};
     rows.forEach(function(x){
-      var value=stage==='AUDIENCE'?x.audience:stage==='ENGAGEMENT'?x.engagement:stage==='QUALIFIED BUYER'?x.qualifiedBuyer:stage==='MEETING'?x.meeting:stage==='INTENT'?x.intent:stage==='DEAL'?x.deal:stage==='RETENTION'?((x.retention||{})[portfolioFilters.retention]||0):x.revenueEvidence;
+      var value=stage==='AUDIENCE'?x.audience:stage==='ENGAGEMENT'?x.engagement:stage==='QUALIFIED BUYER'?x.qualifiedBuyer:stage==='MEETING'?x.meeting:stage==='INTENT'?x.intent:stage==='DEAL'?x.deal:stage==='УДЕРЖАНИЕ'?((x.retention||{})[portfolioFilters.retention]||0):x.revenueEvidence;
       breakdown[x.ecosystem]=(breakdown[x.ecosystem]||0)+Number(value||0);
     });
     var cases=(controlTowerModel().cases||[]).filter(function(x){
@@ -1012,7 +1012,7 @@
     var selectedCases=(row.representativeCases||[]).map(function(id){return cases.filter(function(x){return x.id===id;})[0];}).filter(Boolean);
     var b=row.breakdown||{};
     return '<section class="portfolio-drilldown">'+
-      '<div class="portfolio-drill-head"><div><div class="drawer-kicker">DRILL-DOWN COHORT · СИНТЕТИКА</div><h4>'+h(stage)+' = '+h(row.total)+'</h4><p>'+(prev?('Конверсия из '+h(prev.stage)+': '+pct(Number(row.total||0),Number(prev.count||0))+'%'):'Базовый cohort портфеля')+'. Показан агрегат; representative dossiers ниже — примеры, а не полный row-level export.</p></div><button data-close-drill>×</button></div>'+
+      '<div class="portfolio-drill-head"><div><div class="drawer-kicker">DRILL-DOWN COHORT · СИНТЕТИКА</div><h4>'+h(stage)+' = '+h(row.total)+'</h4><p>'+(prev?('Конверсия из '+h(prev.stage)+': '+pct(Number(row.total||0),Number(prev.count||0))+'%'):'Базовая когорта портфеля')+'. Показан агрегат; representative dossiers ниже — примеры, а не полный row-level export.</p></div><button data-close-drill>×</button></div>'+
       '<div class="cohort-breakdown"><article><span>MFW</span><b>'+h(b.mfw||0)+'</b><small>'+pct(Number(b.mfw||0),Number(row.total||0))+'%</small></article><article><span>BFS</span><b>'+h(b.bfs||0)+'</b><small>'+pct(Number(b.bfs||0),Number(row.total||0))+'%</small></article><article><span>MADE</span><b>'+h(b.made||0)+'</b><small>'+pct(Number(b.made||0),Number(row.total||0))+'%</small></article></div>'+
       '<div class="representative-journeys"><div class="drawer-kicker">РЕПРЕЗЕНТАТИВНЫЕ ДОСЬЕ</div>'+selectedCases.map(function(x){var step=(x.dossier||[]).filter(function(d){return d.stage===stage|| (stage==='DEAL'&&d.stage==='DEAL ROOM') || (stage==='REVENUE EVIDENCE'&&['HANDOFF','90 DAYS','365 DAYS'].indexOf(d.stage)>=0);})[0]||x.dossier[x.dossier.length-1];return '<article><div><span>'+h(x.label)+' · '+h(String(x.primaryEcosystem||'platform').toUpperCase())+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small></div><div>'+evidenceBadge(step&&step.evidence||'synthetic')+'<button data-open-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></div></article>';}).join('')+'</div>'+
       '<div class="hub-note">Число '+h(row.total)+' — агрегат synthetic-сценария. Материализованы только показанные выше representative demo journeys.</div>'+
@@ -1028,7 +1028,7 @@
       (zero?'<div class="portfolio-empty"><b>НЕТ ПОДХОДЯЩЕГО СИНТЕТИЧЕСКОГО COHORT</b><span>Для этого набора фильтров в demo cube нет данных. Значения не подменяются ближайшим сегментом.</span></div>':'')+
       '<div class="portfolio-funnel">'+funnel.map(function(x,i){var prev=i?Number(funnel[i-1].count||0):Number(x.count||0);return '<button class="portfolio-stage '+(selectedPortfolioStage===x.stage?'active':'')+'" data-portfolio-stage="'+h(x.stage)+'"><div class="portfolio-bar"><i style="width:'+Math.max(0,Math.round(Number(x.count||0)/(max||1)*100))+'%"></i></div><span>'+h(x.stage)+'</span><b>'+h(x.count)+'</b><small>'+(i?'conversion '+pct(Number(x.count||0),prev)+'%':'base cohort')+'</small>'+evidenceBadge(x.evidence)+'</button>';}).join('')+'</div>'+
       renderPortfolioDrilldown(selectedPortfolioStage)+
-      '<div class="portfolio-lower"><section><div class="drawer-kicker">ВКЛАД ЭКОСИСТЕМ</div><div class="portfolio-table">'+(fp.ecosystems||[]).map(function(x){return '<div><b>'+h(x.label)+'</b><span>'+h(x.journeys)+' journeys</span><span>'+h(x.qualifiedBuyers)+' qualified</span><span>'+h(x.meetings)+' meetings</span><span>'+h(x.intents)+' intents</span></div>';}).join('')+'</div></section>'+
+      '<div class="portfolio-lower"><section><div class="drawer-kicker">ВКЛАД ЭКОСИСТЕМ</div><div class="portfolio-table">'+(fp.ecosystems||[]).map(function(x){return '<div><b>'+h(x.label)+'</b><span>'+h(x.journeys)+' цепочек</span><span>'+h(x.qualifiedBuyers)+' квалифицировано</span><span>'+h(x.meetings)+' встреч</span><span>'+h(x.intents)+' намерений</span></div>';}).join('')+'</div></section>'+
       '<section><div class="drawer-kicker">RETENTION</div><div class="retention-tower">'+(fp.retention||[]).map(function(x){return '<article class="'+(portfolioFilters.retention===x.period?'active':'')+'"><span>'+h(x.period)+'</span><b>'+h(x.retained)+'</b><small>'+pct(Number(x.retained||0),Number(x.eligible||0))+'% of intent cohort</small></article>';}).join('')+'</div></section></div>'+
       '<section class="portfolio-revenue"><div class="drawer-kicker">ЗАТРОНУТЫЕ REVENUE SURFACES · НЕ ВЫРУЧКА</div><div>'+(fp.revenue||[]).map(function(x){var stream=(INVESTOR_MODEL.revenueStreams||[]).filter(function(s){return s.id===x.id;})[0]||{};return '<article class="'+(portfolioFilters.revenueSurface===x.id?'active':'')+'"><span>'+h(stream.payer||x.id)+'</span><b>'+h(stream.product||x.id)+'</b><small>'+h(x.journeysTouched)+' filtered journeys touched</small></article>';}).join('')+'</div></section>'+
       '<div class="hub-note">Фильтры работают только на детерминированном synthetic cohort cube. Для реальных portfolio KPI потребуются admitted event facts, cohort governance и контроль свежести источников.</div>';
@@ -1084,12 +1084,12 @@
     if(!committeeCases[id]){
       committeeCases[id]={
         status:'DRAFT',
-        approval:'PENDING',
+        approval:'ОЖИДАЕТ',
         pilotStatus:'NOT_STARTED',
         measured:null,
         evidenceCollected:0,
         decision:null,
-        history:[{state:'DRAFT',label:'Business case создан в demo session'}]
+        history:[{state:'DRAFT',label:'Бизнес-кейс создан в демонстрационной сессии'}]
       };
     }
     return committeeCases[id];
@@ -1118,7 +1118,7 @@
     var rec=recommendationByIntervention(id);if(!rec)return;
     var state=ensureCommitteeCase(rec);if(!state)return;
     if(action==='submit'&&state.status==='DRAFT'){state.status='IN_REVIEW';state.history.push({state:'IN_REVIEW',label:'Отправлено на рассмотрение'});}
-    else if(action==='approve'&&state.status==='IN_REVIEW'){state.status='APPROVED';state.approval='APPROVED_DEMO';state.history.push({state:'APPROVED',label:'Одобрено в demo workspace'});}
+    else if(action==='approve'&&state.status==='IN_REVIEW'){state.status='APPROVED';state.approval='APPROVED_DEMO';state.history.push({state:'APPROVED',label:'Одобрено в демонстрационном пространстве'});}
     else if(action==='start'&&state.status==='APPROVED'){state.status='PILOT_RUNNING';state.pilotStatus='RUNNING';state.history.push({state:'PILOT_RUNNING',label:'Пилот запущен'});}
     else if(action==='measure'&&state.status==='PILOT_RUNNING'){
       state.status='MEASURED';state.pilotStatus='MEASURED';state.measured=measuredOutcome(rec);
@@ -1154,7 +1154,7 @@
     var proposalHtml='';
     if(programmeScenarioProposal){
       var ps=programmeScenarioProposal,sc=ps.scenario||{};
-      proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' pts · score '+h(sc.score)+' · risk relief '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ps.status)+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
+      proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' баллов · оценка '+h(sc.score)+' · снижение риска '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ps.status)+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
     }
     hubContent.innerHTML=proposalHtml+
       '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO / SYNTHETIC WORKSPACE</b><span>Все approvals, pilot status и measured results ниже существуют только в текущей demo-сессии и не являются реальными корпоративными решениями.</span></div>'+
@@ -1165,8 +1165,8 @@
         '<article><span>BUDGET REQUEST</span><b>'+h(rec.points)+' pilot points</b><small>не ₽ · относительный demo allocation</small></article>'+
         '<article><span>BASELINE KPI</span><b>'+Math.round(rec.current*10)/10+'%</b><small>'+h(rec.intervention.kpi)+'</small></article>'+
         '<article><span>MODELLED TARGET</span><b>'+Math.round(rec.pilotTarget*10)/10+'%</b><small>assumption, не обещание результата</small></article>'+
-        '<article><span>MEASURED RESULT</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'synthetic pilot result')+'</small></article>'+
-        '<article><span>DECISION</span><b>'+h(decision||'PENDING')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
+        '<article><span>MEASURED RESULT</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'синтетический результат пилота')+'</small></article>'+
+        '<article><span>DECISION</span><b>'+h(decision||'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
       '</div>'+
       '<section class="committee-evidence-plan"><div><div class="drawer-kicker">EVIDENCE PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
       '<section class="committee-pilot"><div><span>PILOT DESIGN</span><b>'+h(rec.intervention.pilot)+'</b></div><div><span>STOP / SCALE LOGIC</span><b>'+h((policy.governance||{}).scale||'')+'</b><small>'+h((policy.governance||{}).iterate||'')+' '+h((policy.governance||{}).stop||'')+'</small></div></section>'+
@@ -1323,7 +1323,7 @@
       '<div class="simulator-budgets">'+(policy.budgets||[10,20,30]).map(function(x){return '<button data-sim-budget="'+h(x)+'" class="'+(Number(x)===Number(programmeScenarioBudget)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
       '<div class="simulator-table"><div class="simulator-row head"><b>SCENARIO</b><b>SCORE</b><b>RISK ↓</b><b>KPI ↑</b><b>EVIDENCE</b><b>DIVERSIFICATION</b><b>OPTIONALITY</b><b>GATE</b></div>'+
       top.map(function(x,i){return '<div class="simulator-row '+(i===0?'best':'')+'"><span>#0'+(i+1)+' · '+h(scenarioLabelMix(x))+'</span><b>'+h(x.score)+'</b><b>'+Math.round(x.riskRelief*10)/10+'</b><b>+'+Math.round(x.kpi*10)/10+' п.п.</b><b>'+Math.round(x.evidence*100)+'%</b><b>'+Math.round(x.diversification*100)+'%</b><b>'+Math.round(x.optionality*100)+'%</b><em>'+(x.conditional?'CONDITIONAL':'READY')+'</em></div>';}).join('')+'</div>'+
-      '<div class="simulator-recommendation"><div><span>BEST MIX</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · risk relief '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>WHY</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+(best?'<button class="simulator-submit" data-sim-propose>ПЕРЕДАТЬ BEST MIX В INVESTMENT COMMITTEE →</button>':'')+
+      '<div class="simulator-recommendation"><div><span>BEST MIX</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · снижение риска '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>WHY</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+(best?'<button class="simulator-submit" data-sim-propose>ПЕРЕДАТЬ BEST MIX В INVESTMENT COMMITTEE →</button>':'')+
       '<div class="simulator-method"><b>Правила</b><span>'+Object.keys(policy.rules||{}).map(function(k){return h(policy.rules[k]);}).join(' · ')+'</span></div>'+
     '</section>';
   }
