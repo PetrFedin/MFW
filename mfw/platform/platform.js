@@ -20,6 +20,8 @@
   var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
   var INVESTOR_MODEL=window.MFP_INVESTOR_MODEL||{};
   var proofMode='live';
+  var controlTowerView='case';
+  var selectedControlCase='buyer-brand-alpha';
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
@@ -540,16 +542,61 @@
       '<div class="hub-note">This is a projection over canonical identities and explicit signals. It is not permission authority and it does not merge event credentials or Made in Moscow brand-verification rights.</div>';
   }
 
-  function renderInvestorProof(){
-    var chain=proofChain(),synthetic=proofMode==='synthetic';
-    hubContent.innerHTML=
-      '<div class="drawer-kicker">INVESTOR PROOF LAYER · '+(synthetic?'ILLUSTRATIVE / SYNTHETIC':'CURRENT ACCOUNT / PRODUCT STATE')+'</div>'+
-      '<div class="proof-head"><div><h3>Один пользовательский сигнал должен оставлять проверяемый след до коммерческого результата.</h3><p>'+(synthetic?'Это демонстрационный кейс. Ни один показатель ниже не является production KPI.':'Показываются только сигналы, которые можно извлечь из текущего demo/account state; отсутствующие этапы честно остаются NOT EVIDENCED.')+'</p></div>'+proofModeToggle()+'</div>'+
-      '<div class="proof-chain">'+chain.map(function(x){return '<article><div class="proof-stage"><span>'+h(x.stage)+'</span><i>'+h(x.time)+'</i></div><b>'+h(x.value)+'</b>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
-      '<div class="proof-rules">'+(INVESTOR_MODEL.proofRules||[]).map(function(x){return '<span>✓ '+h(x)+'</span>';}).join('')+'</div>'+
-      '<div class="proof-actions"><button data-proof-open="partner">PARTNER CONSOLE</button><button data-proof-open="brand">BRAND COCKPIT</button><button data-proof-open="economics">ECONOMICS</button><a href="./evidence-package.json" target="_blank" rel="noopener">EVIDENCE PACKAGE ↗</a></div>';
-    bindProofMode();
+  function controlTowerModel(){return INVESTOR_MODEL.controlTower||{cases:[],syntheticPortfolio:{funnel:[]}};}
+  function selectedControlTowerCase(){
+    var rows=controlTowerModel().cases||[];
+    return rows.filter(function(x){return x.id===selectedControlCase;})[0]||rows[0]||null;
+  }
+  function controlTowerTabs(){
+    return '<div class="control-view-tabs"><button data-control-view="case" class="'+(controlTowerView==='case'?'active':'')+'">CASE DOSSIER</button><button data-control-view="portfolio" class="'+(controlTowerView==='portfolio'?'active':'')+'">PORTFOLIO VIEW</button></div>';
+  }
+  function bindControlTower(){
+    [].slice.call(document.querySelectorAll('[data-control-view]')).forEach(function(b){b.onclick=function(){controlTowerView=b.dataset.controlView;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-control-case]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.controlCase;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-proof-mode]')).forEach(function(b){b.onclick=function(){proofMode=b.dataset.proofMode;renderInvestorProof();};});
     [].slice.call(document.querySelectorAll('[data-proof-open]')).forEach(function(b){b.onclick=function(){hubTab=b.dataset.proofOpen;renderHub();};});
+  }
+  function renderCaseDossier(){
+    var synthetic=proofMode==='synthetic',tower=controlTowerModel(),rows=tower.cases||[],active=selectedControlTowerCase();
+    var liveChain=liveProofChain();
+    if(!synthetic){
+      active={
+        id:'live-current',
+        label:'LIVE CURRENT ACCOUNT',
+        participant:{name:displayName(),role:(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor',organisation:accountState.profile.company||'—',market:accountState.profile.country||'—',source:'Current shared account state'},
+        brand:{name:'Current explicit brand relationship',category:'Derived from explicit saved/follow/favorite state',origin:'MFW/BFS/Made'},
+        potentialRevenueStreams:[],
+        dossier:liveChain.map(function(x,i){return {stage:x.stage,time:x.time,event:i<3?'PLATFORM':'EVIDENCE',detail:x.value,reason:x.evidence==='not_evidenced'?'No admissible evidence in current state.':'Explicit current product/account state.',evidence:x.evidence,ref:x.evidence==='not_evidenced'?'—':'local://current-state/'+String(x.stage).toLowerCase().replace(/\s+/g,'-')};})
+      };
+    }
+    var selector=synthetic?'<div class="case-selector">'+rows.map(function(x){return '<button data-control-case="'+h(x.id)+'" class="'+(active&&active.id===x.id?'active':'')+'"><span>'+h(x.label)+'</span><b>'+h(x.participant.role)+' × '+h(x.brand.category)+'</b></button>';}).join('')+'</div>':'';
+    var streams=(INVESTOR_MODEL.revenueStreams||[]).filter(function(x){return (active.potentialRevenueStreams||[]).indexOf(x.id)>=0;});
+    return '<div class="control-case">'+selector+
+      '<section class="dossier-head"><div><div class="drawer-kicker">'+(synthetic?'ILLUSTRATIVE / SYNTHETIC CASE':'LIVE PROOF · CURRENT ACCOUNT')+'</div><h3>'+h(active.participant.name)+' → '+h(active.brand.name)+'</h3><p>'+h(active.participant.role)+' · '+h(active.participant.organisation)+' · '+h(active.participant.market)+'<br>'+h(active.participant.source)+'</p></div><div class="dossier-brand"><span>BRAND / COUNTERPARTY</span><b>'+h(active.brand.name)+'</b><small>'+h(active.brand.category)+' · '+h(active.brand.origin)+'</small></div></section>'+
+      '<div class="dossier-timeline">'+(active.dossier||[]).map(function(x,i){return '<article><div class="dossier-index">'+String(i+1).padStart(2,'0')+'</div><div class="dossier-main"><div><span>'+h(x.stage)+'</span><i>'+h(x.time)+' · '+h(x.event)+'</i></div><b>'+h(x.detail)+'</b><p>'+h(x.reason)+'</p><code>'+h(x.ref||'—')+'</code></div>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
+      '<section class="dossier-revenue"><div><span>POTENTIAL REVENUE STREAMS</span><b>'+(streams.length?h(streams.map(function(x){return x.product;}).join(' · ')):'No revenue stream is evidenced from current live state')+'</b></div><small>Potential stream ≠ realised revenue. Recognition still follows contract + billable event + payment evidence rules.</small></section>'+
+      '<div class="proof-actions"><button data-proof-open="partner">PARTNER CONSOLE</button><button data-proof-open="brand">BRAND COCKPIT</button><button data-proof-open="economics">ECONOMICS</button><a href="./evidence-package.json" target="_blank" rel="noopener">EVIDENCE PACKAGE ↗</a></div>'+
+    '</div>';
+  }
+  function pct(a,b){return b?Math.round((a/b)*100):0;}
+  function renderPortfolioView(){
+    var portfolio=controlTowerModel().syntheticPortfolio||{},funnel=portfolio.funnel||[];
+    var max=funnel.length?Math.max.apply(null,funnel.map(function(x){return Number(x.count||0);})):1;
+    return '<div class="portfolio-warning"><b>ILLUSTRATIVE / SYNTHETIC PORTFOLIO</b><span>All portfolio counts below are scenario data for investor demonstration. They are not production KPI.</span></div>'+
+      '<section class="portfolio-head"><div><div class="drawer-kicker">EVIDENCE CONTROL TOWER · PORTFOLIO VIEW</div><h3>От аудитории к доказанной коммерческой ценности.</h3><p>Portfolio View агрегирует множество journeys, но сохраняет evidence class и не превращает meeting/request в revenue.</p></div><div class="portfolio-pop"><span>SCENARIO POPULATION</span><b>'+h(portfolio.population||0)+'</b><small>synthetic journeys</small></div></section>'+
+      '<div class="portfolio-funnel">'+funnel.map(function(x,i){var prev=i?Number(funnel[i-1].count||0):Number(x.count||0);return '<article><div class="portfolio-bar"><i style="width:'+Math.max(4,Math.round(Number(x.count||0)/max*100))+'%"></i></div><span>'+h(x.stage)+'</span><b>'+h(x.count)+'</b><small>'+(i?'conversion '+pct(Number(x.count||0),prev)+'%':'base cohort')+'</small>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
+      '<div class="portfolio-lower"><section><div class="drawer-kicker">ECOSYSTEM CONTRIBUTION</div><div class="portfolio-table">'+(portfolio.ecosystems||[]).map(function(x){return '<div><b>'+h(x.label)+'</b><span>'+h(x.journeys)+' journeys</span><span>'+h(x.qualifiedBuyers)+' qualified</span><span>'+h(x.meetings)+' meetings</span><span>'+h(x.intents)+' intents</span></div>';}).join('')+'</div></section>'+
+      '<section><div class="drawer-kicker">RETENTION</div><div class="retention-tower">'+(portfolio.retention||[]).map(function(x){return '<article><span>'+h(x.period)+'</span><b>'+h(x.retained)+'</b><small>'+pct(Number(x.retained||0),Number(x.eligible||0))+'% of eligible</small></article>';}).join('')+'</div></section></div>'+
+      '<section class="evidence-mix"><div class="drawer-kicker">EVIDENCE MIX</div><div>'+(portfolio.evidenceMix||[]).map(function(x){return '<article>'+evidenceBadge(x.class)+'<b>'+h(x.count)+'</b><span>'+h(x.note)+'</span></article>';}).join('')+'</div></section>'+
+      '<section class="portfolio-revenue"><div class="drawer-kicker">REVENUE SURFACES TOUCHED · NOT REVENUE</div><div>'+(portfolio.potentialRevenueStreams||[]).map(function(x){var stream=(INVESTOR_MODEL.revenueStreams||[]).filter(function(s){return s.id===x.id;})[0]||{};return '<article><span>'+h(stream.payer||x.id)+'</span><b>'+h(stream.product||x.id)+'</b><small>'+h(x.journeysTouched)+' journeys touched · '+h(x.note)+'</small></article>';}).join('')+'</div></section>';
+  }
+  function renderInvestorProof(){
+    var synthetic=proofMode==='synthetic';
+    hubContent.innerHTML=
+      '<div class="control-tower-top"><div><div class="drawer-kicker">EVIDENCE CONTROL TOWER</div><h3>Каждый переход должен иметь доказательство.</h3><p>Case Dossier отвечает на вопрос «что произошло с конкретной связкой buyer × brand». Portfolio View отвечает на вопрос «что происходит со всей сетью».</p></div><div>'+controlTowerTabs()+proofModeToggle()+'</div></div>'+
+      (controlTowerView==='portfolio'?renderPortfolioView():renderCaseDossier())+
+      '<div class="proof-rules">'+(INVESTOR_MODEL.proofRules||[]).map(function(x){return '<span>✓ '+h(x)+'</span>';}).join('')+'</div>';
+    bindControlTower();
   }
   function renderPartnerConsole(){
     var rows=INVESTOR_MODEL.partnerConsole||[];
