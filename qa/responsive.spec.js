@@ -361,8 +361,8 @@ test('Capital Allocation ranks three interventions and normalizes modelled pilot
 
   await expect(page.getByText(/RECOMMENDATION \/ CAPITAL ALLOCATION/)).toBeVisible();
   await expect(page.locator('.allocation-card')).toHaveCount(3);
-  await expect(page.getByText('100', { exact: true })).toBeVisible();
-  await expect(page.getByText(/условных points · не ₽/)).toBeVisible();
+  await expect(page.locator('.allocation-budget b')).toHaveText('100');
+  await expect(page.locator('.allocation-budget small')).toContainText('условных points · не ₽');
   await expect(page.locator('.allocation-evidence')).toHaveCount(3);
   await expect(page.locator('.allocation-governance > div')).toHaveCount(4);
 
@@ -370,9 +370,9 @@ test('Capital Allocation ranks three interventions and normalizes modelled pilot
   const sum = points.reduce((s, x) => s + Number((x.match(/\d+/) || ['0'])[0]), 0);
   expect(sum).toBe(100);
 
-  await expect(page.getByText(/Priority score/)).toBeVisible();
-  await expect(page.getByText(/Leverage\/effort — явные model assumptions/)).toBeVisible();
-  await expect(page.getByText(/Реальный бюджет требует стоимости интервенций/)).toBeVisible();
+  await expect(page.locator('.allocation-method b')).toHaveText('Priority score');
+  await expect(page.locator('.allocation-method span')).toContainText('Leverage/effort — явные model assumptions');
+  await expect(page.locator('.capital-allocation > .hub-note')).toContainText('Реальный бюджет требует стоимости интервенций');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('capital-allocation.png') });
 });
@@ -439,7 +439,7 @@ test('Capital Allocation opens selected recommendation as committee business cas
   await recommendation.locator('[data-open-committee]').click();
   await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
   await expect(page.locator('.committee-case-head h3')).toHaveText(title);
-  await expect(page.getByText(/modelled budget points/)).toBeVisible();
+  await expect(page.locator('.committee-status small')).toContainText('modelled budget points');
   await expectNoDocumentOverflow(page);
 });
 
