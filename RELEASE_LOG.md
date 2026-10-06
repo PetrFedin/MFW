@@ -336,3 +336,16 @@ Upgraded Investor Proof into a two-mode Evidence Control Tower:
 - responsive QA for live/synthetic separation and portfolio truth boundaries.
 
 No synthetic portfolio count is presented as production performance.
+
+## 2026-10-06 — Filterable Portfolio Control Tower
+
+Added multi-dimensional investor analytics filters to Portfolio View:
+
+- period / ecosystem / buyer market / brand category;
+- buyer type / evidence class / retention horizon / revenue surface;
+- deterministic recalculation from the synthetic cohort cube;
+- synchronized funnel, ecosystem mix, retention and revenue-surface views;
+- zero-state handling for unsupported filter combinations;
+- responsive QA for filtered calculations and reset behavior.
+
+All filtered values remain synthetic scenario data and are not production KPI.
