@@ -2513,9 +2513,38 @@ async function router(req,res){
     const aggregateId=url.searchParams.get('aggregateId');
     const limit=Math.max(1,Math.min(500,Number(url.searchParams.get('limit')||200)));
     const params=[programmeKey];let where='programme_key=$1';
-    if(aggregateType){params.push(String(aggregateType));where+=' AND aggregate_type=
+    if(aggregateType){params.push(String(aggregateType));where+=' AND aggregate_type=$'+params.length;}
+    if(aggregateId){params.push(String(aggregateId));where+=' AND aggregate_id=$'+params.length;}
+    params.push(limit);
+    const limitParam='$'+params.length;
+    const r=await pool.query(`SELECT * FROM capital_ledger_events WHERE ${where}
+      ORDER BY recorded_at ASC,aggregate_type,aggregate_id,aggregate_seq ASC LIMIT ${limitParam}`,params);
+    return json(res,200,{data:r.rows,authority:'capital_ledger',immutable:true});
+  }
+
+  if(p==='/v1/capital/verify'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,actor_subject,actor_role,auth_method,
+      occurred_at,points,evidence_refs,payload,idempotency_key,request_id,previous_event_hash,event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 ORDER BY aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
+    const verification=verifyCapitalChainRows(r.rows);
+    return json(res,verification.ok?200:409,{data:{programmeKey,...verification},authority:'capital_ledger'});
+  }
+
+  if(p==='/v1/capital/projection'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,points,payload,
+      actor_subject,actor_role,occurred_at,recorded_at,evidence_refs,event_hash,previous_event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 ORDER BY recorded_at ASC,aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
+    return json(res,200,{data:{programmeKey,projection:capitalProjectionFromRows(r.rows),events:r.rowCount,latest:r.rows[r.rows.length-1]||null},authority:'capital_ledger'});
+  }
+
+  if(req.method==='GET'&&p==='/v1/owner/control-tower'){
     const actor=sessionFromRequest(req);if(!actor)return json(res,401,{error:'authentication_required'});
-    const url=new URL(req.url,'http://localhost');
     const retentionRate=Math.max(0,Math.min(1,Number(url.searchParams.get('retentionRate')||0.30)));
     const clvRealization=Math.max(0,Math.min(1,Number(url.searchParams.get('clvRealization')||0.50)));
     return json(res,200,{data:await brand365Store.ownerControlTower({retentionRate,clvRealization})});
