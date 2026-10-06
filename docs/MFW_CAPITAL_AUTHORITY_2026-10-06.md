@@ -271,3 +271,22 @@ Bootstrap endpoints:
 - POST /v1/admin/capital/operator-session
 
 This shared-secret bootstrap is an MVP operator-admission mechanism, not the final enterprise IAM target. SSO/MFA or an equivalent corporate identity provider should replace bootstrap session issuance before broad production rollout.
+
+## Machine admission check
+
+Run:
+
+MFW_EXPECTED_SHA=<exact-sha> MFW_CAPITAL_OPERATOR_SESSION=<operator-session> npm run check:capital-admission
+
+The checker is read-only. It verifies:
+
+- /ready = 200;
+- PostgreSQL data mode;
+- exact release SHA when supplied;
+- migration 023 present;
+- migration 024 present;
+- authenticated ledger read;
+- authoritative projection read;
+- /v1/capital/verify = integrity PASS.
+
+It intentionally does not create synthetic approval, commitment, spend or decision events in production.
