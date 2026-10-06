@@ -484,7 +484,7 @@ Portfolio proposal approvals remain demo-session state only.
 
 Added the enterprise capital authority foundation:
 
-- migration 022_capital_authority.sql;
+- migration 023_capital_authority.sql;
 - append-only capital_ledger_events;
 - DB trigger blocking UPDATE / DELETE / TRUNCATE;
 - per-aggregate sequence and SHA-256 hash chain;
