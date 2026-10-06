@@ -321,3 +321,18 @@ Added the next investor-MVP wave:
 - responsive QA coverage for all new surfaces.
 
 No synthetic/modelled value is treated as production KPI or realised revenue.
+
+## 2026-10-06 — Evidence Control Tower
+
+Upgraded Investor Proof into a two-mode Evidence Control Tower:
+
+- Case Dossier with three synthetic buyer x brand journeys;
+- per-transition reason, evidence class and evidence reference;
+- explicit potential revenue-stream mapping;
+- Portfolio View across eight funnel stages;
+- ecosystem contribution for MFW / BFS / Made in Moscow;
+- D30 / D90 / D365 retention;
+- evidence mix and revenue-surface touch map;
+- responsive QA for live/synthetic separation and portfolio truth boundaries.
+
+No synthetic portfolio count is presented as production performance.
