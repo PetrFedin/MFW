@@ -306,6 +306,18 @@
         "mfw-api/server-v2.js",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "capital_operator_admission",
+      "claim": "Capital Authority access is guarded by PostgreSQL-backed operator grants and persisted revocable sessions. Demo sessions cannot self-elevate; bootstrap administration requires an explicitly configured non-default MFW_ADMIN_TOKEN.",
+      "status": "implemented_not_production_admitted",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw-api/migrations/024_capital_operator_admission.sql",
+        "mfw-api/server-v2.js",
+        "mfw-api/capital-authority-contract.test.js",
+        "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
+      ]
     }
   ],
   "rules": [
@@ -556,6 +568,29 @@
         "eligibleSession": "non-demo Organizer/Staff",
         "demoBehavior": "authority protected; modelled cockpit remains local demo",
         "writeBoundary": "Synthetic investor actions are not persisted to Capital Authority."
+      },
+      "operatorAdmission": {
+        "migration": "024_capital_operator_admission.sql",
+        "grantStates": [
+          "active",
+          "suspended",
+          "revoked"
+        ],
+        "roles": [
+          "Organizer",
+          "Staff"
+        ],
+        "sessionPersistence": "sessions table",
+        "perRequestValidation": [
+          "operator claim",
+          "grant active",
+          "user active",
+          "grant not expired",
+          "session not expired",
+          "session not revoked",
+          "role matches grant"
+        ],
+        "bootstrapBoundary": "Requires explicitly configured non-default MFW_ADMIN_TOKEN; shared-secret bootstrap is transitional until enterprise IAM/SSO."
       }
     }
   },
