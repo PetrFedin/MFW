@@ -7,6 +7,7 @@ const serverPath=path.join(__dirname,'server-v2.js');
 const serverSource=fs.readFileSync(serverPath,'utf8');
 const migrationPath=path.join(__dirname,'migrations','023_capital_authority.sql');
 const migration=fs.readFileSync(migrationPath,'utf8');
+const operatorMigration=fs.readFileSync(path.join(__dirname,'migrations','024_capital_operator_admission.sql'),'utf8');
 const domainSource=fs.readFileSync(path.join(__dirname,'capital-authority.js'),'utf8');
 
 for(const required of [
@@ -21,6 +22,17 @@ for(const required of [
   assert(migration.includes(required),'missing migration contract: '+required);
 }
 for(const required of [
+  'capital_operator_grants',
+  "CHECK (operator_role IN ('Organizer','Staff'))",
+  "CHECK (status IN ('active','suspended','revoked'))",
+  'approved_by',
+  'expires_at',
+  'evidence_refs'
+]){
+  assert(operatorMigration.includes(required),'missing operator migration contract: '+required);
+}
+
+for(const required of [
   "p==='/v1/capital/events'",
   "p==='/v1/capital/ledger'",
   "p==='/v1/capital/projection'",
@@ -32,7 +44,8 @@ for(const required of [
   'validateCapitalTransition',
   'actor.demo===true',
   "capital_authority_role_required",
-  "persistence:'postgres_only'"
+  "persistence:'postgres_only'",
+  "ADMIN_TOKEN_CONFIGURED"
 ]){
   assert(serverSource.includes(required),'missing server contract: '+required);
 }
@@ -100,7 +113,9 @@ async function stop(child){
       {path:'/v1/capital/events',options:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}},
       {path:'/v1/capital/ledger',options:{method:'GET'}},
       {path:'/v1/capital/projection',options:{method:'GET'}},
-      {path:'/v1/capital/verify',options:{method:'GET'}}
+      {path:'/v1/capital/verify',options:{method:'GET'}},
+      {path:'/v1/admin/capital/operators',options:{method:'GET'}},
+      {path:'/v1/admin/capital/operator-session',options:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:'00000000-0000-0000-0000-000000000000'})}}
     ]){
       const {r,body}=await waitForJson('http://127.0.0.1:'+port+request.path,request.options);
       assert.strictEqual(r.status,503,request.path+' must fail closed without postgres');
