@@ -22,6 +22,7 @@
   var proofMode='live';
   var controlTowerView='case';
   var selectedControlCase='buyer-brand-alpha';
+  var selectedPortfolioStage='INTENT';
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
@@ -555,6 +556,9 @@
     [].slice.call(document.querySelectorAll('[data-control-case]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.controlCase;renderInvestorProof();};});
     [].slice.call(document.querySelectorAll('[data-proof-mode]')).forEach(function(b){b.onclick=function(){proofMode=b.dataset.proofMode;renderInvestorProof();};});
     [].slice.call(document.querySelectorAll('[data-proof-open]')).forEach(function(b){b.onclick=function(){hubTab=b.dataset.proofOpen;renderHub();};});
+    [].slice.call(document.querySelectorAll('[data-portfolio-stage]')).forEach(function(b){b.onclick=function(){selectedPortfolioStage=b.dataset.portfolioStage;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-open-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.openDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-close-drill]')).forEach(function(b){b.onclick=function(){selectedPortfolioStage='';renderInvestorProof();};});
   }
   function renderCaseDossier(){
     var synthetic=proofMode==='synthetic',tower=controlTowerModel(),rows=tower.cases||[],active=selectedControlTowerCase();
@@ -579,15 +583,32 @@
     '</div>';
   }
   function pct(a,b){return b?Math.round((a/b)*100):0;}
+  function portfolioStageData(stage){
+    var p=controlTowerModel().syntheticPortfolio||{},map=p.stageCohorts||{};
+    return map[stage]||null;
+  }
+  function renderPortfolioDrilldown(stage){
+    var p=controlTowerModel().syntheticPortfolio||{},funnel=p.funnel||[],row=portfolioStageData(stage),cases=controlTowerModel().cases||[];
+    if(!row)return '';
+    var idx=funnel.findIndex(function(x){return x.stage===stage;}),prev=idx>0?funnel[idx-1]:null;
+    var selectedCases=(row.representativeCases||[]).map(function(id){return cases.filter(function(x){return x.id===id;})[0];}).filter(Boolean);
+    var b=row.breakdown||{};
+    return '<section class="portfolio-drilldown">'+
+      '<div class="portfolio-drill-head"><div><div class="drawer-kicker">COHORT DRILL-DOWN · SYNTHETIC</div><h4>'+h(stage)+' = '+h(row.total)+'</h4><p>'+(prev?('Conversion from '+h(prev.stage)+': '+pct(Number(row.total||0),Number(prev.count||0))+'%'):'Base portfolio cohort')+'. Aggregate count only; representative dossiers below are examples, not a complete row-level export.</p></div><button data-close-drill>×</button></div>'+
+      '<div class="cohort-breakdown"><article><span>MFW</span><b>'+h(b.mfw||0)+'</b><small>'+pct(Number(b.mfw||0),Number(row.total||0))+'%</small></article><article><span>BFS</span><b>'+h(b.bfs||0)+'</b><small>'+pct(Number(b.bfs||0),Number(row.total||0))+'%</small></article><article><span>MADE</span><b>'+h(b.made||0)+'</b><small>'+pct(Number(b.made||0),Number(row.total||0))+'%</small></article></div>'+
+      '<div class="representative-journeys"><div class="drawer-kicker">REPRESENTATIVE DOSSIERS</div>'+selectedCases.map(function(x){var step=(x.dossier||[]).filter(function(d){return d.stage===stage|| (stage==='DEAL'&&d.stage==='DEAL ROOM') || (stage==='REVENUE EVIDENCE'&&['HANDOFF','90 DAYS','365 DAYS'].indexOf(d.stage)>=0);})[0]||x.dossier[x.dossier.length-1];return '<article><div><span>'+h(x.label)+' · '+h(String(x.primaryEcosystem||'platform').toUpperCase())+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small></div><div>'+evidenceBadge(step&&step.evidence||'synthetic')+'<button data-open-dossier="'+h(x.id)+'">OPEN DOSSIER →</button></div></article>';}).join('')+'</div>'+
+      '<div class="hub-note">The '+h(row.total)+' cohort count is aggregate synthetic scenario data. Only the representative dossiers shown above are materialised demo journeys.</div>'+
+    '</section>';
+  }
   function renderPortfolioView(){
     var portfolio=controlTowerModel().syntheticPortfolio||{},funnel=portfolio.funnel||[];
     var max=funnel.length?Math.max.apply(null,funnel.map(function(x){return Number(x.count||0);})):1;
     return '<div class="portfolio-warning"><b>ILLUSTRATIVE / SYNTHETIC PORTFOLIO</b><span>All portfolio counts below are scenario data for investor demonstration. They are not production KPI.</span></div>'+
       '<section class="portfolio-head"><div><div class="drawer-kicker">EVIDENCE CONTROL TOWER · PORTFOLIO VIEW</div><h3>От аудитории к доказанной коммерческой ценности.</h3><p>Portfolio View агрегирует множество journeys, но сохраняет evidence class и не превращает meeting/request в revenue.</p></div><div class="portfolio-pop"><span>SCENARIO POPULATION</span><b>'+h(portfolio.population||0)+'</b><small>synthetic journeys</small></div></section>'+
-      '<div class="portfolio-funnel">'+funnel.map(function(x,i){var prev=i?Number(funnel[i-1].count||0):Number(x.count||0);return '<article><div class="portfolio-bar"><i style="width:'+Math.max(4,Math.round(Number(x.count||0)/max*100))+'%"></i></div><span>'+h(x.stage)+'</span><b>'+h(x.count)+'</b><small>'+(i?'conversion '+pct(Number(x.count||0),prev)+'%':'base cohort')+'</small>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
+      '<div class="portfolio-funnel">'+funnel.map(function(x,i){var prev=i?Number(funnel[i-1].count||0):Number(x.count||0);return '<button class="portfolio-stage '+(selectedPortfolioStage===x.stage?'active':'')+'" data-portfolio-stage="'+h(x.stage)+'"><div class="portfolio-bar"><i style="width:'+Math.max(4,Math.round(Number(x.count||0)/max*100))+'%"></i></div><span>'+h(x.stage)+'</span><b>'+h(x.count)+'</b><small>'+(i?'conversion '+pct(Number(x.count||0),prev)+'%':'base cohort')+'</small>'+evidenceBadge(x.evidence)+'</button>';}).join('')+'</div>'+
       '<div class="portfolio-lower"><section><div class="drawer-kicker">ECOSYSTEM CONTRIBUTION</div><div class="portfolio-table">'+(portfolio.ecosystems||[]).map(function(x){return '<div><b>'+h(x.label)+'</b><span>'+h(x.journeys)+' journeys</span><span>'+h(x.qualifiedBuyers)+' qualified</span><span>'+h(x.meetings)+' meetings</span><span>'+h(x.intents)+' intents</span></div>';}).join('')+'</div></section>'+
       '<section><div class="drawer-kicker">RETENTION</div><div class="retention-tower">'+(portfolio.retention||[]).map(function(x){return '<article><span>'+h(x.period)+'</span><b>'+h(x.retained)+'</b><small>'+pct(Number(x.retained||0),Number(x.eligible||0))+'% of eligible</small></article>';}).join('')+'</div></section></div>'+
-      '<section class="evidence-mix"><div class="drawer-kicker">EVIDENCE MIX</div><div>'+(portfolio.evidenceMix||[]).map(function(x){return '<article>'+evidenceBadge(x.class)+'<b>'+h(x.count)+'</b><span>'+h(x.note)+'</span></article>';}).join('')+'</div></section>'+
+      renderPortfolioDrilldown(selectedPortfolioStage)+'<section class="evidence-mix"><div class="drawer-kicker">EVIDENCE MIX</div><div>'+(portfolio.evidenceMix||[]).map(function(x){return '<article>'+evidenceBadge(x.class)+'<b>'+h(x.count)+'</b><span>'+h(x.note)+'</span></article>';}).join('')+'</div></section>'+
       '<section class="portfolio-revenue"><div class="drawer-kicker">REVENUE SURFACES TOUCHED · NOT REVENUE</div><div>'+(portfolio.potentialRevenueStreams||[]).map(function(x){var stream=(INVESTOR_MODEL.revenueStreams||[]).filter(function(s){return s.id===x.id;})[0]||{};return '<article><span>'+h(stream.payer||x.id)+'</span><b>'+h(stream.product||x.id)+'</b><small>'+h(x.journeysTouched)+' journeys touched · '+h(x.note)+'</small></article>';}).join('')+'</div></section>';
   }
   function renderInvestorProof(){
