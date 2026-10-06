@@ -2251,3 +2251,29 @@ The external verifier receives only the minimum claim required.
 
 **Moat:** repeated event participation creates a longitudinal professional trust graph that is difficult to reproduce without the network's verified history.
 
+## 2026-10-06 implementation review — Capital Authority and governed decision gate
+
+This implementation wave re-read the current master plan before further capital-governance work.
+
+Confirmed dependency rules:
+- durable PostgreSQL admission remains the production gate for persistent authority;
+- new scheduled/stateful operational flows remain sequenced behind pg-boss/outbox and formal policy;
+- decision-support outputs must preserve Observed / Attributed / Incremental / Modelled truth classes;
+- recommendation/read-model logic must not silently become approval, release or accounting authority.
+
+Implemented in the current investor branch:
+- immutable Capital Authority (migration 023);
+- durable Capital Operator Admission (migration 024);
+- hierarchy-safe capital projections that refuse a misleading mixed-hierarchy total;
+- read-only Capital Decision Gate derived from immutable ledger measurements.
+
+Capital Decision Gate boundary:
+- evaluates KPI target vs latest matching measurement;
+- enforces explicit minimum evidence/truth class;
+- returns SCALE / ITERATE / STOP / HOLD recommendation state;
+- is read-only and cannot approve, commit, release or spend capital;
+- remains subordinate to Capital Authority and future formal policy;
+- production admission still requires Phase 0 exact-SHA PostgreSQL proof.
+
+Next dependency-controlled sequence:
+Phase 0 admission -> branch/CI reconciliation -> pg-boss/outbox -> formal policy -> governed tranche command workflow -> external/committee integrations.
