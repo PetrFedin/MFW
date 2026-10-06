@@ -35,7 +35,7 @@ async function main(){
     const auth={Authorization:'Bearer '+operatorSession};
     [ledgerResult,projectionResult,verifyResult]=await Promise.all([
       fetchJson('/v1/capital/ledger?programmeKey='+encodeURIComponent(programmeKey)+'&limit=5',{headers:auth}),
-      fetchJson('/v1/capital/projection?programmeKey='+encodeURIComponent(programmeKey),{headers:auth}),
+      fetchJson('/v1/capital/projection?programmeKey='+encodeURIComponent(programmeKey)+'&aggregateType=programme',{headers:auth}),
       fetchJson('/v1/capital/verify?programmeKey='+encodeURIComponent(programmeKey),{headers:auth})
     ]);
 
@@ -45,6 +45,10 @@ async function main(){
 
     pushIf(errors,ledgerResult.body&&ledgerResult.body.authority!=='capital_ledger','capital_ledger_authority_mismatch');
     pushIf(errors,projectionResult.body&&projectionResult.body.authority!=='capital_ledger','capital_projection_authority_mismatch');
+    const projectionData=projectionResult.body&&projectionResult.body.data||{};
+    pushIf(errors,projectionData.aggregateType!=='programme','capital_projection_grain_mismatch');
+    pushIf(errors,projectionData.projectionRule!=='single_aggregate_type','capital_projection_rule_mismatch');
+    pushIf(errors,!projectionData.projection||typeof projectionData.projection!=='object','capital_projection_missing');
     pushIf(errors,verifyResult.body&&verifyResult.body.authority!=='capital_ledger','capital_verify_authority_mismatch');
 
     const verification=verifyResult.body&&verifyResult.body.data||{};
