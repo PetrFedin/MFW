@@ -1611,6 +1611,30 @@ function capitalEventEnvelope(input){
 function capitalHash(envelope){
   return crypto.createHash('sha256').update(stableJson(envelope)).digest('hex');
 }
+function validateCapitalTransition(existingRows,next){
+  const projection=capitalProjectionFromRows(existingRows);
+  const points=Number(next.points||0);
+  const evidence=normalizeEvidenceRefs(next.evidenceRefs);
+  const evidenceRequired=new Set(['APPROVAL_RECORDED','COMMITMENT_RECORDED','RELEASE_RECORDED','SPEND_RECORDED','MEASUREMENT_RECORDED','DECISION_RECORDED']);
+  const pointsRequired=new Set(['REQUEST_RECORDED','APPROVAL_RECORDED','COMMITMENT_RECORDED','RELEASE_RECORDED','SPEND_RECORDED']);
+  if(evidenceRequired.has(next.eventType)&&!evidence.length)throw Object.assign(new Error('capital_evidence_ref_required'),{status:409});
+  if(pointsRequired.has(next.eventType)&&!(points>0))throw Object.assign(new Error('capital_positive_points_required'),{status:409});
+  if(next.eventType==='APPROVAL_RECORDED'&&projection.approved+points>projection.requested)throw Object.assign(new Error('capital_approval_exceeds_requested'),{status:409});
+  if(next.eventType==='COMMITMENT_RECORDED'&&projection.committed+points>projection.approved)throw Object.assign(new Error('capital_commitment_exceeds_approved'),{status:409});
+  if(next.eventType==='RELEASE_RECORDED'&&points>projection.committedUnspent)throw Object.assign(new Error('capital_release_exceeds_unspent_commitment'),{status:409});
+  if(next.eventType==='SPEND_RECORDED'&&projection.spent+points>projection.netCommitted)throw Object.assign(new Error('capital_spend_exceeds_net_commitment'),{status:409});
+  if(next.eventType==='MEASUREMENT_RECORDED'){
+    if(projection.spent<=0)throw Object.assign(new Error('capital_measurement_requires_spend'),{status:409});
+    const payload=next.payload&&typeof next.payload==='object'?next.payload:{};
+    if(!String(payload.metric||'').trim()||payload.measuredValue==null)throw Object.assign(new Error('capital_measurement_payload_required'),{status:409});
+  }
+  if(next.eventType==='DECISION_RECORDED'){
+    const decision=String(next.payload&&next.payload.decision||'').toUpperCase();
+    if(!['SCALE','ITERATE','STOP'].includes(decision))throw Object.assign(new Error('invalid_capital_decision'),{status:409});
+    if((projection.measurementEvents||0)<1)throw Object.assign(new Error('capital_decision_requires_measurement'),{status:409});
+  }
+}
+
 async function appendCapitalEvent(req,body){
   if(!pool)throw Object.assign(new Error('postgres_required'),{status:503});
   const actor=capitalActor(req);
@@ -1638,10 +1662,12 @@ async function appendCapitalEvent(req,body){
     await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[lockKey]);
     const seenAfterLock=await client.query(`SELECT * FROM capital_ledger_events WHERE idempotency_key=$1 LIMIT 1`,[idempotencyKey]);
     if(seenAfterLock.rowCount){await client.query('COMMIT');return {row:seenAfterLock.rows[0],created:false};}
-    const prev=await client.query(`SELECT aggregate_seq,event_hash FROM capital_ledger_events
-      WHERE programme_key=$1 AND aggregate_type=$2 AND aggregate_id=$3 ORDER BY aggregate_seq DESC LIMIT 1`,[programmeKey,aggregateType,aggregateId]);
-    const seq=prev.rowCount?Number(prev.rows[0].aggregate_seq)+1:1;
-    const previousEventHash=prev.rowCount?String(prev.rows[0].event_hash):null;
+    const history=await client.query(`SELECT aggregate_seq,event_hash,event_type,points,payload FROM capital_ledger_events
+      WHERE programme_key=$1 AND aggregate_type=$2 AND aggregate_id=$3 ORDER BY aggregate_seq ASC`,[programmeKey,aggregateType,aggregateId]);
+    const prev=history.rows[history.rows.length-1]||null;
+    const seq=prev?Number(prev.aggregate_seq)+1:1;
+    const previousEventHash=prev?String(prev.event_hash):null;
+    validateCapitalTransition(history.rows,{eventType,points,evidenceRefs:body.evidenceRefs,payload:body.payload});
     const envelope=capitalEventEnvelope({
       programmeKey,aggregateType,aggregateId,aggregateSeq:seq,eventType,
       actorSubject:actor.sub,actorRole:actor.role,authMethod:'session',
@@ -1697,7 +1723,7 @@ function verifyCapitalChainRows(rows){
 }
 
 function capitalProjectionFromRows(rows){
-  const totals={requested:0,approved:0,committed:0,released:0,spent:0,measured:0,decisions:{SCALE:0,ITERATE:0,STOP:0}};
+  const totals={requested:0,approved:0,committed:0,released:0,spent:0,measured:0,measurementEvents:0,decisionEvents:0,decisions:{SCALE:0,ITERATE:0,STOP:0}};
   for(const r of rows){
     const points=Number(r.points||0);
     if(r.event_type==='REQUEST_RECORDED')totals.requested+=points;
@@ -1705,8 +1731,9 @@ function capitalProjectionFromRows(rows){
     if(r.event_type==='COMMITMENT_RECORDED')totals.committed+=points;
     if(r.event_type==='RELEASE_RECORDED')totals.released+=points;
     if(r.event_type==='SPEND_RECORDED')totals.spent+=points;
-    if(r.event_type==='MEASUREMENT_RECORDED')totals.measured+=points;
+    if(r.event_type==='MEASUREMENT_RECORDED'){totals.measured+=points;totals.measurementEvents++;}
     if(r.event_type==='DECISION_RECORDED'){
+      totals.decisionEvents++;
       const d=String((r.payload&&r.payload.decision)||'').toUpperCase();
       if(Object.prototype.hasOwnProperty.call(totals.decisions,d))totals.decisions[d]++;
     }
