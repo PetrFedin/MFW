@@ -248,6 +248,18 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "capital_reallocation_optimizer",
+      "claim": "Programme Capital Control compares the next 10/20/30 modelled points across MFW, BFS and Made using risk relief, modelled KPI leverage, evidence readiness and absorption, with READY/CONDITIONAL/HOLD gates and next-tranche evidence requirements.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -400,6 +412,31 @@
         "reallocationCapacityAfter": 53
       },
       "boundary": "Modelled pilot points only; not currency, actual accounting spend or approved corporate capital."
+    },
+    "reallocationOptimizer": {
+      "tranches": [
+        10,
+        20,
+        30
+      ],
+      "ecosystems": [
+        "MFW",
+        "BFS",
+        "Made in Moscow"
+      ],
+      "scoreWeights": {
+        "riskRelief": 0.3,
+        "kpiLeverage": 0.25,
+        "evidenceReadiness": 0.3,
+        "absorption": 0.15
+      },
+      "gates": {
+        "ready": ">=80% evidence readiness",
+        "conditional": "60%-<80%",
+        "hold": "<60% or hard blocker"
+      },
+      "rule": "HOLD candidates score 0 regardless of upside; optimizer recommends but does not approve capital.",
+      "capacityBoundary": "Only uncommitted reserve plus explicitly released STOP/closed commitments are available."
     }
   },
   "language": {
