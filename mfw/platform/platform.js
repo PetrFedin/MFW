@@ -28,6 +28,7 @@
   var programmeReleased={};
   var programmeReallocationTarget='mfw';
   var programmeOptimizerTranche=10;
+  var programmeScenarioBudget=30;
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
@@ -1166,6 +1167,72 @@
     var pick=ready[0]||conditional[0]||null;
     return {rows:rows,pick:pick};
   }
+  function simulatorPolicy(){return (optimizerPolicy().portfolioSimulator)||{};}
+  function candidateMapForBudget(budget){
+    var rows=optimizerRows(budget),map={};
+    rows.forEach(function(x){map[x.ecosystem]=x;});
+    return map;
+  }
+  function scenarioMixes(budget){
+    var step=Number(simulatorPolicy().step||10),map=candidateMapForBudget(budget),out=[];
+    for(var m=0;m<=budget;m+=step){
+      for(var b=0;b<=budget-m;b+=step){
+        var md=budget-m-b;
+        var alloc={mfw:m,bfs:b,made:md};
+        var reserve=0,eligible=true,conditional=false;
+        ['mfw','bfs','made'].forEach(function(id){
+          var cand=map[id];
+          if(!cand){reserve+=alloc[id];alloc[id]=0;return;}
+          if(cand.gate==='HOLD'&&alloc[id]>0){eligible=false;}
+          if(cand.gate==='CONDITIONAL'&&alloc[id]>0){conditional=true;}
+          var cap=Math.min(Number(cand.absorptionCap||0),Number(programmeTotals().reallocationCapacity||0));
+          if(alloc[id]>cap){reserve+=alloc[id]-cap;alloc[id]=cap;}
+        });
+        if(!eligible)continue;
+        var used=alloc.mfw+alloc.bfs+alloc.made;
+        reserve+=Math.max(0,budget-used-reserve);
+        var riskRelief=0,kpi=0,evidenceWeighted=0,evidenceWeight=0,active=0;
+        ['mfw','bfs','made'].forEach(function(id){
+          var pts=alloc[id],cand=map[id];if(!cand||pts<=0)return;
+          active++;
+          var ratio=pts/10;
+          riskRelief+=Math.min(Number(cand.riskAtRisk||0),Number(cand.riskReliefPer10||0)*ratio);
+          kpi+=Math.min(Number(cand.maxKpiLift||0),Number(cand.kpiLiftPer10||0)*ratio);
+          evidenceWeighted+=Number(cand.evidenceReadiness||0)*pts;
+          evidenceWeight+=pts;
+        });
+        var evidence=evidenceWeight?evidenceWeighted/evidenceWeight:1;
+        var diversification=Math.min(1,active/3);
+        var optionality=budget?reserve/budget:1;
+        var maxRisk=(optimizerPolicy().candidates||[]).reduce(function(s,x){return s+Number(x.riskAtRisk||0);},0)||1;
+        var maxKpi=(optimizerPolicy().candidates||[]).reduce(function(s,x){return s+Number(x.maxKpiLift||0);},0)||1;
+        var w=simulatorPolicy().weights||{};
+        var score=100*((Number(w.riskReduction||.3)*(riskRelief/maxRisk))+(Number(w.kpiLeverage||.25)*(kpi/maxKpi))+(Number(w.evidenceConfidence||.2)*evidence)+(Number(w.diversification||.1)*diversification)+(Number(w.optionality||.15)*optionality));
+        out.push({alloc:alloc,reserve:reserve,riskRelief:riskRelief,kpi:kpi,evidence:evidence,diversification:diversification,optionality:optionality,conditional:conditional,score:Math.round(score*10)/10});
+      }
+    }
+    return out.sort(function(a,b){return b.score-a.score;});
+  }
+  function scenarioLabelMix(x){
+    var parts=[];
+    if(x.alloc.mfw)parts.push(x.alloc.mfw+' MFW');
+    if(x.alloc.bfs)parts.push(x.alloc.bfs+' BFS');
+    if(x.alloc.made)parts.push(x.alloc.made+' MADE');
+    if(x.reserve)parts.push(x.reserve+' RESERVE');
+    return parts.length?parts.join(' + '):'100% RESERVE';
+  }
+  function renderPortfolioScenarioSimulator(){
+    var policy=simulatorPolicy(),rows=scenarioMixes(programmeScenarioBudget),top=rows.slice(0,5),best=top[0]||null;
+    return '<section class="portfolio-simulator">'+
+      '<div class="simulator-head"><div><div class="drawer-kicker">PORTFOLIO SCENARIO SIMULATOR · MODELLED</div><h4>Как распределить '+h(programmeScenarioBudget)+' points между MFW / BFS / Made / Reserve.</h4><p>Перебираются допустимые mix-сценарии с шагом '+h(policy.step||10)+' points. HOLD-направления не получают новый capital; CONDITIONAL остаются committee-gated.</p></div><div class="simulator-best"><span>TOP SCENARIO SCORE</span><b>'+(best?h(best.score):'—')+'</b><small>/ 100 · modelled</small></div></div>'+
+      '<div class="simulator-budgets">'+(policy.budgets||[10,20,30]).map(function(x){return '<button data-sim-budget="'+h(x)+'" class="'+(Number(x)===Number(programmeScenarioBudget)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
+      '<div class="simulator-table"><div class="simulator-row head"><b>SCENARIO</b><b>SCORE</b><b>RISK ↓</b><b>KPI ↑</b><b>EVIDENCE</b><b>DIVERSIFICATION</b><b>OPTIONALITY</b><b>GATE</b></div>'+
+      top.map(function(x,i){return '<div class="simulator-row '+(i===0?'best':'')+'"><span>#0'+(i+1)+' · '+h(scenarioLabelMix(x))+'</span><b>'+h(x.score)+'</b><b>'+Math.round(x.riskRelief*10)/10+'</b><b>+'+Math.round(x.kpi*10)/10+' п.п.</b><b>'+Math.round(x.evidence*100)+'%</b><b>'+Math.round(x.diversification*100)+'%</b><b>'+Math.round(x.optionality*100)+'%</b><em>'+(x.conditional?'CONDITIONAL':'READY')+'</em></div>';}).join('')+'</div>'+
+      '<div class="simulator-recommendation"><div><span>BEST MIX</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · risk relief '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>WHY</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+
+      '<div class="simulator-method"><b>Правила</b><span>'+Object.keys(policy.rules||{}).map(function(k){return h(policy.rules[k]);}).join(' · ')+'</span></div>'+
+    '</section>';
+  }
+
   function renderReallocationOptimizer(){
     var policy=optimizerPolicy(),t=programmeTotals(),result=optimizerRecommendation(programmeOptimizerTranche),pick=result.pick;
     return '<section class="reallocation-optimizer">'+
@@ -1201,10 +1268,11 @@
       '<section class="programme-reallocation"><div><div class="drawer-kicker">REALLOCATION OPPORTUNITIES</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
       '<div class="reallocation-actions">'+(releasable.length?releasable.map(function(x){var already=Number(programmeReleased[x.intervention]||0)>0;return '<article><span>'+h(x.action)+'</span><b>'+h(x.remaining)+' pts STOP остатка</b><button data-programme-release="'+h(x.intervention)+'" '+(already?'disabled':'')+'>'+(already?'RELEASED':'RELEASE TO POOL')+'</button></article>';}).join(''):'<div class="allocation-no-dossier">Нет STOP-кейсов с неиспользованным commitment.</div>')+'</div></section>'+
       '<section class="programme-decision"><div><span>RECOMMENDED NEXT MOVE</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>PROGRAMME SIGNAL</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
-      renderReallocationOptimizer()+'<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
+      renderReallocationOptimizer()+renderPortfolioScenarioSimulator()+'<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
       '<div class="hub-note">Production-версия должна считать это из immutable approvals, commitments, spend events, measurement snapshots и release decisions. Здесь показан model contract и demo state, а не бухгалтерский ledger.</div>';
     [].slice.call(document.querySelectorAll('[data-programme-release]')).forEach(function(b){b.onclick=function(){programmeRelease(b.dataset.programmeRelease);};});
     [].slice.call(document.querySelectorAll('[data-optimizer-tranche]')).forEach(function(b){b.onclick=function(){programmeOptimizerTranche=Number(b.dataset.optimizerTranche||10);renderProgrammeCapital();};});
+    [].slice.call(document.querySelectorAll('[data-sim-budget]')).forEach(function(b){b.onclick=function(){programmeScenarioBudget=Number(b.dataset.simBudget||30);renderProgrammeCapital();};});
   }
 
   function renderTrustPassportPreview(){
