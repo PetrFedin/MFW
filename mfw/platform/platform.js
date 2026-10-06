@@ -14,6 +14,8 @@
   var hubModal=document.getElementById('hubModal');
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
+  var investorDemoIndex=0;
+  var investorDemoActive=false;
   var AUTHORITY='https://mfw-authority.onrender.com';
   var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
   var madeVerifiedBrands=[];
@@ -509,6 +511,45 @@
     hubTab='directory';renderHub();hubModal.classList.remove('hidden');
     if(focusSearch)setTimeout(function(){var input=document.getElementById('directorySearch');if(input)input.focus();},0);
   }
+  var INVESTOR_DEMO=[
+    {title:'Moscow Fashion Platform',copy:'Один вход. Три разные fashion-вертикали. Один relationship graph.',action:function(){closeSharedOverlays();openEvent('mfw');}},
+    {title:'01 · Moscow Fashion Week',copy:'Показы, LIVE, бренды, buyer path и контент — consumer + professional experience.',action:function(){closeSharedOverlays();openEvent('mfw');}},
+    {title:'02 · BRICS+ Fashion Summit',copy:'Business programme, delegates, organisations и B2B — отдельная деловая оболочка на том же ID.',action:function(){closeSharedOverlays();openEvent('bfs');}},
+    {title:'03 · Сделано в Москве',copy:'Verified layer, digital showroom, Buyer Bridge и Brand365 — городской брендовый контур.',action:function(){closeSharedOverlays();openEvent('made');}},
+    {title:'04 · One ID / separate rights',copy:'Профиль общий, но регистрации, роли, QR и Verified-права остаются раздельными.',action:function(){closeSharedOverlays();openAccount();}},
+    {title:'05 · Cross-platform Deal Room',copy:'Interest → shortlist → meeting → request → external handoff → evidence. Без выдуманного заказа.',action:function(){closeSharedOverlays();hubTab='dealroom';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'06 · Owner value',copy:'Сквозная воронка и 365-day relationship layer показывают инвестору, за что платит владелец платформы.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
+  ];
+  function closeSharedOverlays(){
+    [accountDrawer,registrationModal,investorModal,valueModal,forYouModal,hubModal].forEach(function(el){if(el)el.classList.add('hidden');});
+  }
+  function renderInvestorPilot(){
+    var pilot=document.getElementById('investorPilot');if(!pilot)return;
+    pilot.classList.toggle('hidden',!investorDemoActive);
+    if(!investorDemoActive)return;
+    var step=INVESTOR_DEMO[investorDemoIndex]||INVESTOR_DEMO[0];
+    document.getElementById('investorPilotStep').textContent=String(investorDemoIndex+1).padStart(2,'0')+' / '+String(INVESTOR_DEMO.length).padStart(2,'0');
+    document.getElementById('investorPilotTitle').textContent=step.title;
+    document.getElementById('investorPilotCopy').textContent=step.copy;
+    document.getElementById('investorPilotPrev').disabled=investorDemoIndex===0;
+    document.getElementById('investorPilotNext').textContent=investorDemoIndex===INVESTOR_DEMO.length-1?'ЗАВЕРШИТЬ':'ДАЛЬШЕ →';
+  }
+  function runInvestorStep(index){
+    investorDemoIndex=Math.max(0,Math.min(INVESTOR_DEMO.length-1,index));
+    investorDemoActive=true;
+    var step=INVESTOR_DEMO[investorDemoIndex];
+    if(step&&step.action)step.action();
+    renderInvestorPilot();
+  }
+  function startInvestorDemo(){
+    investorDemoIndex=0;investorDemoActive=true;runInvestorStep(0);
+  }
+  function nextInvestorDemo(){
+    if(investorDemoIndex>=INVESTOR_DEMO.length-1){investorDemoActive=false;closeSharedOverlays();openEvent('mfw');renderInvestorPilot();return;}
+    runInvestorStep(investorDemoIndex+1);
+  }
+  function previousInvestorDemo(){runInvestorStep(investorDemoIndex-1);}
+  function stopInvestorDemo(){investorDemoActive=false;closeSharedOverlays();renderInvestorPilot();}
   function renderInvestorGallery(){
     var root=document.getElementById('investorEcosystemGallery');if(!root)return;
     var cards=[
@@ -605,6 +646,10 @@
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
   document.getElementById('investorBtn').onclick=function(){renderInvestorGallery();investorModal.classList.remove('hidden');};
+  document.getElementById('investorDemoStart').onclick=startInvestorDemo;
+  document.getElementById('investorPilotNext').onclick=nextInvestorDemo;
+  document.getElementById('investorPilotPrev').onclick=previousInvestorDemo;
+  document.getElementById('investorPilotClose').onclick=stopInvestorDemo;
   document.getElementById('valueBtn').onclick=function(){valueModal.classList.remove('hidden');};
   document.getElementById('forYouBtn').onclick=function(){renderForYou();forYouModal.classList.remove('hidden');};
   document.getElementById('hubBtn').onclick=function(){openDiscover(true);};
@@ -630,6 +675,7 @@
   document.addEventListener('keydown',function(e){
     if((e.metaKey||e.ctrlKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();openDiscover(true);return;}
     if(e.key==='Escape'){
+      if(investorDemoActive){stopInvestorDemo();return;}
       [hubModal,forYouModal,valueModal,investorModal,registrationModal,accountDrawer].forEach(function(el){if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');});
     }
   });
