@@ -276,3 +276,18 @@ Evidence before final cache rotation:
 - complete matrix: 360×800, 375×667, 393×852, 430×932, 744×1133, 1024×1366, 1440×900.
 
 Final participant shell cache revision: `mfp-shell-2026-10-03-p2`.
+
+## 2026-10-06 — Investor demo media system
+
+Completed a presentation-focused, pre-Phase-0-safe visual wave:
+
+- centralized MFW / BFS / Made in Moscow media manifest and provenance document;
+- current MFW editorial imagery distributed across distinct storytelling slots;
+- MFW official-video links surfaced separately from the technical demo stream;
+- BFS editorial media deck with its own international/business visual language;
+- Made in Moscow editorial hero/story layer with explicit no-Verified-inference boundary;
+- shared three-ecosystem investor gallery and cross-platform value bridge;
+- PWA cache revision rotated to `mfp-shell-2026-10-06-i1`;
+- responsive QA now checks that investor ecosystem media is present and non-duplicated.
+
+Remote public assets remain source-owned. Commercial/public campaign reuse requires rights confirmation; the demo does not claim a licence.
