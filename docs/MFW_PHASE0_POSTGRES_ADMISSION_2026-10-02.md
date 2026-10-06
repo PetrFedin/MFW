@@ -33,7 +33,7 @@ The authority itself runs `migrate()` before opening the HTTP server. Every migr
 
 For the free web-service contour, the Blueprint therefore does not depend on a separate pre-deploy migration step. Startup is fail-closed:
 
-`DATABASE_URL -> migrations 001-023 -> schema reconciliation -> demo/bootstrap -> deep self-test -> listen`
+`DATABASE_URL -> migrations 001-024 -> schema reconciliation -> demo/bootstrap -> deep self-test -> listen`
 
 If migration or reconciliation fails, the process exits before becoming ready.
 
@@ -87,7 +87,7 @@ The current Render MCP surface does not expose the generated database credential
 After secure binding:
 
 1. deploy `mfw-authority`;
-2. startup applies migrations 001-023;
+2. startup applies migrations 001-024;
 3. `GET /ready` returns 200;
 4. `dataMode=postgres`;
 5. `databaseSchema.ready=true`;
@@ -144,3 +144,17 @@ Production admission for programme-capital writes additionally requires:
 - non-demo Organizer/Staff actor identity.
 
 The frontend modelled Programme Capital Control remains demo-only until these checks pass on the exact deployed SHA.
+
+## Capital Operator Admission extension
+
+Migration 024 adds capital_operator_grants.
+
+Capital Authority production admission additionally requires:
+
+- an explicitly configured non-default MFW_ADMIN_TOKEN for bootstrap operator administration;
+- no public/demo session can become a Capital Authority actor;
+- operator grants are active, evidence-backed and optionally expiring;
+- issued operator sessions are persisted in sessions and revocable;
+- capital requests re-check grant + user + persisted session on every request.
+
+The shared-secret bootstrap is transitional. Enterprise rollout should replace it with organization SSO/MFA while retaining the same grant and ledger authority boundaries.
