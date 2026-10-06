@@ -425,3 +425,26 @@ It also shows:
 - revenue surfaces touched.
 
 Portfolio numbers are scenario data only. A touched revenue surface is explicitly not counted as realised revenue.
+
+## Portfolio drill-down — 2026-10-06
+
+Evidence Control Tower now supports portfolio-to-dossier navigation.
+
+An investor can select any synthetic portfolio stage:
+
+Audience / Engagement / Qualified Buyer / Meeting / Intent / Deal / Retention / Revenue Evidence
+
+and see:
+
+- aggregate stage count;
+- conversion from the previous stage;
+- MFW / BFS / Made in Moscow cohort composition;
+- representative linked demo journeys;
+- evidence class for the representative transition;
+- direct navigation into the selected buyer x brand Case Dossier.
+
+Important truth boundary:
+
+- the aggregate cohort count remains synthetic scenario data;
+- representative dossiers are examples, not a fabricated row-level list of every synthetic journey;
+- opening a representative dossier never implies that all members of the aggregate cohort exist as materialised production records.
