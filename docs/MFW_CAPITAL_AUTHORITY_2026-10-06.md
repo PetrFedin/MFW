@@ -3,7 +3,7 @@
 Date: 2026-10-06
 Repository: PetrFedin/MFW
 Authority service: mfw-api / server-v2.js
-Migration: 022_capital_authority.sql
+Migration: 023_capital_authority.sql
 
 ## Purpose
 
@@ -216,7 +216,7 @@ Responsive QA now runs mfw-api npm run check:foundation before browser/device te
 Capital Authority is not production-admitted until all of the following are green:
 
 1. secure DATABASE_URL binding;
-2. migrations 001-022 applied;
+2. migrations 001-023 applied;
 3. /ready = 200;
 4. dataMode = postgres;
 5. missingMigrations = [];
