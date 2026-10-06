@@ -452,6 +452,8 @@ test('Programme Capital Control separates reserve commitments spend and measured
 
   await expect(page.getByText(/PROGRAMME CAPITAL CONTROL/)).toBeVisible();
   await expect(page.locator('.programme-envelope b')).toHaveText('150');
+  await expect(page.locator('#capitalAuthorityStatus')).toContainText('DEMO MODE · AUTHORITY PROTECTED');
+  await expect(page.locator('#capitalAuthorityStatus')).toContainText('POSTGRES ONLY');
   const stages = page.locator('.programme-stage-grid article');
   await expect(stages).toHaveCount(7);
   await expect(stages.filter({ hasText: 'REQUESTED' }).locator('b')).toHaveText('128');
