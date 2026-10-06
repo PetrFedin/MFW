@@ -201,6 +201,17 @@
         "mfw/platform/platform.js",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "opportunity_explanation_engine",
+      "claim": "Comparison Mode decomposes the largest A/B rate gap into ranked funnel differences, market/category mix and within-segment effects, retention-horizon gaps and representative dossier evidence links.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -280,6 +291,20 @@
         "Deal-stage to Revenue Evidence"
       ],
       "boundary": "Descriptive synthetic comparison only; no causal attribution or monetary uplift inference."
+    },
+    "opportunityExplanation": {
+      "method": "symmetric composition/mix plus within-segment rate decomposition",
+      "dimensions": [
+        "brand category",
+        "buyer market"
+      ],
+      "retention": [
+        "D30",
+        "D90",
+        "D365"
+      ],
+      "evidenceLink": "representative materialised synthetic dossiers only",
+      "boundary": "Descriptive mathematical decomposition; not causal attribution and not monetary uplift."
     }
   },
   "language": {
