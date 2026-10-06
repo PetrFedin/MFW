@@ -821,3 +821,43 @@ This closes the practical gap where Capital Authority existed but no non-demo op
 Added mfw-api/check-capital-admission.js and npm run check:capital-admission.
 
 The check is read-only and requires MFW_CAPITAL_OPERATOR_SESSION. It verifies exact release SHA, migrations 023/024, ledger access, projection access and hash-chain integrity without polluting the immutable ledger with synthetic production events.
+## Capital projection grain safety and Decision Gate — 2026-10-06
+
+Capital Authority was hardened against portfolio double counting.
+
+The previous generic programme projection could become ambiguous when equivalent economic state was represented across multiple aggregate levels such as programme, portfolio proposal, business case and pilot.
+
+The API now:
+- exposes hierarchy breakdown by aggregate type;
+- returns a single total only when an explicit aggregateType grain is requested;
+- marks mixed-hierarchy responses as mixed_hierarchy_no_single_total;
+- requires the production admission checker to request programme grain explicitly.
+
+A read-only Capital Decision Gate is also available over immutable ledger history.
+
+Inputs:
+- programme / aggregate identity;
+- KPI metric;
+- direction;
+- target;
+- proposed next tranche points;
+- minimum evidence class;
+- target-miss policy.
+
+Outputs:
+- SCALE / ITERATE / STOP / HOLD recommendation;
+- target-met state;
+- measured value;
+- truth class;
+- source measurement event hash;
+- reason codes.
+
+The gate does not approve or release capital and has no write authority. It is a deterministic read model over existing ledger events.
+
+Truth classes recognised by the gate:
+- MODELLED;
+- OBSERVED;
+- ATTRIBUTED;
+- INCREMENTAL.
+
+Production write workflow for tranche release remains gated by durable PostgreSQL admission, formal authorization policy and durable jobs/outbox.
