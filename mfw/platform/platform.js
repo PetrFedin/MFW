@@ -44,6 +44,21 @@
     if(!r.ok)throw Object.assign(new Error(out.error||('HTTP '+r.status)),{data:out,status:r.status});
     return out;
   }
+  async function loadOrganisationNetworkProof(){
+    var root=document.getElementById('organisationNetworkProof');if(!root)return;
+    root.innerHTML='<span>ORGANISATION NETWORK · loading authority…</span>';
+    try{
+      var out=await authorityFetch('/v1/network/organisations/summary',{method:'GET'}),d=out.data||{};
+      root.innerHTML=
+        '<div><strong>'+Number(d.activeOrganisations||0)+'</strong><span>active organisations</span></div>'+
+        '<div><strong>'+Number(d.verifiedOrganisations||0)+'</strong><span>verified</span></div>'+
+        '<div><strong>'+Number(d.activeRepresentatives||0)+'</strong><span>representatives</span></div>'+
+        '<div><strong>'+Number(d.crossEventOrganisations||0)+'</strong><span>cross-event</span></div>'+
+        '<small>MFW '+Number(d.mfwOrganisations||0)+' · BFS '+Number(d.bfsOrganisations||0)+' · MADE '+Number(d.madeOrganisations||0)+' · '+Number(d.participationRecords||0)+' participation records · '+h(out.source||'authority')+'</small>';
+    }catch(e){
+      root.innerHTML='<span>ORGANISATION NETWORK · authority unavailable</span>';
+    }
+  }
   function eventRoleMode(code,roleId){
     var row=(EVENT_CONFIG[code].roles||[]).filter(function(x){return x.id===roleId;})[0];
     return row&&row.mode||'public';
@@ -659,7 +674,7 @@
   };
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
-  document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');};
+  document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');loadOrganisationNetworkProof();};
   document.getElementById('valueBtn').onclick=function(){valueModal.classList.remove('hidden');};
   document.getElementById('forYouBtn').onclick=function(){renderForYou();forYouModal.classList.remove('hidden');};
   document.getElementById('hubBtn').onclick=function(){openDiscover(true);};
@@ -667,7 +682,7 @@
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
   document.getElementById('investorClose').onclick=function(){investorModal.classList.add('hidden');};
-  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}};});
+  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){loadOrganisationNetworkProof();narrative.textContent='Persistent Organisation Registry показывает организации, представителей и историю участия между MFW / BFS / Made. Self-claim не равен verification.';}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}};});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
   accountDrawer.addEventListener('click',function(e){if(e.target===accountDrawer)closeAccount();});
