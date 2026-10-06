@@ -39,6 +39,18 @@
   function formatWhen(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch(e){return String(v||'');}}
   function accessToken(){try{return localStorage.getItem('mfwAccessToken')||'';}catch(e){return '';}}
   function setAccessToken(v){try{if(v)localStorage.setItem('mfwAccessToken',v);else localStorage.removeItem('mfwAccessToken');}catch(e){}}
+  function sessionClaims(){
+    var token=accessToken();if(!token)return null;
+    try{
+      var p=token.split('.')[1]||'',s=p.replace(/-/g,'+').replace(/_/g,'/');
+      while(s.length%4)s+='=';
+      return JSON.parse(atob(s));
+    }catch(e){return null;}
+  }
+  function capitalAuthorityEligible(){
+    var p=sessionClaims();
+    return !!(p&&p.demo!==true&&['Organizer','Staff'].indexOf(String(p.role||''))>=0);
+  }
   function displayName(){return ((accountState.profile.firstName||'')+' '+(accountState.profile.lastName||'')).trim()||'MFW User';}
   async function ensureAuthoritySession(role,force){
     var token=accessToken();
@@ -1268,6 +1280,23 @@
     '</section>';
   }
 
+  async function hydrateCapitalAuthorityStatus(){
+    var root=document.getElementById('capitalAuthorityStatus');if(!root||!capitalAuthorityEligible())return;
+    try{
+      var results=await Promise.all([
+        authorityFetch('/v1/capital/projection?programmeKey=mfw_programme',{method:'GET'}),
+        authorityFetch('/v1/capital/verify?programmeKey=mfw_programme',{method:'GET'})
+      ]);
+      var projection=results[0]&&results[0].data&&results[0].data.projection||{};
+      var verify=results[1]&&results[1].data||{};
+      root.innerHTML='<div><div class="drawer-kicker">SERVER CAPITAL AUTHORITY · LIVE PROJECTION</div><h4>POSTGRESQL AUTHORITY · '+(verify.ok?'CHAIN VERIFIED':'CHAIN VERIFICATION FAILED')+'</h4><p>'+h(results[0].data&&results[0].data.events||0)+' immutable events · requested '+h(projection.requested||0)+' · approved '+h(projection.approved||0)+' · net committed '+h(projection.netCommitted||0)+' · spent '+h(projection.spent||0)+'</p></div><div class="capital-authority-kpis"><span>'+h(verify.aggregates||0)+' aggregates</span><span>'+h(verify.events||0)+' verified events</span><span>'+(verify.ok?'INTEGRITY PASS':'INTEGRITY FAIL')+'</span></div>';
+      root.classList.toggle('authority-fail',!verify.ok);
+    }catch(e){
+      root.innerHTML='<div><div class="drawer-kicker">SERVER CAPITAL AUTHORITY</div><h4>AUTHORITY NOT ADMITTED</h4><p>'+h(e&&e.message||'capital authority unavailable')+'</p></div><div class="capital-authority-kpis"><span>NO FALLBACK</span><span>POSTGRES REQUIRED</span></div>';
+      root.classList.add('authority-fail');
+    }
+  }
+
   function renderProgrammeCapital(){
     var model=programmeCapitalModel(),rows=programmeRows(),t=programmeTotals(),eco=ecosystemCapital(),blockers=blockerRows(),releasable=releasableRows();
     var stages=[
@@ -1275,7 +1304,7 @@
     ];
     hubContent.innerHTML=
       '<div class="programme-warning"><b>PROGRAMME CAPITAL CONTROL · DEMO / MODELLED</b><span>Все значения — modelled pilot points. Это не ₽, не фактические расходы и не утверждённый инвестиционный бюджет.</span></div>'+
-      '<section class="programme-head"><div><div class="drawer-kicker">PORTFOLIO-LEVEL CAPITAL GOVERNANCE</div><h3>Где капитал запрошен, закреплён, потрачен, измерен — и что можно перераспределить.</h3><p>Committed-but-unspent отделён от свободного резерва. Освобождение STOP-кейса требует отдельного release decision.</p></div><div class="programme-envelope"><span>PROGRAMME ENVELOPE</span><b>'+h(t.envelope)+'</b><small>modelled points</small></div></section>'+
+      '<section class="programme-head"><div><div class="drawer-kicker">PORTFOLIO-LEVEL CAPITAL GOVERNANCE</div><h3>Где капитал запрошен, закреплён, потрачен, измерен — и что можно перераспределить.</h3><p>Committed-but-unspent отделён от свободного резерва. Освобождение STOP-кейса требует отдельного release decision.</p></div><div class="programme-envelope"><span>PROGRAMME ENVELOPE</span><b>'+h(t.envelope)+'</b><small>modelled points</small></div></section>'+'<section class="capital-authority-status" id="capitalAuthorityStatus"><div><div class="drawer-kicker">SERVER CAPITAL AUTHORITY</div><h4>'+(capitalAuthorityEligible()?'Проверяем authoritative ledger…':'DEMO MODE · AUTHORITY PROTECTED')+'</h4><p>'+(capitalAuthorityEligible()?'Чтение projection и hash-chain verification выполняется только для non-demo Organizer/Staff session.':'Modelled cockpit не подменяет PostgreSQL authority. Demo session не имеет доступа к /v1/capital/* endpoints.')+'</p></div><div class="capital-authority-kpis"><span>POSTGRES ONLY</span><span>APPEND ONLY</span><span>HASH CHAIN</span></div></section>'+
       '<div class="programme-stage-grid">'+stages.map(function(x){return '<article><span>'+h(x[0])+'</span><b>'+h(x[1])+'</b></article>';}).join('')+'</div>'+
       '<div class="programme-capacity-grid"><article><span>UNCOMMITTED RESERVE</span><b>'+h(t.uncommitted)+'</b><small>доступно без снятия commitment</small></article><article><span>COMMITTED · UNSPENT</span><b>'+h(t.committedUnspent)+'</b><small>не свободный капитал</small></article><article><span>EXPLICITLY RELEASED</span><b>'+h(t.released)+'</b><small>освобождено STOP/closed decision</small></article><article><span>REALLOCATION CAPACITY</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases</small></article></div>'+
       '<section class="programme-ecosystems"><div class="drawer-kicker">MFW / BFS / MADE CAPITAL MAP</div><div>'+eco.map(function(x){return '<article><b>'+h(x.label)+'</b><span>requested '+h(x.requested)+'</span><span>approved '+h(x.approved)+'</span><span>committed '+h(x.committed)+'</span><span>spent '+h(x.spent)+'</span><span>measured '+h(x.measured)+'</span></article>';}).join('')+'</div></section>'+
@@ -1287,6 +1316,7 @@
       '<section class="programme-decision"><div><span>RECOMMENDED NEXT MOVE</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>PROGRAMME SIGNAL</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
       renderReallocationOptimizer()+renderPortfolioScenarioSimulator()+'<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
       '<div class="hub-note">Production-версия должна считать это из immutable approvals, commitments, spend events, measurement snapshots и release decisions. Здесь показан model contract и demo state, а не бухгалтерский ledger.</div>';
+    hydrateCapitalAuthorityStatus();
     [].slice.call(document.querySelectorAll('[data-programme-release]')).forEach(function(b){b.onclick=function(){programmeRelease(b.dataset.programmeRelease);};});
     [].slice.call(document.querySelectorAll('[data-optimizer-tranche]')).forEach(function(b){b.onclick=function(){programmeOptimizerTranche=Number(b.dataset.optimizerTranche||10);renderProgrammeCapital();};});
     [].slice.call(document.querySelectorAll('[data-sim-budget]')).forEach(function(b){b.onclick=function(){programmeScenarioBudget=Number(b.dataset.simBudget||30);renderProgrammeCapital();};});
