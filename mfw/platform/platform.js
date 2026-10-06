@@ -27,6 +27,7 @@
   var committeeCases={};
   var programmeReleased={};
   var programmeReallocationTarget='mfw';
+  var programmeOptimizerTranche=10;
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
@@ -1139,6 +1140,50 @@
     programmeReleased[id]=Math.max(0,row.remaining);
     renderProgrammeCapital();
   }
+  function optimizerPolicy(){return (programmeCapitalModel().optimizer)||{};}
+  function optimizerMetricLabel(key){
+    return {qualifiedRate:'Audience → Qualified Buyer',meetingRate:'Qualified Buyer → Meeting',intentRate:'Meeting → Intent',dealRate:'Intent → Deal-stage',retentionRate:'Intent → Retention',revenueEvidenceRate:'Deal-stage → Revenue Evidence'}[key]||key;
+  }
+  function optimizerCandidate(candidate,tranche){
+    var policy=optimizerPolicy(),t=programmeTotals(),available=Math.min(Number(tranche||0),Number(candidate.absorptionCap||0),Number(t.reallocationCapacity||0));
+    var readiness=Number(candidate.evidenceReadiness||0),hard=!!candidate.hardBlock;
+    var gate=hard?'HOLD':readiness>=Number(policy.evidenceReadyThreshold||.8)?'READY':readiness>=Number(policy.conditionalThreshold||.6)?'CONDITIONAL':'HOLD';
+    var riskRelief=Math.min(Number(candidate.riskAtRisk||0),Number(candidate.riskReliefPer10||0)*(available/10));
+    var kpiLift=Math.min(Number(candidate.maxKpiLift||0),Number(candidate.kpiLiftPer10||0)*(available/10));
+    var riskScore=Number(candidate.riskAtRisk||0)>0?(riskRelief/Number(candidate.riskAtRisk||1)):(candidate.mode==='SCALE'?.5:0);
+    var kpiScore=Number(candidate.maxKpiLift||0)>0?(kpiLift/Number(candidate.maxKpiLift||1)):0;
+    var absorption=Number(tranche||0)>0?available/Number(tranche):0;
+    var w=policy.scoreWeights||{};
+    var score=100*((Number(w.riskRelief||.3)*riskScore)+(Number(w.kpiLeverage||.25)*kpiScore)+(Number(w.evidenceReadiness||.3)*readiness)+(Number(w.absorption||.15)*absorption));
+    if(gate==='HOLD')score=0;
+    return Object.assign({},candidate,{requestedTranche:Number(tranche||0),available:available,gate:gate,riskRelief:riskRelief,kpiLift:kpiLift,absorption:absorption,score:Math.round(score*10)/10});
+  }
+  function optimizerRows(tranche){
+    return (optimizerPolicy().candidates||[]).map(function(x){return optimizerCandidate(x,tranche);}).sort(function(a,b){return b.score-a.score;});
+  }
+  function optimizerRecommendation(tranche){
+    var rows=optimizerRows(tranche),ready=rows.filter(function(x){return x.gate==='READY';}),conditional=rows.filter(function(x){return x.gate==='CONDITIONAL';});
+    var pick=ready[0]||conditional[0]||null;
+    return {rows:rows,pick:pick};
+  }
+  function renderReallocationOptimizer(){
+    var policy=optimizerPolicy(),t=programmeTotals(),result=optimizerRecommendation(programmeOptimizerTranche),pick=result.pick;
+    return '<section class="reallocation-optimizer">'+
+      '<div class="optimizer-head"><div><div class="drawer-kicker">CAPITAL REALLOCATION OPTIMIZER · MODELLED</div><h4>Куда направить следующие '+h(programmeOptimizerTranche)+' points.</h4><p>Сравнение учитывает capital-at-risk relief, modelled KPI leverage, evidence readiness и способность vertical принять выбранный tranche.</p></div><div class="optimizer-capacity"><span>AVAILABLE CAPACITY</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases only</small></div></div>'+
+      '<div class="optimizer-tranches">'+(policy.trancheOptions||[10,20,30]).map(function(x){return '<button data-optimizer-tranche="'+h(x)+'" class="'+(Number(x)===Number(programmeOptimizerTranche)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
+      '<div class="optimizer-grid">'+result.rows.map(function(x){
+        var label=x.ecosystem==='mfw'?'MFW':x.ecosystem==='bfs'?'BFS':'Сделано в Москве';
+        return '<article class="optimizer-card '+String(x.gate).toLowerCase()+'"><div class="optimizer-card-head"><span>'+h(label)+' · '+h(x.mode)+'</span><b>'+h(x.gate)+'</b></div><h5>'+h(x.bottleneck)+'</h5>'+
+          '<div class="optimizer-score"><span>DECISION SCORE</span><b>'+h(x.score)+'</b><small>/ 100 · modelled</small></div>'+
+          '<div class="optimizer-metrics"><div><span>ABSORB</span><b>'+h(x.available)+' / '+h(x.requestedTranche)+'</b></div><div><span>AT-RISK RELIEF</span><b>'+Math.round(x.riskRelief*10)/10+' pts</b></div><div><span>KPI</span><b>'+h(optimizerMetricLabel(x.metric))+'</b></div><div><span>MODELLED KPI LIFT</span><b>+'+Math.round(x.kpiLift*10)/10+' п.п.</b></div><div><span>EVIDENCE READINESS</span><b>'+Math.round(Number(x.evidenceReadiness||0)*100)+'%</b></div></div>'+
+          '<div class="optimizer-evidence"><span>ДО СЛЕДУЮЩЕГО ТРАНША</span>'+((x.evidenceBeforeNext||[]).map(function(e){return '<i>○ '+h(e)+'</i>';}).join(''))+'</div>'+
+          '<div class="optimizer-gate-note">'+(x.gate==='READY'?'Можно выносить как modelled candidate на следующий committee review.':x.gate==='CONDITIONAL'?'Транш условный: сначала закрыть обозначенные evidence gaps.':'HOLD: новый tranche не рекомендован до снятия hard evidence blocker.')+'</div></article>';
+      }).join('')+'</div>'+
+      '<div class="optimizer-recommendation"><div><span>MODELLED RECOMMENDATION</span><b>'+(pick?(h(pick.ecosystem==='mfw'?'MFW':pick.ecosystem==='bfs'?'BFS':'Сделано в Москве')+' · '+h(pick.available)+' pts · '+h(pick.gate)):'HOLD / NO ELIGIBLE OPTION')+'</b><small>'+(pick?('score '+h(pick.score)+' · expected KPI +'+Math.round(pick.kpiLift*10)/10+' п.п. · at-risk relief '+Math.round(pick.riskRelief*10)/10+' pts'):'Нет варианта, прошедшего evidence gate.')+'</small></div><div><span>NEXT TRANCHE GATE</span><b>'+(pick?h((pick.evidenceBeforeNext||[])[0]||'Evidence review required'):'Evidence remediation required')+'</b><small>Optimizer не утверждает capital; он формирует кандидат для Investment Committee.</small></div></div>'+
+      '<div class="optimizer-method"><b>Score</b><span>30% risk relief + 25% KPI leverage + 30% evidence readiness + 15% absorption. HOLD получает score 0 независимо от потенциального upside. Все эффекты — model assumptions.</span></div>'+
+    '</section>';
+  }
+
   function renderProgrammeCapital(){
     var model=programmeCapitalModel(),rows=programmeRows(),t=programmeTotals(),eco=ecosystemCapital(),blockers=blockerRows(),releasable=releasableRows();
     var stages=[
@@ -1156,9 +1201,10 @@
       '<section class="programme-reallocation"><div><div class="drawer-kicker">REALLOCATION OPPORTUNITIES</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
       '<div class="reallocation-actions">'+(releasable.length?releasable.map(function(x){var already=Number(programmeReleased[x.intervention]||0)>0;return '<article><span>'+h(x.action)+'</span><b>'+h(x.remaining)+' pts STOP остатка</b><button data-programme-release="'+h(x.intervention)+'" '+(already?'disabled':'')+'>'+(already?'RELEASED':'RELEASE TO POOL')+'</button></article>';}).join(''):'<div class="allocation-no-dossier">Нет STOP-кейсов с неиспользованным commitment.</div>')+'</div></section>'+
       '<section class="programme-decision"><div><span>RECOMMENDED NEXT MOVE</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>PROGRAMME SIGNAL</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
-      '<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
+      renderReallocationOptimizer()+'<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
       '<div class="hub-note">Production-версия должна считать это из immutable approvals, commitments, spend events, measurement snapshots и release decisions. Здесь показан model contract и demo state, а не бухгалтерский ledger.</div>';
     [].slice.call(document.querySelectorAll('[data-programme-release]')).forEach(function(b){b.onclick=function(){programmeRelease(b.dataset.programmeRelease);};});
+    [].slice.call(document.querySelectorAll('[data-optimizer-tranche]')).forEach(function(b){b.onclick=function(){programmeOptimizerTranche=Number(b.dataset.optimizerTranche||10);renderProgrammeCapital();};});
   }
 
   function renderTrustPassportPreview(){
