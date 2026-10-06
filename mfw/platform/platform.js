@@ -24,6 +24,8 @@
   var selectedControlCase='buyer-brand-alpha';
   var selectedPortfolioStage='INTENT';
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+  var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+  var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var comparisonMode=false;
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
@@ -627,8 +629,21 @@
     return {rows:rows,population:sumField(rows,'audience'),funnel:funnel,ecosystems:ecosystems,retention:retention,revenue:revenue};
   }
   function filteredPortfolio(){return filteredPortfolioFor(portfolioFilters);}
+  function ruOption(key,v){
+    var maps={
+      period:{all:'Все периоды'},
+      ecosystem:{all:'Все',mfw:'MFW',bfs:'BRICS+ Fashion Summit',made:'Сделано в Москве'},
+      market:{all:'Все рынки',CIS:'СНГ',Europe:'Европа',GCC:'GCC',Asia:'Азия'},
+      category:{all:'Все категории',Contemporary:'Contemporary',Womenswear:'Женская одежда',Menswear:'Мужская одежда',Accessories:'Аксессуары',Tech:'Fashion Tech'},
+      buyerType:{all:'Все',new:'Новый',returning:'Возвращающийся'},
+      evidence:{all:'Все классы',verified:'Проверено',reported:'Заявлено партнёром',synthetic:'Синтетика'},
+      retention:{D30:'D30',D90:'D90',D365:'D365'},
+      revenueSurface:{all:'Все поверхности',brand:'Brand365 / CRM',professional:'B2B / Deal Room',partner:'Партнёр / спонсор',intelligence:'Аналитика',api:'API / Enterprise'}
+    };
+    return maps[key]&&maps[key][v]||String(v);
+  }
   function portfolioFilterSelect(key,label,values){
-    return '<label><span>'+h(label)+'</span><select data-portfolio-filter="'+h(key)+'">'+values.map(function(v){var lab=String(v).replace('all','ALL').replace('mfw','MFW').replace('bfs','BFS').replace('made','MADE');return '<option value="'+h(v)+'"'+(portfolioFilters[key]===v?' selected':'')+'>'+h(lab)+'</option>';}).join('')+'</select></label>';
+    return '<label><span>'+h(label)+'</span><select data-portfolio-filter="'+h(key)+'">'+values.map(function(v){return '<option value="'+h(v)+'"'+(portfolioFilters[key]===v?' selected':'')+'>'+h(ruOption(key,v))+'</option>';}).join('')+'</select></label>';
   }
   function portfolioFilterBar(){
     var opt=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.filterOptions)||{};
@@ -660,7 +675,7 @@
   function scenarioMetricSet(filters){
     var fp=filteredPortfolioFor(filters),f=fp.funnel||[],by={};
     f.forEach(function(x){by[x.stage]=Number(x.count||0);});
-    var intentBase=by['QUALIFIED BUYER']||0,meetingBase=by['QUALIFIED BUYER']||0,dealBase=by['INTENT']||0,revBase=by['DEAL']||0;
+    var intentBase=by['MEETING']||0,meetingBase=by['QUALIFIED BUYER']||0,dealBase=by['INTENT']||0,revBase=by['DEAL']||0;
     return {
       label:scenarioLabel(filters),population:fp.population,
       qualifiedRate:pct(by['QUALIFIED BUYER']||0,by['AUDIENCE']||0),
