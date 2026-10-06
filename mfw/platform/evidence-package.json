@@ -260,6 +260,18 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "portfolio_scenario_simulator",
+      "claim": "Programme Capital Control simulates eligible 10/20/30-point portfolio mixes across MFW, BFS, Made and Reserve, applying HOLD exclusion, committee gating, absorption caps and ranking by risk reduction, KPI leverage, evidence confidence, diversification and optionality.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -437,6 +449,34 @@
       },
       "rule": "HOLD candidates score 0 regardless of upside; optimizer recommends but does not approve capital.",
       "capacityBoundary": "Only uncommitted reserve plus explicitly released STOP/closed commitments are available."
+    },
+    "portfolioScenarioSimulator": {
+      "budgets": [
+        10,
+        20,
+        30
+      ],
+      "step": 10,
+      "dimensions": [
+        "MFW",
+        "BFS",
+        "Made in Moscow",
+        "Reserve"
+      ],
+      "weights": {
+        "riskReduction": 0.3,
+        "kpiLeverage": 0.25,
+        "evidenceConfidence": 0.2,
+        "diversification": 0.1,
+        "optionality": 0.15
+      },
+      "constraints": [
+        "HOLD cannot receive new capital",
+        "CONDITIONAL remains committee-gated",
+        "absorption caps apply",
+        "unallocated budget remains Reserve"
+      ],
+      "boundary": "Modelled portfolio ranking only; not approval, commitment, currency or realised ROI."
     }
   },
   "language": {
