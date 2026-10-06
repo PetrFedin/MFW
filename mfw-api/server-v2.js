@@ -13,7 +13,7 @@ try { ({ Pool } = require('pg')); } catch (_) {}
 
 const PORT = Number(process.env.PORT || 10000);
 const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
-const VERSION = 'mfw-authority-v9-mvp-golden-path';
+const VERSION = 'mfw-authority-v10-capital-ledger';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
 const RELEASE_SHA = String(process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
@@ -1666,6 +1666,36 @@ async function appendCapitalEvent(req,body){
     throw err;
   }finally{client.release();}
 }
+function verifyCapitalChainRows(rows){
+  const byAggregate=new Map();
+  const errors=[];
+  for(const row of rows){
+    const key=[row.programme_key,row.aggregate_type,row.aggregate_id].join('|');
+    if(!byAggregate.has(key))byAggregate.set(key,[]);
+    byAggregate.get(key).push(row);
+  }
+  for(const [key,events] of byAggregate.entries()){
+    events.sort((a,b)=>Number(a.aggregate_seq)-Number(b.aggregate_seq));
+    let prevHash=null,expectedSeq=1;
+    for(const row of events){
+      if(Number(row.aggregate_seq)!==expectedSeq)errors.push({aggregate:key,seq:Number(row.aggregate_seq),error:'sequence_gap',expected:expectedSeq});
+      if((row.previous_event_hash||null)!==prevHash)errors.push({aggregate:key,seq:Number(row.aggregate_seq),error:'previous_hash_mismatch'});
+      const envelope=capitalEventEnvelope({
+        programmeKey:row.programme_key,aggregateType:row.aggregate_type,aggregateId:row.aggregate_id,
+        aggregateSeq:Number(row.aggregate_seq),eventType:row.event_type,actorSubject:row.actor_subject,actorRole:row.actor_role,
+        authMethod:row.auth_method,occurredAt:new Date(row.occurred_at).toISOString(),
+        points:row.points==null?null:Number(row.points),evidenceRefs:row.evidence_refs,payload:row.payload,
+        idempotencyKey:row.idempotency_key,requestId:row.request_id,previousEventHash:row.previous_event_hash||null
+      });
+      const computed=capitalHash(envelope);
+      if(computed!==String(row.event_hash||''))errors.push({aggregate:key,seq:Number(row.aggregate_seq),error:'event_hash_mismatch',expected:computed,actual:String(row.event_hash||'')});
+      prevHash=String(row.event_hash||'');
+      expectedSeq++;
+    }
+  }
+  return {ok:errors.length===0,aggregates:byAggregate.size,events:rows.length,errors};
+}
+
 function capitalProjectionFromRows(rows){
   const totals={requested:0,approved:0,committed:0,released:0,spent:0,measured:0,decisions:{SCALE:0,ITERATE:0,STOP:0}};
   for(const r of rows){
@@ -5029,6 +5059,17 @@ main().catch(err=>{console.error(err);process.exit(1);});
       ORDER BY recorded_at ASC,aggregate_type,aggregate_id,aggregate_seq ASC LIMIT ${params.length}`,params);
     return json(res,200,{data:r.rows,authority:'capital_ledger',immutable:true});
   }
+  if(p==='/v1/capital/verify'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,actor_subject,actor_role,auth_method,
+      occurred_at,points,evidence_refs,payload,idempotency_key,request_id,previous_event_hash,event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 ORDER BY aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
+    const verification=verifyCapitalChainRows(r.rows);
+    return json(res,verification.ok?200:409,{data:{programmeKey,...verification},authority:'capital_ledger'});
+  }
+
   if(p==='/v1/capital/projection'&&req.method==='GET'){
     if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
     const actor=capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
