@@ -137,7 +137,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorBtn').click();
   await page.locator('#investorDemoStart').click();
   await expect(page.locator('#investorPilot')).toBeVisible();
-  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 08');
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 12');
 
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
@@ -149,15 +149,21 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('#accountDrawer')).not.toHaveClass(/hidden/);
   await page.locator('#investorPilotNext').click();
-  await expect(page.locator('#hubModal')).not.toHaveClass(/hidden/);
+  await expect(page.locator('[data-hub-tab="proof"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="partner"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="brand"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-hub-tab="dealroom"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
-  await expect(page.locator('#hubModal')).not.toHaveClass(/hidden/);
   await expect(page.locator('[data-hub-tab="trust"]')).toHaveClass(/active/);
   await expect(page.getByText('NO OPAQUE SCORE')).toBeVisible();
   await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="economics"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
   await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#investorPilotStep')).toHaveText('08 / 08');
+  await expect(page.locator('#investorPilotStep')).toHaveText('12 / 12');
 });
 
 test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
@@ -170,6 +176,52 @@ test('investor media gallery keeps three ecosystem visuals distinct', async ({ p
   expect(backgrounds.every((x) => x && x !== 'none')).toBeTruthy();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('investor-three-ecosystems.png') });
+});
+
+test('Investor Proof distinguishes live evidence from synthetic demo', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await expect(page.getByText('INVESTOR PROOF LAYER', { exact: false })).toBeVisible();
+  await expect(page.locator('.proof-chain article')).toHaveCount(9);
+  await expect(page.getByText('NOT EVIDENCED').first()).toBeVisible();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC', { exact: false })).toBeVisible();
+  await expect(page.locator('.evidence-synthetic')).toHaveCount(9);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investor-proof-synthetic.png') });
+});
+
+test('Partner Console keeps revenue recognition behind evidence gates', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="partner"]').click();
+  await expect(page.locator('.partner-flow article')).toHaveCount(7);
+  await expect(page.getByText('REVENUE BOUNDARY')).toBeVisible();
+  await expect(page.getByText(/recognised revenue still requires/i)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Brand Cockpit exposes buyer conversion and 30 90 365 continuity', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="brand"]').click();
+  await expect(page.locator('.brand-funnel article')).toHaveCount(9);
+  await expect(page.locator('.continuity-grid article')).toHaveCount(3);
+  await expect(page.getByText('D30')).toBeVisible();
+  await expect(page.getByText('D90')).toBeVisible();
+  await expect(page.getByText('D365')).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Economics maps payer product formula and revenue gate without fake KPI', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="economics"]').click();
+  await expect(page.locator('.economics-row').filter({ hasNot: page.locator('.head') })).toHaveCount(5);
+  await expect(page.getByText(/no factual ARR\/MRR/i)).toBeVisible();
+  await expect(page.getByText(/Demo placeholders are intentionally absent/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
 });
 
 test('Trust Passport preview is explainable and avoids a universal score', async ({ page }, testInfo) => {
@@ -283,7 +335,7 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toContain('mfp-shell-2026-10-06-i1');
+  expect(await swResponse.text()).toContain('mfp-shell-2026-10-06-p1');
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
