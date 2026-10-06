@@ -466,3 +466,16 @@ Added portfolio-mix optimization above the single-destination capital optimizer:
 - PWA cache rotated to p4.
 
 The simulator is modelled decision support only and does not approve capital or forecast realised ROI.
+
+## 2026-10-06 — Portfolio Proposal Handoff
+
+Connected Portfolio Scenario Simulator to Investment Committee Workspace:
+
+- best mix can open as a Portfolio Allocation Proposal;
+- DRAFT -> IN_REVIEW -> APPROVED_DEMO demo flow;
+- proposal includes allocation mix, score, risk relief and KPI leverage;
+- no automatic commitment is created;
+- responsive QA added;
+- PWA cache rotated to p5.
+
+Portfolio proposal approvals remain demo-session state only.
