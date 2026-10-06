@@ -137,7 +137,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorBtn').click();
   await page.locator('#investorDemoStart').click();
   await expect(page.locator('#investorPilot')).toBeVisible();
-  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 07');
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 08');
 
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
@@ -152,8 +152,12 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await expect(page.locator('#hubModal')).not.toHaveClass(/hidden/);
   await expect(page.locator('[data-hub-tab="dealroom"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
+  await expect(page.locator('#hubModal')).not.toHaveClass(/hidden/);
+  await expect(page.locator('[data-hub-tab="trust"]')).toHaveClass(/active/);
+  await expect(page.getByText('NO OPAQUE SCORE')).toBeVisible();
+  await page.locator('#investorPilotNext').click();
   await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#investorPilotStep')).toHaveText('07 / 07');
+  await expect(page.locator('#investorPilotStep')).toHaveText('08 / 08');
 });
 
 test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
@@ -166,6 +170,18 @@ test('investor media gallery keeps three ecosystem visuals distinct', async ({ p
   expect(backgrounds.every((x) => x && x !== 'none')).toBeTruthy();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('investor-three-ecosystems.png') });
+});
+
+test('Trust Passport preview is explainable and avoids a universal score', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="trust"]').click();
+  await expect(page.getByText('TRUST PASSPORT · READ-ONLY PREVIEW')).toBeVisible();
+  await expect(page.locator('.trust-dimension-grid article')).toHaveCount(6);
+  await expect(page.getByText('NO OPAQUE SCORE')).toBeVisible();
+  await expect(page.getByText('No wealth, creditworthiness, politics, ethnicity, hidden intent or universal reputation score.')).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('trust-passport-preview.png') });
 });
 
 test('premium companion Discover stays usable across the platform', async ({ page }, testInfo) => {
