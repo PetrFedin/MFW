@@ -304,3 +304,22 @@ body.made-mode .lifecycle-rail span.active{background:#ff4a43;color:#fff;border-
  .today-action-grid{grid-template-columns:1fr}
  .today-action-grid button{min-height:96px}
 }
+
+
+/* Investor demo media wave · 2026-10-06 */
+.investor-ecosystem-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0}
+.investor-ecosystem-card{position:relative;min-height:210px;border:1px solid #343434;border-radius:18px;overflow:hidden;background:#151515 center/cover no-repeat;color:#fff;padding:16px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;cursor:pointer;isolation:isolate}
+.investor-ecosystem-card:after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.08);border-radius:inherit;pointer-events:none}
+.investor-ecosystem-card span{font-size:8px;font-weight:950;letter-spacing:.14em;opacity:.75}
+.investor-ecosystem-card b{font-size:18px;line-height:.93;letter-spacing:-.035em}
+.investor-ecosystem-card small{font-size:9px;line-height:1.35;color:#d4d4d4}
+.investor-bridge{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 0 18px;border-bottom:1px solid #303030}
+.investor-bridge span{border:1px solid #3a3a3a;border-radius:999px;padding:6px 8px;font-size:7px;font-weight:950;letter-spacing:.08em}
+.investor-bridge i{font-style:normal;color:#d7ff39;font-size:9px}
+body.bfs-mode .investor-ecosystem-card,body.made-mode .investor-ecosystem-card{color:#fff}
+@media(max-width:680px){
+  .investor-ecosystem-gallery{grid-template-columns:1fr;gap:7px}
+  .investor-ecosystem-card{min-height:128px}
+  .investor-ecosystem-card b{font-size:17px}
+  .investor-bridge{gap:4px}
+}
