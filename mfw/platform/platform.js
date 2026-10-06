@@ -7,6 +7,11 @@
   var profileForm=document.getElementById('profileForm');
   var registrationForm=document.getElementById('registrationForm');
   var registrationGrid=document.getElementById('registrationGrid');
+  var organisationPanel=document.getElementById('organisationPanel');
+  var organisationClaimForm=document.getElementById('organisationClaimForm');
+  var organisationCurrent=document.getElementById('organisationCurrent');
+  var organisationDirectory=document.getElementById('organisationDirectory');
+  var organisationStatus=document.getElementById('organisationStatus');
   var currentRegistrationEvent=null;
   var investorModal=document.getElementById('investorModal');
   var valueModal=document.getElementById('valueModal');
@@ -75,8 +80,54 @@
       if(p.country!=null)accountState.profile.country=p.country||'';
       (d.platformRegistrations||[]).forEach(function(r){accountState.registrations[r.eventCode]=r;});
       if(Array.isArray(d.interests))setSelectedInterests(d.interests.map(function(x){return x.key;}));
-      saveState();fillProfile();renderRegistrations();renderInterestPicker();
+      saveState();fillProfile();renderRegistrations();renderInterestPicker();if(accessToken())loadOrganisationRegistry();
     }catch(e){}
+  }
+
+  var organisationState={items:[],current:null,loading:false,error:''};
+  function organisationTypeLabel(v){
+    return ({brand:'BRAND',buyer:'BUYER / RETAILER',media:'MEDIA',institution:'INSTITUTION',service_provider:'SERVICE PROVIDER',education:'EDUCATION',government:'GOVERNMENT',other:'OTHER'})[v]||String(v||'ORGANISATION').toUpperCase();
+  }
+  function organisationVerificationLabel(v){
+    return ({verified:'VERIFIED',submitted:'SUBMITTED',rejected:'REJECTED',expired:'EXPIRED',unverified:'UNVERIFIED'})[v]||String(v||'UNVERIFIED').toUpperCase();
+  }
+  function renderOrganisationIdentity(){
+    if(!organisationPanel)return;
+    var current=organisationState.current;
+    organisationStatus.textContent=current?organisationVerificationLabel(current.verificationStatus):'НЕ ПРИВЯЗАНА';
+    organisationStatus.className='organisation-status '+(current&&current.verificationStatus==='verified'?'verified':'');
+    organisationCurrent.innerHTML=current
+      ? '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+' · '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4><p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p><small>'+h((current.relationship&&current.relationship.relationshipRole)||'representative')+(current.relationship&&current.relationship.roleTitle?' · '+h(current.relationship.roleTitle):'')+'</small><div class="organisation-proof"><span>'+h(current.activeRepresentativeCount||1)+' representatives</span><span>'+h(current.participationCount||0)+' participation records</span></div></article>'
+      : '<p class="organisation-empty">Привяжите профиль к организации. Это создаёт persistent identity, но не подтверждает организацию автоматически.</p>';
+    var rows=(organisationState.items||[]).slice(0,12);
+    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' shown</span></div>'+
+      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' history</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
+  }
+  async function loadOrganisationRegistry(){
+    if(organisationState.loading)return;
+    organisationState.loading=true;organisationState.error='';renderOrganisationIdentity();
+    try{
+      var out=await authorityFetch('/v1/network/organisations?limit=50',{method:'GET'});
+      organisationState.items=out.data||[];
+      var company=String(accountState.profile.company||'').trim().toLowerCase().replace(/\s+/g,' ');
+      if(company&&!organisationState.current){
+        organisationState.current=organisationState.items.filter(function(x){return String(x.name||'').trim().toLowerCase().replace(/\s+/g,' ')===company;})[0]||null;
+      }
+    }catch(e){organisationState.error=e.message||'registry_unavailable';}
+    finally{organisationState.loading=false;renderOrganisationIdentity();}
+  }
+  async function claimOrganisation(values){
+    var role=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor';
+    await ensureAuthoritySession(role,false);
+    var out=await authorityFetch('/v1/network/organisations/claim',{method:'POST',body:JSON.stringify(values)});
+    organisationState.current=out.data||null;
+    if(organisationState.current&&organisationState.current.name){
+      accountState.profile.company=organisationState.current.name;
+      if(organisationState.current.relationship&&organisationState.current.relationship.roleTitle)accountState.profile.title=organisationState.current.relationship.roleTitle;
+      saveState();fillProfile();
+    }
+    await loadOrganisationRegistry();
+    return out;
   }
 
   var DEFAULT_PROFILE={firstName:'Alex',lastName:'Morgan',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Fashion Industry',title:'Guest',country:'Russia'};
@@ -546,7 +597,8 @@
     var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made');setTimeout(function(){try{frame.contentWindow.postMessage({type:'made-open-section',section:'verified'},'*');}catch(e){}},250);};
   }
   function openAccount(){
-    fillProfile();renderRegistrations();renderInterestPicker();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
+    fillProfile();renderRegistrations();renderInterestPicker();renderOrganisationIdentity();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
+    if(accessToken())loadOrganisationRegistry();
   }
   function closeAccount(){accountDrawer.classList.add('hidden');accountDrawer.setAttribute('aria-hidden','true');}
   function openRegistration(code,copied){
@@ -572,6 +624,20 @@
     registrationModal.classList.remove('hidden');registrationModal.setAttribute('aria-hidden','false');
   }
   function closeRegistration(){registrationModal.classList.add('hidden');registrationModal.setAttribute('aria-hidden','true');currentRegistrationEvent=null;}
+  if(organisationClaimForm)organisationClaimForm.onsubmit=async function(e){
+    e.preventDefault();
+    var fd=new FormData(organisationClaimForm),values=Object.fromEntries(fd.entries());
+    values.countryCode=String(values.countryCode||'').trim().toUpperCase()||null;
+    values.city=String(values.city||'').trim()||null;
+    values.roleTitle=String(values.roleTitle||'').trim()||accountState.profile.title||null;
+    try{
+      await claimOrganisation(values);
+      renderOrganisationIdentity();
+    }catch(err){
+      organisationState.error=err.message||'claim_failed';
+      organisationCurrent.innerHTML='<div class="organisation-error">'+h(organisationState.error)+'</div>';
+    }
+  };
   profileForm.onsubmit=async function(e){
     e.preventDefault();
     var fd=new FormData(profileForm);
