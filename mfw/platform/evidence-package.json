@@ -290,7 +290,7 @@
       "status": "implemented_not_production_admitted",
       "evidenceClass": "observed",
       "evidence": [
-        "mfw-api/migrations/022_capital_authority.sql",
+        "mfw-api/migrations/023_capital_authority.sql",
         "mfw-api/server-v2.js",
         "mfw-api/capital-authority-contract.test.js",
         "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
@@ -525,7 +525,7 @@
     },
     "capitalAuthority": {
       "persistence": "postgres_only",
-      "migration": "022_capital_authority.sql",
+      "migration": "023_capital_authority.sql",
       "eventTypes": [
         "REQUEST_RECORDED",
         "APPROVAL_RECORDED",
@@ -550,7 +550,7 @@
         "GET /v1/capital/projection",
         "GET /v1/capital/verify"
       ],
-      "boundary": "Implemented in repository but not production-admitted until PostgreSQL migration 022 and deployed exact-SHA verification are green.",
+      "boundary": "Implemented in repository but not production-admitted until PostgreSQL migration 023 and deployed exact-SHA verification are green.",
       "uiBridge": {
         "mode": "read-only",
         "eligibleSession": "non-demo Organizer/Staff",
