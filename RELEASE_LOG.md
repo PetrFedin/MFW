@@ -430,3 +430,22 @@ Added portfolio-level capital governance:
 - responsive QA for programme totals and release semantics.
 
 No programme values are represented as real currency or accounting records.
+
+## 2026-10-06 — Capital Reallocation Optimizer
+
+Added gate-aware programme reallocation decision support:
+
+- 10 / 20 / 30 modelled-point tranche comparison;
+- MFW / BFS / Made alternatives;
+- capital-at-risk relief;
+- modelled KPI lift;
+- evidence readiness;
+- absorption caps;
+- READY / CONDITIONAL / HOLD gates;
+- next-tranche evidence requirements;
+- recommendation candidate for Investment Committee;
+- explicit linkage to current reallocation capacity;
+- responsive QA;
+- PWA cache rotated to p3.
+
+Optimizer outputs are model assumptions, not approvals, guaranteed KPI uplift, currency or ROI.
