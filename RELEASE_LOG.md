@@ -449,3 +449,20 @@ Added gate-aware programme reallocation decision support:
 - PWA cache rotated to p3.
 
 Optimizer outputs are model assumptions, not approvals, guaranteed KPI uplift, currency or ROI.
+
+## 2026-10-06 — Portfolio Scenario Simulator
+
+Added portfolio-mix optimization above the single-destination capital optimizer:
+
+- 10 / 20 / 30-point programme budget simulation;
+- MFW / BFS / Made / Reserve combinations;
+- explicit Reserve-only and partial-Reserve scenarios;
+- HOLD exclusion before ranking;
+- CONDITIONAL committee gating;
+- absorption-cap enforcement;
+- ranking by risk reduction / KPI leverage / evidence confidence / diversification / optionality;
+- top-scenario recommendation and rationale;
+- responsive QA;
+- PWA cache rotated to p4.
+
+The simulator is modelled decision support only and does not approve capital or forecast realised ROI.
