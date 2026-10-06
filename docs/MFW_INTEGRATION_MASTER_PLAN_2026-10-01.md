@@ -1884,3 +1884,370 @@ The external verifier receives only the minimum claim required.
 
 **Moat:** repeated event participation creates a longitudinal professional trust graph that is difficult to reproduce without the network's verified history.
 
+
+
+## Institutional adoption wave — Persistent Fashion Industry Network
+
+This wave turns MFW/BFS/Made in Moscow from an event platform into persistent professional infrastructure used between events by brands, buyers, institutions, media, education partners and service providers.
+
+### Fashion Network Interchange Profile — ADOPT
+
+Define versioned exchange contracts for:
+
+- organisation/professional identity;
+- verified role;
+- brand/company profile;
+- event participation;
+- meeting availability/status;
+- credential/status;
+- public collection/show metadata;
+- verified business-outcome evidence where voluntarily supplied;
+- partner integration state.
+
+Private Deal Room content, negotiation terms and contact data remain outside the public interchange layer.
+
+### Reference Organisation / Participant Flow — ADOPT
+
+Provide synthetic flows:
+
+`organisation -> verified representative -> event participation -> meeting -> follow-up -> credential/history -> next-event reuse`
+
+### Persistent Organisation Registry — ADOPT
+
+Create a cross-event organisation identity with:
+
+- legal/public identity references;
+- brands/divisions;
+- verified representatives;
+- participation history;
+- current credentials;
+- opted-in business categories/markets;
+- partner integrations.
+
+This survives individual event editions.
+
+### Institutional Publishers — ADOPT
+
+Approved organisations may publish:
+
+- programmes;
+- speaker/delegate rosters;
+- brand/company public profiles;
+- opportunities/open calls;
+- education/content;
+- partner services;
+- public collection/show metadata.
+
+Publishing is role/scoped and reviewable.
+
+### Approved Fashion Service Network — ADOPT
+
+Potential participants:
+
+- showrooms;
+- production/sourcing partners;
+- logistics;
+- PR/media;
+- casting/model services;
+- education;
+- trade/export support;
+- technology/integration vendors.
+
+Profiles show factual capabilities/credentials, not pay-to-win ranking.
+
+### Cross-event Professional Continuity — ADOPT
+
+A verified participant can carry forward:
+
+- identity;
+- organisation relationship;
+- role;
+- credential;
+- meeting reliability history;
+- saved business interests;
+- relationship graph;
+- opted-in availability.
+
+### Enterprise / Association Bundles — ADOPT
+
+Potential packages:
+
+- Event OS;
+- Professional Network;
+- Buyer/Brand Verification;
+- Deal Room;
+- Partner API;
+- Sponsor/Media Intelligence;
+- Association/Institution Portal.
+
+### Data Contribution Incentives — CONDITIONAL
+
+Participants that maintain high-quality public/shared profiles or verified business outcomes can receive:
+
+- improved matchmaking completeness;
+- better analytics;
+- benchmark access;
+- faster re-accreditation where policy allows.
+
+No hidden ranking privilege is purchased or inferred.
+
+### Legitimate Switching Cost — ADOPT
+
+Compounding assets:
+
+- persistent identities;
+- event/meeting history;
+- organisation relationships;
+- credentials;
+- cross-event Deal Room continuity;
+- partner integrations;
+- verified outcome evidence;
+- sponsor/media analytics history.
+
+### Additional acceptance
+
+- event participation history cannot be rewritten by profile owners;
+- credentials remain scope/version/status specific;
+- paid sponsorship does not alter professional verification;
+- organisations control public/shared visibility;
+- private meeting/Deal Room data never enters public registry;
+- new verified entrants are neutral, not disadvantaged for no history.
+
+**Sequencing:** Network Trust Passport -> persistent org registry -> reference flow -> institutional publishing -> service network -> cross-event continuity -> enterprise association distribution.
+
+**Moat:** each event becomes an acquisition and verification cycle for a persistent fashion-industry graph rather than a one-off audience database.
+
+## Platform economics wave — Partner Data API and developer distribution
+
+This wave turns selected MFW/BFS capabilities into a governed B2B platform surface for brands, sponsors, media, city partners and technology partners.
+
+### Partner API Authority — ADOPT
+
+Expose only explicitly approved API resources such as:
+
+- public programme/session/show metadata;
+- public brand/designer/speaker profiles;
+- public collections/looks/content;
+- organisation-scoped campaign/performance summaries;
+- privacy-safe benchmark outputs;
+- approved meeting/Deal Room status for the owning organisation;
+- approved venue/map/accessibility data;
+- public replay/chapter metadata.
+
+Never expose raw participant-level interest, private Deal Room content or cross-organisation CRM data.
+
+### Contract-first API — ADOPT
+
+Use versioned OpenAPI contracts.
+
+Reference:
+
+https://github.com/OpenAPITools/openapi-generator
+
+Generate/test client SDKs from the contract rather than maintaining undocumented hand-written partner clients.
+
+Each API version declares:
+
+- resource schema;
+- auth scope;
+- pagination/filtering;
+- rate limit;
+- freshness;
+- deprecation date;
+- data-classification level.
+
+### Event / Webhook Contract — ADOPT
+
+For approved partner events use versioned webhook/event schemas.
+
+AsyncAPI tooling may be used as a contract/documentation layer:
+
+https://github.com/asyncapi/cli
+
+Candidate events:
+
+- programme item changed;
+- replay published;
+- partner campaign result updated;
+- Deal Room request changed;
+- meeting confirmed/cancelled;
+- credential/pass state changed where appropriate.
+
+Every delivery is signed, idempotent and scoped.
+
+### Developer Portal — ADOPT
+
+Provide:
+
+- API documentation;
+- sandbox/demo tenant;
+- example SDK usage;
+- webhook verifier;
+- changelog;
+- rate limits;
+- data/privacy rules;
+- status/deprecation notices.
+
+Sandbox contains synthetic/demo data only.
+
+### Usage Metering / Commercial Plans — ADAPT
+
+Reference:
+
+https://github.com/openmeterio/openmeter
+
+If API commercialisation requires usage billing, meter only approved dimensions:
+
+- API calls;
+- data export jobs;
+- webhook deliveries;
+- intelligence report generation.
+
+Metering must not become CRM/business authority.
+
+### API Product Tiers — ADOPT
+
+Possible packages:
+
+- Public Programme API;
+- Brand/Sponsor Analytics API;
+- Fashion Intelligence API;
+- Media/Replay API;
+- Enterprise Partner API.
+
+Entitlements remain explicit organisation-scoped permissions.
+
+### Additional acceptance
+
+- every endpoint maps to an approved canonical/read-model source;
+- private participant/Deal Room data cannot be requested by broader scopes;
+- API versioning/deprecation is explicit;
+- webhook signatures/retries are testable;
+- usage metering cannot affect business truth;
+- partner access can be revoked without deleting historical audit.
+
+**Sequencing:** stable public/read models + Fashion Intelligence -> OpenAPI contracts -> auth/scopes -> developer portal -> webhooks -> commercial metering.
+
+**Commercial framing:** MFW/BFS becomes an ecosystem platform whose data and capabilities can power media, sponsors, city partners and brand systems, increasing switching costs and recurring B2B revenue.
+
+## Defensibility wave — Fashion Network Trust Passport and portable professional credentials
+
+This wave creates a governed trust layer for the persistent MFW/BFS professional network. It is not a social popularity score.
+
+### Network Trust Passport — ADOPT
+
+Create a passport projection for eligible professional entities:
+
+- brand/designer;
+- buyer;
+- organisation;
+- speaker/delegate;
+- media/partner;
+- approved service provider.
+
+Passport dimensions may include:
+
+- identity/organisation verification;
+- role verification;
+- event participation history;
+- meeting attendance/reliability;
+- Deal Room response/completion history;
+- submitted/approved company profile;
+- verified commercial outcome where voluntarily evidenced;
+- current credential/status;
+- policy incidents/suspensions where legally appropriate and visible only to authorised operators.
+
+Every dimension exposes source class, period and freshness.
+
+### No universal reputation score — REQUIRED
+
+Do not reduce trust to one opaque number.
+
+Show explainable dimensions such as:
+
+- identity verified;
+- meeting reliability: numerator/denominator/period;
+- response reliability;
+- verified event participation;
+- organisation membership;
+- credential status.
+
+Do not infer creditworthiness, wealth, politics, ethnicity or hidden buyer intent.
+
+### Portable Professional Credential — ADAPT
+
+Reference standard:
+
+https://github.com/w3c/vc-data-model
+
+Where useful, issue W3C Verifiable Credential-compatible attestations such as:
+
+- MFW Verified Buyer;
+- MFW Verified Brand Representative;
+- BFS Speaker;
+- Verified Organisation;
+- Deal Room Integration Partner.
+
+Each credential declares:
+
+- issuer;
+- subject;
+- credential type;
+- exact scope;
+- evidence reference;
+- issued_at;
+- expiry/review date;
+- status/revocation endpoint.
+
+Credential proves the stated attestation only; it is not an endorsement of commercial quality.
+
+### Credential Signature / Verification — ADAPT
+
+Use cryptographic signing/status mechanisms appropriate to the chosen VC implementation.
+
+For software/integration artefacts, Sigstore/Cosign-style signatures may be used:
+
+https://github.com/sigstore/cosign
+
+Do not reuse software-signing identities as participant identities.
+
+### Verified Network Directory — ADOPT
+
+Create a searchable directory where authorised users can filter by:
+
+- verified role;
+- organisation;
+- market/category/topic;
+- event participation;
+- opted-in meeting availability;
+- credential status.
+
+Private contact/commercial data remains hidden until the existing relationship/meeting flow permits it.
+
+### Trust-informed Matchmaking — ADOPT
+
+The matchmaking engine may use bounded trust dimensions such as verified identity and demonstrated meeting attendance.
+
+It must not penalise new participants simply for lacking history.
+
+New verified entrants receive a neutral/no-history state rather than a low score.
+
+### Credential Portability / Handoff — CONDITIONAL
+
+Where a partner system can verify VC-compatible credentials, allow selected credentials to be presented externally.
+
+The external verifier receives only the minimum claim required.
+
+### Additional acceptance
+
+- every trust dimension resolves to evidence and period;
+- no opaque universal reputation score exists;
+- new users are not treated as untrustworthy solely for lacking history;
+- credentials have scope, issuer, status and revocation;
+- private Deal Room content never enters the public trust passport;
+- credential revocation does not rewrite historical event participation.
+
+**Sequencing:** verified identity/org + meeting/Deal Room history -> trust dimensions -> credential issuer/status registry -> verified directory -> trust-aware matchmaking.
+
+**Moat:** repeated event participation creates a longitudinal professional trust graph that is difficult to reproduce without the network's verified history.
+
