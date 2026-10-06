@@ -294,6 +294,45 @@ test('Filterable Portfolio Control Tower exposes honest zero state', async ({ pa
   await expect(page.locator('.portfolio-pop b')).toHaveText('1200');
 });
 
+test('Comparison Mode compares synthetic slices side by side in Russian by default', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  await expect(page.getByText('СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ')).toBeVisible();
+  await expect(page.getByText('СЦЕНАРИЙ A')).toBeVisible();
+  await expect(page.getByText('СЦЕНАРИЙ B')).toBeVisible();
+  await expect(page.locator('[data-scenario-side="a"]')).toHaveCount(8);
+  await expect(page.locator('[data-scenario-side="b"]')).toHaveCount(8);
+  await expect(page.locator('.comparison-metrics article')).toHaveCount(6);
+
+  await page.locator('[data-comparison-preset="cis-gcc"]').click();
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="market"]')).toHaveValue('CIS');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="market"]')).toHaveValue('GCC');
+
+  await page.locator('[data-comparison-preset="new-returning"]').click();
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="buyerType"]')).toHaveValue('new');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="buyerType"]')).toHaveValue('returning');
+
+  await expect(page.getByText(/не доказывает причинность/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('comparison-mode-ru.png') });
+});
+
+test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await expect(page.getByText('ЦЕНТР ДОКАЗАТЕЛЬСТВ · EVIDENCE CONTROL TOWER')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ДОСЬЕ КЕЙСА' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ПОРТФЕЛЬ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'СРАВНЕНИЕ' })).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
 test('Evidence Control Tower synthetic case exposes reason evidence ref and revenue boundary', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
