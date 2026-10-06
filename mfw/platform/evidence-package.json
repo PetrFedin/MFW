@@ -295,6 +295,17 @@
         "mfw-api/capital-authority-contract.test.js",
         "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
       ]
+    },
+    {
+      "id": "capital_authority_ui_bridge",
+      "claim": "Programme Capital Control can read authoritative capital projection and chain verification for authenticated non-demo Organizer/Staff sessions; demo sessions remain modelled and do not query or mutate Capital Authority.",
+      "status": "implemented_not_production_admitted",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw-api/server-v2.js",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -539,7 +550,13 @@
         "GET /v1/capital/projection",
         "GET /v1/capital/verify"
       ],
-      "boundary": "Implemented in repository but not production-admitted until PostgreSQL migration 022 and deployed exact-SHA verification are green."
+      "boundary": "Implemented in repository but not production-admitted until PostgreSQL migration 022 and deployed exact-SHA verification are green.",
+      "uiBridge": {
+        "mode": "read-only",
+        "eligibleSession": "non-demo Organizer/Staff",
+        "demoBehavior": "authority protected; modelled cockpit remains local demo",
+        "writeBoundary": "Synthetic investor actions are not persisted to Capital Authority."
+      }
     }
   },
   "language": {
