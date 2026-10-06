@@ -516,3 +516,16 @@ Added migration 024_capital_operator_admission.sql and production-oriented opera
 - Idempotency-Key and X-Request-Id allowed by CORS for ledger clients.
 
 Final enterprise IAM / SSO is still a later production hardening layer.
+
+## 2026-10-06 — Capital Authority admission checker
+
+Added read-only production admission tooling for Capital Authority:
+
+- exact SHA check;
+- migrations 023/024 check;
+- operator session requirement;
+- ledger/projection access check;
+- hash-chain verification check;
+- no synthetic ledger writes.
+
+Also raised the general production migration floor from 21 to 24.
