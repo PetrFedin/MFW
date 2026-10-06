@@ -798,3 +798,20 @@ Behavior:
 - synthetic Investment Committee / simulator actions remain demo-state only and are never persisted to Capital Authority.
 
 This keeps investor demonstration separate from corporate authority while making the UI ready to surface real ledger state after production admission.
+
+## Capital Operator Admission — 2026-10-06
+
+Migration 024 adds durable Capital Authority operator grants.
+
+Capital access is no longer based on signed claims alone. Every capital request now re-checks:
+
+- non-demo operator session;
+- Organizer/Staff role;
+- active capital_operator_grants row;
+- active user;
+- grant expiry;
+- persisted session expiry/revocation.
+
+Operator bootstrap requires an explicitly configured non-default MFW_ADMIN_TOKEN. Grant suspension/revocation revokes active persisted sessions.
+
+This closes the practical gap where Capital Authority existed but no non-demo operator admission path was available.
