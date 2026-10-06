@@ -193,18 +193,42 @@ test('Cross-event identity graph keeps shared identity and scoped rights separat
   await page.screenshot({ path: testInfo.outputPath('cross-event-identity-graph.png') });
 });
 
-test('Investor Proof distinguishes live evidence from synthetic demo', async ({ page }, testInfo) => {
+test('Evidence Control Tower distinguishes live dossier from synthetic dossier and portfolio', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="proof"]').click();
-  await expect(page.getByText('INVESTOR PROOF LAYER', { exact: false })).toBeVisible();
-  await expect(page.locator('.proof-chain article')).toHaveCount(9);
+  await expect(page.getByText('EVIDENCE CONTROL TOWER', { exact: false })).toBeVisible();
+  await expect(page.getByText('LIVE PROOF · CURRENT ACCOUNT')).toBeVisible();
+  await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
   await expect(page.getByText('NOT EVIDENCED').first()).toBeVisible();
+
   await page.locator('[data-proof-mode="synthetic"]').click();
-  await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC', { exact: false })).toBeVisible();
-  await expect(page.locator('.evidence-synthetic')).toHaveCount(9);
+  await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC CASE')).toBeVisible();
+  await expect(page.locator('.case-selector button')).toHaveCount(3);
+  await expect(page.locator('.dossier-timeline article')).toHaveCount(12);
+  await expect(page.locator('.dossier-timeline .evidence-synthetic')).toHaveCount(12);
+
+  await page.locator('[data-control-view="portfolio"]').click();
+  await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC PORTFOLIO')).toBeVisible();
+  await expect(page.locator('.portfolio-funnel article')).toHaveCount(8);
+  await expect(page.locator('.retention-tower article')).toHaveCount(3);
+  await expect(page.getByText('REVENUE SURFACES TOUCHED · NOT REVENUE')).toBeVisible();
   await expectNoDocumentOverflow(page);
-  await page.screenshot({ path: testInfo.outputPath('investor-proof-synthetic.png') });
+  await page.screenshot({ path: testInfo.outputPath('evidence-control-tower-portfolio.png') });
+});
+
+test('Evidence Control Tower synthetic case exposes reason evidence ref and revenue boundary', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await expect(page.getByText(/Buyer role \+ category overlap \+ explicit saved look/)).toBeVisible();
+  await expect(page.getByText('demo://recommendation/buyer-brand-alpha')).toBeVisible();
+  await expect(page.getByText(/Potential stream ≠ realised revenue/)).toBeVisible();
+  await page.locator('[data-control-case="buyer-brand-gamma"]').click();
+  await expect(page.getByText('Demo Buyer C → Demo Brand C')).toBeVisible();
+  await expect(page.getByText('REPORTED')).toBeVisible();
+  await expectNoDocumentOverflow(page);
 });
 
 test('Partner Console keeps revenue recognition behind evidence gates', async ({ page }) => {
