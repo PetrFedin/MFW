@@ -473,3 +473,39 @@ The same filtered cohort recomputes:
 The synthetic cube contains 12 deterministic cohorts whose unfiltered total preserves the 1,200-journey demo portfolio.
 
 If a filter combination has no cohort, the UI returns an explicit zero state. It does not substitute a nearby cohort or estimate missing values.
+
+## Comparison / Scenario Mode — 2026-10-06
+
+Evidence Control Tower now includes a third view: Comparison / Scenario Mode.
+
+Two independent synthetic slices, A and B, can be configured side-by-side across the same cohort dimensions:
+
+- period;
+- ecosystem;
+- buyer market;
+- brand category;
+- new / returning buyer;
+- evidence class;
+- retention horizon;
+- revenue surface.
+
+Quick presets:
+
+- MFW vs BFS;
+- CIS vs GCC;
+- new vs returning buyer.
+
+The comparison calculates rates from the deterministic synthetic cohort cube:
+
+- Audience -> Qualified Buyer;
+- Qualified Buyer -> Meeting;
+- Meeting -> Intent;
+- Intent -> Deal-stage;
+- Intent -> selected D30/D90/D365 retention;
+- Deal-stage -> Revenue Evidence.
+
+The UI shows both values and the percentage-point delta A-B.
+
+Important boundary: a higher conversion in a selected synthetic slice is descriptive, not causal. It does not prove that the event, market or buyer type caused the difference, and no monetary uplift is inferred without real contracts/payment evidence.
+
+Russian is the default UI language for the shared investor/control-tower layer. English remains secondary/product terminology only where useful.
