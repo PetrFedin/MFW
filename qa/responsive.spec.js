@@ -217,6 +217,32 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
   await page.screenshot({ path: testInfo.outputPath('evidence-control-tower-portfolio.png') });
 });
 
+test('Portfolio drill-down opens synthetic cohorts and representative dossiers', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="portfolio"]').click();
+
+  await page.locator('[data-portfolio-stage="INTENT"]').click();
+  await expect(page.getByText('INTENT = 65')).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article')).toHaveCount(3);
+  await expect(page.getByText('MFW').last()).toBeVisible();
+  await expect(page.getByText('31', { exact: true })).toBeVisible();
+  await expect(page.getByText('BFS').last()).toBeVisible();
+  await expect(page.getByText('29', { exact: true })).toBeVisible();
+  await expect(page.getByText('MADE').last()).toBeVisible();
+  await expect(page.getByText('5', { exact: true })).toBeVisible();
+  await expect(page.locator('.representative-journeys article')).toHaveCount(3);
+  await expect(page.getByText(/Aggregate count only; representative dossiers below are examples/)).toBeVisible();
+
+  await page.locator('[data-open-dossier="buyer-brand-alpha"]').click();
+  await expect(page.getByText('Demo Buyer A → Demo Brand A')).toBeVisible();
+  await expect(page.getByText('demo://deal-room/request-001')).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-intent-drilldown.png') });
+});
+
 test('Evidence Control Tower synthetic case exposes reason evidence ref and revenue boundary', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
