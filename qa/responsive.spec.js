@@ -184,11 +184,11 @@ test('Cross-event identity graph keeps shared identity and scoped rights separat
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="graph"]').click();
-  await expect(page.getByText('CROSS-EVENT IDENTITY GRAPH', { exact: false })).toBeVisible();
+  await expect(page.getByText('СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ', { exact: false })).toBeVisible();
   await expect(page.locator('.identity-node')).toHaveCount(5);
-  await expect(page.getByText('SHARED USER ID')).toBeVisible();
-  await expect(page.getByText(/brand Verified status remains a separate roster authority/i)).toBeVisible();
-  await expect(page.getByText(/does not merge event credentials/i)).toBeVisible();
+  await expect(page.getByText('ОБЩИЙ USER ID')).toBeVisible();
+  await expect(page.getByText(/статус бренда Verified остаётся отдельной authority/i)).toBeVisible();
+  await expect(page.getByText(/не объединяет event credentials/i)).toBeVisible();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('cross-event-identity-graph.png') });
 });
@@ -198,21 +198,21 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="proof"]').click();
   await expect(page.getByText('EVIDENCE CONTROL TOWER', { exact: false })).toBeVisible();
-  await expect(page.getByText('LIVE PROOF · CURRENT ACCOUNT')).toBeVisible();
+  await expect(page.getByText('LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')).toBeVisible();
   await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
   await expect(page.getByText('NOT EVIDENCED').first()).toBeVisible();
 
   await page.locator('[data-proof-mode="synthetic"]').click();
-  await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC CASE')).toBeVisible();
+  await expect(page.getByText('ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КЕЙС')).toBeVisible();
   await expect(page.locator('.case-selector button')).toHaveCount(3);
   await expect(page.locator('.dossier-timeline article')).toHaveCount(12);
   await expect(page.locator('.dossier-timeline .evidence-synthetic')).toHaveCount(12);
 
   await page.locator('[data-control-view="portfolio"]').click();
-  await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC PORTFOLIO')).toBeVisible();
+  await expect(page.getByText('ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ ПОРТФЕЛЬ')).toBeVisible();
   await expect(page.locator('.portfolio-funnel .portfolio-stage')).toHaveCount(8);
   await expect(page.locator('.retention-tower article')).toHaveCount(3);
-  await expect(page.getByText('REVENUE SURFACES TOUCHED · NOT REVENUE')).toBeVisible();
+  await expect(page.getByText('ЗАТРОНУТЫЕ REVENUE SURFACES · НЕ ВЫРУЧКА')).toBeVisible();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('evidence-control-tower-portfolio.png') });
 });
@@ -234,7 +234,7 @@ test('Portfolio drill-down opens synthetic cohorts and representative dossiers',
   await expect(page.getByText('MADE').last()).toBeVisible();
   await expect(page.getByText('5', { exact: true })).toBeVisible();
   await expect(page.locator('.representative-journeys article')).toHaveCount(3);
-  await expect(page.getByText(/Aggregate count only; representative dossiers below are examples/)).toBeVisible();
+  await expect(page.getByText(/Показан агрегат; representative dossiers ниже — примеры/)).toBeVisible();
 
   await page.locator('[data-open-dossier="buyer-brand-alpha"]').click();
   await expect(page.getByText('Demo Buyer A → Demo Brand A')).toBeVisible();
@@ -286,7 +286,7 @@ test('Filterable Portfolio Control Tower exposes honest zero state', async ({ pa
   await page.locator('[data-portfolio-filter="ecosystem"]').selectOption('made');
   await page.locator('[data-portfolio-filter="market"]').selectOption('Asia');
   await expect(page.locator('.portfolio-pop b')).toHaveText('0');
-  await expect(page.getByText('NO MATCHING SYNTHETIC COHORT')).toBeVisible();
+  await expect(page.getByText('НЕТ ПОДХОДЯЩЕГО СИНТЕТИЧЕСКОГО COHORT')).toBeVisible();
   await expect(page.locator('[data-portfolio-stage="AUDIENCE"] > b')).toHaveText('0');
   await expectNoDocumentOverflow(page);
 
@@ -307,6 +307,8 @@ test('Comparison Mode compares synthetic slices side by side in Russian by defau
   await expect(page.locator('[data-scenario-side="a"]')).toHaveCount(8);
   await expect(page.locator('[data-scenario-side="b"]')).toHaveCount(8);
   await expect(page.locator('.comparison-metrics article')).toHaveCount(6);
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="ecosystem"]')).toHaveValue('mfw');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="ecosystem"]')).toHaveValue('bfs');
 
   await page.locator('[data-comparison-preset="cis-gcc"]').click();
   await expect(page.locator('[data-scenario-side="a"][data-scenario-key="market"]')).toHaveValue('CIS');
