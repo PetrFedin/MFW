@@ -197,7 +197,7 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="proof"]').click();
-  await expect(page.getByText('EVIDENCE CONTROL TOWER', { exact: false })).toBeVisible();
+  await expect(page.locator('.control-tower-top .drawer-kicker')).toContainText('EVIDENCE CONTROL TOWER');
   await expect(page.getByText('LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')).toBeVisible();
   await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
   await expect(page.getByText('NOT EVIDENCED').first()).toBeVisible();
@@ -228,11 +228,11 @@ test('Portfolio drill-down opens synthetic cohorts and representative dossiers',
   await expect(page.getByText('INTENT = 65')).toBeVisible();
   await expect(page.locator('.cohort-breakdown article')).toHaveCount(3);
   await expect(page.getByText('MFW').last()).toBeVisible();
-  await expect(page.getByText('31', { exact: true })).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article').filter({ hasText: 'MFW' }).locator('b')).toHaveText('31');
   await expect(page.getByText('BFS').last()).toBeVisible();
-  await expect(page.getByText('29', { exact: true })).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article').filter({ hasText: 'BFS' }).locator('b')).toHaveText('29');
   await expect(page.getByText('MADE').last()).toBeVisible();
-  await expect(page.getByText('5', { exact: true })).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article').filter({ hasText: 'MADE' }).locator('b')).toHaveText('5');
   await expect(page.locator('.representative-journeys article')).toHaveCount(3);
   await expect(page.getByText(/Показан агрегат; representative dossiers ниже — примеры/)).toBeVisible();
 
@@ -302,8 +302,8 @@ test('Comparison Mode compares synthetic slices side by side in Russian by defau
   await page.locator('[data-control-view="comparison"]').click();
 
   await expect(page.getByText('СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ')).toBeVisible();
-  await expect(page.getByText('СЦЕНАРИЙ A')).toBeVisible();
-  await expect(page.getByText('СЦЕНАРИЙ B')).toBeVisible();
+  await expect(page.locator('.scenario-a .scenario-title > span')).toHaveText('СЦЕНАРИЙ A');
+  await expect(page.locator('.scenario-b .scenario-title > span')).toHaveText('СЦЕНАРИЙ B');
   await expect(page.locator('[data-scenario-side="a"]')).toHaveCount(8);
   await expect(page.locator('[data-scenario-side="b"]')).toHaveCount(8);
   await expect(page.locator('.comparison-metrics article')).toHaveCount(6);
@@ -338,8 +338,8 @@ test('Opportunity Explanation decomposes scenario gap and links representative e
   await expect(page.getByText(/не causal attribution/i)).toBeVisible();
 
   await page.locator('[data-comparison-preset="new-returning"]').click();
-  await expect(page.getByText(/Новые/).first()).toBeVisible();
-  await expect(page.getByText(/Возвращающиеся/).first()).toBeVisible();
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="buyerType"]')).toHaveValue('new');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="buyerType"]')).toHaveValue('returning');
 
   const dossierButtons = page.locator('[data-explanation-dossier]');
   if (await dossierButtons.count()) {
@@ -411,7 +411,7 @@ test('Evidence Control Tower synthetic case exposes reason evidence ref and reve
   await page.locator('[data-proof-mode="synthetic"]').click();
   await expect(page.getByText(/Buyer role \+ category overlap \+ explicit saved look/)).toBeVisible();
   await expect(page.getByText('demo://recommendation/buyer-brand-alpha')).toBeVisible();
-  await expect(page.getByText(/Potential stream ≠ realised revenue/)).toBeVisible();
+  await expect(page.getByText(/Потенциальный stream ≠ фактическая выручка/)).toBeVisible();
   await page.locator('[data-control-case="buyer-brand-gamma"]').click();
   await expect(page.getByText('Demo Buyer C → Demo Brand C')).toBeVisible();
   await expect(page.getByText('REPORTED')).toBeVisible();
@@ -434,9 +434,9 @@ test('Brand Cockpit exposes buyer conversion and 30 90 365 continuity', async ({
   await page.locator('[data-hub-tab="brand"]').click();
   await expect(page.locator('.brand-funnel article')).toHaveCount(9);
   await expect(page.locator('.continuity-grid article')).toHaveCount(3);
-  await expect(page.getByText('D30')).toBeVisible();
-  await expect(page.getByText('D90')).toBeVisible();
-  await expect(page.getByText('D365')).toBeVisible();
+  await expect(page.locator('.continuity-grid span', { hasText: /^D30$/ })).toBeVisible();
+  await expect(page.locator('.continuity-grid span', { hasText: /^D90$/ })).toBeVisible();
+  await expect(page.locator('.continuity-grid span', { hasText: /^D365$/ })).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
 
