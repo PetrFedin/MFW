@@ -9,6 +9,7 @@ const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMemb
 const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
 const { shouldRunReverificationCatchup } = require('./reverification-catchup');
 const { OrganisationRegistry } = require('./organisation-registry');
+const { OrganisationCredentialAuthority } = require('./organisation-credential');
 let Pool = null;
 try { ({ Pool } = require('pg')); } catch (_) {}
 
@@ -18,6 +19,7 @@ const VERSION = 'mfw-authority-v9-mvp-golden-path';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
 const RELEASE_SHA = String(process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
+const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
 const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
@@ -637,6 +639,16 @@ mergeOfficialSnapshotIntoMemory();
 
 const brand365Store=new Brand365Store({pool,memory});
 organisationRegistry.pool=pool;
+const organisationCredentialAuthority=new OrganisationCredentialAuthority({
+  registry:organisationRegistry,
+  privateKey:PRIVATE_KEY,
+  publicKey:PUBLIC_KEY,
+  keyConfigured:KEY_SEED_CONFIGURED,
+  keyId:'mfw-org-authority-v1',
+  issuerId:'mfw-platform',
+  pool,
+  memory:new Map()
+});
 let databaseSchemaReadiness={
   configured:!!pool,
   ready:!pool,
@@ -1626,7 +1638,8 @@ async function router(req,res){
     return json(res,roles.all?200:500,{status:roles.all?'pass':'fail',roles});
   }
   if(req.method==='GET'&&p==='/v1/authority/public-key') return json(res,200,{
-    alg:'ES256',kid:'mfw-demo-2026-01',jwk:publicJwk
+    alg:'ES256',kid:'mfw-demo-2026-01',jwk:publicJwk,
+    organisationCredential:{configured:KEY_SEED_CONFIGURED,kid:'mfw-org-authority-v1',issuerId:'mfw-platform',credentialVersion:'mfw-organisation-credential-v1'}
   });
   if(req.method==='GET'&&p==='/v1/authority/revocations'){
     const revoked=[...memory.revoked.entries()].map(([jti,v])=>({jti,...v}));
@@ -1645,6 +1658,37 @@ async function router(req,res){
       const data=await organisationRegistry.list({limit:url.searchParams.get('limit')||50,type:type||null,verifiedOnly});
       return json(res,200,{data,source:pool?'postgres':'memory_demo',authority:'persistent_organisation_registry'});
     }catch(err){return json(res,400,{error:String(err&&err.message||err)});}
+  }
+  if(req.method==='GET'&&p.startsWith('/v1/network/organisations/')&&p.endsWith('/credential')){
+    const raw=p.slice('/v1/network/organisations/'.length,-'/credential'.length);
+    const id=decodeURIComponent(raw);
+    const session=sessionFromRequest(req);
+    if(!session||!session.sub)return json(res,401,{error:'session_required'});
+    const allowed=adminOk(req)||await organisationRegistry.canRepresent(String(session.sub),id);
+    if(!allowed)return json(res,403,{error:'organisation_credential_forbidden'});
+    try{
+      const data=await organisationCredentialAuthority.issue(id);
+      return json(res,200,{data,authority:'verified_organisation_registry'});
+    }catch(err){
+      const code=String(err&&err.message||err);
+      const status=code==='organisation_not_found'?404:(code==='organisation_credential_issuer_not_configured'?503:409);
+      return json(res,status,{error:code});
+    }
+  }
+  if(req.method==='POST'&&p==='/v1/network/organisation-credentials/verify'){
+    const body=await readJson(req).catch(()=>null);
+    if(!body||!body.envelope)return json(res,400,{error:'credential_envelope_required'});
+    const data=await organisationCredentialAuthority.verify(body.envelope);
+    return json(res,200,{data});
+  }
+  if(req.method==='POST'&&p==='/v1/network/organisation-credentials/revoke'){
+    if(!adminOk(req))return json(res,403,{error:'admin_required'});
+    const body=await readJson(req).catch(()=>null);
+    if(!body)return json(res,400,{error:'invalid_json'});
+    try{
+      const row=await organisationCredentialAuthority.revoke(body.credentialSha256,body.organisationId,body.reason,String(sessionFromRequest(req)?.sub||'admin'));
+      return json(res,200,{data:row});
+    }catch(err){return json(res,422,{error:String(err&&err.message||err)});}
   }
   if(req.method==='GET'&&p.startsWith('/v1/network/organisations/')&&p.endsWith('/portable-proof')){
     const raw=p.slice('/v1/network/organisations/'.length,-'/portable-proof'.length);
