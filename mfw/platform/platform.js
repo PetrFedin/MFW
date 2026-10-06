@@ -576,7 +576,7 @@
         '<article><small>04 · BRAND ОТВЕТ</small><h4>Доказательство ответа</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">ПРИВАТНЫЙ КОНТУР</span></article>'+
         '<article><small>05 · ПЕРЕДАЧА</small><h4>Внешняя коммерческая система</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">БЕЗ НЕЯВНОГО СОЗДАНИЯ ЗАКАЗА</span></article>'+
       '</div>'+
-      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ЗАПРОС TYPES</small><h4>Структурированный buyer intent</h4></div><span>ДЕМОНСТРАЦИОННАЯ ТАКСОНОМИЯ</span></div><div class="request-chip-grid">'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ЗАПРОС TYPES</small><h4>Структурированный намерение байера</h4></div><span>ДЕМОНСТРАЦИОННАЯ ТАКСОНОМИЯ</span></div><div class="request-chip-grid">'+
         ['LINE SHEET','WHOLESALE PRICE','AVAILABILITY','MOQ','DELIVERY WINDOW','SAMPLE','SHOWROOM APPOINTMENT','DISTRIBUTION / MARKET'].map(function(x){return '<button disabled>'+x+'</button>';}).join('')+
       '</div></section>'+
       '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ПРИВАТНЫЕ ДОКУМЕНТЫ</small><h4>Контролируемый обмен</h4></div><span>ПРОВЕРКА ДОСТУПА ПЕРЕД СКАЧИВАНИЕМ</span></div><div class="deal-doc-grid">'+
@@ -1061,18 +1061,18 @@
   function renderPartnerConsole(){
     var rows=INVESTOR_MODEL.partnerConsole||[];
     hubContent.innerHTML=
-      '<div class="drawer-kicker">PARTNER / SPONSOR CONSOLE · PREVIEW</div>'+
-      '<div class="operating-hero"><div><h3>Package → inventory → campaign → delivery → report → settlement.</h3><p>Партнёр видит не «охваты ради охватов», а контракт, активированный инвентарь, доказательство доставки и основание для расчётов.</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="drawer-kicker">КАБИНЕТ ПАРТНЁРА / СПОНСОРА · ПРЕДПРОСМОТР</div>'+
+      '<div class="operating-hero"><div><h3>Пакет → инвентарь → кампания → исполнение → отчёт → расчёты.</h3><p>Партнёр видит не «охваты ради охватов», а контракт, активированный инвентарь, доказательство доставки и основание для расчётов.</p></div>'+proofModeToggle()+'</div>'+
       '<div class="partner-flow">'+rows.map(function(x,i){return '<article><span>0'+(i+1)+' · '+h(x.stage)+'</span><b>'+h(x.owner)+'</b><small>'+h(x.proof)+'</small><em>'+h(x.revenueGate)+'</em></article>';}).join('')+'</div>'+
-      '<section class="console-boundary"><b>REVENUE BOUNDARY</b><span>Campaign impression, scan or lead handoff is delivery evidence; recognised revenue still requires the applicable contract/billing/payment evidence.</span></section>';
+      '<section class="console-boundary"><b>ГРАНИЦА ПРИЗНАНИЯ ВЫРУЧКИ</b><span>Показ кампании, сканирование или передача лида являются доказательством исполнения; признание выручки всё равно требует соответствующего договорного, биллингового или платёжного подтверждения.</span></section>';
     bindProofMode();
   }
   function renderBrandCockpit(){
     var funnel=INVESTOR_MODEL.brandFunnel||[],chain=proofChain();
     var stageMap={};chain.forEach(function(x){stageMap[x.stage]=x;});
     hubContent.innerHTML=
-      '<div class="drawer-kicker">BRAND BUSINESS COCKPIT · MVP PREVIEW</div>'+
-      '<div class="operating-hero"><div><h3>Не «сколько лайков», а где именно бренд теряет buyer intent.</h3><p>Audience, professional signals, meeting, Deal Room и 365-day continuity собраны в одну управляемую воронку.</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="drawer-kicker">БИЗНЕС-КАБИНЕТ БРЕНДА · ПРЕДПРОСМОТР MVP</div>'+
+      '<div class="operating-hero"><div><h3>Не «сколько лайков», а где именно бренд теряет намерение байера.</h3><p>Аудитория, профессиональные сигналы, встреча, Комната сделки и непрерывность на горизонте 365 дней собраны в одну управляемую воронку.</p></div>'+proofModeToggle()+'</div>'+
       '<div class="brand-funnel">'+funnel.map(function(x){var live=stageMap[x.stage]||null;return '<article><span>'+h(x.stage)+'</span><b>'+h(x.proof)+'</b>'+(live?evidenceBadge(live.evidence):evidenceBadge(proofMode==='synthetic'?'synthetic':'not_evidenced'))+'</article>';}).join('')+'</div>'+
       '<div class="continuity-grid"><article><span>D30</span><b>Relationship retained</b><small>Verified follow / campaign / reward / return evidence.</small></article><article><span>D90</span><b>Professional continuation</b><small>Follow-up, repeat meeting or brand action.</small></article><article><span>D365</span><b>Network compounding</b><small>Cross-event return and accumulated trust history.</small></article></div>'+
       '<div class="hub-note">В production бренд видит только свою first-party аудиторию и privacy-safe benchmark; competitor-level private data не раскрывается.</div>';
