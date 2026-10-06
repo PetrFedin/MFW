@@ -465,7 +465,7 @@ test('Evidence Control Tower synthetic case exposes reason evidence ref and reve
   await expect(page.getByText(/Потенциальный stream ≠ фактическая выручка/)).toBeVisible();
   await page.locator('[data-control-case="buyer-brand-gamma"]').click();
   await expect(page.getByText('Demo Buyer C → Demo Brand C')).toBeVisible();
-  await expect(page.getByText('REPORTED')).toBeVisible();
+  await expect(page.locator('.evidence-badge.evidence-reported').filter({ hasText: /^REPORTED$/ })).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
 
