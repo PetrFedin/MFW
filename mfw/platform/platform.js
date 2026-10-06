@@ -54,7 +54,7 @@
   }
   function capitalAuthorityEligible(){
     var p=sessionClaims();
-    return !!(p&&p.demo!==true&&['Organizer','Staff'].indexOf(String(p.role||''))>=0);
+    return !!(p&&p.demo!==true&&p.operator===true&&['Organizer','Staff'].indexOf(String(p.role||''))>=0);
   }
   function displayName(){return ((accountState.profile.firstName||'')+' '+(accountState.profile.lastName||'')).trim()||'MFW User';}
   async function ensureAuthoritySession(role,force){
