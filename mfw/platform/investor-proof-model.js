@@ -301,7 +301,79 @@
         {id:'b1',intervention:'meeting-intent-pack',code:'EVIDENCE_PLAN_INCOMPLETE',label:'Evidence plan incomplete'},
         {id:'b2',intervention:'brand365-retention',code:'PILOT_NOT_STARTED',label:'Pilot approved but not started'},
         {id:'b3',intervention:'matchmaking-optimizer',code:'TARGET_MISSED',label:'Measured improvement below modelled target'}
-      ]
+      ],
+      optimizer:{
+        trancheOptions:[10,20,30],
+        evidenceReadyThreshold:.80,
+        conditionalThreshold:.60,
+        scoreWeights:{riskRelief:.30,kpiLeverage:.25,evidenceReadiness:.30,absorption:.15},
+        candidates:[
+          {
+            ecosystem:'mfw',
+            intervention:'professional-discovery',
+            mode:'SCALE',
+            bottleneck:'Масштабирование qualified-buyer conversion после подтверждённого pilot result',
+            metric:'qualifiedRate',
+            riskAtRisk:0,
+            riskReliefPer10:0,
+            kpiLiftPer10:1.0,
+            maxKpiLift:3.0,
+            absorptionCap:30,
+            evidenceReadiness:1.00,
+            hardBlock:false,
+            releaseGate:'READY',
+            evidenceBeforeNext:[
+              'versioned cohort assignment',
+              'qualified-buyer event + reason codes',
+              'post-tranche conversion snapshot',
+              'false-positive qualification guardrail'
+            ]
+          },
+          {
+            ecosystem:'bfs',
+            intervention:'matchmaking-optimizer',
+            mode:'ITERATE',
+            bottleneck:'Measured matcher improvement ниже modelled target; 12 points commitments требуют recovery plan',
+            metric:'meetingRate',
+            riskAtRisk:12,
+            riskReliefPer10:6,
+            kpiLiftPer10:1.4,
+            maxKpiLift:3.5,
+            absorptionCap:20,
+            evidenceReadiness:.70,
+            hardBlock:false,
+            releaseGate:'CONDITIONAL',
+            evidenceBeforeNext:[
+              'match proposal + reason codes',
+              'bilateral accept/decline completeness',
+              'agenda conflict state',
+              'held-meeting evidence + target-recovery snapshot'
+            ]
+          },
+          {
+            ecosystem:'made',
+            intervention:'meeting-intent-pack',
+            mode:'HOLD',
+            bottleneck:'Meeting → intent pilot имеет незакрытый evidence plan; 6 committed-but-unspent points остаются under review',
+            metric:'intentRate',
+            riskAtRisk:6,
+            riskReliefPer10:4,
+            kpiLiftPer10:1.6,
+            maxKpiLift:3.0,
+            absorptionCap:10,
+            evidenceReadiness:.40,
+            hardBlock:true,
+            releaseGate:'HOLD',
+            evidenceBeforeNext:[
+              'complete evidence plan',
+              'meeting-held identity linkage',
+              'pack version/open event',
+              'structured commercial-intent event'
+            ]
+          }
+        ],
+        boundary:'Optimizer is a modelled decision aid. Scores, KPI lifts and risk relief are assumptions; no tranche is approved by the optimizer.'
+      }
     },
     partnerConsole:[
       {stage:'PACKAGE',owner:'Partner / organiser',proof:'Signed scope / package',revenueGate:'Contract'},
