@@ -304,3 +304,20 @@ Added a read-only defensibility layer to the investor MVP:
 - responsive QA covers the trust preview.
 
 No portable credential is actually issued by this preview and no production trust decision is made client-side.
+
+## 2026-10-06 — Investor proof operating layer
+
+Added the next investor-MVP wave:
+
+- shared investor proof model;
+- live-proof vs clearly labelled synthetic demo case;
+- nine-stage evidence chain through D365;
+- Partner / Sponsor Console preview;
+- Brand Business Cockpit preview;
+- buyer conversion funnel;
+- investment/economics dashboard with payer/product/formula/revenue-gate;
+- machine-readable evidence package manifest;
+- guided investor route expanded to 12 steps;
+- responsive QA coverage for all new surfaces.
+
+No synthetic/modelled value is treated as production KPI or realised revenue.
