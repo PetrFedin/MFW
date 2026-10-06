@@ -5,7 +5,7 @@ const {spawn}=require('child_process');
 
 const serverPath=path.join(__dirname,'server-v2.js');
 const serverSource=fs.readFileSync(serverPath,'utf8');
-const migrationPath=path.join(__dirname,'migrations','022_capital_authority.sql');
+const migrationPath=path.join(__dirname,'migrations','023_capital_authority.sql');
 const migration=fs.readFileSync(migrationPath,'utf8');
 const domainSource=fs.readFileSync(path.join(__dirname,'capital-authority.js'),'utf8');
 
