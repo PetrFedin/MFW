@@ -137,7 +137,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorBtn').click();
   await page.locator('#investorDemoStart').click();
   await expect(page.locator('#investorPilot')).toBeVisible();
-  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 13');
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 14');
 
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
@@ -164,8 +164,10 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-hub-tab="economics"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
   await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#investorPilotStep')).toHaveText('13 / 13');
+  await expect(page.locator('#investorPilotStep')).toHaveText('14 / 14');
 });
 
 test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
@@ -389,6 +391,55 @@ test('Capital Allocation recommendations react to scenario presets', async ({ pa
   expect(before.length).toBe(3);
   await expect(page.locator('.allocation-card')).toHaveCount(3);
   await expect(page.locator('.allocation-meta')).toHaveCount(3);
+  await expectNoDocumentOverflow(page);
+});
+
+test('Investment Committee Workspace closes recommendation to decision loop in demo state', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="committee"]').click();
+
+  await expect(page.getByText(/ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO/)).toBeVisible();
+  await expect(page.locator('.committee-recommendations button')).toHaveCount(3);
+  await expect(page.locator('.committee-case-grid article')).toHaveCount(6);
+  await expect(page.getByText(/не являются реальными корпоративными решениями/)).toBeVisible();
+  await expect(page.locator('.committee-status b')).toHaveText('ЧЕРНОВИК');
+
+  const activeId = await page.locator('.committee-recommendations button.active').getAttribute('data-committee-select');
+  await page.locator('[data-committee-action="submit"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('НА РАССМОТРЕНИИ');
+
+  await page.locator('[data-committee-action="approve"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('ОДОБРЕНО · DEMO');
+
+  await page.locator('[data-committee-action="start"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('ПИЛОТ ИДЁТ');
+
+  await page.locator('[data-committee-action="measure"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('ИЗМЕРЕНО');
+  await expect(page.locator('.committee-evidence-plan span.done').first()).toBeVisible();
+
+  await page.locator('[data-committee-action="decide"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('РЕШЕНИЕ ПРИНЯТО');
+  await expect(page.locator('.committee-case-grid article').filter({ hasText: 'DECISION' }).locator('b')).toHaveText(/SCALE|ITERATE|STOP/);
+  await expect(page.locator('.committee-history > div:not(.drawer-kicker)')).toHaveCount(6);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investment-committee-workspace.png') });
+});
+
+test('Capital Allocation opens selected recommendation as committee business case', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  const recommendation = page.locator('.allocation-card').first();
+  const title = await recommendation.locator('h5').textContent();
+  await recommendation.locator('[data-open-committee]').click();
+  await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
+  await expect(page.locator('.committee-case-head h3')).toHaveText(title);
+  await expect(page.getByText(/modelled budget points/)).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
 
