@@ -18,6 +18,8 @@
   var investorDemoActive=false;
   var AUTHORITY='https://mfw-authority.onrender.com';
   var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
+  var INVESTOR_MODEL=window.MFP_INVESTOR_MODEL||{};
+  var proofMode='live';
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
@@ -487,6 +489,80 @@
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
   }
 
+  function evidenceBadge(cls){
+    var labels={observed:'OBSERVED',reported:'REPORTED',verified:'VERIFIED',modelled:'MODELLED',synthetic:'SYNTHETIC',not_evidenced:'NOT EVIDENCED'};
+    return '<span class="evidence-badge evidence-'+h(cls)+'">'+h(labels[cls]||String(cls||'UNKNOWN').toUpperCase())+'</span>';
+  }
+  function liveProofChain(){
+    var interest=getInterestState(),reg=(accountState.registrations.mfw||accountState.registrations.bfs),brandId=(interest.mfwFavorites||[])[0]||(interest.mfwFollowed||[])[0]||null;
+    var brand=(window.MFP_DATA&&window.MFP_DATA.mfw&&window.MFP_DATA.mfw.brands||[]).filter(function(x){return x.id===brandId;})[0];
+    var bfsMeeting=safeJson('bfsMeetingState',null);
+    var followed=(interest.mfwFollowed||[]).length+Object.keys(interest.bfsFollowed||{}).filter(function(k){return interest.bfsFollowed[k];}).length;
+    var favorite=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
+    var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
+    return [
+      {stage:'IDENTITY',time:'NOW',value:reg?'Shared profile + event registration':'Shared profile only',evidence:reg?'observed':'not_evidenced'},
+      {stage:'INTEREST',time:'NOW',value:(favorite||followed||saved)?((favorite+' favorite · '+followed+' follow · '+saved+' saved')):'No explicit signal yet',evidence:(favorite||followed||saved)?'observed':'not_evidenced'},
+      {stage:'BRAND',time:'NOW',value:brand?brand.name:'No MFW brand selected',evidence:brand?'observed':'not_evidenced'},
+      {stage:'MEETING',time:'NOW',value:bfsMeeting?((bfsMeeting.delegate||'BFS contact')+' · '+String(bfsMeeting.status||'requested').toUpperCase()):'No meeting evidence in current local state',evidence:bfsMeeting?'observed':'not_evidenced'},
+      {stage:'INTENT',time:'NOW',value:'Requires explicit Deal Room / request evidence',evidence:'not_evidenced'},
+      {stage:'HANDOFF',time:'NOW',value:'Requires admitted external reference',evidence:'not_evidenced'},
+      {stage:'30 DAYS',time:'D30',value:'Requires verified continuity history',evidence:'not_evidenced'},
+      {stage:'90 DAYS',time:'D90',value:'Requires repeat/follow-up history',evidence:'not_evidenced'},
+      {stage:'365 DAYS',time:'D365',value:'Requires longitudinal cross-event history',evidence:'not_evidenced'}
+    ];
+  }
+  function proofChain(){
+    return proofMode==='synthetic'&&INVESTOR_MODEL.syntheticCase?INVESTOR_MODEL.syntheticCase.chain:liveProofChain();
+  }
+  function proofModeToggle(){
+    return '<div class="proof-mode-toggle"><button data-proof-mode="live" class="'+(proofMode==='live'?'active':'')+'">LIVE PROOF</button><button data-proof-mode="synthetic" class="'+(proofMode==='synthetic'?'active':'')+'">SYNTHETIC CASE</button></div>';
+  }
+  function bindProofMode(){
+    [].slice.call(document.querySelectorAll('[data-proof-mode]')).forEach(function(b){b.onclick=function(){proofMode=b.dataset.proofMode;renderHub();};});
+  }
+  function renderInvestorProof(){
+    var chain=proofChain(),synthetic=proofMode==='synthetic';
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">INVESTOR PROOF LAYER · '+(synthetic?'ILLUSTRATIVE / SYNTHETIC':'CURRENT ACCOUNT / PRODUCT STATE')+'</div>'+
+      '<div class="proof-head"><div><h3>Один пользовательский сигнал должен оставлять проверяемый след до коммерческого результата.</h3><p>'+(synthetic?'Это демонстрационный кейс. Ни один показатель ниже не является production KPI.':'Показываются только сигналы, которые можно извлечь из текущего demo/account state; отсутствующие этапы честно остаются NOT EVIDENCED.')+'</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="proof-chain">'+chain.map(function(x){return '<article><div class="proof-stage"><span>'+h(x.stage)+'</span><i>'+h(x.time)+'</i></div><b>'+h(x.value)+'</b>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
+      '<div class="proof-rules">'+(INVESTOR_MODEL.proofRules||[]).map(function(x){return '<span>✓ '+h(x)+'</span>';}).join('')+'</div>'+
+      '<div class="proof-actions"><button data-proof-open="partner">PARTNER CONSOLE</button><button data-proof-open="brand">BRAND COCKPIT</button><button data-proof-open="economics">ECONOMICS</button><a href="./evidence-package.json" target="_blank" rel="noopener">EVIDENCE PACKAGE ↗</a></div>';
+    bindProofMode();
+    [].slice.call(document.querySelectorAll('[data-proof-open]')).forEach(function(b){b.onclick=function(){hubTab=b.dataset.proofOpen;renderHub();};});
+  }
+  function renderPartnerConsole(){
+    var rows=INVESTOR_MODEL.partnerConsole||[];
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">PARTNER / SPONSOR CONSOLE · PREVIEW</div>'+
+      '<div class="operating-hero"><div><h3>Package → inventory → campaign → delivery → report → settlement.</h3><p>Партнёр видит не «охваты ради охватов», а контракт, активированный инвентарь, доказательство доставки и основание для расчётов.</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="partner-flow">'+rows.map(function(x,i){return '<article><span>0'+(i+1)+' · '+h(x.stage)+'</span><b>'+h(x.owner)+'</b><small>'+h(x.proof)+'</small><em>'+h(x.revenueGate)+'</em></article>';}).join('')+'</div>'+
+      '<section class="console-boundary"><b>REVENUE BOUNDARY</b><span>Campaign impression, scan or lead handoff is delivery evidence; recognised revenue still requires the applicable contract/billing/payment evidence.</span></section>';
+    bindProofMode();
+  }
+  function renderBrandCockpit(){
+    var funnel=INVESTOR_MODEL.brandFunnel||[],chain=proofChain();
+    var stageMap={};chain.forEach(function(x){stageMap[x.stage]=x;});
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">BRAND BUSINESS COCKPIT · MVP PREVIEW</div>'+
+      '<div class="operating-hero"><div><h3>Не «сколько лайков», а где именно бренд теряет buyer intent.</h3><p>Audience, professional signals, meeting, Deal Room и 365-day continuity собраны в одну управляемую воронку.</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="brand-funnel">'+funnel.map(function(x){var live=stageMap[x.stage]||null;return '<article><span>'+h(x.stage)+'</span><b>'+h(x.proof)+'</b>'+(live?evidenceBadge(live.evidence):evidenceBadge(proofMode==='synthetic'?'synthetic':'not_evidenced'))+'</article>';}).join('')+'</div>'+
+      '<div class="continuity-grid"><article><span>D30</span><b>Relationship retained</b><small>Verified follow / campaign / reward / return evidence.</small></article><article><span>D90</span><b>Professional continuation</b><small>Follow-up, repeat meeting or brand action.</small></article><article><span>D365</span><b>Network compounding</b><small>Cross-event return and accumulated trust history.</small></article></div>'+
+      '<div class="hub-note">В production бренд видит только свою first-party аудиторию и privacy-safe benchmark; competitor-level private data не раскрывается.</div>';
+    bindProofMode();
+  }
+  function renderEconomics(){
+    var streams=INVESTOR_MODEL.revenueStreams||[];
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">INVESTMENT / ECONOMICS DASHBOARD · MODEL CONTRACT</div>'+
+      '<div class="economics-hero"><h3>Кто платит → за какой продукт → по какой формуле → когда это становится выручкой.</h3><p>До появления договоров и платежных данных здесь нет фактических ARR/MRR. Формулы показывают экономическую архитектуру, а не результат.</p></div>'+
+      '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE GATE</b></div>'+
+      streams.map(function(x){return '<div class="economics-row"><span>'+h(x.payer)+'</span><span>'+h(x.product)+'</span><code>'+h(x.formula)+'</code><em>'+h(x.recognition)+'</em></div>';}).join('')+'</div>'+
+      '<div class="economics-proof-grid"><article><b>OBSERVED</b><span>Product actions and delivery events.</span></article><article><b>REPORTED</b><span>Partner-declared outcomes.</span></article><article><b>VERIFIED</b><span>Admitted external confirmation.</span></article><article><b>MODELLED</b><span>Scenario economics with explicit assumptions.</span></article></div>'+
+      '<div class="hub-note">Unit economics, CAC, ROI, GMV, ARR and MRR are only factual when their source dataset and calculation period are available. Demo placeholders are intentionally absent.</div>';
+  }
+
   function renderTrustPassportPreview(){
     hubContent.innerHTML=
       '<div class="trust-preview-banner"><b>TRUST PASSPORT · READ-ONLY PREVIEW</b><span>Explainable trust dimensions only. No universal reputation score and no inferred private attributes.</span></div>'+
@@ -510,8 +586,12 @@
     else if(hubTab==='directory')renderDirectory();
     else if(hubTab==='agenda')renderAgenda();
     else if(hubTab==='wallet')renderWallet();
+    else if(hubTab==='proof')renderInvestorProof();
+    else if(hubTab==='partner')renderPartnerConsole();
+    else if(hubTab==='brand')renderBrandCockpit();
     else if(hubTab==='dealroom')renderDealRoomPreview();
     else if(hubTab==='trust')renderTrustPassportPreview();
+    else if(hubTab==='economics')renderEconomics();
     else renderOwner();
   }
   function updateNetworkStatus(){
@@ -531,13 +611,17 @@
   }
   var INVESTOR_DEMO=[
     {title:'Moscow Fashion Platform',copy:'Один вход. Три разные fashion-вертикали. Один relationship graph.',action:function(){closeSharedOverlays();openEvent('mfw');}},
-    {title:'01 · Moscow Fashion Week',copy:'Показы, LIVE, бренды, buyer path и контент — consumer + professional experience.',action:function(){closeSharedOverlays();openEvent('mfw');}},
-    {title:'02 · BRICS+ Fashion Summit',copy:'Business programme, delegates, organisations и B2B — отдельная деловая оболочка на том же ID.',action:function(){closeSharedOverlays();openEvent('bfs');}},
-    {title:'03 · Сделано в Москве',copy:'Verified layer, digital showroom, Buyer Bridge и Brand365 — городской брендовый контур.',action:function(){closeSharedOverlays();openEvent('made');}},
-    {title:'04 · One ID / separate rights',copy:'Профиль общий, но регистрации, роли, QR и Verified-права остаются раздельными.',action:function(){closeSharedOverlays();openAccount();}},
-    {title:'05 · Cross-platform Deal Room',copy:'Interest → shortlist → meeting → request → external handoff → evidence. Без выдуманного заказа.',action:function(){closeSharedOverlays();hubTab='dealroom';renderHub();hubModal.classList.remove('hidden');}},
-    {title:'06 · Trust Passport',copy:'Explainable credentials, verified roles and evidence history create defensibility without an opaque social score.',action:function(){closeSharedOverlays();hubTab='trust';renderHub();hubModal.classList.remove('hidden');}},
-    {title:'07 · Owner value',copy:'Сквозная воронка и 365-day relationship layer показывают инвестору, за что платит владелец платформы.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
+    {title:'01 · Moscow Fashion Week',copy:'Runway, content, brands and buyer workflow.',action:function(){closeSharedOverlays();openEvent('mfw');}},
+    {title:'02 · BRICS+ Fashion Summit',copy:'Business programme, delegates, organisations and B2B.',action:function(){closeSharedOverlays();openEvent('bfs');}},
+    {title:'03 · Сделано в Москве',copy:'Verified brands, showroom, Buyer Bridge and Brand365 continuity.',action:function(){closeSharedOverlays();openEvent('made');}},
+    {title:'04 · One ID / separate rights',copy:'Shared identity with event-scoped registrations and separate verification boundaries.',action:function(){closeSharedOverlays();openAccount();}},
+    {title:'05 · Investor Proof',copy:'User → signal → brand → meeting → intent → handoff → 30/90/365 evidence.',action:function(){closeSharedOverlays();hubTab='proof';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'06 · Partner Console',copy:'Package → inventory → delivery → reporting → settlement evidence.',action:function(){closeSharedOverlays();hubTab='partner';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'07 · Brand Cockpit',copy:'Audience → buyer conversion → relationship continuity.',action:function(){closeSharedOverlays();hubTab='brand';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'08 · Deal Room',copy:'Meeting → structured request → external handoff → outcome evidence.',action:function(){closeSharedOverlays();hubTab='dealroom';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'09 · Trust Passport',copy:'Explainable credentials and longitudinal trust history.',action:function(){closeSharedOverlays();hubTab='trust';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'10 · Economics',copy:'Payer → product → formula → revenue-recognition gate.',action:function(){closeSharedOverlays();hubTab='economics';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'11 · Owner value',copy:'Commercial architecture and 365-day relationship value without invented ARR/MRR.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
   ];
   function closeSharedOverlays(){
     [accountDrawer,registrationModal,investorModal,valueModal,forYouModal,hubModal].forEach(function(el){if(el)el.classList.add('hidden');});
@@ -676,7 +760,7 @@
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
   document.getElementById('investorClose').onclick=function(){investorModal.classList.add('hidden');};
-  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}if(step==='6'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Trust Passport показывает проверяемые роли, историю и credential-status без универсального рейтинга.';}};});
+  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){investorModal.classList.add('hidden');openAccount();}if(step==='5'){hubTab='proof';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Investor Proof связывает сигнал пользователя с evidence chain.';}if(step==='6'){hubTab='partner';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Partner Console показывает путь от пакета до settlement evidence.';}if(step==='7'){hubTab='brand';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}if(step==='8'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}if(step==='9'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}if(step==='10'){hubTab='economics';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}};});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
   accountDrawer.addEventListener('click',function(e){if(e.target===accountDrawer)closeAccount();});
