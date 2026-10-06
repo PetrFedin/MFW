@@ -1773,6 +1773,12 @@ async function router(req,res){
     const revoked=[...memory.revoked.entries()].map(([jti,v])=>({jti,...v}));
     return json(res,200,{generatedAt:new Date().toISOString(),revoked,demo:true});
   }
+  if(req.method==='GET'&&p==='/v1/network/organisations/summary'){
+    try{
+      const data=await organisationRegistry.summary();
+      return json(res,200,{data,source:pool?'postgres':'memory_demo'});
+    }catch(err){return json(res,500,{error:'organisation_summary_failed',detail:String(err&&err.message||err)});}
+  }
   if(req.method==='GET'&&p==='/v1/network/organisations'){
     const type=url.searchParams.get('type');
     const verifiedOnly=url.searchParams.get('verified')==='1';
