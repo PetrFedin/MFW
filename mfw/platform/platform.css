@@ -573,3 +573,15 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .optimizer-method{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:10px;padding:10px;border:1px solid rgba(127,127,127,.18)}.optimizer-method b{font-size:8px}.optimizer-method span{font-size:8px;line-height:1.45;opacity:.62}
 @media(max-width:980px){.optimizer-grid{grid-template-columns:1fr}.optimizer-head{grid-template-columns:1fr}}
 @media(max-width:620px){.optimizer-metrics,.optimizer-recommendation{grid-template-columns:1fr}.optimizer-method{grid-template-columns:1fr}.optimizer-tranches{display:grid;grid-template-columns:repeat(3,1fr)}}
+
+
+/* Portfolio Scenario Simulator · 2026-10-06 */
+.portfolio-simulator{margin-top:12px;border:1px solid rgba(127,127,127,.24);padding:13px;background:rgba(127,127,127,.018)}
+.simulator-head{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:10px}.simulator-head h4{font-size:26px;line-height:.95;margin:6px 0}.simulator-head p{font-size:8px;line-height:1.45;opacity:.62;margin:0}
+.simulator-best{border:1px solid rgba(127,127,127,.2);padding:12px;display:flex;flex-direction:column;justify-content:flex-end}.simulator-best span{font-size:7px;font-weight:950}.simulator-best b{font-size:38px;line-height:.9;margin-top:9px}.simulator-best small{font-size:7px;opacity:.55}
+.simulator-budgets{display:flex;gap:7px;margin:10px 0}.simulator-budgets button{border:1px solid rgba(127,127,127,.28);background:transparent;color:inherit;padding:9px 12px;font-size:8px;font-weight:950}.simulator-budgets button.active{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
+.simulator-table{border:1px solid rgba(127,127,127,.2);overflow-x:auto}.simulator-row{display:grid;grid-template-columns:2.2fr repeat(7,.7fr);gap:7px;min-width:860px;padding:9px 10px;border-top:1px solid rgba(127,127,127,.14);align-items:center}.simulator-row.head{border-top:0;background:rgba(127,127,127,.06)}.simulator-row.best{background:rgba(0,160,110,.06);box-shadow:inset 3px 0 0 #0a7}.simulator-row span,.simulator-row b,.simulator-row em{font-size:7px;line-height:1.35}.simulator-row em{font-style:normal;font-weight:950}
+.simulator-recommendation{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.simulator-recommendation>div{border:1px solid rgba(127,127,127,.2);padding:10px;display:grid;gap:5px}.simulator-recommendation span{font-size:7px;font-weight:950;opacity:.55}.simulator-recommendation b{font-size:11px;line-height:1.35}.simulator-recommendation small{font-size:7px;line-height:1.4;opacity:.6}
+.simulator-method{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:10px;padding:10px;border:1px solid rgba(127,127,127,.18)}.simulator-method b{font-size:8px}.simulator-method span{font-size:8px;line-height:1.45;opacity:.62}
+@media(max-width:760px){.simulator-head,.simulator-recommendation{grid-template-columns:1fr}.simulator-method{grid-template-columns:1fr}}
+@media(max-width:520px){.simulator-budgets{display:grid;grid-template-columns:repeat(3,1fr)}}
