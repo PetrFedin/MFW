@@ -631,3 +631,8 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .organisation-network-proof>small{grid-column:1/-1;padding:9px 12px;border-top:1px solid rgba(127,127,127,.25);font-size:8px;opacity:.6}
 .organisation-network-proof>span{grid-column:1/-1;margin:0;padding:12px}
 @media(max-width:680px){.organisation-network-proof{grid-template-columns:1fr 1fr}.organisation-network-proof>div:nth-child(2){border-right:0}.organisation-network-proof>div:nth-child(-n+2){border-bottom:1px solid rgba(127,127,127,.25)}}
+
+
+/* RU-first acronym explanations */
+.ui-abbr,abbr[title]{text-decoration:none;border-bottom:1px dotted currentColor;cursor:help}
+.ui-abbr:focus,abbr[title]:focus{outline:2px solid currentColor;outline-offset:2px;border-radius:2px}
