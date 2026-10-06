@@ -2264,6 +2264,7 @@ Confirmed dependency rules:
 Implemented in the current investor branch:
 - immutable Capital Authority (migration 023);
 - durable Capital Operator Admission (migration 024);
+- Organisation Credential revocation ledger (migration 025);
 - hierarchy-safe capital projections that refuse a misleading mixed-hierarchy total;
 - read-only Capital Decision Gate derived from immutable ledger measurements.
 
