@@ -812,12 +812,78 @@
       '<div class="explain-method"><b>Метод</b><span>Для категорий и рынков общий rate-gap раскладывается симметрично на composition/mix effect и within-segment rate effect. Их сумма воспроизводит разницу A−B с округлением. Это бухгалтерское математическое разложение, а не causal attribution.</span></div>'+
     '</section>';
   }
+  function interventionForMetric(key){
+    return (INVESTOR_MODEL.interventionCatalog||[]).filter(function(x){return x.metric===key;})[0]||null;
+  }
+  function strongestDriver(target){
+    if(!target)return {label:'Весь выбранный cohort',detail:'Нет доступного segment decomposition'};
+    var dims=[
+      {name:'category',label:'Категория',rows:decompositionForDimension('category',target.spec)},
+      {name:'market',label:'Рынок',rows:decompositionForDimension('market',target.spec)}
+    ];
+    var candidates=[];
+    dims.forEach(function(d){(d.rows||[]).slice(0,2).forEach(function(x){candidates.push({dimension:d.name,dimensionLabel:d.label,value:x.value,total:x.total,abs:Math.abs(x.total),aRate:x.aRate,bRate:x.bRate});});});
+    candidates.sort(function(a,b){return b.abs-a.abs;});
+    var top=candidates[0];
+    return top?{label:top.dimensionLabel+': '+ruOption(top.dimension,top.value),detail:Math.round(top.aRate)+'% A · '+Math.round(top.bRate)+'% B · вклад '+formatOne(top.total)}:{label:'Весь выбранный cohort',detail:'Нет segment decomposition'};
+  }
+  function recommendationSet(){
+    var gap=opportunityGap(),ranked=gap.ranked||[];
+    var rows=ranked.map(function(x){
+      var intervention=interventionForMetric(x.spec.key);if(!intervention)return null;
+      var weak=x.gap===0?'A/B':x.gap>0?'B':'A';
+      var weakFilters=weak==='B'?scenarioB:scenarioA;
+      var weakMetric=weak==='B'?x.b:x.a;
+      var denominator=Math.max(Number(x.a.den||0),Number(x.b.den||0));
+      var population=Math.max(1,scenarioMetricSet(scenarioA).population,scenarioMetricSet(scenarioB).population);
+      var scale=Math.sqrt(denominator/population);
+      var raw=x.abs*scale*Number(intervention.leverage||1)/Math.max(1,Number(intervention.effort||1));
+      var driver=strongestDriver(x);
+      var current=weakMetric.rate;
+      var modelledLift=Math.min(5,Math.max(1,Math.round((x.abs/2)*10)/10));
+      var pilotTarget=Math.min(100,current+modelledLift);
+      return {gap:x,intervention:intervention,weak:weak,weakFilters:weakFilters,denominator:denominator,raw:raw,driver:driver,current:current,modelledLift:modelledLift,pilotTarget:pilotTarget};
+    }).filter(Boolean).sort(function(a,b){return b.raw-a.raw;}).slice(0,3);
+    var total=rows.reduce(function(s,x){return s+x.raw;},0);
+    var allocated=0;
+    rows.forEach(function(x,i){
+      var points=i===rows.length-1?100-allocated:Math.round((total?x.raw/total:1/Math.max(1,rows.length))*100);
+      x.points=Math.max(0,points);allocated+=x.points;
+    });
+    return rows;
+  }
+  function recommendationDossiers(rec){
+    var cases=controlTowerModel().cases||[],filters=rec.weakFilters||scenarioA;
+    var matched=cases.filter(function(x){return caseMatchesScenario(x,filters);}).slice(0,2);
+    return matched.length?matched.map(function(x){var step=dossierStepForMetric(x,rec.gap,filters);return '<button data-capital-dossier="'+h(x.id)+'"><span>'+h(x.participant.name)+' → '+h(x.brand.name)+'</span><small>'+h(step&&step.ref||'—')+'</small></button>';}).join(''):'<div class="allocation-no-dossier">Нет materialised dossier для этого slice; recommendation остаётся aggregate/modelled.</div>';
+  }
+  function renderCapitalAllocation(){
+    var recs=recommendationSet();
+    return '<section class="capital-allocation">'+
+      '<div class="allocation-head"><div><div class="drawer-kicker">RECOMMENDATION / CAPITAL ALLOCATION · MODELLED</div><h4>Куда направить следующий pilot-budget.</h4><p>Топ‑3 действий ранжируются по observed synthetic gap, масштабу denominator cohort и заранее объявленным leverage/effort assumptions.</p></div><div class="allocation-budget"><span>MODELLED PILOT BUDGET</span><b>100</b><small>условных points · не ₽</small></div></div>'+
+      '<div class="allocation-cards">'+recs.map(function(r,i){
+        var it=r.intervention;
+        return '<article class="allocation-card"><div class="allocation-rank"><span>#0'+(i+1)+'</span><b>'+h(r.points)+' pts</b></div>'+
+          '<div class="allocation-bar"><i style="width:'+h(r.points)+'%"></i></div>'+
+          '<div class="allocation-stage">'+h(it.stage)+'</div><h5>'+h(it.action)+'</h5>'+
+          '<p>'+h(it.hypothesis)+'</p>'+
+          '<div class="allocation-meta"><div><span>ЦЕЛЕВОЙ СЦЕНАРИЙ</span><b>'+h(r.weak==='A'?'A':r.weak==='B'?'B':'A/B')+'</b></div><div><span>СЕГМЕНТ-ДРАЙВЕР</span><b>'+h(r.driver.label)+'</b><small>'+h(r.driver.detail)+'</small></div><div><span>KPI</span><b>'+h(it.kpi)+'</b></div><div><span>PILOT TARGET · MODELLED</span><b>'+Math.round(r.current*10)/10+'% → '+Math.round(r.pilotTarget*10)/10+'%</b><small>assumption: закрыть до '+h(r.modelledLift)+' п.п. gap, максимум +5 п.п.</small></div></div>'+
+          '<div class="allocation-evidence"><span>EVIDENCE GATE</span>'+it.evidenceNeeded.map(function(x){return '<i>✓ '+h(x)+'</i>';}).join('')+'</div>'+
+          '<div class="allocation-footer"><div><span>OWNER</span><b>'+h(it.owner)+'</b></div><div><span>PILOT</span><b>'+h(it.pilot)+'</b></div></div>'+
+          '<div class="allocation-dossiers"><span>REPRESENTATIVE EVIDENCE</span>'+recommendationDossiers(r)+'</div>'+
+        '</article>';
+      }).join('')+'</div>'+
+      '<div class="allocation-method"><b>Priority score</b><span>|gap, п.п.| × √(затронутый denominator / max population) × leverage ÷ effort. Затем scores нормализуются до 100 pilot-budget points. Leverage/effort — явные model assumptions из intervention catalog, не финансовая оценка.</span></div>'+
+      '<div class="allocation-governance"><div><b>1 · PILOT</b><span>Запустить ограниченную интервенцию с заранее зафиксированным cohort.</span></div><div><b>2 · MEASURE</b><span>Собрать указанный evidence gate и KPI.</span></div><div><b>3 · VERIFY</b><span>Сравнить с baseline/holdout и проверить качество evidence.</span></div><div><b>4 · SCALE / STOP</b><span>Масштабировать только после подтверждения; иначе остановить или переработать.</span></div></div>'+
+      '<div class="hub-note">100 points — только относительное распределение внимания/экспериментального ресурса внутри demo. Реальный бюджет требует стоимости интервенций, capacity, контрактов, risk limits и утверждения investment committee.</div>'+
+    '</section>';
+  }
   function renderComparisonMode(){
     return '<div class="comparison-warning"><b>СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ</b><span>Сравнение показывает различия в cohort cube. Оно не доказывает причинность и не является production KPI.</span></div>'+
       '<div class="comparison-presets"><button data-comparison-preset="mfw-bfs">MFW vs BFS</button><button data-comparison-preset="cis-gcc">СНГ vs GCC</button><button data-comparison-preset="new-returning">Новые vs возвращающиеся</button><button data-comparison-reset>СБРОСИТЬ</button></div>'+
       '<div class="scenario-grid">'+scenarioPanel('a','СЦЕНАРИЙ A')+scenarioPanel('b','СЦЕНАРИЙ B')+'</div>'+
       '<section class="comparison-result"><div class="drawer-kicker">СРАВНЕНИЕ КЛЮЧЕВЫХ КОНВЕРСИЙ</div><div class="comparison-metrics">'+comparisonInsight()+'</div>'+
-      '<div class="hub-note">«Сильнее» здесь означает более высокий рассчитанный показатель внутри выбранного synthetic slice. Это не причинный вывод о том, почему один рынок или event лучше другого.</div></section>'+renderOpportunityExplanation();
+      '<div class="hub-note">«Сильнее» здесь означает более высокий рассчитанный показатель внутри выбранного synthetic slice. Это не причинный вывод о том, почему один рынок или event лучше другого.</div></section>'+renderOpportunityExplanation()+renderCapitalAllocation();
   }
   function bindComparison(){
     [].slice.call(document.querySelectorAll('[data-scenario-side]')).forEach(function(s){s.onchange=function(){var target=s.dataset.scenarioSide==='a'?scenarioA:scenarioB;target[s.dataset.scenarioKey]=s.value;renderInvestorProof();};});
@@ -831,6 +897,7 @@
     };});
     var reset=document.querySelector('[data-comparison-reset]');if(reset)reset.onclick=function(){scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
     [].slice.call(document.querySelectorAll('[data-explanation-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.explanationDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-capital-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.capitalDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
   }
   function portfolioStageData(stage){
     var fp=filteredPortfolio(),row=(fp.funnel||[]).filter(function(x){return x.stage===stage;})[0];
