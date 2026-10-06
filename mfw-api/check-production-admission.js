@@ -43,7 +43,7 @@ async function main() {
   pushIf(errors, (schema.missingTables || []).length !== 0, 'schema_missing_tables');
   pushIf(errors, (schema.missingColumns || []).length !== 0, 'schema_missing_columns');
   pushIf(errors, (schema.contractErrors || []).length !== 0, 'schema_contract_errors');
-  pushIf(errors, !Array.isArray(schema.migrations) || schema.migrations.length < 24, 'migration_set_incomplete');
+  pushIf(errors, !Array.isArray(schema.migrations) || schema.migrations.length < 25, 'migration_set_incomplete');
 
   pushIf(errors, healthResult.response.status !== 200, 'health_http_' + healthResult.response.status);
   pushIf(errors, health.dataMode !== 'postgres', 'health_data_mode_not_postgres');
