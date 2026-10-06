@@ -212,6 +212,18 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "recommendation_capital_allocation",
+      "claim": "Comparison Mode ranks three modelled interventions, normalizes relative priority into 100 non-monetary pilot-budget points, declares target KPI and required evidence, and links representative dossiers when available.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -305,6 +317,19 @@
       ],
       "evidenceLink": "representative materialised synthetic dossiers only",
       "boundary": "Descriptive mathematical decomposition; not causal attribution and not monetary uplift."
+    },
+    "capitalAllocation": {
+      "interventions": 6,
+      "recommendations": 3,
+      "budgetPoints": 100,
+      "scoreFormula": "abs(gap_pp) * sqrt(affected_denominator / max_scenario_population) * leverage / effort",
+      "governance": [
+        "Pilot",
+        "Measure",
+        "Verify",
+        "Scale/Stop"
+      ],
+      "boundary": "Modelled relative pilot-resource allocation only; not currency, approved budget, causal uplift or ROI forecast."
     }
   },
   "language": {
