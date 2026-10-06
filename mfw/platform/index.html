@@ -35,6 +35,27 @@
       <label>Страна<input name="country"></label>
       <button class="save-profile" type="submit">СОХРАНИТЬ ОБЩИЙ ПРОФИЛЬ</button>
     </form>
+    <section class="organisation-panel" id="organisationPanel">
+      <div class="drawer-kicker">PERSISTENT ORGANISATION IDENTITY</div>
+      <div class="organisation-head">
+        <div>
+          <h3>Организация между событиями</h3>
+          <p>Связывает MFW, BFS и «Сделано в Москве». Самостоятельная привязка остаётся <b>unverified</b>, пока её не подтвердит authority.</p>
+        </div>
+        <span class="organisation-status" id="organisationStatus">НЕ ПРИВЯЗАНА</span>
+      </div>
+      <div class="organisation-current" id="organisationCurrent"></div>
+      <form class="organisation-claim-form" id="organisationClaimForm">
+        <label>Организация<input name="name" autocomplete="organization" required placeholder="Название компании / институции"></label>
+        <label>Тип<select name="organisationType"><option value="brand">Бренд</option><option value="buyer">Buyer / retailer</option><option value="media">Media</option><option value="institution">Институция</option><option value="service_provider">Service provider</option><option value="education">Education</option><option value="government">Government</option><option value="other">Другое</option></select></label>
+        <label>Роль<select name="relationshipRole"><option value="representative">Представитель</option><option value="owner">Owner</option><option value="buyer">Buyer</option><option value="speaker">Speaker</option><option value="delegate">Delegate</option><option value="media">Media</option><option value="service_provider">Service provider</option></select></label>
+        <label>Должность<input name="roleTitle" placeholder="Должность"></label>
+        <label>Страна<input name="countryCode" maxlength="2" placeholder="RU"></label>
+        <label>Город<input name="city" placeholder="Москва"></label>
+        <button class="save-profile" type="submit">ПРИВЯЗАТЬ К PERSISTENT ORGANISATION</button>
+      </form>
+      <div class="organisation-directory" id="organisationDirectory"></div>
+    </section>
     <section class="interest-panel">
       <div class="drawer-kicker">ВАШИ ИНТЕРЕСЫ</div>
       <p>Используются для персональной программы, брендов, сессий и уведомлений. Их можно изменить в любой момент.</p>
