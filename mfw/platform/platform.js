@@ -24,6 +24,9 @@
   var selectedControlCase='buyer-brand-alpha';
   var selectedPortfolioStage='INTENT';
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+  var comparisonMode=false;
+  var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+  var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
@@ -550,7 +553,7 @@
     return rows.filter(function(x){return x.id===selectedControlCase;})[0]||rows[0]||null;
   }
   function controlTowerTabs(){
-    return '<div class="control-view-tabs"><button data-control-view="case" class="'+(controlTowerView==='case'?'active':'')+'">CASE DOSSIER</button><button data-control-view="portfolio" class="'+(controlTowerView==='portfolio'?'active':'')+'">PORTFOLIO VIEW</button></div>';
+    return '<div class="control-view-tabs"><button data-control-view="case" class="'+(controlTowerView==='case'?'active':'')+'">ДОСЬЕ КЕЙСА</button><button data-control-view="portfolio" class="'+(controlTowerView==='portfolio'?'active':'')+'">ПОРТФЕЛЬ</button><button data-control-view="comparison" class="'+(controlTowerView==='comparison'?'active':'')+'">СРАВНЕНИЕ</button></div>';
   }
   function bindControlTower(){
     [].slice.call(document.querySelectorAll('[data-control-view]')).forEach(function(b){b.onclick=function(){controlTowerView=b.dataset.controlView;renderInvestorProof();};});
@@ -584,21 +587,24 @@
     '</div>';
   }
   function pct(a,b){return b?Math.round((a/b)*100):0;}
-  function portfolioCohorts(){
+  function portfolioCohortsFor(filters){
+    filters=filters||portfolioFilters;
     var p=controlTowerModel().syntheticPortfolio||{},rows=(p.cohorts||[]).slice();
     return rows.filter(function(x){
-      return (portfolioFilters.period==='all'||x.period===portfolioFilters.period)&&
-        (portfolioFilters.ecosystem==='all'||x.ecosystem===portfolioFilters.ecosystem)&&
-        (portfolioFilters.market==='all'||x.market===portfolioFilters.market)&&
-        (portfolioFilters.category==='all'||x.category===portfolioFilters.category)&&
-        (portfolioFilters.buyerType==='all'||x.buyerType===portfolioFilters.buyerType)&&
-        (portfolioFilters.evidence==='all'||x.evidence===portfolioFilters.evidence)&&
-        (portfolioFilters.revenueSurface==='all'||x.revenueSurface===portfolioFilters.revenueSurface);
+      return (filters.period==='all'||x.period===filters.period)&&
+        (filters.ecosystem==='all'||x.ecosystem===filters.ecosystem)&&
+        (filters.market==='all'||x.market===filters.market)&&
+        (filters.category==='all'||x.category===filters.category)&&
+        (filters.buyerType==='all'||x.buyerType===filters.buyerType)&&
+        (filters.evidence==='all'||x.evidence===filters.evidence)&&
+        (filters.revenueSurface==='all'||x.revenueSurface===filters.revenueSurface);
     });
   }
+  function portfolioCohorts(){return portfolioCohortsFor(portfolioFilters);}
   function sumField(rows,key){return rows.reduce(function(s,x){return s+Number(x[key]||0);},0);}
-  function filteredPortfolio(){
-    var rows=portfolioCohorts(),ret=portfolioFilters.retention||'D30';
+  function filteredPortfolioFor(filters){
+    filters=filters||portfolioFilters;
+    var rows=portfolioCohortsFor(filters),ret=filters.retention||'D30';
     var funnel=[
       {stage:'AUDIENCE',count:sumField(rows,'audience'),evidence:'synthetic'},
       {stage:'ENGAGEMENT',count:sumField(rows,'engagement'),evidence:'synthetic'},
@@ -620,26 +626,103 @@
     });
     return {rows:rows,population:sumField(rows,'audience'),funnel:funnel,ecosystems:ecosystems,retention:retention,revenue:revenue};
   }
+  function filteredPortfolio(){return filteredPortfolioFor(portfolioFilters);}
   function portfolioFilterSelect(key,label,values){
     return '<label><span>'+h(label)+'</span><select data-portfolio-filter="'+h(key)+'">'+values.map(function(v){var lab=String(v).replace('all','ALL').replace('mfw','MFW').replace('bfs','BFS').replace('made','MADE');return '<option value="'+h(v)+'"'+(portfolioFilters[key]===v?' selected':'')+'>'+h(lab)+'</option>';}).join('')+'</select></label>';
   }
   function portfolioFilterBar(){
     var opt=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.filterOptions)||{};
     return '<div class="portfolio-filters">'+
-      portfolioFilterSelect('period','Period',opt.period||['all'])+
-      portfolioFilterSelect('ecosystem','Ecosystem',opt.ecosystem||['all'])+
-      portfolioFilterSelect('market','Buyer market',opt.market||['all'])+
-      portfolioFilterSelect('category','Brand category',opt.category||['all'])+
-      portfolioFilterSelect('buyerType','Buyer type',opt.buyerType||['all'])+
-      portfolioFilterSelect('evidence','Evidence',opt.evidence||['all'])+
-      portfolioFilterSelect('retention','Retention',opt.retention||['D30'])+
+      portfolioFilterSelect('period','Период',opt.period||['all'])+
+      portfolioFilterSelect('ecosystem','Экосистема',opt.ecosystem||['all'])+
+      portfolioFilterSelect('market','Рынок байера',opt.market||['all'])+
+      portfolioFilterSelect('category','Категория бренда',opt.category||['all'])+
+      portfolioFilterSelect('buyerType','Тип байера',opt.buyerType||['all'])+
+      portfolioFilterSelect('evidence','Класс evidence',opt.evidence||['all'])+
+      portfolioFilterSelect('retention','Горизонт retention',opt.retention||['D30'])+
       portfolioFilterSelect('revenueSurface','Revenue surface',opt.revenueSurface||['all'])+
-      '<button data-reset-portfolio>RESET</button>'+
+      '<button data-reset-portfolio>СБРОСИТЬ</button>'+
     '</div>';
   }
   function bindPortfolioFilters(){
     [].slice.call(document.querySelectorAll('[data-portfolio-filter]')).forEach(function(s){s.onchange=function(){portfolioFilters[s.dataset.portfolioFilter]=s.value;renderInvestorProof();};});
     var reset=document.querySelector('[data-reset-portfolio]');if(reset)reset.onclick=function(){portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
+  }
+  function scenarioLabel(filters){
+    var parts=[];
+    if(filters.ecosystem!=='all')parts.push(String(filters.ecosystem).toUpperCase());
+    if(filters.market!=='all')parts.push(filters.market);
+    if(filters.buyerType!=='all')parts.push(filters.buyerType==='new'?'новые':'возвращающиеся');
+    if(filters.category!=='all')parts.push(filters.category);
+    if(filters.period!=='all')parts.push(filters.period);
+    return parts.length?parts.join(' · '):'Весь портфель';
+  }
+  function scenarioMetricSet(filters){
+    var fp=filteredPortfolioFor(filters),f=fp.funnel||[],by={};
+    f.forEach(function(x){by[x.stage]=Number(x.count||0);});
+    var intentBase=by['QUALIFIED BUYER']||0,meetingBase=by['QUALIFIED BUYER']||0,dealBase=by['INTENT']||0,revBase=by['DEAL']||0;
+    return {
+      label:scenarioLabel(filters),population:fp.population,
+      qualifiedRate:pct(by['QUALIFIED BUYER']||0,by['AUDIENCE']||0),
+      meetingRate:pct(by['MEETING']||0,meetingBase),
+      intentRate:pct(by['INTENT']||0,intentBase),
+      dealRate:pct(by['DEAL']||0,dealBase),
+      retentionRate:pct(by['RETENTION']||0,by['INTENT']||0),
+      revenueEvidenceRate:pct(by['REVENUE EVIDENCE']||0,revBase),
+      intent:by['INTENT']||0,deal:by['DEAL']||0,retention:by['RETENTION']||0,revenueEvidence:by['REVENUE EVIDENCE']||0
+    };
+  }
+  function scenarioSelect(side,key,label,values){
+    var filters=side==='a'?scenarioA:scenarioB;
+    return '<label><span>'+h(label)+'</span><select data-scenario-side="'+side+'" data-scenario-key="'+key+'">'+values.map(function(v){var lab=String(v).replace('all','Все').replace('mfw','MFW').replace('bfs','BFS').replace('made','Сделано в Москве').replace('new','Новые').replace('returning','Возвращающиеся');return '<option value="'+h(v)+'"'+(filters[key]===v?' selected':'')+'>'+h(lab)+'</option>';}).join('')+'</select></label>';
+  }
+  function scenarioPanel(side,title){
+    var opt=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.filterOptions)||{};
+    var filters=side==='a'?scenarioA:scenarioB,metrics=scenarioMetricSet(filters);
+    return '<section class="scenario-panel scenario-'+side+'"><div class="scenario-title"><span>'+title+'</span><b>'+h(metrics.label)+'</b></div><div class="scenario-filters">'+
+      scenarioSelect(side,'period','Период',opt.period||['all'])+
+      scenarioSelect(side,'ecosystem','Экосистема',opt.ecosystem||['all'])+
+      scenarioSelect(side,'market','Рынок',opt.market||['all'])+
+      scenarioSelect(side,'category','Категория',opt.category||['all'])+
+      scenarioSelect(side,'buyerType','Тип байера',opt.buyerType||['all'])+
+      scenarioSelect(side,'evidence','Evidence',opt.evidence||['all'])+
+      scenarioSelect(side,'retention','Retention',opt.retention||['D30'])+
+      scenarioSelect(side,'revenueSurface','Revenue surface',opt.revenueSurface||['all'])+
+      '</div><div class="scenario-kpis"><article><span>Population</span><b>'+h(metrics.population)+'</b></article><article><span>Qualified</span><b>'+h(metrics.qualifiedRate)+'%</b></article><article><span>Meeting</span><b>'+h(metrics.meetingRate)+'%</b></article><article><span>Intent</span><b>'+h(metrics.intentRate)+'%</b></article><article><span>Deal</span><b>'+h(metrics.dealRate)+'%</b></article><article><span>'+h(filters.retention)+'</span><b>'+h(metrics.retentionRate)+'%</b></article><article><span>Revenue evidence</span><b>'+h(metrics.revenueEvidenceRate)+'%</b></article></div></section>';
+  }
+  function diffPp(a,b){var d=a-b;return (d>0?'+':'')+d+' п.п.';}
+  function comparisonInsight(){
+    var a=scenarioMetricSet(scenarioA),b=scenarioMetricSet(scenarioB),metrics=[
+      {key:'qualifiedRate',label:'конверсия в qualified buyer'},
+      {key:'meetingRate',label:'конверсия qualified → meeting'},
+      {key:'intentRate',label:'конверсия qualified → intent'},
+      {key:'dealRate',label:'конверсия intent → deal'},
+      {key:'retentionRate',label:'retention '+scenarioA.retention},
+      {key:'revenueEvidenceRate',label:'deal → revenue evidence'}
+    ];
+    return metrics.map(function(m){
+      var av=a[m.key],bv=b[m.key],winner=av===bv?'Равны':av>bv?'Сценарий A':'Сценарий B';
+      return '<article><span>'+h(m.label)+'</span><b>'+h(av)+'% vs '+h(bv)+'%</b><small>'+h(winner)+' · '+h(diffPp(av,bv))+' A к B</small></article>';
+    }).join('');
+  }
+  function renderComparisonMode(){
+    return '<div class="comparison-warning"><b>СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ</b><span>Сравнение показывает различия в cohort cube. Оно не доказывает причинность и не является production KPI.</span></div>'+
+      '<div class="comparison-presets"><button data-comparison-preset="mfw-bfs">MFW vs BFS</button><button data-comparison-preset="cis-gcc">СНГ vs GCC</button><button data-comparison-preset="new-returning">Новые vs возвращающиеся</button><button data-comparison-reset>СБРОСИТЬ</button></div>'+
+      '<div class="scenario-grid">'+scenarioPanel('a','СЦЕНАРИЙ A')+scenarioPanel('b','СЦЕНАРИЙ B')+'</div>'+
+      '<section class="comparison-result"><div class="drawer-kicker">СРАВНЕНИЕ КЛЮЧЕВЫХ КОНВЕРСИЙ</div><div class="comparison-metrics">'+comparisonInsight()+'</div>'+
+      '<div class="hub-note">«Сильнее» здесь означает более высокий рассчитанный показатель внутри выбранного synthetic slice. Это не причинный вывод о том, почему один рынок или event лучше другого.</div></section>';
+  }
+  function bindComparison(){
+    [].slice.call(document.querySelectorAll('[data-scenario-side]')).forEach(function(s){s.onchange=function(){var target=s.dataset.scenarioSide==='a'?scenarioA:scenarioB;target[s.dataset.scenarioKey]=s.value;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-comparison-preset]')).forEach(function(b){b.onclick=function(){
+      var base={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+      scenarioA=Object.assign({},base);scenarioB=Object.assign({},base);
+      if(b.dataset.comparisonPreset==='mfw-bfs'){scenarioA.ecosystem='mfw';scenarioB.ecosystem='bfs';}
+      if(b.dataset.comparisonPreset==='cis-gcc'){scenarioA.market='CIS';scenarioB.market='GCC';}
+      if(b.dataset.comparisonPreset==='new-returning'){scenarioA.buyerType='new';scenarioB.buyerType='returning';}
+      renderInvestorProof();
+    };});
+    var reset=document.querySelector('[data-comparison-reset]');if(reset)reset.onclick=function(){scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
   }
   function portfolioStageData(stage){
     var fp=filteredPortfolio(),row=(fp.funnel||[]).filter(function(x){return x.stage===stage;})[0];
@@ -692,11 +775,12 @@
   function renderInvestorProof(){
     var synthetic=proofMode==='synthetic';
     hubContent.innerHTML=
-      '<div class="control-tower-top"><div><div class="drawer-kicker">EVIDENCE CONTROL TOWER</div><h3>Каждый переход должен иметь доказательство.</h3><p>Case Dossier отвечает на вопрос «что произошло с конкретной связкой buyer × brand». Portfolio View отвечает на вопрос «что происходит со всей сетью».</p></div><div>'+controlTowerTabs()+proofModeToggle()+'</div></div>'+
-      (controlTowerView==='portfolio'?renderPortfolioView():renderCaseDossier())+
+      '<div class="control-tower-top"><div><div class="drawer-kicker">ЦЕНТР ДОКАЗАТЕЛЬСТВ · EVIDENCE CONTROL TOWER</div><h3>Каждый переход должен иметь доказательство.</h3><p>Досье отвечает на вопрос «что произошло с конкретной связкой байер × бренд». Портфель — «что происходит со всей сетью». Сравнение — «какой срез сильнее по выбранным метрикам».</p></div><div>'+controlTowerTabs()+proofModeToggle()+'</div></div>'+
+      (controlTowerView==='comparison'?renderComparisonMode():(controlTowerView==='portfolio'?renderPortfolioView():renderCaseDossier()))+
       '<div class="proof-rules">'+(INVESTOR_MODEL.proofRules||[]).map(function(x){return '<span>✓ '+h(x)+'</span>';}).join('')+'</div>';
     bindControlTower();
     bindPortfolioFilters();
+    bindComparison();
   }
   function renderPartnerConsole(){
     var rows=INVESTOR_MODEL.partnerConsole||[];
