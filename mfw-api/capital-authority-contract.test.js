@@ -7,6 +7,7 @@ const serverPath=path.join(__dirname,'server-v2.js');
 const serverSource=fs.readFileSync(serverPath,'utf8');
 const migrationPath=path.join(__dirname,'migrations','022_capital_authority.sql');
 const migration=fs.readFileSync(migrationPath,'utf8');
+const domainSource=fs.readFileSync(path.join(__dirname,'capital-authority.js'),'utf8');
 
 for(const required of [
   'capital_ledger_events',
@@ -29,6 +30,13 @@ for(const required of [
   'capitalHash',
   'verifyCapitalChainRows',
   'validateCapitalTransition',
+  'actor.demo===true',
+  "capital_authority_role_required",
+  "persistence:'postgres_only'"
+]){
+  assert(serverSource.includes(required),'missing server contract: '+required);
+}
+for(const required of [
   'capital_approval_exceeds_requested',
   'capital_commitment_exceeds_approved',
   'capital_release_exceeds_unspent_commitment',
@@ -36,11 +44,10 @@ for(const required of [
   'capital_measurement_requires_spend',
   'capital_decision_requires_measurement',
   'capital_evidence_ref_required',
-  'actor.demo===true',
-  "capital_authority_role_required",
-  "persistence:'postgres_only'"
+  'event_hash_mismatch',
+  'previous_hash_mismatch'
 ]){
-  assert(serverSource.includes(required),'missing server contract: '+required);
+  assert(domainSource.includes(required),'missing domain contract: '+required);
 }
 
 function cleanEnv(extra={}){
