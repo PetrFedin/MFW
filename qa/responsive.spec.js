@@ -350,6 +350,48 @@ test('Opportunity Explanation decomposes scenario gap and links representative e
   await page.screenshot({ path: testInfo.outputPath('opportunity-explanation.png') });
 });
 
+test('Capital Allocation ranks three interventions and normalizes modelled pilot budget to 100 points', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  await expect(page.getByText(/RECOMMENDATION \/ CAPITAL ALLOCATION/)).toBeVisible();
+  await expect(page.locator('.allocation-card')).toHaveCount(3);
+  await expect(page.getByText('100', { exact: true })).toBeVisible();
+  await expect(page.getByText(/условных points · не ₽/)).toBeVisible();
+  await expect(page.locator('.allocation-evidence')).toHaveCount(3);
+  await expect(page.locator('.allocation-governance > div')).toHaveCount(4);
+
+  const points = await page.locator('.allocation-rank b').allTextContents();
+  const sum = points.reduce((s, x) => s + Number((x.match(/\d+/) || ['0'])[0]), 0);
+  expect(sum).toBe(100);
+
+  await expect(page.getByText(/Priority score/)).toBeVisible();
+  await expect(page.getByText(/Leverage\/effort — явные model assumptions/)).toBeVisible();
+  await expect(page.getByText(/Реальный бюджет требует стоимости интервенций/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('capital-allocation.png') });
+});
+
+test('Capital Allocation recommendations react to scenario presets', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  const before = await page.locator('.allocation-card h5').allTextContents();
+  await page.locator('[data-comparison-preset="cis-gcc"]').click();
+  const after = await page.locator('.allocation-card h5').allTextContents();
+  expect(after.length).toBe(3);
+  expect(before.length).toBe(3);
+  await expect(page.locator('.allocation-card')).toHaveCount(3);
+  await expect(page.locator('.allocation-meta')).toHaveCount(3);
+  await expectNoDocumentOverflow(page);
+});
+
 test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
