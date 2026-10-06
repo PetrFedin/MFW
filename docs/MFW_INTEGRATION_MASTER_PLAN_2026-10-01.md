@@ -1884,3 +1884,135 @@ The external verifier receives only the minimum claim required.
 
 **Moat:** repeated event participation creates a longitudinal professional trust graph that is difficult to reproduce without the network's verified history.
 
+
+
+## Institutional adoption wave — Persistent Fashion Industry Network
+
+This wave turns MFW/BFS/Made in Moscow from an event platform into persistent professional infrastructure used between events by brands, buyers, institutions, media, education partners and service providers.
+
+### Fashion Network Interchange Profile — ADOPT
+
+Define versioned exchange contracts for:
+
+- organisation/professional identity;
+- verified role;
+- brand/company profile;
+- event participation;
+- meeting availability/status;
+- credential/status;
+- public collection/show metadata;
+- verified business-outcome evidence where voluntarily supplied;
+- partner integration state.
+
+Private Deal Room content, negotiation terms and contact data remain outside the public interchange layer.
+
+### Reference Organisation / Participant Flow — ADOPT
+
+Provide synthetic flows:
+
+`organisation -> verified representative -> event participation -> meeting -> follow-up -> credential/history -> next-event reuse`
+
+### Persistent Organisation Registry — ADOPT
+
+Create a cross-event organisation identity with:
+
+- legal/public identity references;
+- brands/divisions;
+- verified representatives;
+- participation history;
+- current credentials;
+- opted-in business categories/markets;
+- partner integrations.
+
+This survives individual event editions.
+
+### Institutional Publishers — ADOPT
+
+Approved organisations may publish:
+
+- programmes;
+- speaker/delegate rosters;
+- brand/company public profiles;
+- opportunities/open calls;
+- education/content;
+- partner services;
+- public collection/show metadata.
+
+Publishing is role/scoped and reviewable.
+
+### Approved Fashion Service Network — ADOPT
+
+Potential participants:
+
+- showrooms;
+- production/sourcing partners;
+- logistics;
+- PR/media;
+- casting/model services;
+- education;
+- trade/export support;
+- technology/integration vendors.
+
+Profiles show factual capabilities/credentials, not pay-to-win ranking.
+
+### Cross-event Professional Continuity — ADOPT
+
+A verified participant can carry forward:
+
+- identity;
+- organisation relationship;
+- role;
+- credential;
+- meeting reliability history;
+- saved business interests;
+- relationship graph;
+- opted-in availability.
+
+### Enterprise / Association Bundles — ADOPT
+
+Potential packages:
+
+- Event OS;
+- Professional Network;
+- Buyer/Brand Verification;
+- Deal Room;
+- Partner API;
+- Sponsor/Media Intelligence;
+- Association/Institution Portal.
+
+### Data Contribution Incentives — CONDITIONAL
+
+Participants that maintain high-quality public/shared profiles or verified business outcomes can receive:
+
+- improved matchmaking completeness;
+- better analytics;
+- benchmark access;
+- faster re-accreditation where policy allows.
+
+No hidden ranking privilege is purchased or inferred.
+
+### Legitimate Switching Cost — ADOPT
+
+Compounding assets:
+
+- persistent identities;
+- event/meeting history;
+- organisation relationships;
+- credentials;
+- cross-event Deal Room continuity;
+- partner integrations;
+- verified outcome evidence;
+- sponsor/media analytics history.
+
+### Additional acceptance
+
+- event participation history cannot be rewritten by profile owners;
+- credentials remain scope/version/status specific;
+- paid sponsorship does not alter professional verification;
+- organisations control public/shared visibility;
+- private meeting/Deal Room data never enters public registry;
+- new verified entrants are neutral, not disadvantaged for no history.
+
+**Sequencing:** Network Trust Passport -> persistent org registry -> reference flow -> institutional publishing -> service network -> cross-event continuity -> enterprise association distribution.
+
+**Moat:** each event becomes an acquisition and verification cycle for a persistent fashion-industry graph rather than a one-off audience database.
