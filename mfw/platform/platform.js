@@ -25,6 +25,8 @@
   var selectedPortfolioStage='INTENT';
   var committeeSelectedId=null;
   var committeeCases={};
+  var programmeReleased={};
+  var programmeReallocationTarget='mfw';
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
@@ -1090,6 +1092,75 @@
     [].slice.call(document.querySelectorAll('[data-committee-action]')).forEach(function(b){b.onclick=function(){committeeAction(b.dataset.committeeId,b.dataset.committeeAction);};});
   }
 
+  function programmeCapitalModel(){return INVESTOR_MODEL.programmeCapital||{};}
+  function programmeRows(){
+    var model=programmeCapitalModel(),catalog=INVESTOR_MODEL.interventionCatalog||[];
+    return (model.defaultExecution||[]).map(function(x){
+      var it=catalog.filter(function(i){return i.id===x.intervention;})[0]||{};
+      var remaining=Math.max(0,Number(x.committed||0)-Number(x.spent||0));
+      var released=Number(programmeReleased[x.intervention]||0);
+      var measured=x.status==='MEASURED'?Number(x.spent||0):0;
+      return Object.assign({},x,{action:it.action||x.intervention,owner:it.owner||'—',remaining:remaining,released:released,measured:measured});
+    });
+  }
+  function programmeTotals(){
+    var model=programmeCapitalModel(),rows=programmeRows();
+    var t={envelope:Number(model.envelopePoints||0),requested:0,approved:0,committed:0,spent:0,measured:0,scaled:0,stopped:0,released:0,blocked:0};
+    rows.forEach(function(x){
+      t.requested+=Number(x.requested||0);t.approved+=Number(x.approved||0);t.committed+=Number(x.committed||0);t.spent+=Number(x.spent||0);t.measured+=Number(x.measured||0);t.released+=Number(x.released||0);
+      if(x.decision==='SCALE')t.scaled+=Number(x.spent||0);
+      if(x.decision==='STOP')t.stopped+=Number(x.spent||0);
+      if(x.status==='APPROVED'||x.status==='PILOT_RUNNING'||!x.evidenceComplete&&x.status==='MEASURED')t.blocked+=Number(x.committed||0)-Number(x.spent||0);
+    });
+    t.uncommitted=Math.max(0,t.envelope-t.approved);
+    t.committedUnspent=Math.max(0,t.committed-t.spent-t.released);
+    t.reallocationCapacity=t.uncommitted+t.released;
+    return t;
+  }
+  function ecosystemCapital(){
+    var rows=programmeRows(),ids=['mfw','bfs','made'];
+    return ids.map(function(id){
+      var rr=rows.filter(function(x){return x.ecosystem===id;}),sum=function(k){return rr.reduce(function(s,x){return s+Number(x[k]||0);},0);};
+      return {id:id,label:id==='mfw'?'MFW':id==='bfs'?'BFS':'Сделано в Москве',requested:sum('requested'),approved:sum('approved'),committed:sum('committed'),spent:sum('spent'),measured:sum('measured')};
+    });
+  }
+  function blockerRows(){
+    var model=programmeCapitalModel(),rows=programmeRows();
+    return (model.blockers||[]).map(function(b){
+      var row=rows.filter(function(x){return x.intervention===b.intervention;})[0]||{};
+      return Object.assign({},b,{ecosystem:row.ecosystem||'—',action:row.action||b.intervention,atRisk:Math.max(0,Number(row.committed||0)-Number(row.spent||0))});
+    });
+  }
+  function releasableRows(){
+    return programmeRows().filter(function(x){return x.decision==='STOP'&&x.remaining>0;});
+  }
+  function programmeRelease(id){
+    var row=programmeRows().filter(function(x){return x.intervention===id;})[0];if(!row)return;
+    programmeReleased[id]=Math.max(0,row.remaining);
+    renderProgrammeCapital();
+  }
+  function renderProgrammeCapital(){
+    var model=programmeCapitalModel(),rows=programmeRows(),t=programmeTotals(),eco=ecosystemCapital(),blockers=blockerRows(),releasable=releasableRows();
+    var stages=[
+      ['REQUESTED',t.requested],['APPROVED',t.approved],['COMMITTED',t.committed],['SPENT',t.spent],['MEASURED',t.measured],['SCALED',t.scaled],['STOPPED',t.stopped]
+    ];
+    hubContent.innerHTML=
+      '<div class="programme-warning"><b>PROGRAMME CAPITAL CONTROL · DEMO / MODELLED</b><span>Все значения — modelled pilot points. Это не ₽, не фактические расходы и не утверждённый инвестиционный бюджет.</span></div>'+
+      '<section class="programme-head"><div><div class="drawer-kicker">PORTFOLIO-LEVEL CAPITAL GOVERNANCE</div><h3>Где капитал запрошен, закреплён, потрачен, измерен — и что можно перераспределить.</h3><p>Committed-but-unspent отделён от свободного резерва. Освобождение STOP-кейса требует отдельного release decision.</p></div><div class="programme-envelope"><span>PROGRAMME ENVELOPE</span><b>'+h(t.envelope)+'</b><small>modelled points</small></div></section>'+
+      '<div class="programme-stage-grid">'+stages.map(function(x){return '<article><span>'+h(x[0])+'</span><b>'+h(x[1])+'</b></article>';}).join('')+'</div>'+
+      '<div class="programme-capacity-grid"><article><span>UNCOMMITTED RESERVE</span><b>'+h(t.uncommitted)+'</b><small>доступно без снятия commitment</small></article><article><span>COMMITTED · UNSPENT</span><b>'+h(t.committedUnspent)+'</b><small>не свободный капитал</small></article><article><span>EXPLICITLY RELEASED</span><b>'+h(t.released)+'</b><small>освобождено STOP/closed decision</small></article><article><span>REALLOCATION CAPACITY</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases</small></article></div>'+
+      '<section class="programme-ecosystems"><div class="drawer-kicker">MFW / BFS / MADE CAPITAL MAP</div><div>'+eco.map(function(x){return '<article><b>'+h(x.label)+'</b><span>requested '+h(x.requested)+'</span><span>approved '+h(x.approved)+'</span><span>committed '+h(x.committed)+'</span><span>spent '+h(x.spent)+'</span><span>measured '+h(x.measured)+'</span></article>';}).join('')+'</div></section>'+
+      '<section class="programme-table"><div class="programme-row head"><b>PILOT</b><b>VERTICAL</b><b>REQ</b><b>APP</b><b>COM</b><b>SPENT</b><b>STATUS / DECISION</b></div>'+rows.map(function(x){return '<div class="programme-row"><span>'+h(x.action)+'</span><span>'+h(String(x.ecosystem).toUpperCase())+'</span><b>'+h(x.requested)+'</b><b>'+h(x.approved)+'</b><b>'+h(x.committed)+'</b><b>'+h(x.spent)+'</b><em>'+h(x.status)+(x.decision?' · '+h(x.decision):'')+'</em></div>';}).join('')+'</section>'+
+      '<div class="programme-lower"><section class="programme-blockers"><div class="drawer-kicker">BLOCKED / AT RISK</div>'+blockers.map(function(x){return '<article><div><span>'+h(String(x.ecosystem).toUpperCase())+' · '+h(x.code)+'</span><b>'+h(x.action)+'</b><small>'+h(x.label)+'</small></div><em>'+h(x.atRisk)+' pts at risk</em></article>';}).join('')+'</section>'+
+      '<section class="programme-evidence"><div class="drawer-kicker">EVIDENCE COMPLETENESS</div>'+rows.map(function(x){var done=x.evidenceComplete;return '<article><span>'+h(x.action)+'</span><b class="'+(done?'done':'pending')+'">'+(done?'COMPLETE':'INCOMPLETE')+'</b></article>';}).join('')+'</section></div>'+
+      '<section class="programme-reallocation"><div><div class="drawer-kicker">REALLOCATION OPPORTUNITIES</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
+      '<div class="reallocation-actions">'+(releasable.length?releasable.map(function(x){var already=Number(programmeReleased[x.intervention]||0)>0;return '<article><span>'+h(x.action)+'</span><b>'+h(x.remaining)+' pts STOP остатка</b><button data-programme-release="'+h(x.intervention)+'" '+(already?'disabled':'')+'>'+(already?'RELEASED':'RELEASE TO POOL')+'</button></article>';}).join(''):'<div class="allocation-no-dossier">Нет STOP-кейсов с неиспользованным commitment.</div>')+'</div></section>'+
+      '<section class="programme-decision"><div><span>RECOMMENDED NEXT MOVE</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>PROGRAMME SIGNAL</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
+      '<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
+      '<div class="hub-note">Production-версия должна считать это из immutable approvals, commitments, spend events, measurement snapshots и release decisions. Здесь показан model contract и demo state, а не бухгалтерский ledger.</div>';
+    [].slice.call(document.querySelectorAll('[data-programme-release]')).forEach(function(b){b.onclick=function(){programmeRelease(b.dataset.programmeRelease);};});
+  }
+
   function renderTrustPassportPreview(){
     hubContent.innerHTML=
       '<div class="trust-preview-banner"><b>TRUST PASSPORT · READ-ONLY PREVIEW</b><span>Explainable trust dimensions only. No universal reputation score and no inferred private attributes.</span></div>'+
@@ -1121,6 +1192,7 @@
     else if(hubTab==='trust')renderTrustPassportPreview();
     else if(hubTab==='economics')renderEconomics();
     else if(hubTab==='committee')renderInvestmentCommittee();
+    else if(hubTab==='capital')renderProgrammeCapital();
     else renderOwner();
   }
   function updateNetworkStatus(){
@@ -1152,7 +1224,8 @@
     {title:'10 · Trust Passport',copy:'Explainable credentials and longitudinal trust history.',action:function(){closeSharedOverlays();hubTab='trust';renderHub();hubModal.classList.remove('hidden');}},
     {title:'11 · Economics',copy:'Payer → product → formula → revenue-recognition gate.',action:function(){closeSharedOverlays();hubTab='economics';renderHub();hubModal.classList.remove('hidden');}},
     {title:'12 · Investment Committee',copy:'Recommendation → approval → pilot → measure → scale / iterate / stop.',action:function(){closeSharedOverlays();hubTab='committee';renderHub();hubModal.classList.remove('hidden');}},
-    {title:'13 · Owner value',copy:'Commercial architecture and 365-day relationship value without invented ARR/MRR.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
+    {title:'13 · Programme Capital Control',copy:'Requested → approved → committed → spent → measured → scale / stop across MFW, BFS and Made.',action:function(){closeSharedOverlays();hubTab='capital';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'14 · Owner value',copy:'Commercial architecture and 365-day relationship value without invented ARR/MRR.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
   ];
   function closeSharedOverlays(){
     [accountDrawer,registrationModal,investorModal,valueModal,forYouModal,hubModal].forEach(function(el){if(el)el.classList.add('hidden');});
@@ -1305,7 +1378,8 @@
     if(step==='10'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='11'){hubTab='economics';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='12'){hubTab='committee';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
-    if(step==='13'){investorModal.classList.add('hidden');valueModal.classList.remove('hidden');}
+    if(step==='13'){hubTab='capital';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='14'){investorModal.classList.add('hidden');valueModal.classList.remove('hidden');}
   };});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
