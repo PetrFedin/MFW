@@ -272,6 +272,17 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "portfolio_proposal_handoff",
+      "claim": "The best modelled portfolio mix can be handed into the Investment Committee Workspace as an in-memory demo Portfolio Allocation Proposal and progressed through DRAFT, IN_REVIEW and APPROVED_DEMO without creating commitments.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -477,6 +488,17 @@
         "unallocated budget remains Reserve"
       ],
       "boundary": "Modelled portfolio ranking only; not approval, commitment, currency or realised ROI."
+    },
+    "portfolioProposalHandoff": {
+      "flow": [
+        "Portfolio Scenario Simulator",
+        "Best Mix",
+        "Portfolio Allocation Proposal",
+        "IN_REVIEW",
+        "APPROVED_DEMO"
+      ],
+      "persistence": "in-memory demo session only",
+      "boundary": "No commitment, accounting entry or production corporate approval is created."
     }
   },
   "language": {
