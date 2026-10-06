@@ -73,6 +73,7 @@ function validateInvestorBuild(){
   const migration012Path=path.join(__dirname,'migrations','012_schema_reconciliation.sql');
   const migration020Path=path.join(__dirname,'migrations','020_journey_closure.sql');
   const migration022Path=path.join(__dirname,'migrations','022_persistent_organisation_registry.sql');
+  const migration023Path=path.join(__dirname,'migrations','023_organisation_credential_revocations.sql');
   const manifestPath=path.join(__dirname,'..','mfw','manifest.webmanifest');
   const frontend=fs.readFileSync(frontendPath,'utf8');
   const admin=fs.readFileSync(adminPath,'utf8');
@@ -96,6 +97,7 @@ function validateInvestorBuild(){
   const migration012=fs.readFileSync(migration012Path,'utf8');
   const migration020=fs.readFileSync(migration020Path,'utf8');
   const migration022=fs.readFileSync(migration022Path,'utf8');
+  const migration023=fs.readFileSync(migration023Path,'utf8');
   new Function(frontend);
   new Function(admin);
   new Function(platformSource);
@@ -152,6 +154,9 @@ function validateInvestorBuild(){
   }
   for(const required of ['professional_organisations','professional_organisation_memberships','professional_organisation_participation','organisation_id']){
     if(migration022.indexOf(required)<0)throw new Error('missing_persistent_organisation_registry:'+required);
+  }
+  for(const required of ['professional_organisation_credential_revocations','credential_sha256','revoked_by']){
+    if(migration023.indexOf(required)<0)throw new Error('missing_organisation_credential_revocation_contract:'+required);
   }
   for(const required of ["'waitlist'","'invite_only'"]){
     if(migration001.indexOf(required)<0)throw new Error('missing_core_access_mode_contract:'+required);
@@ -730,7 +735,7 @@ async function checkDatabaseSchema(){
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
     'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations',
-    'professional_follows','b2b_leads','professional_organisations','professional_organisation_memberships','professional_organisation_participation',
+    'professional_follows','b2b_leads','professional_organisations','professional_organisation_memberships','professional_organisation_participation','professional_organisation_credential_revocations',
     'partner_programs','brand_program_memberships','partner_service_applications'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
