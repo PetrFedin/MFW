@@ -52,7 +52,7 @@
       OBSERVED:'НАБЛЮДАЕМОЕ',REPORTED:'ЗАЯВЛЕННОЕ',VERIFIED:'ПОДТВЕРЖДЁННОЕ',MODELLED:'МОДЕЛЬНОЕ',
       ATTRIBUTED:'АТРИБУТИРОВАННОЕ',INCREMENTAL:'ИНКРЕМЕНТАЛЬНОЕ',
       COMPLETE:'ПОЛНО',INCOMPLETE:'НЕПОЛНО',PENDING:'ОЖИДАЕТ',
-      REQUESTED:'ЗАПРОШЕНО',COMMITTED:'ЗАРЕЗЕРВИРОВАНО',SPENT:'ИСПОЛЬЗОВАНО',RELEASED:'ОСВОБОЖДЕНО'
+      ЗАПРОСED:'ЗАПРОШЕНО',COMMITTED:'ЗАРЕЗЕРВИРОВАНО',SPENT:'ИСПОЛЬЗОВАНО',RELEASED:'ОСВОБОЖДЕНО'
     };
     return map[v]||String(value==null?'':value);
   }
@@ -567,25 +567,25 @@
     var preferred=(data.mfw.brands||[]).filter(function(x){return x.id===preferredId;})[0]||null;
     var context=preferred?preferred.name:'Выбранный бренд после подтверждённой встречи';
     hubContent.innerHTML=
-      '<div class="dealroom-preview-banner"><b>PREVIEW · NO COMMERCIAL DATA SAVED</b><span>Workflow демонстрируется до durable PostgreSQL + ACL/policy. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
-      '<div class="dealroom-hero"><div><div class="drawer-kicker">BUYER / BRAND DEAL ROOM</div><h3>Из встречи — в структурированный коммерческий follow-up.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>MEETING</span><i>→</i><span>SHORTLIST</span><i>→</i><span>REQUEST</span><i>→</i><span>RESPONSE</span><i>→</i><span>HANDOFF</span></div></div>'+
+      '<div class="dealroom-preview-banner"><b>ПРЕДПРОСМОТР · КОММЕРЧЕСКИЕ ДАННЫЕ НЕ СОХРАНЯЮТСЯ</b><span>Workflow демонстрируется до durable PostgreSQL + ACL/policy. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
+      '<div class="dealroom-hero"><div><div class="drawer-kicker">КОМНАТА СДЕЛКИ БАЙЕРА / БРЕНДА</div><h3>Из встречи — в структурированный коммерческий follow-up.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>ВСТРЕЧА</span><i>→</i><span>ШОРТ-ЛИСТ</span><i>→</i><span>ЗАПРОС</span><i>→</i><span>ОТВЕТ</span><i>→</i><span>ПЕРЕДАЧА</span></div></div>'+
       '<div class="dealroom-stage-grid">'+
-        '<article><small>01 · RELATIONSHIP GATE</small><h4>Confirmed meeting</h4><p>Deal Room открывается только для авторизованной bilateral relationship.</p><span class="deal-status locked">SERVER ACL REQUIRED</span></article>'+
-        '<article><small>02 · BUYER SHORTLIST</small><h4>Looks / collection</h4><p>Look, collection, replay timecode, buyer note и interest level.</p><span class="deal-status">CANONICAL IDS ONLY</span></article>'+
-        '<article><small>03 · STRUCTURED REQUEST</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">AUDITABLE</span></article>'+
-        '<article><small>04 · BRAND RESPONSE</small><h4>Response evidence</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">PRIVATE SCOPE</span></article>'+
-        '<article><small>05 · HANDOFF</small><h4>External commerce</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">NO SILENT ORDER</span></article>'+
+        '<article><small>01 · RELATIONSHIP УСЛОВИЕ</small><h4>Подтверждённая встреча</h4><p>Deal Room открывается только для авторизованной bilateral relationship.</p><span class="deal-status locked">ТРЕБУЕТСЯ СЕРВЕРНОЕ УПРАВЛЕНИЕ ДОСТУПОМ</span></article>'+
+        '<article><small>02 · BUYER ШОРТ-ЛИСТ</small><h4>Образы / коллекция</h4><p>Look, collection, replay timecode, buyer note и interest level.</p><span class="deal-status">ТОЛЬКО КАНОНИЧЕСКИЕ ID</span></article>'+
+        '<article><small>03 · STRUCTURED ЗАПРОС</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">АУДИРУЕМО</span></article>'+
+        '<article><small>04 · BRAND ОТВЕТ</small><h4>Доказательство ответа</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">ПРИВАТНЫЙ КОНТУР</span></article>'+
+        '<article><small>05 · ПЕРЕДАЧА</small><h4>Внешняя коммерческая система</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">БЕЗ НЕЯВНОГО СОЗДАНИЯ ЗАКАЗА</span></article>'+
       '</div>'+
-      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>REQUEST TYPES</small><h4>Структурированный buyer intent</h4></div><span>DEMO TAXONOMY</span></div><div class="request-chip-grid">'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ЗАПРОС TYPES</small><h4>Структурированный buyer intent</h4></div><span>ДЕМОНСТРАЦИОННАЯ ТАКСОНОМИЯ</span></div><div class="request-chip-grid">'+
         ['LINE SHEET','WHOLESALE PRICE','AVAILABILITY','MOQ','DELIVERY WINDOW','SAMPLE','SHOWROOM APPOINTMENT','DISTRIBUTION / MARKET'].map(function(x){return '<button disabled>'+x+'</button>';}).join('')+
       '</div></section>'+
-      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>PRIVATE DOCUMENTS</small><h4>Контролируемый обмен</h4></div><span>ACL BEFORE DOWNLOAD</span></div><div class="deal-doc-grid">'+
-        '<article><b>Line sheet</b><span>versioned · buyer-scoped</span><em>LOCKED PREVIEW</em></article>'+
-        '<article><b>Lookbook</b><span>approved collection assets</span><em>LOCKED PREVIEW</em></article>'+
-        '<article><b>Brand deck</b><span>commercial presentation</span><em>LOCKED PREVIEW</em></article>'+
-        '<article><b>Sample / shipping</b><span>operational information</span><em>LOCKED PREVIEW</em></article>'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ПРИВАТНЫЕ ДОКУМЕНТЫ</small><h4>Контролируемый обмен</h4></div><span>ПРОВЕРКА ДОСТУПА ПЕРЕД СКАЧИВАНИЕМ</span></div><div class="deal-doc-grid">'+
+        '<article><b>Line sheet</b><span>versioned · buyer-scoped</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Lookbook</b><span>approved collection assets</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Brand deck</b><span>commercial presentation</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Sample / shipping</b><span>operational information</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
       '</div></section>'+
-      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>COMMERCIAL EVIDENCE</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
+      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>COMMERCIAL ДОКАЗАТЕЛЬСТВА</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
         '<div><b>OBSERVED</b><span>meeting / request / response inside MFW</span></div>'+
         '<div><b>REPORTED</b><span>commercial outcome voluntarily reported by partner</span></div>'+
         '<div><b>VERIFIED</b><span>outcome confirmed by admitted external integration</span></div>'+
@@ -596,7 +596,7 @@
   }
 
   function evidenceBadge(cls){
-    var labels={observed:'OBSERVED',reported:'REPORTED',verified:'VERIFIED',modelled:'MODELLED',synthetic:'SYNTHETIC',not_evidenced:'NOT EVIDENCED'};
+    var labels={observed:'OBSERVED',reported:'REPORTED',verified:'VERIFIED',modelled:'MODELLED',synthetic:'SYNTHETIC',not_evidenced:'NOT ДОКАЗАТЕЛЬСТВАD'};
     return '<span class="evidence-badge evidence-'+h(cls)+'">'+h(labels[cls]||String(cls||'UNKNOWN').toUpperCase())+'</span>';
   }
   function liveProofChain(){
@@ -607,12 +607,12 @@
     var favorite=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
     var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
     return [
-      {stage:'IDENTITY',time:'NOW',value:reg?'Shared profile + event registration':'Shared profile only',evidence:reg?'observed':'not_evidenced'},
+      {stage:'ИДЕНТИЧНОСТЬ',time:'NOW',value:reg?'Shared profile + event registration':'Shared profile only',evidence:reg?'observed':'not_evidenced'},
       {stage:'INTEREST',time:'NOW',value:(favorite||followed||saved)?((favorite+' favorite · '+followed+' follow · '+saved+' saved')):'No explicit signal yet',evidence:(favorite||followed||saved)?'observed':'not_evidenced'},
       {stage:'BRAND',time:'NOW',value:brand?brand.name:'No MFW brand selected',evidence:brand?'observed':'not_evidenced'},
-      {stage:'MEETING',time:'NOW',value:bfsMeeting?((bfsMeeting.delegate||'BFS contact')+' · '+String(bfsMeeting.status||'requested').toUpperCase()):'No meeting evidence in current local state',evidence:bfsMeeting?'observed':'not_evidenced'},
+      {stage:'ВСТРЕЧА',time:'NOW',value:bfsMeeting?((bfsMeeting.delegate||'BFS contact')+' · '+String(bfsMeeting.status||'requested').toUpperCase()):'No meeting evidence in current local state',evidence:bfsMeeting?'observed':'not_evidenced'},
       {stage:'INTENT',time:'NOW',value:'Requires explicit Deal Room / request evidence',evidence:'not_evidenced'},
-      {stage:'HANDOFF',time:'NOW',value:'Requires admitted external reference',evidence:'not_evidenced'},
+      {stage:'ПЕРЕДАЧА',time:'NOW',value:'Requires admitted external reference',evidence:'not_evidenced'},
       {stage:'30 DAYS',time:'D30',value:'Requires verified continuity history',evidence:'not_evidenced'},
       {stage:'90 DAYS',time:'D90',value:'Requires repeat/follow-up history',evidence:'not_evidenced'},
       {stage:'365 DAYS',time:'D365',value:'Requires longitudinal cross-event history',evidence:'not_evidenced'}
@@ -673,7 +673,7 @@
         participant:{name:displayName(),role:(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor',organisation:accountState.profile.company||'—',market:accountState.profile.country||'—',source:'Текущее состояние общего аккаунта'},
         brand:{name:'Текущая явная связь с брендом',category:'Выведено только из явных saved/follow/favorite',origin:'MFW/BFS/Made'},
         potentialRevenueStreams:[],
-        dossier:liveChain.map(function(x,i){return {stage:x.stage,time:x.time,event:i<3?'PLATFORM':'EVIDENCE',detail:x.value,reason:x.evidence==='not_evidenced'?'В текущем состоянии нет допустимого evidence.':'Явно зафиксированное текущее состояние продукта/аккаунта.',evidence:x.evidence,ref:x.evidence==='not_evidenced'?'—':'local://current-state/'+String(x.stage).toLowerCase().replace(/\s+/g,'-')};})
+        dossier:liveChain.map(function(x,i){return {stage:x.stage,time:x.time,event:i<3?'PLATFORM':'ДОКАЗАТЕЛЬСТВА',detail:x.value,reason:x.evidence==='not_evidenced'?'В текущем состоянии нет допустимого evidence.':'Явно зафиксированное текущее состояние продукта/аккаунта.',evidence:x.evidence,ref:x.evidence==='not_evidenced'?'—':'local://current-state/'+String(x.stage).toLowerCase().replace(/\s+/g,'-')};})
       };
     }
     var selector=synthetic?'<div class="case-selector">'+rows.map(function(x){return '<button data-control-case="'+h(x.id)+'" class="'+(active&&active.id===x.id?'active':'')+'"><span>'+h(x.label)+'</span><b>'+h(x.participant.role)+' × '+h(x.brand.category)+'</b></button>';}).join('')+'</div>':'';
@@ -682,7 +682,7 @@
       '<section class="dossier-head"><div><div class="drawer-kicker">'+(synthetic?'ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КЕЙС':'LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')+'</div><h3>'+h(active.participant.name)+' → '+h(active.brand.name)+'</h3><p>'+h(active.participant.role)+' · '+h(active.participant.organisation)+' · '+h(active.participant.market)+'<br>'+h(active.participant.source)+'</p></div><div class="dossier-brand"><span>БРЕНД / КОНТРАГЕНТ</span><b>'+h(active.brand.name)+'</b><small>'+h(active.brand.category)+' · '+h(active.brand.origin)+'</small></div></section>'+
       '<div class="dossier-timeline">'+(active.dossier||[]).map(function(x,i){return '<article><div class="dossier-index">'+String(i+1).padStart(2,'0')+'</div><div class="dossier-main"><div><span>'+h(x.stage)+'</span><i>'+h(x.time)+' · '+h(x.event)+'</i></div><b>'+h(x.detail)+'</b><p>'+h(x.reason)+'</p><code>'+h(x.ref||'—')+'</code></div>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
       '<section class="dossier-revenue"><div><span>ПОТЕНЦИАЛЬНО ЗАТРОНУТЫЕ REVENUE STREAMS</span><b>'+(streams.length?h(streams.map(function(x){return x.product;}).join(' · ')):'В текущем live-state revenue stream не подтверждён')+'</b></div><small>Потенциальный stream ≠ фактическая выручка. Признание выручки всё равно требует contract + billable event + payment evidence.</small></section>'+
-      '<div class="proof-actions"><button data-proof-open="partner">КАБИНЕТ ПАРТНЁРА</button><button data-proof-open="brand">КАБИНЕТ БРЕНДА</button><button data-proof-open="economics">ЭКОНОМИКА</button><a href="./evidence-package.json" target="_blank" rel="noopener">EVIDENCE PACKAGE ↗</a></div>'+
+      '<div class="proof-actions"><button data-proof-open="partner">КАБИНЕТ ПАРТНЁРА</button><button data-proof-open="brand">КАБИНЕТ БРЕНДА</button><button data-proof-open="economics">ЭКОНОМИКА</button><a href="./evidence-package.json" target="_blank" rel="noopener">ДОКАЗАТЕЛЬСТВА PACKAGE ↗</a></div>'+
     '</div>';
   }
   function pct(a,b){return b?Math.round((a/b)*100):0;}
@@ -708,11 +708,11 @@
       {stage:'AUDIENCE',count:sumField(rows,'audience'),evidence:'synthetic'},
       {stage:'ENGAGEMENT',count:sumField(rows,'engagement'),evidence:'synthetic'},
       {stage:'QUALIFIED BUYER',count:sumField(rows,'qualifiedBuyer'),evidence:'synthetic'},
-      {stage:'MEETING',count:sumField(rows,'meeting'),evidence:'synthetic'},
+      {stage:'ВСТРЕЧА',count:sumField(rows,'meeting'),evidence:'synthetic'},
       {stage:'INTENT',count:sumField(rows,'intent'),evidence:'synthetic'},
       {stage:'DEAL',count:sumField(rows,'deal'),evidence:'synthetic'},
       {stage:'УДЕРЖАНИЕ',count:rows.reduce(function(s,x){return s+Number((x.retention||{})[ret]||0);},0),evidence:'synthetic'},
-      {stage:'REVENUE EVIDENCE',count:sumField(rows,'revenueEvidence'),evidence:'synthetic'}
+      {stage:'REVENUE ДОКАЗАТЕЛЬСТВА',count:sumField(rows,'revenueEvidence'),evidence:'synthetic'}
     ];
     var ecosystems=['mfw','bfs','made'].map(function(id){
       var sub=rows.filter(function(x){return x.ecosystem===id;});
@@ -772,16 +772,16 @@
   function scenarioMetricSet(filters){
     var fp=filteredPortfolioFor(filters),f=fp.funnel||[],by={};
     f.forEach(function(x){by[x.stage]=Number(x.count||0);});
-    var intentBase=by['MEETING']||0,meetingBase=by['QUALIFIED BUYER']||0,dealBase=by['INTENT']||0,revBase=by['DEAL']||0;
+    var intentBase=by['ВСТРЕЧА']||0,meetingBase=by['QUALIFIED BUYER']||0,dealBase=by['INTENT']||0,revBase=by['DEAL']||0;
     return {
       label:scenarioLabel(filters),population:fp.population,
       qualifiedRate:pct(by['QUALIFIED BUYER']||0,by['AUDIENCE']||0),
-      meetingRate:pct(by['MEETING']||0,meetingBase),
+      meetingRate:pct(by['ВСТРЕЧА']||0,meetingBase),
       intentRate:pct(by['INTENT']||0,intentBase),
       dealRate:pct(by['DEAL']||0,dealBase),
       retentionRate:pct(by['УДЕРЖАНИЕ']||0,by['INTENT']||0),
-      revenueEvidenceRate:pct(by['REVENUE EVIDENCE']||0,revBase),
-      intent:by['INTENT']||0,deal:by['DEAL']||0,retention:by['УДЕРЖАНИЕ']||0,revenueEvidence:by['REVENUE EVIDENCE']||0
+      revenueEvidenceRate:pct(by['REVENUE ДОКАЗАТЕЛЬСТВА']||0,revBase),
+      intent:by['INTENT']||0,deal:by['DEAL']||0,retention:by['УДЕРЖАНИЕ']||0,revenueEvidence:by['REVENUE ДОКАЗАТЕЛЬСТВА']||0
     };
   }
   function scenarioSelect(side,key,label,values){
@@ -890,7 +890,7 @@
   }
   function dossierStepForMetric(x,target,filters){
     if(!x||!target)return null;
-    var wanted=target.spec.key==='qualifiedRate'?'RECOMMENDED':target.spec.key==='meetingRate'?'MEETING HELD':target.spec.key==='intentRate'?'INTENT':target.spec.key==='dealRate'?'DEAL ROOM':target.spec.key==='retentionRate'?((filters.retention||'D30').replace('D','')+' DAYS'):'HANDOFF';
+    var wanted=target.spec.key==='qualifiedRate'?'RECOMMENDED':target.spec.key==='meetingRate'?'ВСТРЕЧА HELD':target.spec.key==='intentRate'?'INTENT':target.spec.key==='dealRate'?'DEAL ROOM':target.spec.key==='retentionRate'?((filters.retention||'D30').replace('D','')+' DAYS'):'ПЕРЕДАЧА';
     return (x.dossier||[]).filter(function(d){return d.stage===wanted;})[0]||(x.dossier||[])[x.dossier.length-1]||null;
   }
   function representativeExplanation(target){
@@ -899,7 +899,7 @@
       var rows=cases.filter(function(x){return caseMatchesScenario(x,filters);}).slice(0,2);
       return '<div class="explain-dossiers-side"><div class="drawer-kicker">'+label+'</div>'+(rows.length?rows.map(function(x){var step=dossierStepForMetric(x,target,filters);return '<article><div><span>'+h(x.label)+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small><code>'+h(step&&step.ref||'—')+'</code></div><button data-explanation-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></article>';}).join(''):'<div class="explain-empty">Для этого synthetic slice нет материализованного representative dossier. Агрегат не превращается в выдуманные row-level кейсы.</div>')+'</div>';
     }
-    return '<section class="explain-dossiers"><div class="drawer-kicker">REPRESENTATIVE EVIDENCE</div><div class="explain-dossiers-grid">'+side('СЦЕНАРИЙ A',scenarioA)+side('СЦЕНАРИЙ B',scenarioB)+'</div></section>';
+    return '<section class="explain-dossiers"><div class="drawer-kicker">REPRESENTATIVE ДОКАЗАТЕЛЬСТВА</div><div class="explain-dossiers-grid">'+side('СЦЕНАРИЙ A',scenarioA)+side('СЦЕНАРИЙ B',scenarioB)+'</div></section>';
   }
   function renderOpportunityExplanation(){
     var gap=opportunityGap(),target=gap.target;if(!target)return '';
@@ -968,9 +968,9 @@
           '<div class="allocation-stage">'+h(it.stage)+'</div><h5>'+h(it.action)+'</h5>'+
           '<p>'+h(it.hypothesis)+'</p>'+
           '<div class="allocation-meta"><div><span>ЦЕЛЕВОЙ СЦЕНАРИЙ</span><b>'+h(r.weak==='A'?'A':r.weak==='B'?'B':'A/B')+'</b></div><div><span>СЕГМЕНТ-ДРАЙВЕР</span><b>'+h(r.driver.label)+'</b><small>'+h(r.driver.detail)+'</small></div><div><span>KPI</span><b>'+h(it.kpi)+'</b></div><div><span>PILOT TARGET · MODELLED</span><b>'+Math.round(r.current*10)/10+'% → '+Math.round(r.pilotTarget*10)/10+'%</b><small>assumption: закрыть до '+h(r.modelledLift)+' п.п. gap, максимум +5 п.п.</small></div></div>'+
-          '<div class="allocation-evidence"><span>EVIDENCE GATE</span>'+it.evidenceNeeded.map(function(x){return '<i>✓ '+h(x)+'</i>';}).join('')+'</div>'+
+          '<div class="allocation-evidence"><span>ДОКАЗАТЕЛЬСТВА УСЛОВИЕ</span>'+it.evidenceNeeded.map(function(x){return '<i>✓ '+h(x)+'</i>';}).join('')+'</div>'+
           '<div class="allocation-footer"><div><span>OWNER</span><b>'+h(it.owner)+'</b></div><div><span>PILOT</span><b>'+h(it.pilot)+'</b></div></div>'+
-          '<div class="allocation-dossiers"><span>REPRESENTATIVE EVIDENCE</span>'+recommendationDossiers(r)+'</div><button class="allocation-open-case" data-open-committee="'+h(it.id)+'">ОТКРЫТЬ MINI BUSINESS CASE →</button>'+
+          '<div class="allocation-dossiers"><span>REPRESENTATIVE ДОКАЗАТЕЛЬСТВА</span>'+recommendationDossiers(r)+'</div><button class="allocation-open-case" data-open-committee="'+h(it.id)+'">ОТКРЫТЬ МИНИ-БИЗНЕС-КЕЙС →</button>'+
         '</article>';
       }).join('')+'</div>'+
       '<div class="allocation-method"><b>Priority score</b><span>|gap, п.п.| × √(затронутый denominator / max population) × leverage ÷ effort. Затем scores нормализуются до 100 pilot-budget points. Leverage/effort — явные model assumptions из intervention catalog, не финансовая оценка.</span></div>'+
@@ -1005,7 +1005,7 @@
     if(!row)return null;
     var rows=fp.rows||[],breakdown={mfw:0,bfs:0,made:0};
     rows.forEach(function(x){
-      var value=stage==='AUDIENCE'?x.audience:stage==='ENGAGEMENT'?x.engagement:stage==='QUALIFIED BUYER'?x.qualifiedBuyer:stage==='MEETING'?x.meeting:stage==='INTENT'?x.intent:stage==='DEAL'?x.deal:stage==='УДЕРЖАНИЕ'?((x.retention||{})[portfolioFilters.retention]||0):x.revenueEvidence;
+      var value=stage==='AUDIENCE'?x.audience:stage==='ENGAGEMENT'?x.engagement:stage==='QUALIFIED BUYER'?x.qualifiedBuyer:stage==='ВСТРЕЧА'?x.meeting:stage==='INTENT'?x.intent:stage==='DEAL'?x.deal:stage==='УДЕРЖАНИЕ'?((x.retention||{})[portfolioFilters.retention]||0):x.revenueEvidence;
       breakdown[x.ecosystem]=(breakdown[x.ecosystem]||0)+Number(value||0);
     });
     var cases=(controlTowerModel().cases||[]).filter(function(x){
@@ -1029,7 +1029,7 @@
     return '<section class="portfolio-drilldown">'+
       '<div class="portfolio-drill-head"><div><div class="drawer-kicker">DRILL-DOWN COHORT · СИНТЕТИКА</div><h4>'+h(stage)+' = '+h(row.total)+'</h4><p>'+(prev?('Конверсия из '+h(prev.stage)+': '+pct(Number(row.total||0),Number(prev.count||0))+'%'):'Базовая когорта портфеля')+'. Показан агрегат; representative dossiers ниже — примеры, а не полный row-level export.</p></div><button data-close-drill>×</button></div>'+
       '<div class="cohort-breakdown"><article><span>MFW</span><b>'+h(b.mfw||0)+'</b><small>'+pct(Number(b.mfw||0),Number(row.total||0))+'%</small></article><article><span>BFS</span><b>'+h(b.bfs||0)+'</b><small>'+pct(Number(b.bfs||0),Number(row.total||0))+'%</small></article><article><span>MADE</span><b>'+h(b.made||0)+'</b><small>'+pct(Number(b.made||0),Number(row.total||0))+'%</small></article></div>'+
-      '<div class="representative-journeys"><div class="drawer-kicker">РЕПРЕЗЕНТАТИВНЫЕ ДОСЬЕ</div>'+selectedCases.map(function(x){var step=(x.dossier||[]).filter(function(d){return d.stage===stage|| (stage==='DEAL'&&d.stage==='DEAL ROOM') || (stage==='REVENUE EVIDENCE'&&['HANDOFF','90 DAYS','365 DAYS'].indexOf(d.stage)>=0);})[0]||x.dossier[x.dossier.length-1];return '<article><div><span>'+h(x.label)+' · '+h(String(x.primaryEcosystem||'platform').toUpperCase())+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small></div><div>'+evidenceBadge(step&&step.evidence||'synthetic')+'<button data-open-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></div></article>';}).join('')+'</div>'+
+      '<div class="representative-journeys"><div class="drawer-kicker">РЕПРЕЗЕНТАТИВНЫЕ ДОСЬЕ</div>'+selectedCases.map(function(x){var step=(x.dossier||[]).filter(function(d){return d.stage===stage|| (stage==='DEAL'&&d.stage==='DEAL ROOM') || (stage==='REVENUE ДОКАЗАТЕЛЬСТВА'&&['ПЕРЕДАЧА','90 DAYS','365 DAYS'].indexOf(d.stage)>=0);})[0]||x.dossier[x.dossier.length-1];return '<article><div><span>'+h(x.label)+' · '+h(String(x.primaryEcosystem||'platform').toUpperCase())+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small></div><div>'+evidenceBadge(step&&step.evidence||'synthetic')+'<button data-open-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></div></article>';}).join('')+'</div>'+
       '<div class="hub-note">Число '+h(row.total)+' — агрегат synthetic-сценария. Материализованы только показанные выше representative demo journeys.</div>'+
     '</section>';
   }
@@ -1039,7 +1039,7 @@
     var zero=fp.population===0;
     return '<div class="portfolio-warning"><b>ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ ПОРТФЕЛЬ</b><span>Все значения пересчитываются из детерминированного synthetic cohort cube. Это не production KPI.</span></div>'+
       portfolioFilterBar()+
-      '<section class="portfolio-head"><div><div class="drawer-kicker">EVIDENCE CONTROL TOWER · ФИЛЬТРУЕМЫЙ ПОРТФЕЛЬ</div><h3>Где именно сеть создаёт наиболее сильную конверсию и сетевую ценность.</h3><p>Все фильтры одновременно пересчитывают воронку, вклад экосистем, retention и покрытие revenue surfaces.</p></div><div class="portfolio-pop"><span>ОТОБРАННАЯ ПОПУЛЯЦИЯ</span><b>'+h(fp.population)+'</b><small>синтетических journeys</small></div></section>'+
+      '<section class="portfolio-head"><div><div class="drawer-kicker">ДОКАЗАТЕЛЬСТВА CONTROL TOWER · ФИЛЬТРУЕМЫЙ ПОРТФЕЛЬ</div><h3>Где именно сеть создаёт наиболее сильную конверсию и сетевую ценность.</h3><p>Все фильтры одновременно пересчитывают воронку, вклад экосистем, retention и покрытие revenue surfaces.</p></div><div class="portfolio-pop"><span>ОТОБРАННАЯ ПОПУЛЯЦИЯ</span><b>'+h(fp.population)+'</b><small>синтетических journeys</small></div></section>'+
       (zero?'<div class="portfolio-empty"><b>НЕТ ПОДХОДЯЩЕГО СИНТЕТИЧЕСКОГО COHORT</b><span>Для этого набора фильтров в demo cube нет данных. Значения не подменяются ближайшим сегментом.</span></div>':'')+
       '<div class="portfolio-funnel">'+funnel.map(function(x,i){var prev=i?Number(funnel[i-1].count||0):Number(x.count||0);return '<button class="portfolio-stage '+(selectedPortfolioStage===x.stage?'active':'')+'" data-portfolio-stage="'+h(x.stage)+'"><div class="portfolio-bar"><i style="width:'+Math.max(0,Math.round(Number(x.count||0)/(max||1)*100))+'%"></i></div><span>'+h(x.stage)+'</span><b>'+h(x.count)+'</b><small>'+(i?'conversion '+pct(Number(x.count||0),prev)+'%':'base cohort')+'</small>'+evidenceBadge(x.evidence)+'</button>';}).join('')+'</div>'+
       renderPortfolioDrilldown(selectedPortfolioStage)+
@@ -1051,7 +1051,7 @@
   function renderInvestorProof(){
     var synthetic=proofMode==='synthetic';
     hubContent.innerHTML=
-      '<div class="control-tower-top"><div><div class="drawer-kicker">ЦЕНТР ДОКАЗАТЕЛЬСТВ · EVIDENCE CONTROL TOWER</div><h3>Каждый переход должен иметь доказательство.</h3><p>Досье отвечает на вопрос «что произошло с конкретной связкой байер × бренд». Портфель — «что происходит со всей сетью». Сравнение — «какой срез сильнее по выбранным метрикам».</p></div><div>'+controlTowerTabs()+proofModeToggle()+'</div></div>'+
+      '<div class="control-tower-top"><div><div class="drawer-kicker">ЦЕНТР ДОКАЗАТЕЛЬСТВ · ДОКАЗАТЕЛЬСТВА CONTROL TOWER</div><h3>Каждый переход должен иметь доказательство.</h3><p>Досье отвечает на вопрос «что произошло с конкретной связкой байер × бренд». Портфель — «что происходит со всей сетью». Сравнение — «какой срез сильнее по выбранным метрикам».</p></div><div>'+controlTowerTabs()+proofModeToggle()+'</div></div>'+
       (controlTowerView==='comparison'?renderComparisonMode():(controlTowerView==='portfolio'?renderPortfolioView():renderCaseDossier()))+
       '<div class="proof-rules">'+(INVESTOR_MODEL.proofRules||[]).map(function(x){return '<span>✓ '+h(x)+'</span>';}).join('')+'</div>';
     bindControlTower();
@@ -1083,7 +1083,7 @@
     hubContent.innerHTML=
       '<div class="drawer-kicker">INVESTMENT / ЭКОНОМИКА DASHBOARD · MODEL CONTRACT</div>'+
       '<div class="economics-hero"><h3>Кто платит → за какой продукт → по какой формуле → когда это становится выручкой.</h3><p>До появления договоров и платежных данных здесь нет фактических ARR/MRR. Формулы показывают экономическую архитектуру, а не результат.</p></div>'+
-      '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE GATE</b></div>'+
+      '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE УСЛОВИЕ</b></div>'+
       streams.map(function(x){return '<div class="economics-row"><span>'+h(x.payer)+'</span><span>'+h(x.product)+'</span><code>'+h(x.formula)+'</code><em>'+h(x.recognition)+'</em></div>';}).join('')+'</div>'+
       '<div class="economics-proof-grid"><article><b>OBSERVED</b><span>Product actions and delivery events.</span></article><article><b>REPORTED</b><span>Partner-declared outcomes.</span></article><article><b>VERIFIED</b><span>Admitted external confirmation.</span></article><article><b>MODELLED</b><span>Scenario economics with explicit assumptions.</span></article></div>'+
       '<div class="hub-note">Unit economics, CAC, ROI, GMV, ARR and MRR are only factual when their source dataset and calculation period are available. Demo placeholders are intentionally absent.</div>';
@@ -1174,16 +1174,16 @@
     hubContent.innerHTML=proposalHtml+
       '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO / SYNTHETIC WORKSPACE</b><span>Все approvals, pilot status и measured results ниже существуют только в текущей demo-сессии и не являются реальными корпоративными решениями.</span></div>'+
       '<div class="committee-recommendations">'+recs.map(function(x){return '<button data-committee-select="'+h(x.intervention.id)+'" class="'+(x.intervention.id===committeeSelectedId?'active':'')+'"><span>'+h(x.points)+' pts</span><b>'+h(x.intervention.action)+'</b><small>'+h(x.intervention.stage)+'</small></button>';}).join('')+'</div>'+
-      '<section class="committee-case-head"><div><div class="drawer-kicker">MINI BUSINESS CASE</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>STATUS</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' modelled budget points</small></div></section>'+
+      '<section class="committee-case-head"><div><div class="drawer-kicker">МИНИ-БИЗНЕС-КЕЙС</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>STATUS</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' modelled budget points</small></div></section>'+
       '<div class="committee-case-grid">'+
         '<article><span>OWNER</span><b>'+h(rec.intervention.owner)+'</b></article>'+
-        '<article><span>BUDGET REQUEST</span><b>'+h(rec.points)+' pilot points</b><small>не ₽ · относительный demo allocation</small></article>'+
+        '<article><span>BUDGET ЗАПРОС</span><b>'+h(rec.points)+' pilot points</b><small>не ₽ · относительный demo allocation</small></article>'+
         '<article><span>BASELINE KPI</span><b>'+Math.round(rec.current*10)/10+'%</b><small>'+h(rec.intervention.kpi)+'</small></article>'+
         '<article><span>MODELLED TARGET</span><b>'+Math.round(rec.pilotTarget*10)/10+'%</b><small>assumption, не обещание результата</small></article>'+
         '<article><span>MEASURED RESULT</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'синтетический результат пилота')+'</small></article>'+
         '<article><span>DECISION</span><b>'+h(decision||'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
       '</div>'+
-      '<section class="committee-evidence-plan"><div><div class="drawer-kicker">EVIDENCE PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
+      '<section class="committee-evidence-plan"><div><div class="drawer-kicker">ДОКАЗАТЕЛЬСТВА PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
       '<section class="committee-pilot"><div><span>PILOT DESIGN</span><b>'+h(rec.intervention.pilot)+'</b></div><div><span>STOP / SCALE LOGIC</span><b>'+h((policy.governance||{}).scale||'')+'</b><small>'+h((policy.governance||{}).iterate||'')+' '+h((policy.governance||{}).stop||'')+'</small></div></section>'+
       '<div class="committee-state-flow">'+(policy.states||[]).map(function(x){var active=x===state.status;return '<span class="'+(active?'active':'')+'">'+h(committeeStatusLabel(x))+'</span>';}).join('<i>→</i>')+'</div>'+
       '<div class="committee-actions">'+committeeActionButton(rec,state)+'<button class="secondary" data-committee-action="reset" data-committee-id="'+h(rec.intervention.id)+'">RESET DEMO</button></div>'+
@@ -1334,11 +1334,11 @@
   function renderPortfolioScenarioSimulator(){
     var policy=simulatorPolicy(),rows=scenarioMixes(programmeScenarioBudget),top=rows.slice(0,5),best=top[0]||null;
     return '<section class="portfolio-simulator">'+
-      '<div class="simulator-head"><div><div class="drawer-kicker">PORTFOLIO SCENARIO SIMULATOR · MODELLED</div><h4>Как распределить '+h(programmeScenarioBudget)+' points между MFW / BFS / Made / Reserve.</h4><p>Перебираются допустимые mix-сценарии с шагом '+h(policy.step||10)+' points. HOLD-направления не получают новый capital; CONDITIONAL остаются committee-gated.</p></div><div class="simulator-best"><span>TOP SCENARIO SCORE</span><b>'+(best?h(best.score):'—')+'</b><small>/ 100 · modelled</small></div></div>'+
+      '<div class="simulator-head"><div><div class="drawer-kicker">СИМУЛЯТОР СЦЕНАРИЕВ ПОРТФЕЛЯ · МОДЕЛЬНО</div><h4>Как распределить '+h(programmeScenarioBudget)+' points между MFW / BFS / Made / Reserve.</h4><p>Перебираются допустимые mix-сценарии с шагом '+h(policy.step||10)+' points. HOLD-направления не получают новый capital; CONDITIONAL остаются committee-gated.</p></div><div class="simulator-best"><span>ОЦЕНКА ЛУЧШЕГО СЦЕНАРИЯ</span><b>'+(best?h(best.score):'—')+'</b><small>/ 100 · modelled</small></div></div>'+
       '<div class="simulator-budgets">'+(policy.budgets||[10,20,30]).map(function(x){return '<button data-sim-budget="'+h(x)+'" class="'+(Number(x)===Number(programmeScenarioBudget)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
-      '<div class="simulator-table"><div class="simulator-row head"><b>SCENARIO</b><b>SCORE</b><b>RISK ↓</b><b>KPI ↑</b><b>EVIDENCE</b><b>DIVERSIFICATION</b><b>OPTIONALITY</b><b>GATE</b></div>'+
+      '<div class="simulator-table"><div class="simulator-row head"><b>СЦЕНАРИЙ</b><b>ОЦЕНКА</b><b>РИСК ↓</b><b>KPI ↑</b><b>ДОКАЗАТЕЛЬСТВА</b><b>ДИВЕРСИФИКАЦИЯ</b><b>ГИБКОСТЬ</b><b>УСЛОВИЕ</b></div>'+
       top.map(function(x,i){return '<div class="simulator-row '+(i===0?'best':'')+'"><span>#0'+(i+1)+' · '+h(scenarioLabelMix(x))+'</span><b>'+h(x.score)+'</b><b>'+Math.round(x.riskRelief*10)/10+'</b><b>+'+Math.round(x.kpi*10)/10+' п.п.</b><b>'+Math.round(x.evidence*100)+'%</b><b>'+Math.round(x.diversification*100)+'%</b><b>'+Math.round(x.optionality*100)+'%</b><em>'+(x.conditional?'CONDITIONAL':'READY')+'</em></div>';}).join('')+'</div>'+
-      '<div class="simulator-recommendation"><div><span>BEST MIX</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · снижение риска '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>WHY</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+(best?'<button class="simulator-submit" data-sim-propose>ПЕРЕДАТЬ BEST MIX В INVESTMENT COMMITTEE →</button>':'')+
+      '<div class="simulator-recommendation"><div><span>ЛУЧШЕЕ РАСПРЕДЕЛЕНИЕ</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · снижение риска '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>ПОЧЕМУ</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+(best?'<button class="simulator-submit" data-sim-propose>ПЕРЕДАТЬ ЛУЧШЕЕ РАСПРЕДЕЛЕНИЕ В INVESTMENT COMMITTEE →</button>':'')+
       '<div class="simulator-method"><b>Правила</b><span>'+Object.keys(policy.rules||{}).map(function(k){return h(policy.rules[k]);}).join(' · ')+'</span></div>'+
     '</section>';
   }
@@ -1346,17 +1346,17 @@
   function renderReallocationOptimizer(){
     var policy=optimizerPolicy(),t=programmeTotals(),result=optimizerRecommendation(programmeOptimizerTranche),pick=result.pick;
     return '<section class="reallocation-optimizer">'+
-      '<div class="optimizer-head"><div><div class="drawer-kicker">CAPITAL REALLOCATION OPTIMIZER · MODELLED</div><h4>Куда направить следующие '+h(programmeOptimizerTranche)+' points.</h4><p>Сравнение учитывает capital-at-risk relief, modelled KPI leverage, evidence readiness и способность vertical принять выбранный tranche.</p></div><div class="optimizer-capacity"><span>AVAILABLE CAPACITY</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases only</small></div></div>'+
+      '<div class="optimizer-head"><div><div class="drawer-kicker">ОПТИМИЗАТОР ПЕРЕРАСПРЕДЕЛЕНИЯ КАПИТАЛА · МОДЕЛЬНО</div><h4>Куда направить следующие '+h(programmeOptimizerTranche)+' points.</h4><p>Сравнение учитывает capital-at-risk relief, modelled KPI leverage, evidence readiness и способность vertical принять выбранный tranche.</p></div><div class="optimizer-capacity"><span>ДОСТУПНАЯ ЁМКОСТЬ</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases only</small></div></div>'+
       '<div class="optimizer-tranches">'+(policy.trancheOptions||[10,20,30]).map(function(x){return '<button data-optimizer-tranche="'+h(x)+'" class="'+(Number(x)===Number(programmeOptimizerTranche)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
       '<div class="optimizer-grid">'+result.rows.map(function(x){
         var label=x.ecosystem==='mfw'?'MFW':x.ecosystem==='bfs'?'BFS':'Сделано в Москве';
         return '<article class="optimizer-card '+String(x.gate).toLowerCase()+'"><div class="optimizer-card-head"><span>'+h(label)+' · '+h(ruCode(x.mode))+'</span><b>'+h(ruCode(x.gate))+'</b></div><h5>'+h(x.bottleneck)+'</h5>'+
-          '<div class="optimizer-score"><span>DECISION SCORE</span><b>'+h(x.score)+'</b><small>/ 100 · modelled</small></div>'+
-          '<div class="optimizer-metrics"><div><span>ABSORB</span><b>'+h(x.available)+' / '+h(x.requestedTranche)+'</b></div><div><span>AT-RISK RELIEF</span><b>'+Math.round(x.riskRelief*10)/10+' pts</b></div><div><span>KPI</span><b>'+h(optimizerMetricLabel(x.metric))+'</b></div><div><span>MODELLED KPI LIFT</span><b>+'+Math.round(x.kpiLift*10)/10+' п.п.</b></div><div><span>EVIDENCE READINESS</span><b>'+Math.round(Number(x.evidenceReadiness||0)*100)+'%</b></div></div>'+
+          '<div class="optimizer-score"><span>ОЦЕНКА РЕШЕНИЯ</span><b>'+h(x.score)+'</b><small>/ 100 · modelled</small></div>'+
+          '<div class="optimizer-metrics"><div><span>МОЖЕТ ПРИНЯТЬ</span><b>'+h(x.available)+' / '+h(x.requestedTranche)+'</b></div><div><span>СНИЖЕНИЕ РИСКА</span><b>'+Math.round(x.riskRelief*10)/10+' pts</b></div><div><span>KPI</span><b>'+h(optimizerMetricLabel(x.metric))+'</b></div><div><span>МОДЕЛЬНЫЙ РОСТ KPI</span><b>+'+Math.round(x.kpiLift*10)/10+' п.п.</b></div><div><span>ГОТОВНОСТЬ ДОКАЗАТЕЛЬСТВ</span><b>'+Math.round(Number(x.evidenceReadiness||0)*100)+'%</b></div></div>'+
           '<div class="optimizer-evidence"><span>ДО СЛЕДУЮЩЕГО ТРАНША</span>'+((x.evidenceBeforeNext||[]).map(function(e){return '<i>○ '+h(e)+'</i>';}).join(''))+'</div>'+
           '<div class="optimizer-gate-note">'+(x.gate==='READY'?'Можно выносить как modelled candidate на следующий committee review.':x.gate==='CONDITIONAL'?'Транш условный: сначала закрыть обозначенные evidence gaps.':'HOLD: новый tranche не рекомендован до снятия hard evidence blocker.')+'</div></article>';
       }).join('')+'</div>'+
-      '<div class="optimizer-recommendation"><div><span>MODELLED RECOMMENDATION</span><b>'+(pick?(h(pick.ecosystem==='mfw'?'MFW':pick.ecosystem==='bfs'?'BFS':'Сделано в Москве')+' · '+h(pick.available)+' pts · '+h(pick.gate)):'HOLD / NO ELIGIBLE OPTION')+'</b><small>'+(pick?('score '+h(pick.score)+' · expected KPI +'+Math.round(pick.kpiLift*10)/10+' п.п. · at-risk relief '+Math.round(pick.riskRelief*10)/10+' pts'):'Нет варианта, прошедшего evidence gate.')+'</small></div><div><span>NEXT TRANCHE GATE</span><b>'+(pick?h((pick.evidenceBeforeNext||[])[0]||'Evidence review required'):'Evidence remediation required')+'</b><small>Optimizer не утверждает capital; он формирует кандидат для Investment Committee.</small></div></div>'+
+      '<div class="optimizer-recommendation"><div><span>МОДЕЛЬНАЯ РЕКОМЕНДАЦИЯ</span><b>'+(pick?(h(pick.ecosystem==='mfw'?'MFW':pick.ecosystem==='bfs'?'BFS':'Сделано в Москве')+' · '+h(pick.available)+' pts · '+h(pick.gate)):'HOLD / NO ELIGIBLE OPTION')+'</b><small>'+(pick?('score '+h(pick.score)+' · expected KPI +'+Math.round(pick.kpiLift*10)/10+' п.п. · at-risk relief '+Math.round(pick.riskRelief*10)/10+' pts'):'Нет варианта, прошедшего evidence gate.')+'</small></div><div><span>СЛЕДУЮЩИЙ ТРАНШ УСЛОВИЕ</span><b>'+(pick?h((pick.evidenceBeforeNext||[])[0]||'Evidence review required'):'Evidence remediation required')+'</b><small>Optimizer не утверждает capital; он формирует кандидат для Investment Committee.</small></div></div>'+
       '<div class="optimizer-method"><b>Score</b><span>30% risk relief + 25% KPI leverage + 30% evidence readiness + 15% absorption. HOLD получает score 0 независимо от потенциального upside. Все эффекты — model assumptions.</span></div>'+
     '</section>';
   }
@@ -1370,10 +1370,10 @@
       ]);
       var projection=results[0]&&results[0].data&&results[0].data.projection||{};
       var verify=results[1]&&results[1].data||{};
-      root.innerHTML='<div><div class="drawer-kicker">SERVER CAPITAL AUTHORITY · LIVE PROJECTION</div><h4>POSTGRESQL AUTHORITY · '+(verify.ok?'CHAIN VERIFIED':'CHAIN VERIFICATION FAILED')+'</h4><p>'+h(results[0].data&&results[0].data.events||0)+' immutable events · requested '+h(projection.requested||0)+' · approved '+h(projection.approved||0)+' · net committed '+h(projection.netCommitted||0)+' · spent '+h(projection.spent||0)+'</p></div><div class="capital-authority-kpis"><span>'+h(verify.aggregates||0)+' aggregates</span><span>'+h(verify.events||0)+' verified events</span><span>'+(verify.ok?'INTEGRITY PASS':'INTEGRITY FAIL')+'</span></div>';
+      root.innerHTML='<div><div class="drawer-kicker">СЕРВЕРНЫЙ РЕЕСТР КАПИТАЛА · АКТУАЛЬНАЯ ПРОЕКЦИЯ</div><h4>POSTGRESQL · СЕРВЕРНЫЙ ИСТОЧНИК ИСТИНЫ · '+(verify.ok?'ЦЕПОЧКА ПРОВЕРЕНА':'ОШИБКА ПРОВЕРКИ ЦЕПОЧКИ')+'</h4><p>'+h(results[0].data&&results[0].data.events||0)+' immutable events · requested '+h(projection.requested||0)+' · approved '+h(projection.approved||0)+' · net committed '+h(projection.netCommitted||0)+' · spent '+h(projection.spent||0)+'</p></div><div class="capital-authority-kpis"><span>'+h(verify.aggregates||0)+' aggregates</span><span>'+h(verify.events||0)+' verified events</span><span>'+(verify.ok?'INTEGRITY PASS':'INTEGRITY FAIL')+'</span></div>';
       root.classList.toggle('authority-fail',!verify.ok);
     }catch(e){
-      root.innerHTML='<div><div class="drawer-kicker">SERVER CAPITAL AUTHORITY</div><h4>AUTHORITY NOT ADMITTED</h4><p>'+h(e&&e.message||'capital authority unavailable')+'</p></div><div class="capital-authority-kpis"><span>NO FALLBACK</span><span>POSTGRES REQUIRED</span></div>';
+      root.innerHTML='<div><div class="drawer-kicker">СЕРВЕРНЫЙ РЕЕСТР КАПИТАЛА</div><h4>СЕРВЕРНЫЙ РЕЕСТР НЕ ДОПУЩЕН</h4><p>'+h(e&&e.message||'capital authority unavailable')+'</p></div><div class="capital-authority-kpis"><span>БЕЗ РЕЗЕРВНОЙ ПОДМЕНЫ</span><span>ТРЕБУЕТСЯ POSTGRESQL</span></div>';
       root.classList.add('authority-fail');
     }
   }
@@ -1381,20 +1381,20 @@
   function renderProgrammeCapital(){
     var model=programmeCapitalModel(),rows=programmeRows(),t=programmeTotals(),eco=ecosystemCapital(),blockers=blockerRows(),releasable=releasableRows();
     var stages=[
-      ['REQUESTED',t.requested],['APPROVED',t.approved],['COMMITTED',t.committed],['SPENT',t.spent],['MEASURED',t.measured],['SCALED',t.scaled],['STOPPED',t.stopped]
+      ['ЗАПРОСED',t.requested],['APPROVED',t.approved],['COMMITTED',t.committed],['SPENT',t.spent],['MEASURED',t.measured],['SCALED',t.scaled],['STOPPED',t.stopped]
     ];
     hubContent.innerHTML=
-      '<div class="programme-warning"><b>PROGRAMME CAPITAL CONTROL · DEMO / MODELLED</b><span>Все значения — modelled pilot points. Это не ₽, не фактические расходы и не утверждённый инвестиционный бюджет.</span></div>'+
-      '<section class="programme-head"><div><div class="drawer-kicker">PORTFOLIO-LEVEL CAPITAL GOVERNANCE</div><h3>Где капитал запрошен, закреплён, потрачен, измерен — и что можно перераспределить.</h3><p>Committed-but-unspent отделён от свободного резерва. Освобождение STOP-кейса требует отдельного release decision.</p></div><div class="programme-envelope"><span>PROGRAMME ENVELOPE</span><b>'+h(t.envelope)+'</b><small>modelled points</small></div></section>'+'<section class="capital-authority-status" id="capitalAuthorityStatus"><div><div class="drawer-kicker">SERVER CAPITAL AUTHORITY</div><h4>'+(capitalAuthorityEligible()?'Проверяем authoritative ledger…':'DEMO MODE · AUTHORITY PROTECTED')+'</h4><p>'+(capitalAuthorityEligible()?'Чтение projection и hash-chain verification выполняется только для non-demo Organizer/Staff session.':'Modelled cockpit не подменяет PostgreSQL authority. Demo session не имеет доступа к /v1/capital/* endpoints.')+'</p></div><div class="capital-authority-kpis"><span>POSTGRES ONLY</span><span>APPEND ONLY</span><span>HASH CHAIN</span></div></section>'+
+      '<div class="programme-warning"><b>УПРАВЛЕНИЕ КАПИТАЛОМ ПРОГРАММЫ · ДЕМО / МОДЕЛЬНО</b><span>Все значения — modelled pilot points. Это не ₽, не фактические расходы и не утверждённый инвестиционный бюджет.</span></div>'+
+      '<section class="programme-head"><div><div class="drawer-kicker">УПРАВЛЕНИЕ КАПИТАЛОМ НА УРОВНЕ ПОРТФЕЛЯ</div><h3>Где капитал запрошен, закреплён, потрачен, измерен — и что можно перераспределить.</h3><p>Committed-but-unspent отделён от свободного резерва. Освобождение STOP-кейса требует отдельного release decision.</p></div><div class="programme-envelope"><span>ОБЩИЙ ЛИМИТ ПРОГРАММЫ</span><b>'+h(t.envelope)+'</b><small>modelled points</small></div></section>'+'<section class="capital-authority-status" id="capitalAuthorityStatus"><div><div class="drawer-kicker">СЕРВЕРНЫЙ РЕЕСТР КАПИТАЛА</div><h4>'+(capitalAuthorityEligible()?'Проверяем authoritative ledger…':'DEMO MODE · AUTHORITY PROTECTED')+'</h4><p>'+(capitalAuthorityEligible()?'Чтение projection и hash-chain verification выполняется только для non-demo Organizer/Staff session.':'Modelled cockpit не подменяет PostgreSQL authority. Demo session не имеет доступа к /v1/capital/* endpoints.')+'</p></div><div class="capital-authority-kpis"><span>POSTGRES ONLY</span><span>APPEND ONLY</span><span>HASH CHAIN</span></div></section>'+
       '<div class="programme-stage-grid">'+stages.map(function(x){return '<article><span>'+h(x[0])+'</span><b>'+h(x[1])+'</b></article>';}).join('')+'</div>'+
-      '<div class="programme-capacity-grid"><article><span>UNCOMMITTED RESERVE</span><b>'+h(t.uncommitted)+'</b><small>доступно без снятия commitment</small></article><article><span>COMMITTED · UNSPENT</span><b>'+h(t.committedUnspent)+'</b><small>не свободный капитал</small></article><article><span>EXPLICITLY RELEASED</span><b>'+h(t.released)+'</b><small>освобождено STOP/closed decision</small></article><article><span>REALLOCATION CAPACITY</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases</small></article></div>'+
-      '<section class="programme-ecosystems"><div class="drawer-kicker">MFW / BFS / MADE CAPITAL MAP</div><div>'+eco.map(function(x){return '<article><b>'+h(x.label)+'</b><span>requested '+h(x.requested)+'</span><span>approved '+h(x.approved)+'</span><span>committed '+h(x.committed)+'</span><span>spent '+h(x.spent)+'</span><span>measured '+h(x.measured)+'</span></article>';}).join('')+'</div></section>'+
-      '<section class="programme-table"><div class="programme-row head"><b>PILOT</b><b>VERTICAL</b><b>REQ</b><b>APP</b><b>COM</b><b>SPENT</b><b>STATUS / DECISION</b></div>'+rows.map(function(x){return '<div class="programme-row"><span>'+h(x.action)+'</span><span>'+h(String(x.ecosystem).toUpperCase())+'</span><b>'+h(x.requested)+'</b><b>'+h(x.approved)+'</b><b>'+h(x.committed)+'</b><b>'+h(x.spent)+'</b><em>'+h(ruCode(x.status))+(x.decision?' · '+h(ruCode(x.decision)):'')+'</em></div>';}).join('')+'</section>'+
-      '<div class="programme-lower"><section class="programme-blockers"><div class="drawer-kicker">BLOCKED / AT RISK</div>'+blockers.map(function(x){return '<article><div><span>'+h(String(x.ecosystem).toUpperCase())+' · '+h(x.code)+'</span><b>'+h(x.action)+'</b><small>'+h(x.label)+'</small></div><em>'+h(x.atRisk)+' pts at risk</em></article>';}).join('')+'</section>'+
-      '<section class="programme-evidence"><div class="drawer-kicker">EVIDENCE COMPLETENESS</div>'+rows.map(function(x){var done=x.evidenceComplete;return '<article><span>'+h(x.action)+'</span><b class="'+(done?'done':'pending')+'">'+(done?'ПОЛНО':'НЕПОЛНО')+'</b></article>';}).join('')+'</section></div>'+
-      '<section class="programme-reallocation"><div><div class="drawer-kicker">REALLOCATION OPPORTUNITIES</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
+      '<div class="programme-capacity-grid"><article><span>НЕЗАРЕЗЕРВИРОВАННЫЙ РЕЗЕРВ</span><b>'+h(t.uncommitted)+'</b><small>доступно без снятия commitment</small></article><article><span>ЗАРЕЗЕРВИРОВАНО · НЕ ИСПОЛЬЗОВАНО</span><b>'+h(t.committedUnspent)+'</b><small>не свободный капитал</small></article><article><span>ЯВНО ОСВОБОЖДЕНО</span><b>'+h(t.released)+'</b><small>освобождено STOP/closed decision</small></article><article><span>ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases</small></article></div>'+
+      '<section class="programme-ecosystems"><div class="drawer-kicker">КАРТА КАПИТАЛА MFW / BFS / MADE</div><div>'+eco.map(function(x){return '<article><b>'+h(x.label)+'</b><span>requested '+h(x.requested)+'</span><span>approved '+h(x.approved)+'</span><span>committed '+h(x.committed)+'</span><span>spent '+h(x.spent)+'</span><span>measured '+h(x.measured)+'</span></article>';}).join('')+'</div></section>'+
+      '<section class="programme-table"><div class="programme-row head"><b>ПИЛОТ</b><b>НАПРАВЛЕНИЕ</b><b>ЗАПР.</b><b>ОДОБР.</b><b>РЕЗЕРВ</b><b>ИСП.</b><b>СТАТУС / РЕШЕНИЕ</b></div>'+rows.map(function(x){return '<div class="programme-row"><span>'+h(x.action)+'</span><span>'+h(String(x.ecosystem).toUpperCase())+'</span><b>'+h(x.requested)+'</b><b>'+h(x.approved)+'</b><b>'+h(x.committed)+'</b><b>'+h(x.spent)+'</b><em>'+h(ruCode(x.status))+(x.decision?' · '+h(ruCode(x.decision)):'')+'</em></div>';}).join('')+'</section>'+
+      '<div class="programme-lower"><section class="programme-blockers"><div class="drawer-kicker">БЛОКИРОВКИ / ПОД РИСКОМ</div>'+blockers.map(function(x){return '<article><div><span>'+h(String(x.ecosystem).toUpperCase())+' · '+h(x.code)+'</span><b>'+h(x.action)+'</b><small>'+h(x.label)+'</small></div><em>'+h(x.atRisk)+' pts at risk</em></article>';}).join('')+'</section>'+
+      '<section class="programme-evidence"><div class="drawer-kicker">ПОЛНОТА ДОКАЗАТЕЛЬСТВ</div>'+rows.map(function(x){var done=x.evidenceComplete;return '<article><span>'+h(x.action)+'</span><b class="'+(done?'done':'pending')+'">'+(done?'ПОЛНО':'НЕПОЛНО')+'</b></article>';}).join('')+'</section></div>'+
+      '<section class="programme-reallocation"><div><div class="drawer-kicker">ВОЗМОЖНОСТИ ПЕРЕРАСПРЕДЕЛЕНИЯ</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
       '<div class="reallocation-actions">'+(releasable.length?releasable.map(function(x){var already=Number(programmeReleased[x.intervention]||0)>0;return '<article><span>'+h(x.action)+'</span><b>'+h(x.remaining)+' pts STOP остатка</b><button data-programme-release="'+h(x.intervention)+'" '+(already?'disabled':'')+'>'+(already?'RELEASED':'RELEASE TO POOL')+'</button></article>';}).join(''):'<div class="allocation-no-dossier">Нет STOP-кейсов с неиспользованным commitment.</div>')+'</div></section>'+
-      '<section class="programme-decision"><div><span>RECOMMENDED NEXT MOVE</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>PROGRAMME SIGNAL</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
+      '<section class="programme-decision"><div><span>РЕКОМЕНДУЕМЫЙ СЛЕДУЮЩИЙ ШАГ</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>СИГНАЛ ПО ПРОГРАММЕ</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
       renderReallocationOptimizer()+renderPortfolioScenarioSimulator()+'<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
       '<div class="hub-note">Production-версия должна считать это из immutable approvals, commitments, spend events, measurement snapshots и release decisions. Здесь показан model contract и demo state, а не бухгалтерский ledger.</div>';
     hydrateCapitalAuthorityStatus();
@@ -1410,18 +1410,18 @@
 
   function renderTrustPassportPreview(){
     hubContent.innerHTML=
-      '<div class="trust-preview-banner"><b>TRUST PASSPORT · READ-ONLY PREVIEW</b><span>Explainable trust dimensions only. No universal reputation score and no inferred private attributes.</span></div>'+
-      '<section class="trust-hero"><div><div class="drawer-kicker">NETWORK TRUST PASSPORT</div><h3>Доверие как проверяемые факты, а не «магический рейтинг».</h3><p>Каждый статус связан с источником, периодом и возможностью ревокации. Новому участнику без истории показывается neutral / no-history, а не низкая оценка.</p></div><div class="trust-credential"><span>DEMO CREDENTIAL</span><b>MFW VERIFIED BUYER</b><small>issuer · scope · issued_at · review date · status</small></div></section>'+
+      '<div class="trust-preview-banner"><b>ПАСПОРТ ДОВЕРИЯ · ПРЕДПРОСМОТР ТОЛЬКО ДЛЯ ЧТЕНИЯ</b><span>Explainable trust dimensions only. No universal reputation score and no inferred private attributes.</span></div>'+
+      '<section class="trust-hero"><div><div class="drawer-kicker">СЕТЕВОЙ ПАСПОРТ ДОВЕРИЯ</div><h3>Доверие как проверяемые факты, а не «магический рейтинг».</h3><p>Каждый статус связан с источником, периодом и возможностью ревокации. Новому участнику без истории показывается neutral / no-history, а не низкая оценка.</p></div><div class="trust-credential"><span>ДЕМОНСТРАЦИОННОЕ ПОДТВЕРЖДЕНИЕ</span><b>ПОДТВЕРЖДЁННЫЙ БАЙЕР MFW</b><small>issuer · scope · issued_at · review date · status</small></div></section>'+
       '<div class="trust-dimension-grid">'+
-        '<article><small>IDENTITY</small><b>Verified identity</b><span>Source: registration authority</span><em>DEMO / EXPLAINABLE</em></article>'+
-        '<article><small>ROLE</small><b>Buyer role</b><span>Source: event accreditation</span><em>EVENT-SCOPED</em></article>'+
-        '<article><small>PARTICIPATION</small><b>Event history</b><span>MFW / BFS participation only when evidenced</span><em>HISTORICAL</em></article>'+
-        '<article><small>MEETINGS</small><b>Reliability</b><span>Shown as numerator / denominator / period</span><em>NO OPAQUE SCORE</em></article>'+
-        '<article><small>ORGANISATION</small><b>Verified affiliation</b><span>Organisation membership with freshness</span><em>REVOCABLE</em></article>'+
-        '<article><small>COMMERCIAL</small><b>Outcome evidence</b><span>Observed / Reported / Verified remain separate</span><em>NO CREDIT INFERENCE</em></article>'+
+        '<article><small>ИДЕНТИЧНОСТЬ</small><b>Подтверждённая идентичность</b><span>Источник: серверный реестр регистраций</span><em>DEMO / EXPLAINABLE</em></article>'+
+        '<article><small>ROLE</small><b>Роль байера</b><span>Source: event accreditation</span><em>EVENT-SCOPED</em></article>'+
+        '<article><small>PARTICIPATION</small><b>История участия</b><span>MFW / BFS participation only when evidenced</span><em>HISTORICAL</em></article>'+
+        '<article><small>ВСТРЕЧАS</small><b>Надёжность встреч</b><span>Shown as numerator / denominator / period</span><em>NO OPAQUE ОЦЕНКА</em></article>'+
+        '<article><small>ORGANISATION</small><b>Подтверждённая связь с организацией</b><span>Organisation membership with freshness</span><em>REVOCABLE</em></article>'+
+        '<article><small>COMMERCIAL</small><b>Доказательство результата</b><span>Observed / Reported / Verified remain separate</span><em>NO CREDIT INFERENCE</em></article>'+
       '</div>'+
-      '<section class="trust-rules"><div><b>WHAT THIS ENABLES</b><span>Verified directory · trust-aware matchmaking · portable credential handoff</span></div><div><b>WHAT IT NEVER DOES</b><span>No wealth, creditworthiness, politics, ethnicity, hidden intent or universal reputation score.</span></div></section>'+
-      '<div class="trust-flow"><span>IDENTITY / ORG</span><i>→</i><span>EVENT HISTORY</span><i>→</i><span>MEETING EVIDENCE</span><i>→</i><span>CREDENTIAL</span><i>→</i><span>VERIFIED DIRECTORY</span></div>'+
+      '<section class="trust-rules"><div><b>ЧТО ЭТО ДАЁТ</b><span>Verified directory · trust-aware matchmaking · portable credential handoff</span></div><div><b>ЧЕГО ЭТО НЕ ДЕЛАЕТ</b><span>No wealth, creditworthiness, politics, ethnicity, hidden intent or universal reputation score.</span></div></section>'+
+      '<div class="trust-flow"><span>ИДЕНТИЧНОСТЬ / ORG</span><i>→</i><span>EVENT HISTORY</span><i>→</i><span>ВСТРЕЧА ДОКАЗАТЕЛЬСТВА</span><i>→</i><span>CREDENTIAL</span><i>→</i><span>ПОДТВЕРЖДЁННЫЙ КАТАЛОГ</span></div>'+
       '<div class="hub-note">Preview only: production issuer/status registry, revocation and portable credentials remain dependency-gated behind durable identity, PostgreSQL history and policy review.</div>';
   }
 
