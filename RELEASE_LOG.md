@@ -349,3 +349,18 @@ Added multi-dimensional investor analytics filters to Portfolio View:
 - responsive QA for filtered calculations and reset behavior.
 
 All filtered values remain synthetic scenario data and are not production KPI.
+
+## 2026-10-06 — Comparison / Scenario Mode
+
+Added side-by-side investor scenario comparison:
+
+- independent A/B filter sets;
+- MFW vs BFS preset;
+- CIS vs GCC preset;
+- new vs returning preset;
+- conversion, retention and revenue-evidence rates;
+- percentage-point deltas;
+- responsive comparison layout;
+- Russian-first Control Tower labels and filters.
+
+All comparison outputs remain deterministic synthetic scenario metrics, not production KPI or causal conclusions.
