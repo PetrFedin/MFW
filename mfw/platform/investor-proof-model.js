@@ -170,6 +170,86 @@
         ]
       }
     },
+    interventionCatalog:[
+      {
+        id:'professional-discovery',
+        metric:'qualifiedRate',
+        stage:'AUDIENCE → QUALIFIED BUYER',
+        action:'Усилить professional discovery и qualification',
+        hypothesis:'Более точная роль, category intent и buyer objectives должны повысить долю квалифицированных профессиональных пользователей.',
+        kpi:'Audience → Qualified Buyer',
+        evidenceNeeded:['versioned qualification rules','explicit buyer-role / objective events','pre/post cohort assignment','qualified-buyer event with reason codes'],
+        pilot:'A/B или phased rollout qualification rules',
+        leverage:1.00,
+        effort:2,
+        owner:'Product + Professional Experience'
+      },
+      {
+        id:'matchmaking-optimizer',
+        metric:'meetingRate',
+        stage:'QUALIFIED BUYER → MEETING',
+        action:'Усилить matchmaking и agenda-slot optimizer',
+        hypothesis:'Reason codes, bilateral objectives и conflict-free slots должны повысить долю qualified buyers, доходящих до подтверждённой встречи.',
+        kpi:'Qualified Buyer → Meeting',
+        evidenceNeeded:['match proposal event','reason codes','bilateral accept/decline','agenda conflict state','meeting held evidence'],
+        pilot:'Controlled matcher/slotting experiment',
+        leverage:1.15,
+        effort:3,
+        owner:'B2B Product + Operations'
+      },
+      {
+        id:'meeting-intent-pack',
+        metric:'intentRate',
+        stage:'MEETING → INTENT',
+        action:'Добавить buyer-ready meeting pack',
+        hypothesis:'Line sheet, MOQ, delivery window, category fit и structured meeting brief должны увеличить явный commercial intent после встречи.',
+        kpi:'Meeting → Commercial Intent',
+        evidenceNeeded:['meeting held event','pack opened/version','structured request type','request timestamp','buyer/brand identities'],
+        pilot:'Meeting pack pilot on eligible meetings',
+        leverage:1.25,
+        effort:2,
+        owner:'Brand Success + Buyer Experience'
+      },
+      {
+        id:'deal-room-sla',
+        metric:'dealRate',
+        stage:'INTENT → DEAL-STAGE',
+        action:'Ввести Deal Room SLA и readiness checklist',
+        hypothesis:'Структурированные документы, availability, MOQ и SLA ответа должны сократить потери между intent и deal-stage.',
+        kpi:'Commercial Intent → Deal-stage',
+        evidenceNeeded:['Deal Room opened','required-document checklist','response SLA timestamps','request/response state','external handoff or deal-stage evidence'],
+        pilot:'SLA + readiness workflow pilot',
+        leverage:1.30,
+        effort:3,
+        owner:'Commercial Product + Brand Operations'
+      },
+      {
+        id:'brand365-retention',
+        metric:'retentionRate',
+        stage:'INTENT → D30/D90/D365',
+        action:'Запустить сегментированные Brand365 follow-up journeys',
+        hypothesis:'Opt-in follow-up, reminders и professional continuity должны увеличить удержание после intent.',
+        kpi:'Intent → D30/D90/D365 Retention',
+        evidenceNeeded:['consent/opt-in','journey assignment','follow-up delivery event','repeat professional action','canonical identity continuity'],
+        pilot:'Holdout lifecycle experiment',
+        leverage:1.10,
+        effort:2,
+        owner:'CRM + Brand365'
+      },
+      {
+        id:'outcome-verification',
+        metric:'revenueEvidenceRate',
+        stage:'DEAL-STAGE → REVENUE EVIDENCE',
+        action:'Встроить outcome verification и finance linkage',
+        hypothesis:'Стандартизированный внешний outcome reference и billing linkage должны увеличить долю deal-stage кейсов с доказанным commercial outcome.',
+        kpi:'Deal-stage → Revenue Evidence',
+        evidenceNeeded:['external outcome reference','evidence class','contract/billing reference where applicable','verification actor','settlement/payment evidence where applicable'],
+        pilot:'Verification workflow with selected partners',
+        leverage:1.20,
+        effort:4,
+        owner:'Commercial Ops + Finance + Data Governance'
+      }
+    ],
     partnerConsole:[
       {stage:'PACKAGE',owner:'Partner / organiser',proof:'Signed scope / package',revenueGate:'Contract'},
       {stage:'INVENTORY',owner:'Organiser',proof:'Approved placement inventory',revenueGate:'No revenue yet'},
