@@ -715,3 +715,26 @@ Governance constraints apply before ranking:
 The simulator shows the top five eligible mixes for 20/30-point budgets and all available mixes for a 10-point budget. A pure Reserve scenario is included, so optionality is an explicit portfolio decision rather than an accidental capacity remainder.
 
 All risk reduction and KPI values are model assumptions. They are not guaranteed outcomes, currency or ROI.
+
+## Portfolio Proposal Handoff — 2026-10-06
+
+The best Portfolio Scenario Simulator mix can now be handed directly into the Investment Committee Workspace as a demo Portfolio Allocation Proposal.
+
+Flow:
+
+Portfolio Scenario Simulator -> Best Mix -> Portfolio Allocation Proposal -> Review -> Approved Demo Allocation.
+
+The proposal includes:
+
+- selected programme budget;
+- MFW / BFS / Made / Reserve mix;
+- modelled portfolio score;
+- modelled risk relief;
+- modelled KPI leverage;
+- proposal status.
+
+Proposal state is in-memory demo state only:
+
+DRAFT -> IN_REVIEW -> APPROVED_DEMO.
+
+This handoff does not create commitments, accounting entries or corporate approvals. Production implementation requires server-side actors, immutable proposal/approval history, approval authority and linkage to programme commitment records.
