@@ -536,6 +536,49 @@ test('Capital Reallocation Optimizer capacity follows explicit programme release
   await expectNoDocumentOverflow(page);
 });
 
+test('Portfolio Scenario Simulator ranks eligible capital mixes for 10 20 30 point budgets', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.getByText(/PORTFOLIO SCENARIO SIMULATOR/)).toBeVisible();
+  await expect(page.locator('.simulator-budgets button')).toHaveCount(3);
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
+  await expect(page.locator('.simulator-row.best')).toHaveCount(1);
+  await expect(page.locator('.simulator-table')).not.toContainText('MADE');
+  await expect(page.locator('.simulator-method')).toContainText('HOLD candidates cannot receive new capital');
+
+  const best30 = await page.locator('.simulator-row.best span').textContent();
+  await page.locator('[data-sim-budget="10"]').click();
+  await expect(page.getByRole('heading', { name: /Как распределить 10 points/ })).toBeVisible();
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(2);
+  const best10 = await page.locator('.simulator-row.best span').textContent();
+
+  await page.locator('[data-sim-budget="20"]').click();
+  await expect(page.getByRole('heading', { name: /Как распределить 20 points/ })).toBeVisible();
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(4);
+  const best20 = await page.locator('.simulator-row.best span').textContent();
+
+  expect(best30).toBeTruthy();
+  expect(best20).toBeTruthy();
+  expect(best10).toBeTruthy();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-scenario-simulator.png') });
+});
+
+test('Portfolio Scenario Simulator preserves reserve optionality and capacity rules', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await page.locator('[data-sim-budget="30"]').click();
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
+  await expect(page.locator('.simulator-table')).toContainText('RESERVE');
+  await expect(page.locator('.simulator-method')).toContainText('Unallocated budget remains reserve and preserves optionality');
+  await expect(page.locator('.simulator-method')).toContainText('No vertical can receive more than its absorption cap');
+  await expectNoDocumentOverflow(page);
+});
+
 test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
