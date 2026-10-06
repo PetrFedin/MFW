@@ -283,6 +283,18 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "server_capital_authority",
+      "claim": "The backend includes a PostgreSQL-only append-only Capital Authority with immutable ledger events, authenticated non-demo actors, idempotency, per-aggregate sequencing, hash-chain verification, evidence references and domain invariants for approvals, commitments, releases, spend, measurements and decisions.",
+      "status": "implemented_not_production_admitted",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw-api/migrations/022_capital_authority.sql",
+        "mfw-api/server-v2.js",
+        "mfw-api/capital-authority-contract.test.js",
+        "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
+      ]
     }
   ],
   "rules": [
@@ -499,6 +511,35 @@
       ],
       "persistence": "in-memory demo session only",
       "boundary": "No commitment, accounting entry or production corporate approval is created."
+    },
+    "capitalAuthority": {
+      "persistence": "postgres_only",
+      "migration": "022_capital_authority.sql",
+      "eventTypes": [
+        "REQUEST_RECORDED",
+        "APPROVAL_RECORDED",
+        "COMMITMENT_RECORDED",
+        "RELEASE_RECORDED",
+        "SPEND_RECORDED",
+        "MEASUREMENT_RECORDED",
+        "DECISION_RECORDED"
+      ],
+      "writeAuthority": "authenticated non-demo Organizer/Staff",
+      "integrity": [
+        "append-only trigger",
+        "idempotency key",
+        "aggregate sequence",
+        "previous_event_hash",
+        "SHA-256 event_hash",
+        "verification endpoint"
+      ],
+      "api": [
+        "POST /v1/capital/events",
+        "GET /v1/capital/ledger",
+        "GET /v1/capital/projection",
+        "GET /v1/capital/verify"
+      ],
+      "boundary": "Implemented in repository but not production-admitted until PostgreSQL migration 022 and deployed exact-SHA verification are green."
     }
   },
   "language": {
