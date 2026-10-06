@@ -250,6 +250,33 @@
         owner:'Commercial Ops + Finance + Data Governance'
       }
     ],
+    investmentCommittee:{
+      label:'DEMO / SYNTHETIC WORKSPACE',
+      budgetUnit:'pilot points',
+      approvalRequirements:[
+        'named owner',
+        'explicit budget request',
+        'baseline KPI and modelled target',
+        'evidence plan',
+        'pilot design',
+        'risk / stop criteria'
+      ],
+      states:['DRAFT','IN_REVIEW','APPROVED','PILOT_RUNNING','MEASURED','DECIDED'],
+      decisions:['SCALE','ITERATE','STOP'],
+      resultProfiles:{
+        'professional-discovery':1.05,
+        'matchmaking-optimizer':0.72,
+        'meeting-intent-pack':1.10,
+        'deal-room-sla':0.55,
+        'brand365-retention':0.65,
+        'outcome-verification':-0.15
+      },
+      governance:{
+        scale:'Measured KPI meets/exceeds modelled target and evidence gate is complete.',
+        iterate:'Measured KPI improves vs baseline but misses modelled target, or evidence quality remains incomplete.',
+        stop:'Measured KPI does not improve vs baseline, material guardrail breaks, or evidence quality is insufficient.'
+      }
+    },
     partnerConsole:[
       {stage:'PACKAGE',owner:'Partner / organiser',proof:'Signed scope / package',revenueGate:'Contract'},
       {stage:'INVENTORY',owner:'Organiser',proof:'Approved placement inventory',revenueGate:'No revenue yet'},
