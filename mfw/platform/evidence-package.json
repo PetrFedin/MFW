@@ -157,6 +157,17 @@
         "mfw/platform/investor-proof-model.js",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "portfolio_drilldown",
+      "claim": "Portfolio funnel stages drill down into ecosystem cohort composition and representative dossiers, then into per-transition evidence references.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -191,6 +202,24 @@
     "caseStages": 12,
     "portfolioStages": 8,
     "syntheticCases": 3,
-    "boundary": "Portfolio counts and dossier scenarios are illustrative/synthetic unless separately evidenced by production authority."
+    "boundary": "Portfolio counts and dossier scenarios are illustrative/synthetic unless separately evidenced by production authority.",
+    "drilldown": {
+      "stages": [
+        "AUDIENCE",
+        "ENGAGEMENT",
+        "QUALIFIED BUYER",
+        "MEETING",
+        "INTENT",
+        "DEAL",
+        "RETENTION",
+        "REVENUE EVIDENCE"
+      ],
+      "ecosystems": [
+        "MFW",
+        "BFS",
+        "MADE"
+      ],
+      "boundary": "Aggregate synthetic cohort counts are not materialised row-level production records; only linked representative demo dossiers are navigable."
+    }
   }
 }
