@@ -717,12 +717,107 @@
       return '<article><span>'+h(m.label)+'</span><b>'+h(av)+'% vs '+h(bv)+'%</b><small>'+h(winner)+' · '+h(diffPp(av,bv))+' A к B</small></article>';
     }).join('');
   }
+  function rateRaw(n,d){return d?(Number(n||0)/Number(d)*100):0;}
+  function metricSpecs(){
+    return [
+      {key:'qualifiedRate',label:'Audience → qualified buyer',num:'qualifiedBuyer',den:'audience',inspect:'Проверить discovery, capture явного интереса и критерии qualification.'},
+      {key:'meetingRate',label:'Qualified buyer → meeting',num:'meeting',den:'qualifiedBuyer',inspect:'Проверить reason codes matchmaking, доступность слотов и bilateral acceptance.'},
+      {key:'intentRate',label:'Meeting → intent',num:'intent',den:'meeting',inspect:'Проверить качество встречи, category fit, line sheet и delivery information.'},
+      {key:'dealRate',label:'Intent → deal-stage',num:'deal',den:'intent',inspect:'Проверить Deal Room SLA, документы, MOQ, availability и скорость ответа бренда.'},
+      {key:'retentionRate',label:'Intent → retention',num:'retention',den:'intent',inspect:'Проверить Brand365 opt-in, follow-up journeys и причины повторного профессионального действия.'},
+      {key:'revenueEvidenceRate',label:'Deal-stage → revenue evidence',num:'revenueEvidence',den:'deal',inspect:'Проверить external outcome verification, contract/billing linkage и settlement evidence.'}
+    ];
+  }
+  function rowValue(row,key,filters){
+    if(key==='retention')return Number((row.retention||{})[(filters&&filters.retention)||'D30']||0);
+    return Number(row[key]||0);
+  }
+  function metricRawForRows(rows,spec,filters){
+    var n=rows.reduce(function(s,r){return s+rowValue(r,spec.num,filters);},0);
+    var d=rows.reduce(function(s,r){return s+rowValue(r,spec.den,filters);},0);
+    return {num:n,den:d,rate:rateRaw(n,d)};
+  }
+  function opportunityGap(){
+    var rowsA=portfolioCohortsFor(scenarioA),rowsB=portfolioCohortsFor(scenarioB);
+    var ranked=metricSpecs().map(function(spec){
+      var a=metricRawForRows(rowsA,spec,scenarioA),b=metricRawForRows(rowsB,spec,scenarioB);
+      return {spec:spec,a:a,b:b,gap:a.rate-b.rate,abs:Math.abs(a.rate-b.rate)};
+    }).sort(function(x,y){return y.abs-x.abs;});
+    return {ranked:ranked,target:ranked[0]||null};
+  }
+  function decompositionForDimension(dim,spec){
+    var rowsA=portfolioCohortsFor(scenarioA),rowsB=portfolioCohortsFor(scenarioB);
+    var all=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.cohorts)||[];
+    var values=Array.from(new Set(all.map(function(x){return x[dim];}))).filter(Boolean);
+    var totalA=metricRawForRows(rowsA,spec,scenarioA),totalB=metricRawForRows(rowsB,spec,scenarioB);
+    return values.map(function(v){
+      var aRows=rowsA.filter(function(x){return x[dim]===v;}),bRows=rowsB.filter(function(x){return x[dim]===v;});
+      var a=metricRawForRows(aRows,spec,scenarioA),b=metricRawForRows(bRows,spec,scenarioB);
+      var shareA=totalA.den?a.den/totalA.den:0,shareB=totalB.den?b.den/totalB.den:0;
+      var ra=a.den?a.rate/100:0,rb=b.den?b.rate/100:0;
+      var mix=(shareA-shareB)*((ra+rb)/2)*100;
+      var within=((shareA+shareB)/2)*(ra-rb)*100;
+      return {value:v,aRate:a.rate,bRate:b.rate,aDen:a.den,bDen:b.den,mix:mix,within:within,total:mix+within};
+    }).filter(function(x){return x.aDen||x.bDen;}).sort(function(x,y){return Math.abs(y.total)-Math.abs(x.total);});
+  }
+  function formatOne(v){var n=Math.round(Number(v||0)*10)/10;return (n>0?'+':'')+n.toFixed(1)+' п.п.';}
+  function explanationDimension(title,dim,target){
+    if(!target)return '';
+    var rows=decompositionForDimension(dim,target.spec),directA=scenarioA[dim],directB=scenarioB[dim];
+    var axisNote=(directA!=='all'&&directB!=='all'&&directA!==directB)?'<div class="explain-axis-note">Эта размерность уже задаёт ось сравнения: A = '+h(ruOption(dim,directA))+'; B = '+h(ruOption(dim,directB))+'. Разложение ниже показывает математический вклад доступных сегментов, но не причинность.</div>':'';
+    return '<section class="explain-dimension"><div class="drawer-kicker">'+h(title)+'</div>'+axisNote+
+      '<div class="explain-driver-list">'+rows.map(function(x){return '<article><div><span>'+h(ruOption(dim,x.value))+'</span><b>'+Math.round(x.aRate)+'% A · '+Math.round(x.bRate)+'% B</b></div><div><small>mix '+h(formatOne(x.mix))+'</small><small>within '+h(formatOne(x.within))+'</small><em>'+h(formatOne(x.total))+'</em></div></article>';}).join('')+'</div></section>';
+  }
+  function retentionExplanation(){
+    var rowsA=portfolioCohortsFor(scenarioA),rowsB=portfolioCohortsFor(scenarioB),periods=['D30','D90','D365'];
+    var items=periods.map(function(period){
+      var fa=Object.assign({},scenarioA,{retention:period}),fb=Object.assign({},scenarioB,{retention:period});
+      var a=metricRawForRows(rowsA,{num:'retention',den:'intent'},fa),b=metricRawForRows(rowsB,{num:'retention',den:'intent'},fb);
+      return {period:period,a:a.rate,b:b.rate,gap:a.rate-b.rate};
+    });
+    var top=items.slice().sort(function(x,y){return Math.abs(y.gap)-Math.abs(x.gap);})[0];
+    return '<section class="explain-retention"><div class="drawer-kicker">RETENTION HORIZON</div><div class="retention-compare">'+items.map(function(x){return '<article class="'+(top&&top.period===x.period?'active':'')+'"><span>'+x.period+'</span><b>'+Math.round(x.a)+'% A · '+Math.round(x.b)+'% B</b><small>Δ '+h(formatOne(x.gap))+'</small></article>';}).join('')+'</div><div class="hub-note">Максимальный retention-gap в этом сравнении: '+h(top?top.period:'—')+'. Он рассчитан относительно intent cohort каждого сценария.</div></section>';
+  }
+  function caseMatchesScenario(x,filters){
+    var t=x.portfolioTags||{};
+    return (filters.period==='all'||t.period===filters.period)&&
+      (filters.ecosystem==='all'||t.ecosystem===filters.ecosystem)&&
+      (filters.market==='all'||t.market===filters.market)&&
+      (filters.category==='all'||t.category===filters.category)&&
+      (filters.buyerType==='all'||t.buyerType===filters.buyerType)&&
+      (filters.evidence==='all'||t.evidence===filters.evidence)&&
+      (filters.revenueSurface==='all'||t.revenueSurface===filters.revenueSurface);
+  }
+  function dossierStepForMetric(x,target,filters){
+    if(!x||!target)return null;
+    var wanted=target.spec.key==='qualifiedRate'?'RECOMMENDED':target.spec.key==='meetingRate'?'MEETING HELD':target.spec.key==='intentRate'?'INTENT':target.spec.key==='dealRate'?'DEAL ROOM':target.spec.key==='retentionRate'?((filters.retention||'D30').replace('D','')+' DAYS'):'HANDOFF';
+    return (x.dossier||[]).filter(function(d){return d.stage===wanted;})[0]||(x.dossier||[])[x.dossier.length-1]||null;
+  }
+  function representativeExplanation(target){
+    var cases=controlTowerModel().cases||[];
+    function side(label,filters){
+      var rows=cases.filter(function(x){return caseMatchesScenario(x,filters);}).slice(0,2);
+      return '<div class="explain-dossiers-side"><div class="drawer-kicker">'+label+'</div>'+(rows.length?rows.map(function(x){var step=dossierStepForMetric(x,target,filters);return '<article><div><span>'+h(x.label)+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small><code>'+h(step&&step.ref||'—')+'</code></div><button data-explanation-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></article>';}).join(''):'<div class="explain-empty">Для этого synthetic slice нет материализованного representative dossier. Агрегат не превращается в выдуманные row-level кейсы.</div>')+'</div>';
+    }
+    return '<section class="explain-dossiers"><div class="drawer-kicker">REPRESENTATIVE EVIDENCE</div><div class="explain-dossiers-grid">'+side('СЦЕНАРИЙ A',scenarioA)+side('СЦЕНАРИЙ B',scenarioB)+'</div></section>';
+  }
+  function renderOpportunityExplanation(){
+    var gap=opportunityGap(),target=gap.target;if(!target)return '';
+    var leader=target.gap===0?'Разрыва нет':target.gap>0?'Сценарий A':'Сценарий B';
+    return '<section class="opportunity-explanation">'+
+      '<div class="opportunity-head"><div><div class="drawer-kicker">OPPORTUNITY EXPLANATION · МАТЕМАТИЧЕСКОЕ РАЗЛОЖЕНИЕ</div><h4>'+h(leader)+' · крупнейший gap: '+h(target.spec.label)+'</h4><p>A '+Math.round(target.a.rate)+'% · B '+Math.round(target.b.rate)+'% · Δ '+h(formatOne(target.gap))+'. Ниже показано, из каких наблюдаемых компонентов synthetic cohort cube складывается разница.</p></div><div class="opportunity-action"><span>ЧТО ПРОВЕРИТЬ</span><b>'+h(target.spec.inspect)+'</b></div></div>'+
+      '<div class="gap-waterfall">'+gap.ranked.map(function(x){return '<article><span>'+h(x.spec.label)+'</span><b>'+Math.round(x.a.rate)+'% / '+Math.round(x.b.rate)+'%</b><small>'+h(formatOne(x.gap))+'</small><i style="width:'+Math.min(100,Math.round(x.abs))+'%"></i></article>';}).join('')+'</div>'+
+      '<div class="explain-dim-grid">'+explanationDimension('ВКЛАД КАТЕГОРИЙ','category',target)+explanationDimension('ВКЛАД РЫНКОВ','market',target)+'</div>'+
+      retentionExplanation()+representativeExplanation(target)+
+      '<div class="explain-method"><b>Метод</b><span>Для категорий и рынков общий rate-gap раскладывается симметрично на composition/mix effect и within-segment rate effect. Их сумма воспроизводит разницу A−B с округлением. Это бухгалтерское математическое разложение, а не causal attribution.</span></div>'+
+    '</section>';
+  }
   function renderComparisonMode(){
     return '<div class="comparison-warning"><b>СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ</b><span>Сравнение показывает различия в cohort cube. Оно не доказывает причинность и не является production KPI.</span></div>'+
       '<div class="comparison-presets"><button data-comparison-preset="mfw-bfs">MFW vs BFS</button><button data-comparison-preset="cis-gcc">СНГ vs GCC</button><button data-comparison-preset="new-returning">Новые vs возвращающиеся</button><button data-comparison-reset>СБРОСИТЬ</button></div>'+
       '<div class="scenario-grid">'+scenarioPanel('a','СЦЕНАРИЙ A')+scenarioPanel('b','СЦЕНАРИЙ B')+'</div>'+
       '<section class="comparison-result"><div class="drawer-kicker">СРАВНЕНИЕ КЛЮЧЕВЫХ КОНВЕРСИЙ</div><div class="comparison-metrics">'+comparisonInsight()+'</div>'+
-      '<div class="hub-note">«Сильнее» здесь означает более высокий рассчитанный показатель внутри выбранного synthetic slice. Это не причинный вывод о том, почему один рынок или event лучше другого.</div></section>';
+      '<div class="hub-note">«Сильнее» здесь означает более высокий рассчитанный показатель внутри выбранного synthetic slice. Это не причинный вывод о том, почему один рынок или event лучше другого.</div></section>'+renderOpportunityExplanation();
   }
   function bindComparison(){
     [].slice.call(document.querySelectorAll('[data-scenario-side]')).forEach(function(s){s.onchange=function(){var target=s.dataset.scenarioSide==='a'?scenarioA:scenarioB;target[s.dataset.scenarioKey]=s.value;renderInvestorProof();};});
@@ -735,6 +830,7 @@
       renderInvestorProof();
     };});
     var reset=document.querySelector('[data-comparison-reset]');if(reset)reset.onclick=function(){scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
+    [].slice.call(document.querySelectorAll('[data-explanation-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.explanationDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
   }
   function portfolioStageData(stage){
     var fp=filteredPortfolio(),row=(fp.funnel||[]).filter(function(x){return x.stage===stage;})[0];
