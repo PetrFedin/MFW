@@ -479,3 +479,15 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .retention-tower article.active,.portfolio-revenue article.active{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
 @media(max-width:900px){.portfolio-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.portfolio-filters{grid-template-columns:1fr}.portfolio-filters>button{min-height:44px}.portfolio-filters select{min-height:44px}}
+
+
+/* Comparison / Scenario Mode · RU default · 2026-10-06 */
+.comparison-warning{display:grid;gap:5px;margin:12px 0;padding:12px 14px;border:1px solid #d85cff;background:rgba(216,92,255,.06)}
+.comparison-warning b{font-size:8px;letter-spacing:.1em;color:#d85cff}.comparison-warning span{font-size:8px;line-height:1.45}
+.comparison-presets{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}.comparison-presets button{border:1px solid currentColor;background:transparent;color:inherit;padding:9px 11px;min-height:38px;font-size:8px;font-weight:950}
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scenario-panel{border:1px solid rgba(127,127,127,.26);padding:13px}.scenario-title{display:grid;gap:4px;margin-bottom:10px}.scenario-title span{font-size:7px;font-weight:950;letter-spacing:.1em;opacity:.55}.scenario-title b{font-size:18px}
+.scenario-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.scenario-filters label{display:grid;gap:4px}.scenario-filters span{font-size:7px;font-weight:900;opacity:.55}.scenario-filters select{min-height:36px;border:1px solid rgba(127,127,127,.26);background:transparent;color:inherit;padding:6px 8px;font-size:8px}
+.scenario-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px}.scenario-kpis article{border:1px solid rgba(127,127,127,.2);padding:9px}.scenario-kpis span{display:block;font-size:7px;opacity:.6}.scenario-kpis b{display:block;font-size:18px;margin-top:5px}
+.comparison-result{margin-top:12px;border:1px solid rgba(127,127,127,.26);padding:13px}.comparison-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.comparison-metrics article{border:1px solid rgba(127,127,127,.2);padding:10px;display:grid;gap:5px}.comparison-metrics span{font-size:7px;font-weight:900;line-height:1.35}.comparison-metrics b{font-size:15px}.comparison-metrics small{font-size:7px;line-height:1.4;opacity:.6}
+@media(max-width:900px){.scenario-grid{grid-template-columns:1fr}.comparison-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.scenario-filters,.scenario-kpis,.comparison-metrics{grid-template-columns:1fr}.comparison-presets{display:grid;grid-template-columns:1fr 1fr}.comparison-presets button{min-height:44px}}
