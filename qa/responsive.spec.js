@@ -493,6 +493,49 @@ test('Programme Capital Control requires explicit release before STOP commitment
   await expectNoDocumentOverflow(page);
 });
 
+test('Capital Reallocation Optimizer compares 10 20 30 point tranches with evidence gates', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.getByText(/CAPITAL REALLOCATION OPTIMIZER/)).toBeVisible();
+  await expect(page.locator('.optimizer-tranches button')).toHaveCount(3);
+  await expect(page.locator('.optimizer-card')).toHaveCount(3);
+  await expect(page.locator('.optimizer-card.ready')).toHaveCount(1);
+  await expect(page.locator('.optimizer-card.conditional')).toHaveCount(1);
+  await expect(page.locator('.optimizer-card.hold')).toHaveCount(1);
+  await expect(page.locator('.optimizer-card.hold')).toContainText('Сделано в Москве');
+  await expect(page.locator('.optimizer-card.hold')).toContainText('HOLD');
+
+  await expect(page.locator('.optimizer-recommendation').first()).toContainText('MFW');
+  await expect(page.locator('.optimizer-capacity b')).toHaveText('50');
+
+  await page.locator('[data-optimizer-tranche="20"]').click();
+  await expect(page.getByRole('heading', { name: /Куда направить следующие 20 points/ })).toBeVisible();
+  await expect(page.locator('[data-optimizer-tranche="20"]')).toHaveClass(/active/);
+  await expect(page.locator('.optimizer-card').filter({ hasText: 'BFS' })).toContainText('20 / 20');
+
+  await page.locator('[data-optimizer-tranche="30"]').click();
+  await expect(page.getByRole('heading', { name: /Куда направить следующие 30 points/ })).toBeVisible();
+  await expect(page.locator('.optimizer-card').filter({ hasText: 'BFS' })).toContainText('20 / 30');
+  await expect(page.locator('.optimizer-card').filter({ hasText: 'Сделано в Москве' })).toContainText('10 / 30');
+  await expect(page.locator('.optimizer-method')).toContainText('HOLD получает score 0');
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('capital-reallocation-optimizer.png') });
+});
+
+test('Capital Reallocation Optimizer capacity follows explicit programme releases', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.locator('.optimizer-capacity b')).toHaveText('50');
+  await page.locator('[data-programme-release="deal-room-sla"]').click();
+  await expect(page.locator('.optimizer-capacity b')).toHaveText('53');
+  await expect(page.locator('.optimizer-recommendation')).toContainText(/Optimizer не утверждает capital|MODELLED RECOMMENDATION/);
+  await expectNoDocumentOverflow(page);
+});
+
 test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
