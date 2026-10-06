@@ -479,3 +479,22 @@ Connected Portfolio Scenario Simulator to Investment Committee Workspace:
 - PWA cache rotated to p5.
 
 Portfolio proposal approvals remain demo-session state only.
+
+## 2026-10-06 — Immutable Capital Authority
+
+Added the enterprise capital authority foundation:
+
+- migration 022_capital_authority.sql;
+- append-only capital_ledger_events;
+- DB trigger blocking UPDATE / DELETE / TRUNCATE;
+- per-aggregate sequence and SHA-256 hash chain;
+- concurrent idempotency protection with advisory transaction lock;
+- non-demo Organizer/Staff actor requirement;
+- PostgreSQL-only fail-closed API;
+- request / approval / commitment / release / spend / measurement / decision events;
+- server-side capital state invariants;
+- ledger / projection / chain verification endpoints;
+- capital authority contract test;
+- mfw-api foundation checks added to PR CI.
+
+No frontend modelled capital value is promoted to production truth by this change alone.
