@@ -41,6 +41,21 @@
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
+  function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
+  function ruCode(value){
+    var v=String(value==null?'':value).toUpperCase();
+    var map={
+      READY:'ГОТОВО',CONDITIONAL:'УСЛОВНО',HOLD:'ПАУЗА',
+      SCALE:'МАСШТАБИРОВАТЬ',ITERATE:'ДОРАБОТАТЬ',STOP:'ОСТАНОВИТЬ',
+      DRAFT:'ЧЕРНОВИК',IN_REVIEW:'НА РАССМОТРЕНИИ',APPROVED:'ОДОБРЕНО',
+      APPROVED_DEMO:'ОДОБРЕНО В ДЕМО',PILOT_RUNNING:'ПИЛОТ ИДЁТ',MEASURED:'ИЗМЕРЕНО',DECIDED:'РЕШЕНИЕ ПРИНЯТО',
+      OBSERVED:'НАБЛЮДАЕМОЕ',REPORTED:'ЗАЯВЛЕННОЕ',VERIFIED:'ПОДТВЕРЖДЁННОЕ',MODELLED:'МОДЕЛЬНОЕ',
+      ATTRIBUTED:'АТРИБУТИРОВАННОЕ',INCREMENTAL:'ИНКРЕМЕНТАЛЬНОЕ',
+      COMPLETE:'ПОЛНО',INCOMPLETE:'НЕПОЛНО',PENDING:'ОЖИДАЕТ',
+      REQUESTED:'ЗАПРОШЕНО',COMMITTED:'ЗАРЕЗЕРВИРОВАНО',SPENT:'ИСПОЛЬЗОВАНО',RELEASED:'ОСВОБОЖДЕНО'
+    };
+    return map[v]||String(value==null?'':value);
+  }
   function formatWhen(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch(e){return String(v||'');}}
   function accessToken(){try{return localStorage.getItem('mfwAccessToken')||'';}catch(e){return '';}}
   function setAccessToken(v){try{if(v)localStorage.setItem('mfwAccessToken',v);else localStorage.removeItem('mfwAccessToken');}catch(e){}}
@@ -175,7 +190,7 @@
     return out;
   }
 
-  var DEFAULT_PROFILE={firstName:'Alex',lastName:'Morgan',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Fashion Industry',title:'Guest',country:'Russia'};
+  var DEFAULT_PROFILE={firstName:'Алексей',lastName:'Иванов',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Индустрия моды',title:'Гость',country:'Россия'};
   var INTEREST_OPTIONS=[
     {id:'runway',label:'Показы'},
     {id:'emerging_brands',label:'Новые бренды'},
@@ -318,7 +333,7 @@
     };
     document.getElementById('ownerFunnel').innerHTML='<h3>Ваш путь</h3><div class="funnel-grid">'+
       [['РЕГИСТРАЦИИ',counts.registered],['СОХРАНЕНО',counts.saved],['ПОДПИСКИ',counts.followed],['ИЗБРАННОЕ',counts.favorite]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
-      '</div><div class="funnel-note">'+(server?'Рекомендации рассчитаны server-side из explicit interests + follows + favorites.':'Локальный fallback до появления server-сессии.')+'</div>';
+      '</div><div class="funnel-note">'+(server?'Рекомендации рассчитаны на сервере из явных интересов, подписок и избранного.':'Локальный резервный режим до появления серверной сессии.')+'</div>';
   }
 
   function agendaLoad(){return safeJson('mfpAgenda.v1',[]);}
@@ -534,10 +549,10 @@
       var migrationRows=migration.slice(0,6).map(function(m){return '<div class="migration-row"><span>'+m.from+'</span><i>→</i><span>'+m.to+'</span><b>'+m.users+'</b></div>';}).join('');
       var acqRows=acq.slice(0,6).map(function(a){return '<div class="tower-row"><b>'+a.source+'</b><span>'+a.acquired+' привлечено</span><span>CAC '+(a.cac==null?'—':money(a.cac))+'</span><span>ROI '+(a.roi==null?'—':pct(a.roi))+'</span><span>'+money(a.revenue)+' выручка</span></div>';}).join('');
       var scenarioRows=scenarios.map(function(v){return '<div class="scenario-card"><span>MODELLED · '+v.label+'</span><b>'+money(v.illustrativeValue)+'</b><small>illustrative ecosystem value</small><em>GMV uplift '+pct(v.gmvUplift)+' · retention uplift '+pct(v.retentionUplift)+' · CLV realization '+pct(v.clvRealization)+'</em></div>';}).join('');
-      hubContent.innerHTML='<div class="drawer-kicker">OWNER CONTROL TOWER · SERVER AUTHORITY</div><h3 class="tower-title">MFW Audience → Commercial Asset</h3>'+
-        '<div class="metric-legend"><span>OBSERVED</span><span>ATTRIBUTED</span><span>INCREMENTAL</span><span>MODELLED</span></div>'+
+      hubContent.innerHTML='<div class="drawer-kicker">ЦЕНТР УПРАВЛЕНИЯ ВЛАДЕЛЬЦА · СЕРВЕРНЫЕ ДАННЫЕ</div><h3 class="tower-title">Аудитория MFW → коммерческий актив</h3>'+
+        '<div class="metric-legend"><span>НАБЛЮДАЕМОЕ</span><span>АТРИБУТИРОВАННОЕ</span><span>ИНКРЕМЕНТАЛЬНОЕ</span><span>МОДЕЛЬНОЕ</span></div>'+
         '<div class="analytics-grid">'+
-        [['BRANDS',s.brands||0],['CUSTOMERS',s.customers||0],['УДЕРЖАНИЕ',pct(s.ecosystemRetention)],['ATTR. GMV',money(s.attributableGmv)],['INCR. GMV',money(s.incrementalGmv)],['PREDICTED CLV',money(s.predictedClv)]].map(function(a){return '<div class="analytics-stat"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>';}).join('')+'</div>'+
+        [['БРЕНДЫ',s.brands||0],['КЛИЕНТЫ',s.customers||0],['УДЕРЖАНИЕ',pct(s.ecosystemRetention)],['АТРИБ. '+abbr('GMV','Gross Merchandise Value — валовая стоимость товаров'),money(s.attributableGmv)],['ИНКР. '+abbr('GMV','Gross Merchandise Value — валовая стоимость товаров'),money(s.incrementalGmv)],['ПРОГНОЗ '+abbr('CLV','Customer Lifetime Value — пожизненная ценность клиента'),money(s.predictedClv)]].map(function(a){return '<div class="analytics-stat"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>';}).join('')+'</div>'+
         '<div class="tower-section"><h3>Brand-by-brand contribution</h3><div class="tower-table">'+(brandRows||'<div class="hub-note">Нет коммерческих данных брендов.</div>')+'</div></div>'+
         '<div class="tower-split"><section><h3>Cohort retention</h3><div class="cohort-head"><b>COHORT</b><span>N</span><span>M1</span><span>M3</span><span>M6</span></div>'+(cohortRows||'<div class="hub-note">Нужна история покупок.</div>')+'</section><section><h3>Cross-brand migration</h3><div class="tower-mini"><b>'+pct(cb.migrationRate)+'</b><span>multi-brand buyers</span><small>'+Number(cb.avgBrandsPerBuyer||0).toFixed(1)+' brands / buyer</small></div>'+(migrationRows||'<div class="hub-note">Переходов пока нет.</div>')+'</section></div>'+
         '<div class="tower-split"><section><h3>MFW ↔ BFS cross-event</h3><div class="cross-event-ring"><b>'+pct(ce.overlapRate)+'</b><span>cross-event overlap</span></div><div class="tower-foot">'+(ce.mfwUsers||0)+' MFW · '+(ce.bfsUsers||0)+' BFS · '+(ce.crossEventUsers||0)+' both</div></section><section><h3>Acquisition-source mix</h3><div class="tower-table">'+(acqRows||'<div class="hub-note">Добавьте server acquisition events.</div>')+'</div></section></div>'+
@@ -1154,7 +1169,7 @@
     var proposalHtml='';
     if(programmeScenarioProposal){
       var ps=programmeScenarioProposal,sc=ps.scenario||{};
-      proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' баллов · оценка '+h(sc.score)+' · снижение риска '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ps.status)+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
+      proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' баллов · оценка '+h(sc.score)+' · снижение риска '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ruCode(ps.status))+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
     }
     hubContent.innerHTML=proposalHtml+
       '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO / SYNTHETIC WORKSPACE</b><span>Все approvals, pilot status и measured results ниже существуют только в текущей demo-сессии и не являются реальными корпоративными решениями.</span></div>'+
@@ -1335,7 +1350,7 @@
       '<div class="optimizer-tranches">'+(policy.trancheOptions||[10,20,30]).map(function(x){return '<button data-optimizer-tranche="'+h(x)+'" class="'+(Number(x)===Number(programmeOptimizerTranche)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
       '<div class="optimizer-grid">'+result.rows.map(function(x){
         var label=x.ecosystem==='mfw'?'MFW':x.ecosystem==='bfs'?'BFS':'Сделано в Москве';
-        return '<article class="optimizer-card '+String(x.gate).toLowerCase()+'"><div class="optimizer-card-head"><span>'+h(label)+' · '+h(x.mode)+'</span><b>'+h(x.gate)+'</b></div><h5>'+h(x.bottleneck)+'</h5>'+
+        return '<article class="optimizer-card '+String(x.gate).toLowerCase()+'"><div class="optimizer-card-head"><span>'+h(label)+' · '+h(ruCode(x.mode))+'</span><b>'+h(ruCode(x.gate))+'</b></div><h5>'+h(x.bottleneck)+'</h5>'+
           '<div class="optimizer-score"><span>DECISION SCORE</span><b>'+h(x.score)+'</b><small>/ 100 · modelled</small></div>'+
           '<div class="optimizer-metrics"><div><span>ABSORB</span><b>'+h(x.available)+' / '+h(x.requestedTranche)+'</b></div><div><span>AT-RISK RELIEF</span><b>'+Math.round(x.riskRelief*10)/10+' pts</b></div><div><span>KPI</span><b>'+h(optimizerMetricLabel(x.metric))+'</b></div><div><span>MODELLED KPI LIFT</span><b>+'+Math.round(x.kpiLift*10)/10+' п.п.</b></div><div><span>EVIDENCE READINESS</span><b>'+Math.round(Number(x.evidenceReadiness||0)*100)+'%</b></div></div>'+
           '<div class="optimizer-evidence"><span>ДО СЛЕДУЮЩЕГО ТРАНША</span>'+((x.evidenceBeforeNext||[]).map(function(e){return '<i>○ '+h(e)+'</i>';}).join(''))+'</div>'+
@@ -1374,9 +1389,9 @@
       '<div class="programme-stage-grid">'+stages.map(function(x){return '<article><span>'+h(x[0])+'</span><b>'+h(x[1])+'</b></article>';}).join('')+'</div>'+
       '<div class="programme-capacity-grid"><article><span>UNCOMMITTED RESERVE</span><b>'+h(t.uncommitted)+'</b><small>доступно без снятия commitment</small></article><article><span>COMMITTED · UNSPENT</span><b>'+h(t.committedUnspent)+'</b><small>не свободный капитал</small></article><article><span>EXPLICITLY RELEASED</span><b>'+h(t.released)+'</b><small>освобождено STOP/closed decision</small></article><article><span>REALLOCATION CAPACITY</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases</small></article></div>'+
       '<section class="programme-ecosystems"><div class="drawer-kicker">MFW / BFS / MADE CAPITAL MAP</div><div>'+eco.map(function(x){return '<article><b>'+h(x.label)+'</b><span>requested '+h(x.requested)+'</span><span>approved '+h(x.approved)+'</span><span>committed '+h(x.committed)+'</span><span>spent '+h(x.spent)+'</span><span>measured '+h(x.measured)+'</span></article>';}).join('')+'</div></section>'+
-      '<section class="programme-table"><div class="programme-row head"><b>PILOT</b><b>VERTICAL</b><b>REQ</b><b>APP</b><b>COM</b><b>SPENT</b><b>STATUS / DECISION</b></div>'+rows.map(function(x){return '<div class="programme-row"><span>'+h(x.action)+'</span><span>'+h(String(x.ecosystem).toUpperCase())+'</span><b>'+h(x.requested)+'</b><b>'+h(x.approved)+'</b><b>'+h(x.committed)+'</b><b>'+h(x.spent)+'</b><em>'+h(x.status)+(x.decision?' · '+h(x.decision):'')+'</em></div>';}).join('')+'</section>'+
+      '<section class="programme-table"><div class="programme-row head"><b>PILOT</b><b>VERTICAL</b><b>REQ</b><b>APP</b><b>COM</b><b>SPENT</b><b>STATUS / DECISION</b></div>'+rows.map(function(x){return '<div class="programme-row"><span>'+h(x.action)+'</span><span>'+h(String(x.ecosystem).toUpperCase())+'</span><b>'+h(x.requested)+'</b><b>'+h(x.approved)+'</b><b>'+h(x.committed)+'</b><b>'+h(x.spent)+'</b><em>'+h(ruCode(x.status))+(x.decision?' · '+h(ruCode(x.decision)):'')+'</em></div>';}).join('')+'</section>'+
       '<div class="programme-lower"><section class="programme-blockers"><div class="drawer-kicker">BLOCKED / AT RISK</div>'+blockers.map(function(x){return '<article><div><span>'+h(String(x.ecosystem).toUpperCase())+' · '+h(x.code)+'</span><b>'+h(x.action)+'</b><small>'+h(x.label)+'</small></div><em>'+h(x.atRisk)+' pts at risk</em></article>';}).join('')+'</section>'+
-      '<section class="programme-evidence"><div class="drawer-kicker">EVIDENCE COMPLETENESS</div>'+rows.map(function(x){var done=x.evidenceComplete;return '<article><span>'+h(x.action)+'</span><b class="'+(done?'done':'pending')+'">'+(done?'COMPLETE':'INCOMPLETE')+'</b></article>';}).join('')+'</section></div>'+
+      '<section class="programme-evidence"><div class="drawer-kicker">EVIDENCE COMPLETENESS</div>'+rows.map(function(x){var done=x.evidenceComplete;return '<article><span>'+h(x.action)+'</span><b class="'+(done?'done':'pending')+'">'+(done?'ПОЛНО':'НЕПОЛНО')+'</b></article>';}).join('')+'</section></div>'+
       '<section class="programme-reallocation"><div><div class="drawer-kicker">REALLOCATION OPPORTUNITIES</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
       '<div class="reallocation-actions">'+(releasable.length?releasable.map(function(x){var already=Number(programmeReleased[x.intervention]||0)>0;return '<article><span>'+h(x.action)+'</span><b>'+h(x.remaining)+' pts STOP остатка</b><button data-programme-release="'+h(x.intervention)+'" '+(already?'disabled':'')+'>'+(already?'RELEASED':'RELEASE TO POOL')+'</button></article>';}).join(''):'<div class="allocation-no-dossier">Нет STOP-кейсов с неиспользованным commitment.</div>')+'</div></section>'+
       '<section class="programme-decision"><div><span>RECOMMENDED NEXT MOVE</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>PROGRAMME SIGNAL</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
