@@ -45,7 +45,15 @@ for(const required of [
   'actor.demo===true',
   "capital_authority_role_required",
   "persistence:'postgres_only'",
-  "ADMIN_TOKEN_CONFIGURED"
+  "ADMIN_TOKEN_CONFIGURED",
+  "secureCapitalAdminOk",
+  "async function capitalActor",
+  "actor.operator!==true",
+  "issueCapitalOperatorSession",
+  "p==='/v1/admin/capital/operators'",
+  "p==='/v1/admin/capital/operator-session'",
+  "capital_operator_grants",
+  "UPDATE sessions SET revoked_at=now()"
 ]){
   assert(serverSource.includes(required),'missing server contract: '+required);
 }
