@@ -1650,3 +1650,116 @@ For enterprise partners provide only approved aggregate exports/API:
 
 **Commercial framing:** recurring subscription / intelligence product for brands, sponsors, industry organisations and city stakeholders; the longitudinal dataset becomes a defensible network-data moat.
 
+## Platform economics wave — Partner Data API and developer distribution
+
+This wave turns selected MFW/BFS capabilities into a governed B2B platform surface for brands, sponsors, media, city partners and technology partners.
+
+### Partner API Authority — ADOPT
+
+Expose only explicitly approved API resources such as:
+
+- public programme/session/show metadata;
+- public brand/designer/speaker profiles;
+- public collections/looks/content;
+- organisation-scoped campaign/performance summaries;
+- privacy-safe benchmark outputs;
+- approved meeting/Deal Room status for the owning organisation;
+- approved venue/map/accessibility data;
+- public replay/chapter metadata.
+
+Never expose raw participant-level interest, private Deal Room content or cross-organisation CRM data.
+
+### Contract-first API — ADOPT
+
+Use versioned OpenAPI contracts.
+
+Reference:
+
+https://github.com/OpenAPITools/openapi-generator
+
+Generate/test client SDKs from the contract rather than maintaining undocumented hand-written partner clients.
+
+Each API version declares:
+
+- resource schema;
+- auth scope;
+- pagination/filtering;
+- rate limit;
+- freshness;
+- deprecation date;
+- data-classification level.
+
+### Event / Webhook Contract — ADOPT
+
+For approved partner events use versioned webhook/event schemas.
+
+AsyncAPI tooling may be used as a contract/documentation layer:
+
+https://github.com/asyncapi/cli
+
+Candidate events:
+
+- programme item changed;
+- replay published;
+- partner campaign result updated;
+- Deal Room request changed;
+- meeting confirmed/cancelled;
+- credential/pass state changed where appropriate.
+
+Every delivery is signed, idempotent and scoped.
+
+### Developer Portal — ADOPT
+
+Provide:
+
+- API documentation;
+- sandbox/demo tenant;
+- example SDK usage;
+- webhook verifier;
+- changelog;
+- rate limits;
+- data/privacy rules;
+- status/deprecation notices.
+
+Sandbox contains synthetic/demo data only.
+
+### Usage Metering / Commercial Plans — ADAPT
+
+Reference:
+
+https://github.com/openmeterio/openmeter
+
+If API commercialisation requires usage billing, meter only approved dimensions:
+
+- API calls;
+- data export jobs;
+- webhook deliveries;
+- intelligence report generation.
+
+Metering must not become CRM/business authority.
+
+### API Product Tiers — ADOPT
+
+Possible packages:
+
+- Public Programme API;
+- Brand/Sponsor Analytics API;
+- Fashion Intelligence API;
+- Media/Replay API;
+- Enterprise Partner API.
+
+Entitlements remain explicit organisation-scoped permissions.
+
+### Additional acceptance
+
+- every endpoint maps to an approved canonical/read-model source;
+- private participant/Deal Room data cannot be requested by broader scopes;
+- API versioning/deprecation is explicit;
+- webhook signatures/retries are testable;
+- usage metering cannot affect business truth;
+- partner access can be revoked without deleting historical audit.
+
+**Sequencing:** stable public/read models + Fashion Intelligence -> OpenAPI contracts -> auth/scopes -> developer portal -> webhooks -> commercial metering.
+
+**Commercial framing:** MFW/BFS becomes an ecosystem platform whose data and capabilities can power media, sponsors, city partners and brand systems, increasing switching costs and recurring B2B revenue.
+
