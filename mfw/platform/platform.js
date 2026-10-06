@@ -1151,7 +1151,8 @@
     {title:'09 · Deal Room',copy:'Meeting → structured request → external handoff → outcome evidence.',action:function(){closeSharedOverlays();hubTab='dealroom';renderHub();hubModal.classList.remove('hidden');}},
     {title:'10 · Trust Passport',copy:'Explainable credentials and longitudinal trust history.',action:function(){closeSharedOverlays();hubTab='trust';renderHub();hubModal.classList.remove('hidden');}},
     {title:'11 · Economics',copy:'Payer → product → formula → revenue-recognition gate.',action:function(){closeSharedOverlays();hubTab='economics';renderHub();hubModal.classList.remove('hidden');}},
-    {title:'12 · Owner value',copy:'Commercial architecture and 365-day relationship value without invented ARR/MRR.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
+    {title:'12 · Investment Committee',copy:'Recommendation → approval → pilot → measure → scale / iterate / stop.',action:function(){closeSharedOverlays();hubTab='committee';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'13 · Owner value',copy:'Commercial architecture and 365-day relationship value without invented ARR/MRR.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
   ];
   function closeSharedOverlays(){
     [accountDrawer,registrationModal,investorModal,valueModal,forYouModal,hubModal].forEach(function(el){if(el)el.classList.add('hidden');});
@@ -1303,7 +1304,8 @@
     if(step==='9'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='10'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='11'){hubTab='economics';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
-    if(step==='12'){investorModal.classList.add('hidden');valueModal.classList.remove('hidden');}
+    if(step==='12'){hubTab='committee';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='13'){investorModal.classList.add('hidden');valueModal.classList.remove('hidden');}
   };});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
