@@ -620,3 +620,14 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .organisation-directory-head{font-size:9px;text-transform:uppercase;letter-spacing:.08em}.organisation-mini b,.organisation-mini small{display:block}.organisation-mini b{font-size:10px}.organisation-mini small,.organisation-mini>span{font-size:8px;opacity:.6;margin-top:3px}
 .organisation-empty{margin:0;font-size:10px;line-height:1.5;opacity:.65}.organisation-error{padding:10px;border:1px solid #bb2d2d;color:#bb2d2d;font-size:9px}
 @media(max-width:680px){.organisation-head{display:grid}.organisation-claim-form{grid-template-columns:1fr}.organisation-claim-form .save-profile{grid-column:auto}.organisation-claim-form input,.organisation-claim-form select{font-size:16px}}
+
+
+/* Organisation network authority proof · reconciled from main */
+.organisation-network-proof{margin:14px 0 4px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid rgba(127,127,127,.3)}
+.organisation-network-proof>div{padding:12px;border-right:1px solid rgba(127,127,127,.25)}
+.organisation-network-proof>div:nth-child(4){border-right:0}
+.organisation-network-proof strong{display:block;font-size:26px;line-height:1}
+.organisation-network-proof span{display:block;margin-top:5px;font-size:8px;text-transform:uppercase;letter-spacing:.06em;opacity:.65}
+.organisation-network-proof>small{grid-column:1/-1;padding:9px 12px;border-top:1px solid rgba(127,127,127,.25);font-size:8px;opacity:.6}
+.organisation-network-proof>span{grid-column:1/-1;margin:0;padding:12px}
+@media(max-width:680px){.organisation-network-proof{grid-template-columns:1fr 1fr}.organisation-network-proof>div:nth-child(2){border-right:0}.organisation-network-proof>div:nth-child(-n+2){border-bottom:1px solid rgba(127,127,127,.25)}}
