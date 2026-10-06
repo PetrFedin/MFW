@@ -529,3 +529,19 @@ Added read-only production admission tooling for Capital Authority:
 - no synthetic ledger writes.
 
 Also raised the general production migration floor from 21 to 24.
+## 2026-10-06 — Hierarchy-safe Capital Projection + Decision Gate
+
+Hardened Capital Authority decision support:
+
+- removed ambiguous mixed-hierarchy total from /v1/capital/projection;
+- added per-aggregate-type and per-aggregate breakdown;
+- explicit aggregateType is required for a single authoritative total;
+- admission checker now validates programme projection grain;
+- added regression coverage preventing programme + pilot double counting;
+- added deterministic read-only Capital Decision Gate;
+- gate evaluates KPI target, truth class and evidence presence;
+- gate returns SCALE / ITERATE / STOP / HOLD recommendation only;
+- recommendation carries source measurement event hash;
+- no approval, commitment, release or spend is created by the gate.
+
+This wave explicitly follows the Integration Master Plan dependency rule: persistent tranche workflow remains sequenced behind durable PostgreSQL admission plus pg-boss/outbox and formal policy.
