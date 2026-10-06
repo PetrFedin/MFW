@@ -466,3 +466,16 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .representative-journeys{margin-top:14px}.representative-journeys>.drawer-kicker{margin-bottom:7px}.representative-journeys article{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 0;border-top:1px solid rgba(127,127,127,.2);align-items:center}.representative-journeys article>div:first-child{display:grid;gap:4px}.representative-journeys span{font-size:7px;font-weight:950;letter-spacing:.08em}.representative-journeys b{font-size:12px}.representative-journeys small{font-size:8px;line-height:1.4;opacity:.62}.representative-journeys article>div:last-child{display:flex;align-items:center;gap:8px}.representative-journeys button{border:1px solid currentColor;background:transparent;color:inherit;padding:8px 10px;font-size:7px;font-weight:950;white-space:nowrap}
 @media(max-width:700px){.representative-journeys article{grid-template-columns:1fr}.representative-journeys article>div:last-child{justify-content:space-between}.cohort-breakdown{grid-template-columns:1fr 1fr 1fr}}
 @media(max-width:430px){.cohort-breakdown{grid-template-columns:1fr}.representative-journeys article>div:last-child{display:grid}.representative-journeys button{min-height:42px}}
+
+
+/* Filterable Portfolio Control Tower · 2026-10-06 */
+.portfolio-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0 14px}
+.portfolio-filters label{display:grid;gap:5px;border:1px solid rgba(127,127,127,.22);padding:9px;background:rgba(127,127,127,.03)}
+.portfolio-filters label span{font-size:7px;font-weight:950;letter-spacing:.08em;opacity:.58}
+.portfolio-filters select{width:100%;min-height:36px;border:1px solid rgba(127,127,127,.28);background:transparent;color:inherit;padding:6px 8px;font:800 8px/1.2 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.portfolio-filters>button{border:1px solid currentColor;background:transparent;color:inherit;min-height:56px;font-size:8px;font-weight:950;letter-spacing:.08em}
+.portfolio-empty{display:grid;gap:5px;border:1px dashed rgba(127,127,127,.45);padding:13px;margin:10px 0;background:rgba(127,127,127,.04)}
+.portfolio-empty b{font-size:9px;letter-spacing:.09em}.portfolio-empty span{font-size:8px;line-height:1.45;opacity:.62}
+.retention-tower article.active,.portfolio-revenue article.active{border-color:currentColor;box-shadow:inset 0 0 0 1px currentColor}
+@media(max-width:900px){.portfolio-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.portfolio-filters{grid-template-columns:1fr}.portfolio-filters>button{min-height:44px}.portfolio-filters select{min-height:44px}}
