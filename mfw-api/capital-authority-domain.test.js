@@ -5,6 +5,7 @@ const {
   capitalProjectionFromRows,
   capitalProjectionBreakdown,
   capitalProjectionForType,
+  capitalDecisionGate,
   validateCapitalTransition,
   verifyCapitalChainRows
 }=require('./capital-authority');
@@ -128,5 +129,32 @@ assert.strictEqual(capitalProjectionForType(mixedRows,'programme').committed,70)
 assert.strictEqual(capitalProjectionForType(mixedRows,'pilot').committed,70);
 assert.strictEqual(capitalProjectionForType(mixedRows,'unknown'),null);
 
+
+
+
+const measurementBase={
+  ...rows[5],
+  event_type:'MEASUREMENT_RECORDED',
+  payload:{metric:'buyer_conversion',measuredValue:12.4,truthClass:'OBSERVED'},
+  evidence_refs:['evidence://metric']
+};
+const gateRows=[...rows.slice(0,5),measurementBase];
+const scaleGate=capitalDecisionGate(gateRows,{metric:'buyer_conversion',direction:'increase',target:10,nextTranchePoints:20,minimumEvidenceClass:'OBSERVED'});
+assert.strictEqual(scaleGate.status,'SCALE');
+assert.strictEqual(scaleGate.eligible,true);
+assert.strictEqual(scaleGate.targetMet,true);
+assert.strictEqual(scaleGate.truthClass,'OBSERVED');
+
+const holdTruth=capitalDecisionGate([{...measurementBase,payload:{metric:'buyer_conversion',measuredValue:12.4,truthClass:'MODELLED'}}],{metric:'buyer_conversion',direction:'increase',target:10,minimumEvidenceClass:'OBSERVED'});
+assert.strictEqual(holdTruth.status,'HOLD');
+assert(holdTruth.reasonCodes.includes('evidence_class_below_policy'));
+
+const missingMeasurement=capitalDecisionGate(rows.slice(0,5),{metric:'buyer_conversion',direction:'increase',target:10});
+assert.strictEqual(missingMeasurement.status,'HOLD');
+assert(missingMeasurement.reasonCodes.includes('measurement_missing'));
+
+const iterateGate=capitalDecisionGate([{...measurementBase,payload:{metric:'buyer_conversion',measuredValue:7.5,truthClass:'ATTRIBUTED'}}],{metric:'buyer_conversion',direction:'increase',target:10,minimumEvidenceClass:'OBSERVED'});
+assert.strictEqual(iterateGate.status,'ITERATE');
+assert.strictEqual(iterateGate.targetMet,false);
 
 console.log(JSON.stringify({event:'capital_authority_domain',status:'pass',events:rows.length}));
