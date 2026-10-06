@@ -92,6 +92,45 @@ class OrganisationRegistry{
       .slice(0,limit).map(x=>this.publicRow(x));
   }
 
+  async summary(){
+    if(this.pool){
+      const r=await this.pool.query(`SELECT
+        count(*) FILTER (WHERE status='active')::int AS "activeOrganisations",
+        count(*) FILTER (WHERE status='active' AND verification_status='verified')::int AS "verifiedOrganisations",
+        (SELECT count(*)::int FROM professional_organisation_memberships WHERE status='active') AS "activeRepresentatives",
+        (SELECT count(*)::int FROM professional_organisation_participation WHERE status<>'revoked') AS "participationRecords",
+        (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked') AS "organisationsWithHistory",
+        (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked' AND event_brand='mfw') AS "mfwOrganisations",
+        (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked' AND event_brand='bfs') AS "bfsOrganisations",
+        (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked' AND event_brand='made_in_moscow') AS "madeOrganisations"
+        FROM professional_organisations`);
+      const row=r.rows[0]||{};
+      const cross=await this.pool.query(`SELECT count(*)::int AS n FROM (
+        SELECT organisation_id FROM professional_organisation_participation
+        WHERE status<>'revoked' GROUP BY organisation_id
+        HAVING count(DISTINCT event_brand)>=2
+      ) x`);
+      return {...row,crossEventOrganisations:cross.rows[0]?.n||0,authority:'persistent_organisation_registry'};
+    }
+    const rows=[...this.memory.values()].filter(x=>x.status==='active');
+    const participation=rows.flatMap(x=>(x.participation||[]).filter(p=>p.status!=='revoked').map(p=>({...p,organisationId:x.id})));
+    const byBrand=brand=>new Set(participation.filter(p=>p.eventBrand===brand).map(p=>p.organisationId)).size;
+    const brandsByOrg=new Map();
+    participation.forEach(p=>{const set=brandsByOrg.get(p.organisationId)||new Set();set.add(p.eventBrand);brandsByOrg.set(p.organisationId,set);});
+    return {
+      activeOrganisations:rows.length,
+      verifiedOrganisations:rows.filter(x=>x.verificationStatus==='verified').length,
+      activeRepresentatives:rows.reduce((n,x)=>n+(x.members?x.members.size:0),0),
+      participationRecords:participation.length,
+      organisationsWithHistory:new Set(participation.map(p=>p.organisationId)).size,
+      mfwOrganisations:byBrand('mfw'),
+      bfsOrganisations:byBrand('bfs'),
+      madeOrganisations:byBrand('made_in_moscow'),
+      crossEventOrganisations:[...brandsByOrg.values()].filter(set=>set.size>=2).length,
+      authority:'persistent_organisation_registry',
+    };
+  }
+
   async get(id){
     if(this.pool){
       const r=await this.pool.query(`SELECT id,canonical_name AS "name",organisation_type AS "organisationType",
