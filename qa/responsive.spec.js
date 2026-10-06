@@ -137,7 +137,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorBtn').click();
   await page.locator('#investorDemoStart').click();
   await expect(page.locator('#investorPilot')).toBeVisible();
-  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 14');
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 15');
 
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
@@ -166,8 +166,10 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="capital"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
   await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#investorPilotStep')).toHaveText('14 / 14');
+  await expect(page.locator('#investorPilotStep')).toHaveText('15 / 15');
 });
 
 test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
@@ -440,6 +442,54 @@ test('Capital Allocation opens selected recommendation as committee business cas
   await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
   await expect(page.locator('.committee-case-head h3')).toHaveText(title);
   await expect(page.locator('.committee-status small')).toContainText('modelled budget points');
+  await expectNoDocumentOverflow(page);
+});
+
+test('Programme Capital Control separates reserve commitments spend and measured outcomes', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.getByText(/PROGRAMME CAPITAL CONTROL/)).toBeVisible();
+  await expect(page.locator('.programme-envelope b')).toHaveText('150');
+  const stages = page.locator('.programme-stage-grid article');
+  await expect(stages).toHaveCount(7);
+  await expect(stages.filter({ hasText: 'REQUESTED' }).locator('b')).toHaveText('128');
+  await expect(stages.filter({ hasText: 'APPROVED' }).locator('b')).toHaveText('100');
+  await expect(stages.filter({ hasText: 'COMMITTED' }).locator('b')).toHaveText('85');
+  await expect(stages.filter({ hasText: 'SPENT' }).locator('b')).toHaveText('58');
+  await expect(stages.filter({ hasText: 'MEASURED' }).locator('b')).toHaveText('46');
+  await expect(stages.filter({ hasText: 'SCALED' }).locator('b')).toHaveText('22');
+  await expect(stages.filter({ hasText: 'STOPPED' }).locator('b')).toHaveText('6');
+
+  const capacity = page.locator('.programme-capacity-grid article');
+  await expect(capacity.filter({ hasText: 'UNCOMMITTED RESERVE' }).locator('b')).toHaveText('50');
+  await expect(capacity.filter({ hasText: 'COMMITTED · UNSPENT' }).locator('b')).toHaveText('27');
+  await expect(capacity.filter({ hasText: 'REALLOCATION CAPACITY' }).locator('b')).toHaveText('50');
+  await expect(page.locator('.programme-ecosystems article')).toHaveCount(3);
+  await expect(page.locator('.programme-row:not(.head)')).toHaveCount(5);
+  await expect(page.locator('.programme-blockers article')).toHaveCount(3);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('programme-capital-control.png') });
+});
+
+test('Programme Capital Control requires explicit release before STOP commitment becomes reallocatable', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  const capacity = page.locator('.programme-capacity-grid article');
+  await expect(capacity.filter({ hasText: 'EXPLICITLY RELEASED' }).locator('b')).toHaveText('0');
+  await expect(capacity.filter({ hasText: 'REALLOCATION CAPACITY' }).locator('b')).toHaveText('50');
+
+  const release = page.locator('[data-programme-release="deal-room-sla"]');
+  await expect(release).toBeVisible();
+  await release.click();
+
+  await expect(capacity.filter({ hasText: 'EXPLICITLY RELEASED' }).locator('b')).toHaveText('3');
+  await expect(capacity.filter({ hasText: 'COMMITTED · UNSPENT' }).locator('b')).toHaveText('24');
+  await expect(capacity.filter({ hasText: 'REALLOCATION CAPACITY' }).locator('b')).toHaveText('53');
+  await expect(page.locator('[data-programme-release="deal-room-sla"]')).toBeDisabled();
   await expectNoDocumentOverflow(page);
 });
 
