@@ -224,6 +224,18 @@
         "mfw/platform/platform.css",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "investment_committee_workspace",
+      "claim": "A modelled recommendation can be opened as a demo mini business case and progressed through review, demo approval, pilot, measurement and SCALE/ITERATE/STOP decision with evidence gating.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -233,7 +245,7 @@
     "Production access/credential/commercial claims remain authority-gated."
   ],
   "guidedInvestorRoute": {
-    "steps": 13,
+    "steps": 14,
     "scope": [
       "MFW",
       "BFS",
@@ -330,6 +342,30 @@
         "Scale/Stop"
       ],
       "boundary": "Modelled relative pilot-resource allocation only; not currency, approved budget, causal uplift or ROI forecast."
+    },
+    "investmentCommittee": {
+      "states": [
+        "DRAFT",
+        "IN_REVIEW",
+        "APPROVED",
+        "PILOT_RUNNING",
+        "MEASURED",
+        "DECIDED"
+      ],
+      "decisions": [
+        "SCALE",
+        "ITERATE",
+        "STOP"
+      ],
+      "persistence": "in-memory demo session only",
+      "requiredProductionControls": [
+        "actor identity",
+        "immutable decision history",
+        "timestamps",
+        "role-based approval",
+        "auditable evidence links"
+      ],
+      "boundary": "No demo approval, pilot status or measured result is a production corporate decision."
     }
   },
   "language": {
