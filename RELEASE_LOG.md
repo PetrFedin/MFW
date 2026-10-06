@@ -414,3 +414,19 @@ Added the final governance loop to the investor MVP:
 - QA updated to use scoped/exact selectors after Russian-first UI changes.
 
 Committee actions are demo-only and are not production corporate approvals.
+
+## 2026-10-06 — Programme Capital Control
+
+Added portfolio-level capital governance:
+
+- 150-point modelled programme envelope;
+- requested / approved / committed / spent / measured / scaled / stopped states;
+- MFW / BFS / Made capital allocation views;
+- blocker and evidence-completeness views;
+- strict separation of uncommitted reserve and committed-but-unspent capital;
+- explicit STOP commitment release before reallocation;
+- reallocation capacity calculation;
+- guided investor route extended to 15 steps;
+- responsive QA for programme totals and release semantics.
+
+No programme values are represented as real currency or accounting records.
