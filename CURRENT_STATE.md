@@ -357,3 +357,33 @@ The shared investor value layer now shows five monetisation surfaces without pre
 Each surface is labelled by the evidence required before it can be treated as a commercial result. The UI explicitly states that engagement, meetings and structured requests are not revenue.
 
 This remains a product/commercial architecture preview. Actual ARR/MRR, unit economics and realised revenue require production contracts, billing/payment evidence and production analytics.
+
+## Investor proof operating layer — 2026-10-06
+
+The investor MVP now has one shared evidence model feeding four operating surfaces:
+
+- Investor Proof;
+- Partner / Sponsor Console;
+- Brand Business Cockpit;
+- Investment / Economics Dashboard.
+
+The proof chain is:
+
+user/profile -> explicit interest -> brand -> meeting -> structured commercial intent -> external handoff -> D30 -> D90 -> D365
+
+Two modes are intentionally separated:
+
+- LIVE PROOF: only current account/product signals are shown; missing stages are labelled NOT EVIDENCED.
+- SYNTHETIC CASE: a full illustrative case is shown with SYNTHETIC evidence labels and is never presented as production performance.
+
+Evidence taxonomy remains explicit:
+
+OBSERVED / REPORTED / VERIFIED / MODELLED / SYNTHETIC / NOT EVIDENCED.
+
+Partner Console uses package -> inventory -> campaign -> delivery -> handoff -> report -> settlement, with recognised revenue gated behind appropriate contract/billing/payment evidence.
+
+Brand Cockpit uses exposure -> relationship -> buyer signal -> match -> meeting -> Deal Room -> request -> handoff -> outcome and adds D30/D90/D365 continuity.
+
+Economics maps payer -> product -> formula -> revenue-recognition gate and deliberately shows no factual ARR/MRR without source contracts and billing data.
+
+A machine-readable evidence manifest is available at `mfw/platform/evidence-package.json`.
