@@ -785,3 +785,16 @@ Server-side invariants reject:
 Hash chains can be independently replayed by /v1/capital/verify.
 
 The frontend Programme Capital Control remains explicitly MODELLED/DEMO until PostgreSQL production admission and a real authority-backed UI projection are green.
+
+## Capital Authority UI bridge — 2026-10-06
+
+Programme Capital Control now has a read-only bridge to the server Capital Authority.
+
+Behavior:
+
+- non-demo Organizer/Staff session -> read /v1/capital/projection + /v1/capital/verify;
+- display authoritative PostgreSQL projection and chain integrity;
+- demo session -> AUTHORITY PROTECTED, no authority query, no fallback write;
+- synthetic Investment Committee / simulator actions remain demo-state only and are never persisted to Capital Authority.
+
+This keeps investor demonstration separate from corporate authority while making the UI ready to surface real ledger state after production admission.
