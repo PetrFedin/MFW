@@ -67,6 +67,52 @@ function capitalProjectionFromRows(rows){
   totals.committedUnspent=Math.max(0,totals.netCommitted-totals.spent);
   return totals;
 }
+function capitalProjectionBreakdown(rows){
+  const byAggregate=new Map();
+  const byType=new Map();
+  for(const row of rows){
+    const programmeKey=String(row.programme_key||'');
+    const aggregateType=String(row.aggregate_type||'');
+    const aggregateId=String(row.aggregate_id||'');
+    const aggregateKey=[programmeKey,aggregateType,aggregateId].join('|');
+    if(!byAggregate.has(aggregateKey))byAggregate.set(aggregateKey,[]);
+    byAggregate.get(aggregateKey).push(row);
+    if(!byType.has(aggregateType))byType.set(aggregateType,[]);
+    byType.get(aggregateType).push(row);
+  }
+  const aggregates=[...byAggregate.entries()].map(([key,events])=>{
+    const first=events[0]||{};
+    return {
+      key,
+      programmeKey:String(first.programme_key||''),
+      aggregateType:String(first.aggregate_type||''),
+      aggregateId:String(first.aggregate_id||''),
+      events:events.length,
+      projection:capitalProjectionFromRows(events)
+    };
+  }).sort((x,y)=>x.aggregateType.localeCompare(y.aggregateType)||x.aggregateId.localeCompare(y.aggregateId));
+  const types={};
+  for(const [aggregateType,events] of byType.entries()){
+    types[aggregateType]={
+      aggregates:aggregates.filter(x=>x.aggregateType===aggregateType).length,
+      events:events.length,
+      projection:capitalProjectionFromRows(events)
+    };
+  }
+  const aggregateTypes=Object.keys(types).sort();
+  return {
+    hierarchySafe:true,
+    mixedHierarchy:aggregateTypes.length>1,
+    aggregateTypes,
+    types,
+    aggregates
+  };
+}
+function capitalProjectionForType(rows,aggregateType){
+  const type=String(aggregateType||'').trim();
+  if(!CAPITAL_AGGREGATE_TYPES.has(type))return null;
+  return capitalProjectionFromRows(rows.filter(r=>String(r.aggregate_type||'')===type));
+}
 function transitionError(message){
   const err=new Error(message);
   err.status=409;
@@ -134,6 +180,8 @@ module.exports={
   capitalEventEnvelope,
   capitalHash,
   capitalProjectionFromRows,
+  capitalProjectionBreakdown,
+  capitalProjectionForType,
   validateCapitalTransition,
   verifyCapitalChainRows
 };
