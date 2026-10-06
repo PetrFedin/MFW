@@ -372,7 +372,20 @@
             ]
           }
         ],
-        boundary:'Optimizer is a modelled decision aid. Scores, KPI lifts and risk relief are assumptions; no tranche is approved by the optimizer.'
+        boundary:'Optimizer is a modelled decision aid. Scores, KPI lifts and risk relief are assumptions; no tranche is approved by the optimizer.',
+        portfolioSimulator:{
+          budgets:[10,20,30],
+          step:10,
+          weights:{riskReduction:.30,kpiLeverage:.25,evidenceConfidence:.20,diversification:.10,optionality:.15},
+          reserveScorePerShare:1,
+          rules:{
+            hold:'HOLD candidates cannot receive new capital in an eligible scenario.',
+            conditional:'CONDITIONAL allocations remain committee-gated and make the portfolio scenario CONDITIONAL.',
+            capacity:'No vertical can receive more than its absorption cap or current reallocation capacity.',
+            reserve:'Unallocated budget remains reserve and preserves optionality.',
+            approval:'The simulator ranks mixes; it does not approve or commit capital.'
+          }
+        }
       }
     },
     partnerConsole:[
