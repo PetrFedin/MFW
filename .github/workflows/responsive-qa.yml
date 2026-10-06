@@ -31,6 +31,12 @@ jobs:
           node --check mfw/platform/bfs/app.js
           node --check mfw/platform/made-in-moscow/app.js
           node --check mfw/sw.js
+      - name: Install authority dependencies
+        working-directory: mfw-api
+        run: npm install --no-audit --no-fund
+      - name: Run authority foundation checks
+        working-directory: mfw-api
+        run: npm run check:foundation
       - name: Install Chromium
         working-directory: qa
         run: npx playwright install --with-deps chromium
