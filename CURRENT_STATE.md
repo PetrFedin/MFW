@@ -328,3 +328,18 @@ A stateless investor-demo media layer now connects the three ecosystem direction
 - new responsive QA asserts that the three investor ecosystem cards use three distinct backgrounds.
 
 No event access, Verified status, commercial outcome, analytics KPI or production-readiness claim is inferred from media. Phase 0 PostgreSQL admission remains unchanged.
+
+## Trust Passport MVP preview — 2026-10-06
+
+Implemented from the newest defensibility/trust section of the master plan as a dependency-safe preview:
+
+- dedicated Trust Passport tab in the shared Hub;
+- six explainable dimensions: identity, role, event participation, meeting reliability, organisation affiliation and commercial outcome evidence;
+- explicit source/scope/freshness framing;
+- neutral no-history principle for new verified participants;
+- no universal/opaque reputation score;
+- no inference of wealth, creditworthiness, politics, ethnicity or hidden buyer intent;
+- portable credential / verified-directory / trust-aware matchmaking shown only as future governed capabilities;
+- guided investor route now includes Trust Passport before Owner value.
+
+Production credential issuer/status registry and revocation remain gated behind durable identity/history, PostgreSQL and formal policy review.
