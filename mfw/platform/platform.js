@@ -523,7 +523,7 @@
     return proofMode==='synthetic'&&INVESTOR_MODEL.syntheticCase?INVESTOR_MODEL.syntheticCase.chain:liveProofChain();
   }
   function proofModeToggle(){
-    return '<div class="proof-mode-toggle"><button data-proof-mode="live" class="'+(proofMode==='live'?'active':'')+'">LIVE PROOF</button><button data-proof-mode="synthetic" class="'+(proofMode==='synthetic'?'active':'')+'">SYNTHETIC CASE</button></div>';
+    return '<div class="proof-mode-toggle"><button data-proof-mode="live" class="'+(proofMode==='live'?'active':'')+'" >LIVE-ДАННЫЕ</button><button data-proof-mode="synthetic" class="'+(proofMode==='synthetic'?'active':'')+'" >СИНТЕТИЧЕСКИЙ КЕЙС</button></div>';
   }
   function bindProofMode(){
     [].slice.call(document.querySelectorAll('[data-proof-mode]')).forEach(function(b){b.onclick=function(){proofMode=b.dataset.proofMode;renderHub();};});
@@ -534,17 +534,17 @@
     var favorite=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
     var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
     hubContent.innerHTML=
-      '<div class="drawer-kicker">CROSS-EVENT IDENTITY GRAPH · ONE SUBJECT / SEPARATE RIGHTS</div>'+
+      '<div class="drawer-kicker">СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ · ОДИН СУБЪЕКТ / РАЗДЕЛЬНЫЕ ПРАВА</div>'+
       '<div class="identity-graph">'+
-        '<article class="identity-node center"><span>PLATFORM SUBJECT</span><b>'+h(displayName())+'</b><small>'+h(accountState.profile.company||'No organisation')+' · '+h(accountState.profile.country||'—')+'</small></article>'+
-        '<article class="identity-node mfw"><span>MFW</span><b>'+(mfwReg?h(String(mfwReg.registrationType||'registered').toUpperCase()):'NO REGISTRATION')+'</b><small>event-scoped access · '+saved+' saved signals</small></article>'+
-        '<article class="identity-node bfs"><span>BFS</span><b>'+(bfsReg?h(String(bfsReg.registrationType||'registered').toUpperCase()):'NO REGISTRATION')+'</b><small>event-scoped access · professional meeting layer</small></article>'+
-        '<article class="identity-node made"><span>MADE IN MOSCOW</span><b>SHARED USER ID</b><small>brand Verified status remains a separate roster authority</small></article>'+
-        '<article class="identity-node signals"><span>RELATIONSHIP GRAPH</span><b>'+h(followed)+' follow · '+h(favorite)+' favorite</b><small>explicit signals only · no hidden intent inference</small></article>'+
+        '<article class="identity-node center"><span>СУБЪЕКТ ПЛАТФОРМЫ</span><b>'+h(displayName())+'</b><small>'+h(accountState.profile.company||'No organisation')+' · '+h(accountState.profile.country||'—')+'</small></article>'+
+        '<article class="identity-node mfw"><span>MFW</span><b>'+(mfwReg?h(String(mfwReg.registrationType||'registered').toUpperCase()) :'НЕТ РЕГИСТРАЦИИ')+'</b><small>доступ в рамках события · '+saved+' сохранённых сигналов</small></article>'+
+        '<article class="identity-node bfs"><span>BFS</span><b>'+(bfsReg?h(String(bfsReg.registrationType||'registered').toUpperCase()) :'НЕТ РЕГИСТРАЦИИ')+'</b><small>доступ в рамках события · профессиональный слой встреч</small></article>'+
+        '<article class="identity-node made"><span>MADE IN MOSCOW</span><b>ОБЩИЙ USER ID</b><small>статус бренда Verified остаётся отдельной authority</small></article>'+
+        '<article class="identity-node signals"><span>ГРАФ ОТНОШЕНИЙ</span><b>'+h(followed)+' подписок · '+h(favorite)+' избранных</b><small>только явные сигналы · без вывода скрытого intent</small></article>'+
       '</div>'+
-      '<div class="identity-edge-grid"><div><b>SHARED</b><span>profile · interests · discover · relationship continuity</span></div><div><b>SEPARATE</b><span>MFW/BFS registration · QR/access · Made brand verification</span></div><div><b>COMPOUNDS</b><span>repeat participation · meetings · Deal Room evidence · trust history</span></div></div>'+
-      '<div class="identity-principle"><b>WHY THIS MATTERS</b><span>Without the shared identity graph, MFW, BFS and Made in Moscow are three disconnected event products. With it, every explicitly authorised interaction can strengthen the same longitudinal fashion-network relationship while keeping permissions event-scoped.</span></div>'+
-      '<div class="hub-note">This is a projection over canonical identities and explicit signals. It is not permission authority and it does not merge event credentials or Made in Moscow brand-verification rights.</div>';
+      '<div class="identity-edge-grid"><div><b>ОБЩЕЕ</b><span>профиль · интересы · поиск · continuity отношений</span></div><div><b>РАЗДЕЛЬНО</b><span>регистрация MFW/BFS · QR/access · верификация бренда Made</span></div><div><b>НАКАПЛИВАЕТСЯ</b><span>повторное участие · встречи · evidence Deal Room · trust history</span></div></div>'+
+      '<div class="identity-principle"><b>ПОЧЕМУ ЭТО ВАЖНО</b><span>Без общего графа идентичности MFW, BFS и «Сделано в Москве» остаются тремя несвязанными продуктами. С ним каждое явно разрешённое взаимодействие усиливает одну долгосрочную fashion-связь, сохраняя отдельные права каждого события.</span></div>'+
+      '<div class="hub-note">Это проекция поверх канонических identity и явных сигналов. Она не является authority прав доступа и не объединяет event credentials или права верификации брендов «Сделано в Москве».</div>';
   }
 
   function controlTowerModel(){return INVESTOR_MODEL.controlTower||{cases:[],syntheticPortfolio:{funnel:[]}};}
@@ -848,7 +848,7 @@
   function updateNetworkStatus(){
     var el=document.getElementById('networkStatus');if(!el)return;
     var online=navigator.onLine!==false;
-    el.textContent=online?'ONLINE':'OFFLINE · PUBLIC CACHE ONLY';
+    el.textContent=online?'ОНЛАЙН':'ОФЛАЙН · ТОЛЬКО ПУБЛИЧНЫЙ КЭШ';
     el.classList.toggle('offline',!online);
     document.body.classList.toggle('offline-mode',!online);
   }
