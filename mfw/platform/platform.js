@@ -23,6 +23,8 @@
   var controlTowerView='case';
   var selectedControlCase='buyer-brand-alpha';
   var selectedPortfolioStage='INTENT';
+  var committeeSelectedId=null;
+  var committeeCases={};
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
@@ -870,7 +872,7 @@
           '<div class="allocation-meta"><div><span>ЦЕЛЕВОЙ СЦЕНАРИЙ</span><b>'+h(r.weak==='A'?'A':r.weak==='B'?'B':'A/B')+'</b></div><div><span>СЕГМЕНТ-ДРАЙВЕР</span><b>'+h(r.driver.label)+'</b><small>'+h(r.driver.detail)+'</small></div><div><span>KPI</span><b>'+h(it.kpi)+'</b></div><div><span>PILOT TARGET · MODELLED</span><b>'+Math.round(r.current*10)/10+'% → '+Math.round(r.pilotTarget*10)/10+'%</b><small>assumption: закрыть до '+h(r.modelledLift)+' п.п. gap, максимум +5 п.п.</small></div></div>'+
           '<div class="allocation-evidence"><span>EVIDENCE GATE</span>'+it.evidenceNeeded.map(function(x){return '<i>✓ '+h(x)+'</i>';}).join('')+'</div>'+
           '<div class="allocation-footer"><div><span>OWNER</span><b>'+h(it.owner)+'</b></div><div><span>PILOT</span><b>'+h(it.pilot)+'</b></div></div>'+
-          '<div class="allocation-dossiers"><span>REPRESENTATIVE EVIDENCE</span>'+recommendationDossiers(r)+'</div>'+
+          '<div class="allocation-dossiers"><span>REPRESENTATIVE EVIDENCE</span>'+recommendationDossiers(r)+'</div><button class="allocation-open-case" data-open-committee="'+h(it.id)+'">ОТКРЫТЬ MINI BUSINESS CASE →</button>'+
         '</article>';
       }).join('')+'</div>'+
       '<div class="allocation-method"><b>Priority score</b><span>|gap, п.п.| × √(затронутый denominator / max population) × leverage ÷ effort. Затем scores нормализуются до 100 pilot-budget points. Leverage/effort — явные model assumptions из intervention catalog, не финансовая оценка.</span></div>'+
@@ -898,6 +900,7 @@
     var reset=document.querySelector('[data-comparison-reset]');if(reset)reset.onclick=function(){scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
     [].slice.call(document.querySelectorAll('[data-explanation-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.explanationDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
     [].slice.call(document.querySelectorAll('[data-capital-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.capitalDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-open-committee]')).forEach(function(b){b.onclick=function(){committeeSelectedId=b.dataset.openCommittee;hubTab='committee';renderHub();};});
   }
   function portfolioStageData(stage){
     var fp=filteredPortfolio(),row=(fp.funnel||[]).filter(function(x){return x.stage===stage;})[0];
@@ -988,6 +991,105 @@
       '<div class="hub-note">Unit economics, CAC, ROI, GMV, ARR and MRR are only factual when their source dataset and calculation period are available. Demo placeholders are intentionally absent.</div>';
   }
 
+  function committeePolicy(){return INVESTOR_MODEL.investmentCommittee||{};}
+  function recommendationByIntervention(id){
+    return recommendationSet().filter(function(x){return x.intervention&&x.intervention.id===id;})[0]||null;
+  }
+  function ensureCommitteeCase(rec){
+    if(!rec)return null;
+    var id=rec.intervention.id;
+    if(!committeeCases[id]){
+      committeeCases[id]={
+        status:'DRAFT',
+        approval:'PENDING',
+        pilotStatus:'NOT_STARTED',
+        measured:null,
+        evidenceCollected:0,
+        decision:null,
+        history:[{state:'DRAFT',label:'Business case создан в demo session'}]
+      };
+    }
+    return committeeCases[id];
+  }
+  function measuredOutcome(rec){
+    var factor=Number((committeePolicy().resultProfiles||{})[rec.intervention.id]);
+    if(!Number.isFinite(factor))factor=.75;
+    var lift=Number(rec.modelledLift||0)*factor;
+    return Math.max(0,Math.min(100,Number(rec.current||0)+lift));
+  }
+  function committeeEvidenceState(rec,state){
+    var total=(rec.intervention.evidenceNeeded||[]).length;
+    if(state.measured===null)return {complete:0,total:total,ratio:0};
+    var factor=Number((committeePolicy().resultProfiles||{})[rec.intervention.id]);
+    var complete=factor>=1?total:factor>=.5?Math.max(0,total-1):Math.max(1,total-2);
+    return {complete:complete,total:total,ratio:total?complete/total:0};
+  }
+  function committeeDecision(rec,state){
+    var ev=committeeEvidenceState(rec,state);
+    if(state.measured===null)return null;
+    if(state.measured>=rec.pilotTarget&&ev.complete===ev.total)return 'SCALE';
+    if(state.measured>rec.current&&ev.ratio>=.6)return 'ITERATE';
+    return 'STOP';
+  }
+  function committeeAction(id,action){
+    var rec=recommendationByIntervention(id);if(!rec)return;
+    var state=ensureCommitteeCase(rec);if(!state)return;
+    if(action==='submit'&&state.status==='DRAFT'){state.status='IN_REVIEW';state.history.push({state:'IN_REVIEW',label:'Отправлено на рассмотрение'});}
+    else if(action==='approve'&&state.status==='IN_REVIEW'){state.status='APPROVED';state.approval='APPROVED_DEMO';state.history.push({state:'APPROVED',label:'Одобрено в demo workspace'});}
+    else if(action==='start'&&state.status==='APPROVED'){state.status='PILOT_RUNNING';state.pilotStatus='RUNNING';state.history.push({state:'PILOT_RUNNING',label:'Пилот запущен'});}
+    else if(action==='measure'&&state.status==='PILOT_RUNNING'){
+      state.status='MEASURED';state.pilotStatus='MEASURED';state.measured=measuredOutcome(rec);
+      var ev=committeeEvidenceState(rec,state);state.evidenceCollected=ev.complete;
+      state.history.push({state:'MEASURED',label:'Результат измерен: '+Math.round(state.measured*10)/10+'%'});
+    } else if(action==='decide'&&state.status==='MEASURED'){
+      state.status='DECIDED';state.decision=committeeDecision(rec,state);
+      state.history.push({state:'DECIDED',label:'Решение: '+state.decision});
+    } else if(action==='reset'){
+      delete committeeCases[id];
+    }
+    committeeSelectedId=id;renderInvestmentCommittee();
+  }
+  function committeeStatusLabel(v){
+    return {DRAFT:'ЧЕРНОВИК',IN_REVIEW:'НА РАССМОТРЕНИИ',APPROVED:'ОДОБРЕНО · DEMO',PILOT_RUNNING:'ПИЛОТ ИДЁТ',MEASURED:'ИЗМЕРЕНО',DECIDED:'РЕШЕНИЕ ПРИНЯТО'}[v]||v;
+  }
+  function committeeActionButton(rec,state){
+    if(state.status==='DRAFT')return '<button data-committee-action="submit" data-committee-id="'+h(rec.intervention.id)+'">ОТПРАВИТЬ НА REVIEW →</button>';
+    if(state.status==='IN_REVIEW')return '<button data-committee-action="approve" data-committee-id="'+h(rec.intervention.id)+'">ОДОБРИТЬ DEMO PILOT →</button>';
+    if(state.status==='APPROVED')return '<button data-committee-action="start" data-committee-id="'+h(rec.intervention.id)+'">ЗАПУСТИТЬ PILOT →</button>';
+    if(state.status==='PILOT_RUNNING')return '<button data-committee-action="measure" data-committee-id="'+h(rec.intervention.id)+'">ЗАФИКСИРОВАТЬ РЕЗУЛЬТАТ →</button>';
+    if(state.status==='MEASURED')return '<button data-committee-action="decide" data-committee-id="'+h(rec.intervention.id)+'">ПРИНЯТЬ SCALE / ITERATE / STOP →</button>';
+    return '<button data-committee-action="reset" data-committee-id="'+h(rec.intervention.id)+'">СБРОСИТЬ DEMO CASE</button>';
+  }
+  function renderInvestmentCommittee(){
+    var recs=recommendationSet();
+    if(!committeeSelectedId&&recs[0])committeeSelectedId=recs[0].intervention.id;
+    var rec=recommendationByIntervention(committeeSelectedId)||recs[0];
+    if(!rec){hubContent.innerHTML='<div class="portfolio-empty"><b>НЕТ ДОСТУПНОЙ РЕКОМЕНДАЦИИ</b><span>Сначала сформируйте Comparison / Scenario Mode.</span></div>';return;}
+    committeeSelectedId=rec.intervention.id;
+    var state=ensureCommitteeCase(rec),ev=committeeEvidenceState(rec,state),decision=state.decision||committeeDecision(rec,state),policy=committeePolicy();
+    var measured=state.measured===null?'—':(Math.round(state.measured*10)/10+'%');
+    hubContent.innerHTML=
+      '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO / SYNTHETIC WORKSPACE</b><span>Все approvals, pilot status и measured results ниже существуют только в текущей demo-сессии и не являются реальными корпоративными решениями.</span></div>'+
+      '<div class="committee-recommendations">'+recs.map(function(x){return '<button data-committee-select="'+h(x.intervention.id)+'" class="'+(x.intervention.id===committeeSelectedId?'active':'')+'"><span>'+h(x.points)+' pts</span><b>'+h(x.intervention.action)+'</b><small>'+h(x.intervention.stage)+'</small></button>';}).join('')+'</div>'+
+      '<section class="committee-case-head"><div><div class="drawer-kicker">MINI BUSINESS CASE</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>STATUS</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' modelled budget points</small></div></section>'+
+      '<div class="committee-case-grid">'+
+        '<article><span>OWNER</span><b>'+h(rec.intervention.owner)+'</b></article>'+
+        '<article><span>BUDGET REQUEST</span><b>'+h(rec.points)+' pilot points</b><small>не ₽ · относительный demo allocation</small></article>'+
+        '<article><span>BASELINE KPI</span><b>'+Math.round(rec.current*10)/10+'%</b><small>'+h(rec.intervention.kpi)+'</small></article>'+
+        '<article><span>MODELLED TARGET</span><b>'+Math.round(rec.pilotTarget*10)/10+'%</b><small>assumption, не обещание результата</small></article>'+
+        '<article><span>MEASURED RESULT</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'synthetic pilot result')+'</small></article>'+
+        '<article><span>DECISION</span><b>'+h(decision||'PENDING')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
+      '</div>'+
+      '<section class="committee-evidence-plan"><div><div class="drawer-kicker">EVIDENCE PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
+      '<section class="committee-pilot"><div><span>PILOT DESIGN</span><b>'+h(rec.intervention.pilot)+'</b></div><div><span>STOP / SCALE LOGIC</span><b>'+h((policy.governance||{}).scale||'')+'</b><small>'+h((policy.governance||{}).iterate||'')+' '+h((policy.governance||{}).stop||'')+'</small></div></section>'+
+      '<div class="committee-state-flow">'+(policy.states||[]).map(function(x){var active=x===state.status;return '<span class="'+(active?'active':'')+'">'+h(committeeStatusLabel(x))+'</span>';}).join('<i>→</i>')+'</div>'+
+      '<div class="committee-actions">'+committeeActionButton(rec,state)+'<button class="secondary" data-committee-action="reset" data-committee-id="'+h(rec.intervention.id)+'">RESET DEMO</button></div>'+
+      '<section class="committee-history"><div class="drawer-kicker">DECISION LOG · CURRENT SESSION</div>'+state.history.map(function(x){return '<div><b>'+h(committeeStatusLabel(x.state))+'</b><span>'+h(x.label)+'</span></div>';}).join('')+'</section>'+
+      '<div class="hub-note">Workspace демонстрирует governance contract. Реальный approval должен жить в серверной authority с actor identity, timestamps, immutable decision/evidence history и role-based permissions.</div>';
+    [].slice.call(document.querySelectorAll('[data-committee-select]')).forEach(function(b){b.onclick=function(){committeeSelectedId=b.dataset.committeeSelect;renderInvestmentCommittee();};});
+    [].slice.call(document.querySelectorAll('[data-committee-action]')).forEach(function(b){b.onclick=function(){committeeAction(b.dataset.committeeId,b.dataset.committeeAction);};});
+  }
+
   function renderTrustPassportPreview(){
     hubContent.innerHTML=
       '<div class="trust-preview-banner"><b>TRUST PASSPORT · READ-ONLY PREVIEW</b><span>Explainable trust dimensions only. No universal reputation score and no inferred private attributes.</span></div>'+
@@ -1018,6 +1120,7 @@
     else if(hubTab==='dealroom')renderDealRoomPreview();
     else if(hubTab==='trust')renderTrustPassportPreview();
     else if(hubTab==='economics')renderEconomics();
+    else if(hubTab==='committee')renderInvestmentCommittee();
     else renderOwner();
   }
   function updateNetworkStatus(){
