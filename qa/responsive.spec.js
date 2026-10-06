@@ -137,7 +137,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await page.locator('#investorBtn').click();
   await page.locator('#investorDemoStart').click();
   await expect(page.locator('#investorPilot')).toBeVisible();
-  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 12');
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 13');
 
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
@@ -148,6 +148,8 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
 
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('#accountDrawer')).not.toHaveClass(/hidden/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="graph"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-hub-tab="proof"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
@@ -163,7 +165,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await expect(page.locator('[data-hub-tab="economics"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#investorPilotStep')).toHaveText('12 / 12');
+  await expect(page.locator('#investorPilotStep')).toHaveText('13 / 13');
 });
 
 test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
@@ -176,6 +178,19 @@ test('investor media gallery keeps three ecosystem visuals distinct', async ({ p
   expect(backgrounds.every((x) => x && x !== 'none')).toBeTruthy();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('investor-three-ecosystems.png') });
+});
+
+test('Cross-event identity graph keeps shared identity and scoped rights separate', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="graph"]').click();
+  await expect(page.getByText('CROSS-EVENT IDENTITY GRAPH', { exact: false })).toBeVisible();
+  await expect(page.locator('.identity-node')).toHaveCount(5);
+  await expect(page.getByText('SHARED USER ID')).toBeVisible();
+  await expect(page.getByText(/brand Verified status remains a separate roster authority/i)).toBeVisible();
+  await expect(page.getByText(/does not merge event credentials/i)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('cross-event-identity-graph.png') });
 });
 
 test('Investor Proof distinguishes live evidence from synthetic demo', async ({ page }, testInfo) => {
