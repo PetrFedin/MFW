@@ -509,3 +509,26 @@ The UI shows both values and the percentage-point delta A-B.
 Important boundary: a higher conversion in a selected synthetic slice is descriptive, not causal. It does not prove that the event, market or buyer type caused the difference, and no monetary uplift is inferred without real contracts/payment evidence.
 
 Russian is the default UI language for the shared investor/control-tower layer. English remains secondary/product terminology only where useful.
+
+## Opportunity Explanation Engine — 2026-10-06
+
+Comparison / Scenario Mode now includes a deterministic Opportunity Explanation layer.
+
+For the selected A/B scenarios it:
+
+- ranks the six comparison gaps by absolute percentage-point difference;
+- selects the largest gap as the primary opportunity/exposure to inspect;
+- shows a compact funnel-gap waterfall;
+- decomposes the selected rate gap by brand category and buyer market;
+- separates composition/mix effect from within-segment rate effect;
+- compares D30 / D90 / D365 retention gaps;
+- maps representative synthetic dossiers for each side when a materialised demo case matches the selected scenario;
+- links directly from the explanation back into the Case Dossier and its evidence references.
+
+The decomposition is symmetric:
+
+- mix effect captures differences in segment weights;
+- within-segment effect captures differences in segment rates;
+- their sum reproduces the aggregate A-B rate gap up to rounding.
+
+This is descriptive accounting decomposition only. It is not causal attribution, and it does not infer monetary uplift without real contract/billing/payment evidence.
