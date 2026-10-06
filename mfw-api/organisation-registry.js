@@ -131,6 +131,53 @@ class OrganisationRegistry{
     };
   }
 
+  async portableProof(id){
+    const row=await this.get(id);
+    if(!row)return null;
+    const participation=(row.participation||[])
+      .filter(x=>x.status!=='revoked')
+      .map(x=>({
+        eventBrand:x.eventBrand,
+        eventRef:x.eventRef,
+        participationType:x.participationType,
+        status:x.status,
+        source:x.source||null,
+        evidenceRef:x.evidenceRef||null,
+        occurredAt:x.occurredAt||null
+      }));
+    const canonical={
+      schemaVersion:'mfw-organisation-participation-proof-v1',
+      organisation:{
+        id:row.id,
+        name:row.name,
+        organisationType:row.organisationType,
+        countryCode:row.countryCode||null,
+        city:row.city||null,
+        verificationStatus:row.verificationStatus,
+        verificationSource:row.verificationSource||null,
+        verifiedAt:row.verifiedAt||null
+      },
+      participation,
+      summary:{
+        participationRecords:participation.length,
+        eventBrands:[...new Set(participation.map(x=>x.eventBrand))].sort(),
+        crossEvent:new Set(participation.map(x=>x.eventBrand)).size>=2
+      },
+      disclosureBoundary:{
+        userProfilesIncluded:false,
+        representativePersonalDataIncluded:false,
+        commercialLeadDataIncluded:false
+      },
+      signature:{status:'unsigned',issuer:null}
+    };
+    const stable=value=>{
+      if(value===null||typeof value!=='object')return JSON.stringify(value);
+      if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
+      return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';
+    };
+    return {...canonical,proofSha256:crypto.createHash('sha256').update(stable(canonical)).digest('hex')};
+  }
+
   async get(id){
     if(this.pool){
       const r=await this.pool.query(`SELECT id,canonical_name AS "name",organisation_type AS "organisationType",
