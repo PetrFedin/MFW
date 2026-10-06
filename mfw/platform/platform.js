@@ -74,6 +74,21 @@
     if(!r.ok)throw Object.assign(new Error(out.error||('HTTP '+r.status)),{data:out,status:r.status});
     return out;
   }
+  async function loadOrganisationNetworkProof(){
+    var root=document.getElementById('organisationNetworkProof');if(!root)return;
+    root.innerHTML='<span>ORGANISATION NETWORK · loading authority…</span>';
+    try{
+      var out=await authorityFetch('/v1/network/organisations/summary',{method:'GET'}),d=out.data||{};
+      root.innerHTML=
+        '<div><strong>'+Number(d.activeOrganisations||0)+'</strong><span>active organisations</span></div>'+
+        '<div><strong>'+Number(d.verifiedOrganisations||0)+'</strong><span>verified</span></div>'+
+        '<div><strong>'+Number(d.activeRepresentatives||0)+'</strong><span>representatives</span></div>'+
+        '<div><strong>'+Number(d.crossEventOrganisations||0)+'</strong><span>cross-event</span></div>'+
+        '<small>MFW '+Number(d.mfwOrganisations||0)+' · BFS '+Number(d.bfsOrganisations||0)+' · MADE '+Number(d.madeOrganisations||0)+' · '+Number(d.participationRecords||0)+' participation records · '+h(out.source||'authority')+'</small>';
+    }catch(e){
+      root.innerHTML='<span>ORGANISATION NETWORK · authority unavailable</span>';
+    }
+  }
   function eventRoleMode(code,roleId){
     var row=(EVENT_CONFIG[code].roles||[]).filter(function(x){return x.id===roleId;})[0];
     return row&&row.mode||'public';
@@ -1584,7 +1599,7 @@
   };
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
-  document.getElementById('investorBtn').onclick=function(){renderInvestorGallery();investorModal.classList.remove('hidden');};
+  document.getElementById('investorBtn').onclick=function(){renderInvestorGallery();investorModal.classList.remove('hidden');loadOrganisationNetworkProof();};
   document.getElementById('investorDemoStart').onclick=startInvestorDemo;
   document.getElementById('investorPilotNext').onclick=nextInvestorDemo;
   document.getElementById('investorPilotPrev').onclick=previousInvestorDemo;
@@ -1601,7 +1616,7 @@
     if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}
     if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}
     if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge и continuity.';}
-    if(step==='4'){investorModal.classList.add('hidden');openAccount();}
+    if(step==='4'){loadOrganisationNetworkProof();investorModal.classList.add('hidden');openAccount();}
     if(step==='5'){hubTab='graph';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='6'){hubTab='proof';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
     if(step==='7'){hubTab='partner';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
