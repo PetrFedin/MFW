@@ -815,3 +815,9 @@ Capital access is no longer based on signed claims alone. Every capital request 
 Operator bootstrap requires an explicitly configured non-default MFW_ADMIN_TOKEN. Grant suspension/revocation revokes active persisted sessions.
 
 This closes the practical gap where Capital Authority existed but no non-demo operator admission path was available.
+
+## Capital Authority machine admission — 2026-10-06
+
+Added mfw-api/check-capital-admission.js and npm run check:capital-admission.
+
+The check is read-only and requires MFW_CAPITAL_OPERATOR_SESSION. It verifies exact release SHA, migrations 023/024, ledger access, projection access and hash-chain integrity without polluting the immutable ledger with synthetic production events.
