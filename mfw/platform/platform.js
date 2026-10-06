@@ -52,7 +52,7 @@
       OBSERVED:'НАБЛЮДАЕМОЕ',REPORTED:'ЗАЯВЛЕННОЕ',VERIFIED:'ПОДТВЕРЖДЁННОЕ',MODELLED:'МОДЕЛЬНОЕ',
       ATTRIBUTED:'АТРИБУТИРОВАННОЕ',INCREMENTAL:'ИНКРЕМЕНТАЛЬНОЕ',
       COMPLETE:'ПОЛНО',INCOMPLETE:'НЕПОЛНО',PENDING:'ОЖИДАЕТ',
-      ЗАПРОСED:'ЗАПРОШЕНО',COMMITTED:'ЗАРЕЗЕРВИРОВАНО',SPENT:'ИСПОЛЬЗОВАНО',RELEASED:'ОСВОБОЖДЕНО'
+      REQUESTED:'ЗАПРОШЕНО',COMMITTED:'ЗАРЕЗЕРВИРОВАНО',SPENT:'ИСПОЛЬЗОВАНО',RELEASED:'ОСВОБОЖДЕНО'
     };
     return map[v]||String(value==null?'':value);
   }
