@@ -3,6 +3,8 @@ const {
   capitalEventEnvelope,
   capitalHash,
   capitalProjectionFromRows,
+  capitalProjectionBreakdown,
+  capitalProjectionForType,
   validateCapitalTransition,
   verifyCapitalChainRows
 }=require('./capital-authority');
@@ -108,5 +110,23 @@ assert.strictEqual(badLink.ok,false);
 assert(badLink.errors.some(x=>x.error==='previous_hash_mismatch'));
 
 expectError(()=>validateCapitalTransition(rows,{eventType:'APPROVAL_RECORDED',points:1,evidenceRefs:[],payload:{}}),'capital_evidence_ref_required');
+
+const mixedRows=[
+  {...rows[0],aggregate_type:'programme',aggregate_id:'programme_root'},
+  {...rows[1],aggregate_type:'programme',aggregate_id:'programme_root'},
+  {...rows[2],aggregate_type:'programme',aggregate_id:'programme_root'},
+  {...rows[0],aggregate_type:'pilot',aggregate_id:'pilot_child',idempotency_key:'pilot_req',event_hash:'a'.repeat(64)},
+  {...rows[1],aggregate_type:'pilot',aggregate_id:'pilot_child',idempotency_key:'pilot_app',event_hash:'b'.repeat(64)},
+  {...rows[2],aggregate_type:'pilot',aggregate_id:'pilot_child',idempotency_key:'pilot_commit',event_hash:'c'.repeat(64)}
+];
+const breakdown=capitalProjectionBreakdown(mixedRows);
+assert.strictEqual(breakdown.mixedHierarchy,true);
+assert.deepStrictEqual(breakdown.aggregateTypes,['pilot','programme']);
+assert.strictEqual(breakdown.types.programme.projection.requested,100);
+assert.strictEqual(breakdown.types.pilot.projection.requested,100);
+assert.strictEqual(capitalProjectionForType(mixedRows,'programme').committed,70);
+assert.strictEqual(capitalProjectionForType(mixedRows,'pilot').committed,70);
+assert.strictEqual(capitalProjectionForType(mixedRows,'unknown'),null);
+
 
 console.log(JSON.stringify({event:'capital_authority_domain',status:'pass',events:rows.length}));
