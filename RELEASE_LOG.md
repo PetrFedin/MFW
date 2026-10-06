@@ -545,3 +545,15 @@ Hardened Capital Authority decision support:
 - no approval, commitment, release or spend is created by the gate.
 
 This wave explicitly follows the Integration Master Plan dependency rule: persistent tranche workflow remains sequenced behind durable PostgreSQL admission plus pg-boss/outbox and formal policy.
+## 2026-10-06 — Russian-first investor and capital UI
+
+Added a Russian-first localisation hardening wave:
+
+- Russian is the primary visible language across Investor / Capital / Organisation / Partner / Brand / Trust / Deal Room surfaces;
+- visible technical state labels are translated through presentation mappings while API/storage enum values remain unchanged;
+- common abbreviations expose Russian explanations using accessible title/tooltips;
+- core English headings such as Owner / Investor Route, Evidence Control Tower, Programme Capital Control and Mini Business Case were replaced in the Russian locale;
+- added qa/russian-first-contract.test.js;
+- Responsive QA now fails if key investor/capital headings regress back to English.
+
+English locale support remains a separate requirement and is not replaced by this RU-first policy.
