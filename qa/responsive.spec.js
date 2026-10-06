@@ -551,12 +551,12 @@ test('Portfolio Scenario Simulator ranks eligible capital mixes for 10 20 30 poi
   const best30 = await page.locator('.simulator-row.best span').textContent();
   await page.locator('[data-sim-budget="10"]').click();
   await expect(page.getByRole('heading', { name: /Как распределить 10 points/ })).toBeVisible();
-  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(2);
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(3);
   const best10 = await page.locator('.simulator-row.best span').textContent();
 
   await page.locator('[data-sim-budget="20"]').click();
   await expect(page.getByRole('heading', { name: /Как распределить 20 points/ })).toBeVisible();
-  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(4);
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
   const best20 = await page.locator('.simulator-row.best span').textContent();
 
   expect(best30).toBeTruthy();
