@@ -1571,6 +1571,7 @@ function stableJson(value){
 function capitalActor(req){
   const actor=sessionFromRequest(req);
   if(!actor)return null;
+  if(actor.demo===true)return null;
   if(!['Organizer','Staff'].includes(String(actor.role||'')))return null;
   return actor;
 }
@@ -1635,6 +1636,8 @@ async function appendCapitalEvent(req,body){
     if(seen.rowCount){await client.query('COMMIT');return {row:seen.rows[0],created:false};}
     const lockKey=programmeKey+'|'+aggregateType+'|'+aggregateId;
     await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[lockKey]);
+    const seenAfterLock=await client.query(`SELECT * FROM capital_ledger_events WHERE idempotency_key=$1 LIMIT 1`,[idempotencyKey]);
+    if(seenAfterLock.rowCount){await client.query('COMMIT');return {row:seenAfterLock.rows[0],created:false};}
     const prev=await client.query(`SELECT aggregate_seq,event_hash FROM capital_ledger_events
       WHERE programme_key=$1 AND aggregate_type=$2 AND aggregate_id=$3 ORDER BY aggregate_seq DESC LIMIT 1`,[programmeKey,aggregateType,aggregateId]);
     const seq=prev.rowCount?Number(prev.rows[0].aggregate_seq)+1:1;
