@@ -561,3 +561,35 @@ Priority score:
 The 100 points are not currency and are not an approved budget. Real capital allocation requires intervention costs, capacity, contractual constraints, risk limits and investment-committee approval.
 
 Pilot targets are scenario assumptions only. No recommendation is represented as guaranteed uplift.
+
+## Investment Committee Workspace — 2026-10-06
+
+The investment operating loop is now closed in the investor MVP:
+
+Recommendation -> Mini Business Case -> Review -> Demo Approval -> Pilot Running -> Measured -> Scale / Iterate / Stop.
+
+Each mini business case contains:
+
+- named owner;
+- modelled pilot-budget request in non-monetary points;
+- baseline KPI;
+- modelled KPI target;
+- evidence plan;
+- pilot design;
+- measured synthetic result;
+- decision state;
+- current-session decision log.
+
+The workspace uses an in-memory demo state machine only:
+
+DRAFT -> IN_REVIEW -> APPROVED -> PILOT_RUNNING -> MEASURED -> DECIDED.
+
+The final decision follows explicit demo rules:
+
+- SCALE: measured KPI meets/exceeds target and the evidence gate is complete;
+- ITERATE: KPI improves vs baseline but misses target, or evidence remains incomplete;
+- STOP: KPI does not improve, a material guardrail breaks, or evidence quality is insufficient.
+
+No approval, pilot state or measured result is persisted to production authority. The UI explicitly labels all of these states as DEMO / SYNTHETIC.
+
+Production implementation still requires server-side actor identity, immutable decision/evidence history, timestamps, role-based approval permissions and auditability.
