@@ -126,6 +126,37 @@
         "mfw/platform/investor-proof-model.js",
         "mfw/platform/platform.js"
       ]
+    },
+    {
+      "id": "evidence_control_tower",
+      "claim": "Investor Proof is implemented as an Evidence Control Tower with Case Dossier and Portfolio View.",
+      "status": "implemented_preview",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css"
+      ]
+    },
+    {
+      "id": "case_dossier",
+      "claim": "Synthetic investor dossiers expose source, viewed/saved signals, recommendation reason, meeting, intent, Deal Room, handoff, D30/D90/D365, evidence class/reference and potential revenue surfaces.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "portfolio_view",
+      "claim": "Synthetic portfolio aggregates Audience → Engagement → Qualified Buyer → Meeting → Intent → Deal → Retention → Revenue Evidence while retaining explicit synthetic labelling.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -151,5 +182,15 @@
       "Owner Value"
     ],
     "status": "implemented_preview"
+  },
+  "controlTower": {
+    "views": [
+      "Case Dossier",
+      "Portfolio View"
+    ],
+    "caseStages": 12,
+    "portfolioStages": 8,
+    "syntheticCases": 3,
+    "boundary": "Portfolio counts and dossier scenarios are illustrative/synthetic unless separately evidenced by production authority."
   }
 }
