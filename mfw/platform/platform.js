@@ -26,9 +26,6 @@
   var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
-  var comparisonMode=false;
-  var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
-  var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
@@ -689,7 +686,7 @@
   }
   function scenarioSelect(side,key,label,values){
     var filters=side==='a'?scenarioA:scenarioB;
-    return '<label><span>'+h(label)+'</span><select data-scenario-side="'+side+'" data-scenario-key="'+key+'">'+values.map(function(v){var lab=String(v).replace('all','Все').replace('mfw','MFW').replace('bfs','BFS').replace('made','Сделано в Москве').replace('new','Новые').replace('returning','Возвращающиеся');return '<option value="'+h(v)+'"'+(filters[key]===v?' selected':'')+'>'+h(lab)+'</option>';}).join('')+'</select></label>';
+    return '<label><span>'+h(label)+'</span><select data-scenario-side="'+side+'" data-scenario-key="'+key+'">'+values.map(function(v){return '<option value="'+h(v)+'"'+(filters[key]===v?' selected':'')+'>'+h(ruOption(key,v))+'</option>';}).join('')+'</select></label>';
   }
   function scenarioPanel(side,title){
     var opt=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.filterOptions)||{};
@@ -703,7 +700,7 @@
       scenarioSelect(side,'evidence','Evidence',opt.evidence||['all'])+
       scenarioSelect(side,'retention','Retention',opt.retention||['D30'])+
       scenarioSelect(side,'revenueSurface','Revenue surface',opt.revenueSurface||['all'])+
-      '</div><div class="scenario-kpis"><article><span>Population</span><b>'+h(metrics.population)+'</b></article><article><span>Qualified</span><b>'+h(metrics.qualifiedRate)+'%</b></article><article><span>Meeting</span><b>'+h(metrics.meetingRate)+'%</b></article><article><span>Intent</span><b>'+h(metrics.intentRate)+'%</b></article><article><span>Deal</span><b>'+h(metrics.dealRate)+'%</b></article><article><span>'+h(filters.retention)+'</span><b>'+h(metrics.retentionRate)+'%</b></article><article><span>Revenue evidence</span><b>'+h(metrics.revenueEvidenceRate)+'%</b></article></div></section>';
+      '</div><div class="scenario-kpis"><article><span>Популяция</span><b>'+h(metrics.population)+'</b></article><article><span>Qualified buyer</span><b>'+h(metrics.qualifiedRate)+'%</b></article><article><span>Встреча</span><b>'+h(metrics.meetingRate)+'%</b></article><article><span>Коммерческий интерес</span><b>'+h(metrics.intentRate)+'%</b></article><article><span>Deal-stage</span><b>'+h(metrics.dealRate)+'%</b></article><article><span>'+h(filters.retention)+'</span><b>'+h(metrics.retentionRate)+'%</b></article><article><span>Revenue evidence</span><b>'+h(metrics.revenueEvidenceRate)+'%</b></article></div></section>';
   }
   function diffPp(a,b){var d=a-b;return (d>0?'+':'')+d+' п.п.';}
   function comparisonInsight(){
