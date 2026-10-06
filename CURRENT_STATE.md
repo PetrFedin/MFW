@@ -635,3 +635,50 @@ Programme view includes:
 - programme-level ITERATE / REVIEW signal.
 
 All values are modelled pilot points, not currency, actual accounting spend or approved corporate budgets.
+
+## Capital Reallocation Optimizer — 2026-10-06
+
+Programme Capital Control now includes a gate-aware Capital Reallocation Optimizer.
+
+The optimizer compares the next 10 / 20 / 30 modelled points across:
+
+- MFW;
+- BRICS+ Fashion Summit;
+- Made in Moscow.
+
+Each candidate is evaluated on:
+
+- capital-at-risk relief;
+- modelled KPI leverage;
+- evidence readiness;
+- tranche absorption capacity.
+
+Decision score:
+
+30% risk relief + 25% KPI leverage + 30% evidence readiness + 15% absorption.
+
+Evidence governance overrides upside:
+
+- READY: evidence readiness >= 80%;
+- CONDITIONAL: 60% to <80%;
+- HOLD: below 60% or hard evidence blocker;
+- HOLD candidates receive score 0 regardless of modelled upside.
+
+Current demo candidate states:
+
+- MFW professional discovery: READY;
+- BFS matchmaking optimizer: CONDITIONAL;
+- Made in Moscow meeting-intent pack: HOLD due to incomplete evidence plan.
+
+For each 10/20/30-point scenario the UI shows:
+
+- how much the vertical can absorb;
+- modelled KPI lift;
+- capital-at-risk relief;
+- evidence readiness;
+- evidence required before the next tranche;
+- a modelled recommendation for committee review.
+
+The optimizer does not approve capital. It only produces a candidate decision for Investment Committee review.
+
+Reallocation capacity remains constrained by Programme Capital rules: uncommitted reserve + explicit releases only.
