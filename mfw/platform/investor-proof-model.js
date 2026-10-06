@@ -277,6 +277,32 @@
         stop:'Measured KPI does not improve vs baseline, material guardrail breaks, or evidence quality is insufficient.'
       }
     },
+    programmeCapital:{
+      label:'DEMO / MODELLED PROGRAMME CAPITAL',
+      envelopePoints:150,
+      reservePoints:50,
+      rules:{
+        requested:'Requested pilot points are demand, not approval.',
+        approved:'Approved points are an investment-committee decision in demo state.',
+        committed:'Committed points are reserved to a pilot and are not available for reallocation.',
+        spent:'Spent points represent modelled executed pilot resource, not currency.',
+        measured:'Measured points are spent resource attached to a completed KPI measurement.',
+        releasable:'Only uncommitted reserve and explicitly released STOP/closed commitments may be considered for reallocation.'
+      },
+      ecosystemWeights:{mfw:.46,bfs:.34,made:.20},
+      defaultExecution:[
+        {intervention:'professional-discovery',ecosystem:'mfw',requested:34,approved:30,committed:28,spent:22,status:'MEASURED',evidenceComplete:true,decision:'SCALE'},
+        {intervention:'matchmaking-optimizer',ecosystem:'bfs',requested:31,approved:28,committed:25,spent:18,status:'MEASURED',evidenceComplete:false,decision:'ITERATE'},
+        {intervention:'meeting-intent-pack',ecosystem:'made',requested:25,approved:22,committed:18,spent:12,status:'PILOT_RUNNING',evidenceComplete:false,decision:null},
+        {intervention:'deal-room-sla',ecosystem:'mfw',requested:20,approved:12,committed:9,spent:6,status:'MEASURED',evidenceComplete:true,decision:'STOP'},
+        {intervention:'brand365-retention',ecosystem:'bfs',requested:18,approved:8,committed:5,spent:0,status:'APPROVED',evidenceComplete:false,decision:null}
+      ],
+      blockers:[
+        {id:'b1',intervention:'meeting-intent-pack',code:'EVIDENCE_PLAN_INCOMPLETE',label:'Evidence plan incomplete'},
+        {id:'b2',intervention:'brand365-retention',code:'PILOT_NOT_STARTED',label:'Pilot approved but not started'},
+        {id:'b3',intervention:'matchmaking-optimizer',code:'TARGET_MISSED',label:'Measured improvement below modelled target'}
+      ]
+    },
     partnerConsole:[
       {stage:'PACKAGE',owner:'Partner / organiser',proof:'Signed scope / package',revenueGate:'Contract'},
       {stage:'INVENTORY',owner:'Organiser',proof:'Approved placement inventory',revenueGate:'No revenue yet'},
