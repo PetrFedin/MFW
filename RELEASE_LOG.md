@@ -291,3 +291,16 @@ Completed a presentation-focused, pre-Phase-0-safe visual wave:
 - responsive QA now checks that investor ecosystem media is present and non-duplicated.
 
 Remote public assets remain source-owned. Commercial/public campaign reuse requires rights confirmation; the demo does not claim a licence.
+
+## 2026-10-06 — Trust Passport preview
+
+Added a read-only defensibility layer to the investor MVP:
+
+- Trust Passport Hub tab;
+- explainable credential dimensions instead of one score;
+- explicit no-history state principle;
+- prohibited inference categories called out in-product;
+- eight-step guided investor demo now includes the trust/credential moat;
+- responsive QA covers the trust preview.
+
+No portable credential is actually issued by this preview and no production trust decision is made client-side.
