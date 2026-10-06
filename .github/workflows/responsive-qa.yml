@@ -31,6 +31,8 @@ jobs:
           node --check mfw/platform/bfs/app.js
           node --check mfw/platform/made-in-moscow/app.js
           node --check mfw/sw.js
+      - name: Run Russian-first UI contract
+        run: node qa/russian-first-contract.test.js
       - name: Install authority dependencies
         working-directory: mfw-api
         run: npm install --no-audit --no-fund
