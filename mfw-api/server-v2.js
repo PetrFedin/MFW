@@ -8,6 +8,7 @@ const { Brand365Store } = require('./brand365-store');
 const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMembership } = require('./social-providers');
 const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
 const { shouldRunReverificationCatchup } = require('./reverification-catchup');
+const { OrganisationRegistry } = require('./organisation-registry');
 const {
   CAPITAL_EVENT_TYPES,
   CAPITAL_AGGREGATE_TYPES,
@@ -42,6 +43,7 @@ const VK_LOGIN_REDIRECT_URI = process.env.MFW_VK_LOGIN_REDIRECT_URI || (PUBLIC_B
 const REVERIFY_INTERVAL_MINUTES = Math.max(60,Number(process.env.MFW_REVERIFY_INTERVAL_MINUTES || 360));
 const REVERIFY_BATCH_SIZE = Math.max(1,Math.min(1000,Number(process.env.MFW_REVERIFY_BATCH_SIZE || 250)));
 const featureEvaluator=new FeatureEvaluator({env:process.env});
+const organisationRegistry=new OrganisationRegistry({pool:null});
 
 function loadOfficialSnapshot(){
   try{
@@ -78,7 +80,8 @@ function validateInvestorBuild(){
   const migration011Path=path.join(__dirname,'migrations','011_social_auth_hardening.sql');
   const migration012Path=path.join(__dirname,'migrations','012_schema_reconciliation.sql');
   const migration020Path=path.join(__dirname,'migrations','020_journey_closure.sql');
-  const migration022Path=path.join(__dirname,'migrations','022_capital_authority.sql');
+  const migration022Path=path.join(__dirname,'migrations','022_persistent_organisation_registry.sql');
+  const migration023Path=path.join(__dirname,'migrations','023_capital_authority.sql');
   const manifestPath=path.join(__dirname,'..','mfw','manifest.webmanifest');
   const frontend=fs.readFileSync(frontendPath,'utf8');
   const admin=fs.readFileSync(adminPath,'utf8');
@@ -102,6 +105,7 @@ function validateInvestorBuild(){
   const migration012=fs.readFileSync(migration012Path,'utf8');
   const migration020=fs.readFileSync(migration020Path,'utf8');
   const migration022=fs.readFileSync(migration022Path,'utf8');
+  const migration023=fs.readFileSync(migration023Path,'utf8');
   new Function(frontend);
   new Function(admin);
   new Function(platformSource);
@@ -156,8 +160,11 @@ function validateInvestorBuild(){
   for(const required of ['professional_follows','b2b_leads','event_brand','official_updated_at']){
     if(migration020.indexOf(required)<0)throw new Error('missing_journey_closure_migration:'+required);
   }
+  for(const required of ['professional_organisations','professional_organisation_memberships','professional_organisation_participation','organisation_id']){
+    if(migration022.indexOf(required)<0)throw new Error('missing_persistent_organisation_registry:'+required);
+  }
   for(const required of ['capital_ledger_events','idempotency_key','previous_event_hash','event_hash','reject_capital_ledger_mutation']){
-    if(migration022.indexOf(required)<0)throw new Error('missing_capital_authority_migration:'+required);
+    if(migration023.indexOf(required)<0)throw new Error('missing_capital_authority_migration:'+required);
   }
   for(const required of ["'waitlist'","'invite_only'"]){
     if(migration001.indexOf(required)<0)throw new Error('missing_core_access_mode_contract:'+required);
@@ -644,6 +651,7 @@ function mergeOfficialSnapshotIntoMemory(){
 mergeOfficialSnapshotIntoMemory();
 
 const brand365Store=new Brand365Store({pool,memory});
+organisationRegistry.pool=pool;
 let databaseSchemaReadiness={
   configured:!!pool,
   ready:!pool,
@@ -725,7 +733,7 @@ async function checkDatabaseSchema(){
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
     'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations',
-    'professional_follows','b2b_leads',
+    'professional_follows','b2b_leads','professional_organisations','professional_organisation_memberships','professional_organisation_participation',
     'partner_programs','brand_program_memberships','partner_service_applications','capital_ledger_events'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
@@ -737,7 +745,7 @@ async function checkDatabaseSchema(){
     ['events','access_mode'],['events','event_brand'],['events','source_url'],['events','official_updated_at'],['event_registrations','source'],['streams','external_key'],['streams','provider_mode'],
     ['brands','external_key'],['brand_social_channels','external_key'],['loyalty_offers','external_key'],
     ['event_registrations','registration_type'],['event_registrations','organisation'],['event_registrations','job_title'],['event_registrations','purpose'],['event_registrations','submitted_payload'],
-    ['brand_content_posts','external_key'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at'],
+    ['brand_content_posts','external_key'],['platform_registrations','organisation_id'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at'],
     ['brand_program_memberships','status'],['brand_program_memberships','moderation_status'],['brand_program_memberships','external_ref'],
     ['partner_service_applications','service_code'],['partner_service_applications','status'],['partner_service_applications','event_brand'],
     ['capital_ledger_events','programme_key'],['capital_ledger_events','aggregate_type'],['capital_ledger_events','aggregate_id'],['capital_ledger_events','aggregate_seq'],
@@ -1712,6 +1720,29 @@ async function router(req,res){
     const revoked=[...memory.revoked.entries()].map(([jti,v])=>({jti,...v}));
     return json(res,200,{generatedAt:new Date().toISOString(),revoked,demo:true});
   }
+  if(req.method==='GET'&&p==='/v1/network/organisations'){
+    const type=url.searchParams.get('type');
+    const verifiedOnly=url.searchParams.get('verified')==='1';
+    try{
+      const data=await organisationRegistry.list({limit:url.searchParams.get('limit')||50,type:type||null,verifiedOnly});
+      return json(res,200,{data,source:pool?'postgres':'memory_demo',authority:'persistent_organisation_registry'});
+    }catch(err){return json(res,400,{error:String(err&&err.message||err)});}
+  }
+  if(req.method==='GET'&&p.startsWith('/v1/network/organisations/')){
+    const id=decodeURIComponent(p.slice('/v1/network/organisations/'.length));
+    const data=await organisationRegistry.get(id);
+    return data?json(res,200,{data,source:pool?'postgres':'memory_demo'}):json(res,404,{error:'organisation_not_found'});
+  }
+  if(req.method==='POST'&&p==='/v1/network/organisations/claim'){
+    const session=sessionFromRequest(req);
+    if(!session||!session.sub)return json(res,401,{error:'session_required'});
+    const body=await readBody(req);
+    try{
+      const data=await organisationRegistry.claimForUser(session.sub,body);
+      return json(res,200,{data,authority:'self_claim_unverified'});
+    }catch(err){return json(res,400,{error:String(err&&err.message||err)});}
+  }
+
   if(req.method==='GET'&&p==='/v1/events'){
     const eventBrand=String(url.searchParams.get('eventBrand')||'mfw').toLowerCase();
     const all=url.searchParams.get('all')==='1';
