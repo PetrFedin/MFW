@@ -579,6 +579,29 @@ test('Portfolio Scenario Simulator preserves reserve optionality and capacity ru
   await expectNoDocumentOverflow(page);
 });
 
+test('Best portfolio mix hands off into Investment Committee proposal workflow', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+  await page.locator('[data-sim-budget="30"]').click();
+
+  const bestMix = await page.locator('.simulator-row.best span').textContent();
+  await page.locator('[data-sim-propose]').click();
+  await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
+  await expect(page.locator('.committee-portfolio-proposal')).toBeVisible();
+  await expect(page.locator('.committee-portfolio-proposal h4')).toHaveText(bestMix.replace(/^#01 · /,''));
+  await expect(page.locator('.proposal-status b')).toHaveText('DRAFT');
+
+  await page.locator('[data-portfolio-proposal-action="submit"]').click();
+  await expect(page.locator('.proposal-status b')).toHaveText('IN_REVIEW');
+
+  await page.locator('[data-portfolio-proposal-action="approve"]').click();
+  await expect(page.locator('.proposal-status b')).toHaveText('APPROVED_DEMO');
+  await expect(page.locator('.committee-portfolio-proposal')).toContainText('не approval authority');
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-proposal-handoff.png') });
+});
+
 test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
