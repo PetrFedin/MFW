@@ -184,6 +184,16 @@ test('Trust Passport preview is explainable and avoids a universal score', async
   await page.screenshot({ path: testInfo.outputPath('trust-passport-preview.png') });
 });
 
+test('investor value layer separates monetisation hypotheses from revenue truth', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#valueBtn').click();
+  await expect(page.locator('.revenue-grid article')).toHaveCount(5);
+  await expect(page.getByText('Revenue truth rule')).toBeVisible();
+  await expect(page.getByText(/Engagement, meeting or request is not revenue/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investor-revenue-architecture.png') });
+});
+
 test('premium companion Discover stays usable across the platform', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
