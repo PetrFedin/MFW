@@ -168,6 +168,17 @@
         "mfw/platform/platform.js",
         "qa/responsive.spec.js"
       ]
+    },
+    {
+      "id": "filterable_portfolio_control_tower",
+      "claim": "Portfolio View supports simultaneous filtering by period, ecosystem, buyer market, brand category, buyer type, evidence class, retention horizon and revenue surface, with deterministic recalculation from the synthetic cohort cube.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "qa/responsive.spec.js"
+      ]
     }
   ],
   "rules": [
@@ -220,6 +231,17 @@
         "MADE"
       ],
       "boundary": "Aggregate synthetic cohort counts are not materialised row-level production records; only linked representative demo dossiers are navigable."
-    }
+    },
+    "filters": [
+      "period",
+      "ecosystem",
+      "buyer market",
+      "brand category",
+      "buyer type",
+      "evidence class",
+      "retention horizon",
+      "revenue surface"
+    ],
+    "filterBoundary": "Filters recompute only deterministic synthetic cohorts. Unsupported combinations produce zero state; no imputation or nearest-cohort substitution."
   }
 }
