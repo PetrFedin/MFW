@@ -593,3 +593,45 @@ The final decision follows explicit demo rules:
 No approval, pilot state or measured result is persisted to production authority. The UI explicitly labels all of these states as DEMO / SYNTHETIC.
 
 Production implementation still requires server-side actor identity, immutable decision/evidence history, timestamps, role-based approval permissions and auditability.
+
+## Programme Capital Control — 2026-10-06
+
+The investor MVP now includes portfolio-level capital governance above individual Investment Committee cases.
+
+Modelled programme envelope:
+
+- envelope: 150 pilot points;
+- requested: 128;
+- approved: 100;
+- committed: 85;
+- spent: 58;
+- measured: 46;
+- scaled: 22;
+- stopped: 6;
+- uncommitted reserve: 50;
+- committed-but-unspent: 27.
+
+Core capital rule:
+
+Committed-but-unspent is not free capital.
+
+Only:
+
+1. uncommitted programme reserve; and
+2. capital explicitly released from a STOP / closed commitment
+
+may enter reallocation capacity.
+
+The demo includes an explicit release action for the unused 3-point balance of a stopped Deal Room SLA pilot. Before release, reallocation capacity is 50. After release it becomes 53 and committed-but-unspent falls from 27 to 24.
+
+Programme view includes:
+
+- Requested -> Approved -> Committed -> Spent -> Measured -> Scaled / Stopped;
+- MFW / BFS / Made in Moscow capital map;
+- pilot-level table;
+- blockers and at-risk commitments;
+- evidence completeness;
+- reallocation opportunities;
+- programme-level ITERATE / REVIEW signal.
+
+All values are modelled pilot points, not currency, actual accounting spend or approved corporate budgets.
