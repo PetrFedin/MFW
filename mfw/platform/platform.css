@@ -418,3 +418,7 @@ body:not(.bfs-mode):not(.made-mode) .proof-mode-toggle button.active{background:
 .identity-edge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.identity-edge-grid>div{border:1px solid rgba(127,127,127,.22);padding:12px;display:grid;gap:6px}.identity-edge-grid b{font-size:8px;letter-spacing:.1em}.identity-edge-grid span{font-size:8px;line-height:1.45;opacity:.65}
 .identity-principle{display:grid;grid-template-columns:auto 1fr;gap:14px;margin-top:12px;padding:13px;border:1px solid rgba(127,127,127,.25)}.identity-principle b{font-size:8px;letter-spacing:.09em}.identity-principle span{font-size:9px;line-height:1.5;opacity:.72}
 @media(max-width:650px){.identity-graph{grid-template-columns:1fr}.identity-node.center,.identity-node.mfw,.identity-node.bfs,.identity-node.made,.identity-node.signals{grid-column:auto;grid-row:auto}.identity-edge-grid{grid-template-columns:1fr}.identity-principle{grid-template-columns:1fr}}
+
+.investor-evidence-actions{display:flex;justify-content:flex-end;margin-top:12px}
+.investor-evidence-actions a{border:1px solid #3a3a3a;border-radius:999px;padding:9px 12px;color:#d7ff39;text-decoration:none;font-size:8px;font-weight:950;letter-spacing:.08em}
+@media(max-width:680px){.investor-evidence-actions{justify-content:stretch}.investor-evidence-actions a{width:100%;text-align:center;min-height:44px;display:grid;place-items:center}}
