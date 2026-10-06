@@ -210,7 +210,7 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
 
   await page.locator('[data-control-view="portfolio"]').click();
   await expect(page.getByText('ILLUSTRATIVE / SYNTHETIC PORTFOLIO')).toBeVisible();
-  await expect(page.locator('.portfolio-funnel article')).toHaveCount(8);
+  await expect(page.locator('.portfolio-funnel .portfolio-stage')).toHaveCount(8);
   await expect(page.locator('.retention-tower article')).toHaveCount(3);
   await expect(page.getByText('REVENUE SURFACES TOUCHED · NOT REVENUE')).toBeVisible();
   await expectNoDocumentOverflow(page);
@@ -241,6 +241,57 @@ test('Portfolio drill-down opens synthetic cohorts and representative dossiers',
   await expect(page.getByText('demo://deal-room/request-001')).toBeVisible();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('portfolio-intent-drilldown.png') });
+});
+
+test('Filterable Portfolio Control Tower recalculates funnel retention and ecosystem mix', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="portfolio"]').click();
+
+  await expect(page.locator('[data-portfolio-filter]')).toHaveCount(8);
+  await expect(page.locator('.portfolio-pop b')).toHaveText('1200');
+
+  await page.locator('[data-portfolio-filter="ecosystem"]').selectOption('bfs');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('360');
+  await expect(page.locator('[data-portfolio-stage="INTENT"] > b')).toHaveText('29');
+
+  await page.locator('[data-portfolio-filter="market"]').selectOption('CIS');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('90');
+  await expect(page.locator('[data-portfolio-stage="INTENT"] > b')).toHaveText('7');
+
+  await page.locator('[data-portfolio-filter="retention"]').selectOption('D365');
+  await expect(page.locator('[data-portfolio-stage="RETENTION"] > b')).toHaveText('2');
+
+  await page.locator('[data-portfolio-filter="revenueSurface"]').selectOption('api');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('90');
+  await expect(page.locator('.portfolio-revenue article.active')).toHaveCount(1);
+
+  await page.locator('[data-portfolio-stage="INTENT"]').click();
+  await expect(page.getByText('INTENT = 7')).toBeVisible();
+  await expect(page.getByText('BFS').last()).toBeVisible();
+  await expect(page.getByText('7', { exact: true }).last()).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-filters.png') });
+});
+
+test('Filterable Portfolio Control Tower exposes honest zero state', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="portfolio"]').click();
+
+  await page.locator('[data-portfolio-filter="ecosystem"]').selectOption('made');
+  await page.locator('[data-portfolio-filter="market"]').selectOption('Asia');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('0');
+  await expect(page.getByText('NO MATCHING SYNTHETIC COHORT')).toBeVisible();
+  await expect(page.locator('[data-portfolio-stage="AUDIENCE"] > b')).toHaveText('0');
+  await expectNoDocumentOverflow(page);
+
+  await page.locator('[data-reset-portfolio]').click();
+  await expect(page.locator('.portfolio-pop b')).toHaveText('1200');
 });
 
 test('Evidence Control Tower synthetic case exposes reason evidence ref and revenue boundary', async ({ page }) => {
