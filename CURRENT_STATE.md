@@ -743,7 +743,7 @@ This handoff does not create commitments, accounting entries or corporate approv
 
 Capital governance now has a durable server-side authority contract in mfw-api.
 
-Migration 022 adds capital_ledger_events as an append-only PostgreSQL ledger.
+migration 023 adds capital_ledger_events as an append-only PostgreSQL ledger.
 
 Capital events now have:
 
