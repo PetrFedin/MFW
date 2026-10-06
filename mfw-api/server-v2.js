@@ -89,6 +89,7 @@ function validateInvestorBuild(){
   const migration022Path=path.join(__dirname,'migrations','022_persistent_organisation_registry.sql');
   const migration023Path=path.join(__dirname,'migrations','023_capital_authority.sql');
   const migration024Path=path.join(__dirname,'migrations','024_capital_operator_admission.sql');
+  const migration025Path=path.join(__dirname,'migrations','025_organisation_credential_revocations.sql');
   const manifestPath=path.join(__dirname,'..','mfw','manifest.webmanifest');
   const frontend=fs.readFileSync(frontendPath,'utf8');
   const admin=fs.readFileSync(adminPath,'utf8');
@@ -114,6 +115,7 @@ function validateInvestorBuild(){
   const migration022=fs.readFileSync(migration022Path,'utf8');
   const migration023=fs.readFileSync(migration023Path,'utf8');
   const migration024=fs.readFileSync(migration024Path,'utf8');
+  const migration025=fs.readFileSync(migration025Path,'utf8');
   new Function(frontend);
   new Function(admin);
   new Function(platformSource);
@@ -176,6 +178,9 @@ function validateInvestorBuild(){
   }
   for(const required of ['capital_operator_grants','operator_role','approved_by','expires_at','evidence_refs']){
     if(migration024.indexOf(required)<0)throw new Error('missing_capital_operator_admission:'+required);
+  }
+  for(const required of ['professional_organisation_credential_revocations','credential_sha256','revoked_by','revoked_at']){
+    if(migration025.indexOf(required)<0)throw new Error('missing_organisation_credential_revocation:'+required);
   }
   for(const required of ["'waitlist'","'invite_only'"]){
     if(migration001.indexOf(required)<0)throw new Error('missing_core_access_mode_contract:'+required);
