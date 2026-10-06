@@ -387,3 +387,41 @@ Brand Cockpit uses exposure -> relationship -> buyer signal -> match -> meeting 
 Economics maps payer -> product -> formula -> revenue-recognition gate and deliberately shows no factual ARR/MRR without source contracts and billing data.
 
 A machine-readable evidence manifest is available at `mfw/platform/evidence-package.json`.
+
+## Evidence Control Tower — 2026-10-06
+
+Investor Proof is now an Evidence Control Tower with two explicit views:
+
+### Case Dossier
+
+A selected buyer x brand relationship expands into a chronological dossier:
+
+source -> seen -> saved -> recommended -> meeting proposed -> meeting held -> intent -> Deal Room -> external handoff -> D30 -> D90 -> D365
+
+Each transition exposes:
+
+- event/context;
+- timestamp/relative time;
+- human-readable reason;
+- evidence class;
+- evidence reference;
+- potentially affected revenue streams.
+
+LIVE PROOF derives only current account/product state and leaves missing stages NOT EVIDENCED.
+
+SYNTHETIC CASE provides three complete illustrative dossiers. Synthetic cases are clearly labelled and are not production KPI.
+
+### Portfolio View
+
+The synthetic investor portfolio aggregates:
+
+Audience -> Engagement -> Qualified Buyer -> Meeting -> Intent -> Deal -> Retention -> Revenue Evidence
+
+It also shows:
+
+- MFW / BFS / Made in Moscow contribution;
+- D30 / D90 / D365 retention;
+- evidence-class mix;
+- revenue surfaces touched.
+
+Portfolio numbers are scenario data only. A touched revenue surface is explicitly not counted as realised revenue.
