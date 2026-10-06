@@ -218,8 +218,8 @@ test('Economics maps payer product formula and revenue gate without fake KPI', a
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="economics"]').click();
-  await expect(page.locator('.economics-row').filter({ hasNot: page.locator('.head') })).toHaveCount(5);
-  await expect(page.getByText(/no factual ARR\/MRR/i)).toBeVisible();
+  await expect(page.locator('.economics-row:not(.head)')).toHaveCount(5);
+  await expect(page.getByText(/нет фактических ARR\/MRR/i)).toBeVisible();
   await expect(page.getByText(/Demo placeholders are intentionally absent/)).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
