@@ -113,6 +113,57 @@ function capitalProjectionForType(rows,aggregateType){
   if(!CAPITAL_AGGREGATE_TYPES.has(type))return null;
   return capitalProjectionFromRows(rows.filter(r=>String(r.aggregate_type||'')===type));
 }
+const CAPITAL_TRUTH_CLASSES=new Set(['OBSERVED','ATTRIBUTED','INCREMENTAL','MODELLED']);
+
+function normalizeTruthClass(value){
+  const v=String(value||'').trim().toUpperCase();
+  return CAPITAL_TRUTH_CLASSES.has(v)?v:null;
+}
+function evidenceClassRank(value){
+  const v=normalizeTruthClass(value);
+  return v==='INCREMENTAL'?4:v==='ATTRIBUTED'?3:v==='OBSERVED'?2:v==='MODELLED'?1:0;
+}
+function capitalDecisionGate(rows,policy={}){
+  const metric=String(policy.metric||'').trim();
+  const direction=String(policy.direction||'increase').toLowerCase();
+  const target=Number(policy.target);
+  const nextTranchePoints=Number(policy.nextTranchePoints||0);
+  const minimumEvidenceClass=normalizeTruthClass(policy.minimumEvidenceClass||'OBSERVED')||'OBSERVED';
+  if(!metric||!Number.isFinite(target)||!['increase','decrease'].includes(direction)){
+    return {status:'HOLD',eligible:false,reasonCodes:['invalid_policy'],metric:metric||null,target:Number.isFinite(target)?target:null};
+  }
+  const projection=capitalProjectionFromRows(rows);
+  const measurements=rows.filter(r=>r.event_type==='MEASUREMENT_RECORDED'&&String(r.payload&&r.payload.metric||'')===metric);
+  const latest=measurements[measurements.length-1]||null;
+  if(!latest){
+    return {status:'HOLD',eligible:false,reasonCodes:['measurement_missing'],metric,target,direction,nextTranchePoints,minimumEvidenceClass,projection};
+  }
+  const measuredValue=Number(latest.payload&&latest.payload.measuredValue);
+  const truthClass=normalizeTruthClass(latest.payload&&latest.payload.truthClass);
+  const evidenceRefs=normalizeEvidenceRefs(latest.evidence_refs);
+  const reasons=[];
+  if(!Number.isFinite(measuredValue))reasons.push('measurement_invalid');
+  if(!truthClass)reasons.push('truth_class_missing');
+  if(truthClass&&evidenceClassRank(truthClass)<evidenceClassRank(minimumEvidenceClass))reasons.push('evidence_class_below_policy');
+  if(!evidenceRefs.length)reasons.push('measurement_evidence_missing');
+  if(projection.spent<=0)reasons.push('spend_missing');
+  if(reasons.length){
+    return {status:'HOLD',eligible:false,reasonCodes:reasons,metric,target,direction,measuredValue:Number.isFinite(measuredValue)?measuredValue:null,truthClass,nextTranchePoints,minimumEvidenceClass,projection};
+  }
+  const targetMet=direction==='increase'?measuredValue>=target:measuredValue<=target;
+  const decision=String(policy.onTargetMiss||'ITERATE').toUpperCase();
+  const missDecision=['ITERATE','STOP'].includes(decision)?decision:'ITERATE';
+  return {
+    status:targetMet?'SCALE':missDecision,
+    eligible:true,
+    targetMet,
+    reasonCodes:[targetMet?'target_met':'target_missed'],
+    metric,target,direction,measuredValue,truthClass,nextTranchePoints,minimumEvidenceClass,
+    measurementEventHash:latest.event_hash||null,
+    measurementOccurredAt:latest.occurred_at||null,
+    projection
+  };
+}
 function transitionError(message){
   const err=new Error(message);
   err.status=409;
@@ -182,6 +233,9 @@ module.exports={
   capitalProjectionFromRows,
   capitalProjectionBreakdown,
   capitalProjectionForType,
+  CAPITAL_TRUTH_CLASSES,
+  normalizeTruthClass,
+  capitalDecisionGate,
   validateCapitalTransition,
   verifyCapitalChainRows
 };
