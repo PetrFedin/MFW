@@ -132,6 +132,30 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
+test('guided investor demo traverses all three ecosystems and shared layers', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#investorBtn').click();
+  await page.locator('#investorDemoStart').click();
+  await expect(page.locator('#investorPilot')).toBeVisible();
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 07');
+
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
+
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('#accountDrawer')).not.toHaveClass(/hidden/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('#hubModal')).not.toHaveClass(/hidden/);
+  await expect(page.locator('[data-hub-tab="dealroom"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#investorPilotStep')).toHaveText('07 / 07');
+});
+
 test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#investorBtn').click();
