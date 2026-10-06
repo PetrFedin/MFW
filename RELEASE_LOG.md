@@ -498,3 +498,21 @@ Added the enterprise capital authority foundation:
 - mfw-api foundation checks added to PR CI.
 
 No frontend modelled capital value is promoted to production truth by this change alone.
+
+## 2026-10-06 — Capital Operator Admission
+
+Added migration 024_capital_operator_admission.sql and production-oriented operator admission:
+
+- durable Organizer/Staff capital grants;
+- active / suspended / revoked lifecycle;
+- optional grant expiry;
+- appointment evidence refs;
+- non-default secure admin bootstrap requirement;
+- persisted 4-hour operator sessions;
+- per-request grant + user + session revalidation;
+- session revocation on grant suspension/revocation;
+- demo sessions cannot self-elevate;
+- normalized PostgreSQL-only fail-closed responses;
+- Idempotency-Key and X-Request-Id allowed by CORS for ledger clients.
+
+Final enterprise IAM / SSO is still a later production hardening layer.
