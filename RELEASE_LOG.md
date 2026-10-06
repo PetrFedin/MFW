@@ -557,3 +557,12 @@ Added a Russian-first localisation hardening wave:
 - Responsive QA now fails if key investor/capital headings regress back to English.
 
 English locale support remains a separate requirement and is not replaced by this RU-first policy.
+
+
+## 2026-10-06 — Canonical migration ordering through 025
+
+- preserved Capital Authority as migration 023;
+- preserved Capital Operator Admission as migration 024;
+- placed organisation credential revocation ledger at migration 025 to avoid duplicate numeric prefixes;
+- added a migration-order CI contract requiring unique contiguous numbering;
+- Phase 0 PostgreSQL admission now expects migrations 001-025.
