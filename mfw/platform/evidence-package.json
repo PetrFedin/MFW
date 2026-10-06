@@ -318,6 +318,17 @@
         "mfw-api/capital-authority-contract.test.js",
         "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
       ]
+    },
+    {
+      "id": "capital_authority_machine_admission",
+      "claim": "The repository includes a read-only Capital Authority production admission checker that verifies exact release SHA, PostgreSQL readiness, migrations 023/024, operator-authenticated ledger/projection access and hash-chain integrity without creating synthetic ledger events.",
+      "status": "implemented_not_run_against_production",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw-api/check-capital-admission.js",
+        "mfw-api/package.json",
+        "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
+      ]
     }
   ],
   "rules": [
@@ -591,6 +602,25 @@
           "role matches grant"
         ],
         "bootstrapBoundary": "Requires explicitly configured non-default MFW_ADMIN_TOKEN; shared-secret bootstrap is transitional until enterprise IAM/SSO."
+      },
+      "admissionCheck": {
+        "command": "npm run check:capital-admission",
+        "requiredEnv": [
+          "MFW_EXPECTED_SHA",
+          "MFW_CAPITAL_OPERATOR_SESSION"
+        ],
+        "mode": "read_only",
+        "verifies": [
+          "ready",
+          "postgres",
+          "exact_sha",
+          "migration_023",
+          "migration_024",
+          "ledger_access",
+          "projection_access",
+          "hash_chain_integrity"
+        ],
+        "boundary": "Not production PASS until executed successfully against the deployed exact SHA."
       }
     }
   },
