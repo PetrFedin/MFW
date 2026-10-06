@@ -379,3 +379,21 @@ Added decision-support explanations to Comparison Mode:
 - responsive QA for the explanation layer.
 
 All outputs are synthetic descriptive analysis, not causal claims or realised economic impact.
+
+## 2026-10-06 — Recommendation / Capital Allocation
+
+Added a modelled investment decision layer to Comparison Mode:
+
+- six-item intervention catalog mapped to the funnel;
+- deterministic opportunity scoring;
+- top-three intervention ranking;
+- 100-point normalized pilot resource allocation;
+- target scenario and strongest segment driver;
+- KPI and modelled pilot target;
+- evidence gate per intervention;
+- owner and pilot design;
+- representative dossier links;
+- Pilot / Measure / Verify / Scale-or-Stop governance;
+- QA asserting three recommendations and exactly 100 allocated points.
+
+The allocation is a transparent scenario model, not a monetary budget or realised ROI forecast.
