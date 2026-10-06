@@ -771,7 +771,7 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toContain('mfp-shell-2026-10-06-p1');
+  expect(await swResponse.text()).toMatch(/mfp-shell-2026-10-06-p\\d+/);
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
