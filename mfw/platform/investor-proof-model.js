@@ -31,6 +31,7 @@
         {
           id:'buyer-brand-alpha',
           label:'CASE 01 · BUYER × BRAND',
+          primaryEcosystem:'mfw',
           participant:{id:'demo-buyer-a',name:'Demo Buyer A',role:'Buyer',organisation:'Demo Retail Group',market:'International retail',source:'MFW professional accreditation'},
           brand:{id:'demo-brand-a',name:'Demo Brand A',category:'Contemporary fashion',origin:'Moscow'},
           potentialRevenueStreams:['professional','brand','intelligence'],
@@ -52,6 +53,7 @@
         {
           id:'delegate-made-beta',
           label:'CASE 02 · DELEGATE × MADE BRAND',
+          primaryEcosystem:'made',
           participant:{id:'demo-delegate-b',name:'Demo Delegate B',role:'Delegate',organisation:'Demo Fashion Council',market:'BRICS market development',source:'BFS managed delegation'},
           brand:{id:'demo-made-b',name:'Demo Made Brand B',category:'Accessories',origin:'Moscow'},
           potentialRevenueStreams:['professional','brand','api'],
@@ -73,6 +75,7 @@
         {
           id:'buyer-brand-gamma',
           label:'CASE 03 · RETURNING BUYER',
+          primaryEcosystem:'bfs',
           participant:{id:'demo-buyer-c',name:'Demo Buyer C',role:'Buyer',organisation:'Demo Concept Store',market:'CIS retail',source:'Returning cross-event professional identity'},
           brand:{id:'demo-brand-c',name:'Demo Brand C',category:'Womenswear',origin:'Moscow'},
           potentialRevenueStreams:['brand','professional','partner','intelligence'],
@@ -95,6 +98,16 @@
       syntheticPortfolio:{
         label:'ILLUSTRATIVE / SYNTHETIC PORTFOLIO',
         population:1200,
+        stageCohorts:{
+          'AUDIENCE':{total:1200,breakdown:{mfw:640,bfs:360,made:200},representativeCases:['buyer-brand-alpha','delegate-made-beta','buyer-brand-gamma']},
+          'ENGAGEMENT':{total:720,breakdown:{mfw:400,bfs:220,made:100},representativeCases:['buyer-brand-alpha','delegate-made-beta','buyer-brand-gamma']},
+          'QUALIFIED BUYER':{total:180,breakdown:{mfw:96,bfs:72,made:12},representativeCases:['buyer-brand-alpha','buyer-brand-gamma','delegate-made-beta']},
+          'MEETING':{total:108,breakdown:{mfw:54,bfs:46,made:8},representativeCases:['buyer-brand-alpha','buyer-brand-gamma','delegate-made-beta']},
+          'INTENT':{total:65,breakdown:{mfw:31,bfs:29,made:5},representativeCases:['buyer-brand-alpha','buyer-brand-gamma','delegate-made-beta']},
+          'DEAL':{total:31,breakdown:{mfw:14,bfs:14,made:3},representativeCases:['buyer-brand-alpha','buyer-brand-gamma','delegate-made-beta']},
+          'RETENTION':{total:22,breakdown:{mfw:10,bfs:10,made:2},representativeCases:['buyer-brand-gamma','buyer-brand-alpha','delegate-made-beta']},
+          'REVENUE EVIDENCE':{total:12,breakdown:{mfw:5,bfs:6,made:1},representativeCases:['buyer-brand-gamma','buyer-brand-alpha','delegate-made-beta']}
+        },
         funnel:[
           {stage:'AUDIENCE',count:1200,evidence:'synthetic'},
           {stage:'ENGAGEMENT',count:720,evidence:'synthetic'},
