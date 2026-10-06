@@ -92,6 +92,16 @@ class OrganisationRegistry{
       .slice(0,limit).map(x=>this.publicRow(x));
   }
 
+  async canRepresent(userId,organisationId){
+    if(this.pool){
+      const r=await this.pool.query(`SELECT 1 FROM professional_organisation_memberships
+        WHERE organisation_id=$1 AND user_id=$2 AND status='active' LIMIT 1`,[organisationId,userId]);
+      return !!r.rowCount;
+    }
+    const row=this.memory.get(String(organisationId));
+    return !!(row&&row.members&&row.members.get(String(userId))?.status==='active');
+  }
+
   async summary(){
     if(this.pool){
       const r=await this.pool.query(`SELECT
