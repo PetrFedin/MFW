@@ -32,6 +32,10 @@ async function mockAuthorities(page) {
       path === '/v1/admin/native-readiness'
     ) {
       body = { data: {} };
+    } else if (path === '/v1/made-in-moscow/brands') {
+      body = { data: [{ id: 'masterpeace', name: 'Masterpeace', city: 'Москва' }], source: 'qa-postgres' };
+    } else if (path === '/v1/made-in-moscow/overview') {
+      body = { data: { verifiedBrands: 1, productionAdmitted: false } };
     } else if (path.includes('/profile')) {
       body = { data: { id: 'qa-user', firstName: 'QA', lastName: 'Agent', email: 'qa@example.test' } };
     } else if (path.includes('/agenda')) {
@@ -180,6 +184,56 @@ test('Made in Moscow bridge navigates back to MFW and BFS without losing platfor
 });
 
 
+
+
+test('Made verified brand deep-links into exact MFW brand and preserves brand context for BFS', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfwOpeningSeen', '1');
+    localStorage.setItem('mfwOnboarded', '1');
+  });
+  await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
+  const made = page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeBrandGrid')).toContainText('Masterpeace');
+
+  await made.locator('[data-made-open-mfw="masterpeace"]').click();
+  await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
+  const mfw = page.frameLocator('#eventFrame');
+  await expect(mfw.getByRole('heading', { name: 'Masterpeace' })).toBeVisible();
+
+  await page.locator('[data-event="made"]').click();
+  await expect(made.locator('[data-made-open-buyer="masterpeace"]')).toBeVisible();
+  await made.locator('[data-made-open-buyer="masterpeace"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  const bfs = page.frameLocator('#eventFrame');
+  await expect(bfs.getByText('BRAND CONTEXT · masterpeace')).toBeVisible();
+  await expect(bfs.getByText(/Made in Moscow → MFW canonical brand → BFS commercial flow/)).toBeVisible();
+
+  const trace = await page.evaluate(() => JSON.parse(localStorage.getItem('mfp.crossBrandJourney.v1') || 'null'));
+  expect(trace).toMatchObject({ brandRef: 'masterpeace', source: 'made_in_moscow', lastTarget: 'bfs' });
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('made-mfw-bfs-brand-path.png') });
+});
+
+test('live evidence distinguishes cross-event brand transition from meeting and revenue proof', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfp.crossBrandJourney.v1', JSON.stringify({
+      brandRef: 'masterpeace',
+      source: 'made_in_moscow',
+      lastTarget: 'bfs',
+      lastRouteKind: 'brand-buyer',
+      observedAt: '2026-10-07T17:00:00.000Z'
+    }));
+  });
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await expect(page.getByText('CROSS-EVENT')).toBeVisible();
+  await expect(page.getByText(/Made → BFS · masterpeace/)).toBeVisible();
+  await expect(page.getByText(/Requires explicit Deal Room \/ request evidence/)).toBeVisible();
+  await expect(page.getByText(/Requires admitted external reference/)).toBeVisible();
+});
+
+
 test('guided investor demo traverses all three ecosystems and shared layers', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#investorBtn').click();
@@ -251,7 +305,7 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
   await page.locator('[data-hub-tab="proof"]').click();
   await expect(page.locator('.control-tower-top .drawer-kicker')).toContainText('ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ');
   await expect(page.getByText('LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')).toBeVisible();
-  await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
+  await expect(page.locator('.dossier-timeline article')).toHaveCount(10);
   await expect(page.getByText('НЕ ПОДТВЕРЖДЕНО').first()).toBeVisible();
 
   await page.locator('[data-proof-mode="synthetic"]').click();
