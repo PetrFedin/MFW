@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MFW · адаптивный localhost</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#111;color:#fff}
+  .toolbar{position:sticky;top:0;z-index:10;display:flex;gap:8px;align-items:center;padding:12px 16px;background:rgba(17,17,17,.94);backdrop-filter:blur(16px);border-bottom:1px solid #2d2d2d}
+  .brand{font-weight:700;margin-right:auto}.meta{font-size:12px;color:#aaa;margin-right:12px}
+  button{border:1px solid #3b3b3b;background:#1b1b1b;color:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:650}
+  button[aria-pressed="true"]{background:#fff;color:#111;border-color:#fff}
+  .stage{padding:20px;display:flex;justify-content:center;align-items:flex-start;min-height:calc(100vh - 62px);overflow:auto}
+  .device{background:#000;border:1px solid #333;border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.35);overflow:hidden;transition:width .25s,height .25s,border-radius .25s}
+  iframe{display:block;border:0;width:100%;height:100%;background:#fff}
+  body[data-mode="desktop"] .device{width:1440px;height:900px;border-radius:12px}
+  body[data-mode="tablet"] .device{width:1024px;height:768px;border-radius:24px}
+  body[data-mode="phone"] .device{width:390px;height:844px;border-radius:34px}
+  @media(max-width:1100px){.meta{display:none}.stage{padding:12px}}
+</style>
+</head>
+<body data-mode="desktop">
+<div class="toolbar">
+  <div class="brand">MFW · localhost</div>
+  <div class="meta" id="meta">Монитор · 1440×900</div>
+  <button data-mode="desktop" aria-pressed="true">Монитор</button>
+  <button data-mode="tablet" aria-pressed="false">Планшет</button>
+  <button data-mode="phone" aria-pressed="false">Телефон</button>
+</div>
+<main class="stage">
+  <div class="device"><iframe id="app" src="/mfw/platform/index.html" title="MFW preview"></iframe></div>
+</main>
+<script>
+const modes={
+ desktop:["Монитор","1440×900"],
+ tablet:["Планшет","1024×768"],
+ phone:["Телефон","390×844"]
+};
+document.querySelectorAll("button[data-mode]").forEach(btn=>{
+ btn.addEventListener("click",()=>{
+   const mode=btn.dataset.mode;
+   document.body.dataset.mode=mode;
+   document.querySelectorAll("button[data-mode]").forEach(x=>x.setAttribute("aria-pressed",String(x===btn)));
+   document.getElementById("meta").textContent=modes[mode][0]+" · "+modes[mode][1];
+ });
+});
+</script>
+</body>
+</html>
