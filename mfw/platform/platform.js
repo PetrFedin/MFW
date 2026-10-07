@@ -567,30 +567,30 @@
     var preferred=(data.mfw.brands||[]).filter(function(x){return x.id===preferredId;})[0]||null;
     var context=preferred?preferred.name:'Выбранный бренд после подтверждённой встречи';
     hubContent.innerHTML=
-      '<div class="dealroom-preview-banner"><b>ПРЕДПРОСМОТР · КОММЕРЧЕСКИЕ ДАННЫЕ НЕ СОХРАНЯЮТСЯ</b><span>Workflow демонстрируется до durable PostgreSQL + ACL/policy. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
-      '<div class="dealroom-hero"><div><div class="drawer-kicker">КОМНАТА СДЕЛКИ БАЙЕРА / БРЕНДА</div><h3>Из встречи — в структурированный коммерческий follow-up.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>ВСТРЕЧА</span><i>→</i><span>ШОРТ-ЛИСТ</span><i>→</i><span>ЗАПРОС</span><i>→</i><span>ОТВЕТ</span><i>→</i><span>ПЕРЕДАЧА</span></div></div>'+
+      '<div class="dealroom-preview-banner"><b>ПРЕДПРОСМОТР · КОММЕРЧЕСКИЕ ДАННЫЕ НЕ СОХРАНЯЮТСЯ</b><span>Сценарий демонстрируется до постоянного PostgreSQL и формальной политики доступа. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
+      '<div class="dealroom-hero"><div><div class="drawer-kicker">КОМНАТА СДЕЛКИ БАЙЕРА / БРЕНДА</div><h3>Из встречи — в структурированное коммерческое сопровождение.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>ВСТРЕЧА</span><i>→</i><span>ШОРТ-ЛИСТ</span><i>→</i><span>ЗАПРОС</span><i>→</i><span>ОТВЕТ</span><i>→</i><span>ПЕРЕДАЧА</span></div></div>'+
       '<div class="dealroom-stage-grid">'+
-        '<article><small>01 · RELATIONSHIP УСЛОВИЕ</small><h4>Подтверждённая встреча</h4><p>Deal Room открывается только для авторизованной bilateral relationship.</p><span class="deal-status locked">ТРЕБУЕТСЯ СЕРВЕРНОЕ УПРАВЛЕНИЕ ДОСТУПОМ</span></article>'+
-        '<article><small>02 · BUYER ШОРТ-ЛИСТ</small><h4>Образы / коллекция</h4><p>Look, collection, replay timecode, buyer note и interest level.</p><span class="deal-status">ТОЛЬКО КАНОНИЧЕСКИЕ ID</span></article>'+
-        '<article><small>03 · STRUCTURED ЗАПРОС</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">АУДИРУЕМО</span></article>'+
-        '<article><small>04 · BRAND ОТВЕТ</small><h4>Доказательство ответа</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">ПРИВАТНЫЙ КОНТУР</span></article>'+
-        '<article><small>05 · ПЕРЕДАЧА</small><h4>Внешняя коммерческая система</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">БЕЗ НЕЯВНОГО СОЗДАНИЯ ЗАКАЗА</span></article>'+
+        '<article><small>01 · УСЛОВИЕ ОТНОШЕНИЙ</small><h4>Подтверждённая встреча</h4><p>Комната сделки открывается только для подтверждённой двусторонней деловой связи.</p><span class="deal-status locked">ТРЕБУЕТСЯ СЕРВЕРНОЕ УПРАВЛЕНИЕ ДОСТУПОМ</span></article>'+
+        '<article><small>02 · ШОРТ-ЛИСТ БАЙЕРА</small><h4>Образы / коллекция</h4><p>Образ, коллекция, таймкод записи, заметка байера и уровень интереса.</p><span class="deal-status">ТОЛЬКО КАНОНИЧЕСКИЕ ID</span></article>'+
+        '<article><small>03 · СТРУКТУРИРОВАННЫЙ ЗАПРОС</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">АУДИРУЕМО</span></article>'+
+        '<article><small>04 · ОТВЕТ БРЕНДА</small><h4>Доказательство ответа</h4><p>Ответ, ссылка на одобренный документ и следующий шаг без превращения MFW в ERP-систему.</p><span class="deal-status">ПРИВАТНЫЙ КОНТУР</span></article>'+
+        '<article><small>05 · ПЕРЕДАЧА</small><h4>Внешняя коммерческая система</h4><p>Ссылка на CRM / PLM / внешнюю оптовую систему — только после явной передачи.</p><span class="deal-status">БЕЗ НЕЯВНОГО СОЗДАНИЯ ЗАКАЗА</span></article>'+
       '</div>'+
-      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ЗАПРОС TYPES</small><h4>Структурированный намерение байера</h4></div><span>ДЕМОНСТРАЦИОННАЯ ТАКСОНОМИЯ</span></div><div class="request-chip-grid">'+
-        ['LINE SHEET','WHOLESALE PRICE','AVAILABILITY','MOQ','DELIVERY WINDOW','SAMPLE','SHOWROOM APPOINTMENT','DISTRIBUTION / MARKET'].map(function(x){return '<button disabled>'+x+'</button>';}).join('')+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ТИПЫ ЗАПРОСОВ</small><h4>Структурированное намерение байера</h4></div><span>ДЕМОНСТРАЦИОННАЯ ТАКСОНОМИЯ</span></div><div class="request-chip-grid">'+
+        ['ЛИНЕЙНЫЙ ЛИСТ','ОПТОВАЯ ЦЕНА','НАЛИЧИЕ','MOQ','ОКНО ПОСТАВКИ','ОБРАЗЕЦ','ВСТРЕЧА В ШОУРУМЕ','ДИСТРИБУЦИЯ / РЫНОК'].map(function(x){return '<button disabled>'+x+'</button>';}).join('')+
       '</div></section>'+
       '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ПРИВАТНЫЕ ДОКУМЕНТЫ</small><h4>Контролируемый обмен</h4></div><span>ПРОВЕРКА ДОСТУПА ПЕРЕД СКАЧИВАНИЕМ</span></div><div class="deal-doc-grid">'+
-        '<article><b>Line sheet</b><span>versioned · buyer-scoped</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
-        '<article><b>Lookbook</b><span>approved collection assets</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
-        '<article><b>Brand deck</b><span>commercial presentation</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
-        '<article><b>Sample / shipping</b><span>operational information</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Линейный лист</b><span>версионируется · доступ байера</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Лукбук</b><span>одобренные материалы коллекции</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Презентация бренда</b><span>коммерческая презентация</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Образец / доставка</b><span>операционная информация</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
       '</div></section>'+
-      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>COMMERCIAL ДОКАЗАТЕЛЬСТВА</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
-        '<div><b>OBSERVED</b><span>meeting / request / response inside MFW</span></div>'+
-        '<div><b>REPORTED</b><span>commercial outcome voluntarily reported by partner</span></div>'+
-        '<div><b>VERIFIED</b><span>outcome confirmed by admitted external integration</span></div>'+
+      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>КОММЕРЧЕСКИЕ ДОКАЗАТЕЛЬСТВА</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
+        '<div><b>НАБЛЮДАЕМОЕ</b><span>встреча / запрос / ответ внутри MFW</span></div>'+
+        '<div><b>ЗАЯВЛЕННОЕ</b><span>коммерческий результат, добровольно заявленный партнёром</span></div>'+
+        '<div><b>ПОДТВЕРЖДЁННОЕ</b><span>результат, подтверждённый допущенной внешней интеграцией</span></div>'+
       '</div></section>'+
-      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ BFS NETWORKING</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ MFW BRANDS</button></div>'+
+      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ ДЕЛОВЫЕ СВЯЗИ BFS</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ БРЕНДЫ MFW</button></div>'+
       '<div class="hub-note">Граница предпросмотра: Комната сделки показывает будущий продуктовый контракт. Рабочий жизненный цикл, ACL, документы, сроки, идемпотентность и аудит допускаются только после Phase 0 PostgreSQL и формальной политики.</div>';
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
   }
