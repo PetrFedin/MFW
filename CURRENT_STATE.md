@@ -931,3 +931,25 @@ It compares:
 It fails on current known runtime drift such as missing `healthCheckPath=/ready`, memory mode, non-green admission, deploy SHA mismatch or an exposed PostgreSQL allowlist.
 
 This is proof tooling only. It does not apply `DATABASE_URL`, mutate Render or close MFW-INT-00 by itself.
+
+
+## Three-ecosystem coherence hardening — 2026-10-07
+
+MFW, BFS and Made in Moscow are treated as one platform with different domain experiences, not as interchangeable skins.
+
+Shared layer:
+- one platform profile / identity;
+- event switcher and common account shell;
+- cross-event discovery and investor/evidence layers;
+- canonical brand identity where available;
+- separate registration/participation status for MFW and BFS;
+- separate Made in Moscow programme verification status.
+
+Domain boundaries remain explicit:
+- MFW owns fashion-week participation, shows, brands/collections, buyer fashion journeys and Brand365;
+- BFS owns summit programme, speakers/organisations, delegate networking, meetings and follow-up leads;
+- Made in Moscow owns the verified-programme projection, resident/brand discovery, Digital Market/Showroom and Buyer Bridge presentation, while relying on canonical MFW brand IDs and shared B2B authority rather than creating duplicate identities.
+
+Made in Moscow now exposes a shared-ID bridge showing MFW/BFS participation state, exact production-admission truth and direct navigation into the relevant MFW/BFS experiences. Verified brand cards link users into the MFW fashion journey and Buyer Bridge instead of behaving as isolated presentation cards.
+
+No real Made in Moscow Verified membership is claimed while PostgreSQL production admission and approved roster/import evidence remain unavailable.
