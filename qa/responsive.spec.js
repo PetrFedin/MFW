@@ -132,6 +132,54 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
+
+test('three ecosystems share identity while keeping scoped participation and Made verification separate', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+
+  await page.locator('#accountBtn').click();
+  await page.locator('#profileForm input[name="firstName"]').fill('QA');
+  await page.locator('#profileForm input[name="lastName"]').fill('Ecosystem');
+  await page.locator('#profileForm input[name="email"]').fill('qa-ecosystem@example.test');
+  await page.locator('#profileForm input[name="phone"]').fill('+10000000000');
+  await page.locator('#profileForm button[type="submit"]').click();
+
+  await page.locator('[data-event="bfs"]').click();
+  const bfs = page.frameLocator('#eventFrame');
+  await expect(bfs.locator('.logo')).toBeVisible();
+  await bfs.locator('[data-view="profile"]').click();
+  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible();
+  await expect(bfs.getByText('MFW')).toBeVisible();
+  await expect(bfs.getByText('СДЕЛАНО В МОСКВЕ')).toBeVisible();
+
+  await page.locator('[data-event="made"]').click();
+  const made = page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeAccountBridge')).toBeVisible();
+  await expect(made.locator('#madeAccountBridge')).toContainText('QA Ecosystem');
+  await expect(made.locator('#madeAccountBridge')).toContainText('MFW');
+  await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
+  await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(3);
+  await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
+});
+
+test('Made in Moscow bridge navigates back to MFW and BFS without losing platform shell', async ({ page }) => {
+  await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
+  const made = page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeAccountBridge')).toBeVisible();
+
+  await made.locator('[data-bridge-event="mfw"]').click();
+  await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
+  await expect(page.locator('#eventFrame')).toHaveAttribute('src', '../mfw/index.html');
+
+  await page.locator('[data-event="made"]').click();
+  await made.locator('[data-bridge-event="bfs"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  await expect(page.locator('#eventFrame')).toHaveAttribute('src', './bfs/index.html');
+});
+
+
 test('guided investor demo traverses all three ecosystems and shared layers', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#investorBtn').click();
