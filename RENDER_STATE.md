@@ -1,6 +1,6 @@
 # Render deployment state
 
-Snapshot date: **2026-10-02**
+Snapshot date: **2026-10-07**
 
 ## Legacy live contour
 
@@ -126,7 +126,7 @@ Until `DATABASE_URL` is securely bound:
 Admission sequence:
 1. securely bind existing `mfw-postgres` as `DATABASE_URL`;
 2. set `MFW_REQUIRE_POSTGRES=true`;
-3. authority startup applies migrations 001–021 transactionally;
+3. authority startup applies migrations 001–025 transactionally;
 4. verify schema reconciliation;
 5. verify `dataMode=postgres`;
 6. verify social reverification;
@@ -198,3 +198,29 @@ Canonical Blueprint corrections:
 - `MFW_REVERIFY_INTERVAL_MINUTES=360` and `MFW_REVERIFY_BATCH_SIZE=250` are explicit non-secret config.
 
 Current live blocker remains unchanged: the direct-created authority still needs the existing free PostgreSQL connection securely injected by Render. The MCP update-env action can set literal values but does not expose/apply the generated `fromDatabase` secret reference, so the credential is not reconstructed outside Render.
+
+
+## 2026-10-07 — Phase 0 runtime re-verification
+
+Render workspace: `ME` / `tea-dagitrp5efls73apuv50`.
+
+Verified through Render control-plane data:
+
+- `mfw-authority`: free web service, Frankfurt, branch `main`, autoDeploy configured as yes;
+- `mfw-postgres`: free PostgreSQL 17, Frankfurt, status `available`;
+- free database expiry currently reported as 2026-10-30;
+- latest observed authority runtime logs still report `dataMode=memory`;
+- social reverification remains inactive with reason `postgres_required`;
+- the direct-created authority still has not inherited the Blueprint `DATABASE_URL fromDatabase` binding;
+- the Render connector cannot safely materialise the generated database connection string and does not expose Blueprint apply/sync;
+- database external IP allowlist is empty, so external read-only SQL inspection is intentionally blocked.
+
+Canonical `render.yaml` already contains the correct secure target:
+
+`DATABASE_URL <- fromDatabase(mfw-postgres.connectionString)`
+and
+`MFW_REQUIRE_POSTGRES=true`.
+
+Therefore the remaining infrastructure action is a Render-side Blueprint apply/sync (or equivalent secure internal binding) for the existing canonical resources. The database password must not be copied into chat, source control or reconstructed through external tooling.
+
+The production migration floor is now 001–025. Capital admission tooling fails closed unless the full schema reconciliation contract is green.
