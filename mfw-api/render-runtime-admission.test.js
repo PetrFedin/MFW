@@ -53,6 +53,31 @@ assert.strictEqual(pass.schemaVersion,'mfw-render-runtime-admission-v1');
 assert.strictEqual(typeof pass.receiptSha256,'string');
 assert.strictEqual(pass.receiptSha256.length,64);
 
+
+const renderMcpService={
+  id:EXPECTED.service.id,
+  name:EXPECTED.service.name,
+  branch:'main',
+  autoDeploy:'yes',
+  repo:'https://github.com/PetrFedin/MFW',
+  serviceDetails:{
+    plan:'free',
+    region:'frankfurt',
+    runtime:'node',
+    healthCheckPath:'/ready',
+    envSpecificDetails:{startCommand:'cd mfw-api && node server-v2.js'}
+  }
+};
+const nestedShape=verify({
+  service:renderMcpService,
+  postgres,
+  deploy,
+  admission,
+  expectedSha
+});
+assert.strictEqual(nestedShape.ok,true);
+assert.deepStrictEqual(nestedShape.errors,[]);
+
 const drift=verify({
   service:{...service,healthCheckPath:''},
   postgres,
