@@ -611,3 +611,22 @@ Added `mfw-render-runtime-admission-v1`:
 - foundation regression coverage.
 
 No live PostgreSQL admission is claimed by this change.
+
+
+## 2026-10-07 — exact live baseline after PR #11
+
+Re-verified canonical runtime after the Render runtime-admission normalizer fix:
+
+- exact `main`: `4bad237ee3bab227805f0cb605abaa37e987a3e4`;
+- live authority deploy: `dep-db37a167bikc73btfto0`;
+- build: PASS;
+- authority process: LIVE;
+- deep functional self-test: PASS;
+- persistence: `dataMode=memory`;
+- PostgreSQL guard: not enabled;
+- database binding: not configured;
+- schema admission: not ready;
+- social reverification: inactive / `postgres_required`;
+- live Render health-check path: still empty.
+
+This release does **not** claim Phase 0 production admission. The next valid state transition remains secure Render-internal `DATABASE_URL` binding to the existing free `mfw-postgres`, `MFW_REQUIRE_POSTGRES=true`, `healthCheckPath=/ready`, exact-head redeploy, migrations 001–025, then deterministic Production + Capital admission receipts on the same SHA.
