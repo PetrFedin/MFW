@@ -379,11 +379,11 @@
           weights:{riskReduction:.30,kpiLeverage:.25,evidenceConfidence:.20,diversification:.10,optionality:.15},
           reserveScorePerShare:1,
           rules:{
-            hold:'HOLD candidates cannot receive new capital in an eligible scenario.',
-            conditional:'CONDITIONAL allocations remain committee-gated and make the portfolio scenario CONDITIONAL.',
-            capacity:'No vertical can receive more than its absorption cap or current reallocation capacity.',
-            reserve:'Unallocated budget remains reserve and preserves optionality.',
-            approval:'The simulator ranks mixes; it does not approve or commit capital.'
+            hold:'Направления со статусом «ПАУЗА» не могут получать новый капитал в допустимом сценарии.',
+            conditional:'Условные распределения требуют решения инвесткомитета и делают сценарий портфеля условным.',
+            capacity:'Ни одно направление не может получить больше своей ёмкости освоения или текущей ёмкости перераспределения.',
+            reserve:'Нераспределённый бюджет остаётся резервом и сохраняет гибкость.',
+            approval:'Симулятор ранжирует варианты; он не одобряет и не резервирует капитал.'
           }
         }
       }
