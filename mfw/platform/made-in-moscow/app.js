@@ -28,8 +28,8 @@ function renderAccountBridge(){
   [].slice.call(root.querySelectorAll('[data-bridge-section]')).forEach(function(b){b.onclick=function(){go(b.dataset.bridgeSection);};});
 }
 function bindBrandActions(){
-  [].slice.call(document.querySelectorAll('[data-made-open-mfw]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'mfw'},'*');};});
-  [].slice.call(document.querySelectorAll('[data-made-open-buyer]')).forEach(function(b){b.onclick=function(){go('buyer');};});
+  [].slice.call(document.querySelectorAll('[data-made-open-mfw]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'mfw',route:{kind:'brand',id:b.dataset.madeOpenMfw,source:'made_in_moscow'}},'*');};});
+  [].slice.call(document.querySelectorAll('[data-made-open-buyer]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'bfs',route:{kind:'brand-buyer',brandRef:b.dataset.madeOpenBuyer,source:'made_in_moscow'}},'*');};});
 }
 async function hydrateVerifiedRoster(){
   try{
