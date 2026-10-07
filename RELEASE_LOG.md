@@ -582,3 +582,17 @@ Aligned the specialised Capital Authority admission checker with the platform-wi
 - corrected Capital Authority documentation from the stale migration-022/001–024 wording.
 
 No runtime PostgreSQL admission is claimed by this release. Render still requires secure Blueprint/internal database binding before Phase 0 can be declared green.
+
+
+## 2026-10-07 — Phase 0 Admission Evidence Bundle
+
+Added deterministic read-only admission evidence:
+
+- `npm run check:admission-evidence` for production admission;
+- `npm run check:admission-evidence:full` for production + Capital chain verification;
+- exact SHA is mandatory;
+- canonical evidence payload receives SHA-256 receipt;
+- operator bearer token is never serialized;
+- contract test is part of `check:foundation`.
+
+This is evidence tooling only; it does not claim live PostgreSQL admission while Render Blueprint binding is still absent.

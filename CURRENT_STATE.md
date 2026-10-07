@@ -896,3 +896,22 @@ It requires:
 - Capital ledger hash-chain verification PASS.
 
 This is admission tooling only. It does not change the current Render runtime truth: the direct-created `mfw-authority` still lacks the secure Blueprint `fromDatabase` binding and remains blocked from PostgreSQL production admission.
+
+
+## Admission Evidence Bundle — 2026-10-07
+
+Repository now includes a read-only `mfw-admission-evidence-v1` bundle generator.
+
+It composes the existing production and Capital admission contracts into one deterministic receipt:
+
+- exact release SHA;
+- PostgreSQL readiness;
+- migration floor 001–025;
+- schema reconciliation;
+- role + loyalty Golden Paths;
+- social reverification state;
+- optional programme-grain Capital ledger/projection/hash-chain verification.
+
+The bundle does not mutate state and does not expose Capital Operator session tokens.
+
+Runtime truth is unchanged until Render applies the secure internal PostgreSQL binding: current Phase 0 remains blocked on infrastructure, not application code.

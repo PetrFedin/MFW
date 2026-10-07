@@ -2417,3 +2417,26 @@ Do not claim this layer complete until:
 7. historical participation remains intact after credential revoke.
 
 **Economic effect:** identity verification, partner onboarding and cross-event trust become reusable infrastructure rather than event-by-event manual work, creating recurring B2B verification/federation revenue and legitimate switching cost.
+
+
+## 2026-10-07 — Phase 0 Admission Evidence Bundle
+
+A read-only evidence layer is added to the existing Phase 0 admission path.
+
+Purpose:
+
+`exact release SHA -> /ready -> /health -> /health/deep -> schema reconciliation -> PostgreSQL Golden Paths -> optional Capital ledger/projection/verify -> deterministic SHA-256 evidence receipt`
+
+Rules:
+
+- this does not create a new authority;
+- it never writes business state;
+- it never creates or persists operator sessions;
+- `MFW_CAPITAL_OPERATOR_SESSION` is consumed only as an in-process bearer value when full Capital verification is explicitly requested and is never emitted into the evidence bundle;
+- `--scope=production` proves only production admission;
+- `--scope=full` additionally proves Capital programme-grain projection and hash-chain verification;
+- an exact `MFW_EXPECTED_SHA` is mandatory for a successful evidence bundle;
+- evidence hash is calculated over canonical JSON without `generatedAt`, making the same admitted state reproducible;
+- this layer remains subordinate to MFW-INT-00 and cannot mark production ready while PostgreSQL admission is blocked.
+
+This strengthens the existing requirement for exact-head deployment evidence without moving pg-boss, formal policy or any other persistent capability ahead of MFW-INT-00.
