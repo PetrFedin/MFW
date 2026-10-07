@@ -33,7 +33,7 @@ If PostgreSQL is unavailable, every /v1/capital/* endpoint fails closed with:
 - error=postgres_required;
 - persistence=postgres_only.
 
-Migration 022 is part of the ordinary transactional startup migration chain and therefore becomes part of /ready schema admission.
+Migration 023 is part of the ordinary transactional startup migration chain and therefore becomes part of /ready schema admission. The current platform-wide production migration floor is 001–025.
 
 ## Append-only ledger
 
@@ -216,7 +216,7 @@ Responsive QA now runs mfw-api npm run check:foundation before browser/device te
 Capital Authority is not production-admitted until all of the following are green:
 
 1. secure DATABASE_URL binding;
-2. migrations 001-024 applied;
+2. migrations 001-025 applied with schema reconciliation PASS;
 3. /ready = 200;
 4. dataMode = postgres;
 5. missingMigrations = [];
@@ -285,6 +285,8 @@ The checker is read-only. It verifies:
 - exact release SHA when supplied;
 - migration 023 present;
 - migration 024 present;
+- platform migration floor 025 present;
+- schema.ready=true with zero missing migrations/tables/columns/contract errors;
 - authenticated ledger read;
 - authoritative projection read;
 - /v1/capital/verify = integrity PASS.

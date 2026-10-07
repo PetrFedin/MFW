@@ -876,3 +876,23 @@ Visible machine states are mapped separately from API/storage enums, so localisa
 Abbreviations receive accessible explanations where practical, including KPI, CRM, B2B, API, ARR/MRR, GMV, CLV, CAC and ROI.
 
 Responsive QA now runs qa/russian-first-contract.test.js before browser device tests.
+
+
+## Capital Authority admission contract hardening — 2026-10-07
+
+The specialised `check:capital-admission` contract is now aligned with the platform-wide Phase 0 production gate.
+
+It requires:
+
+- `dataMode=postgres`;
+- `MFW_REQUIRE_POSTGRES=true`;
+- configured database binding;
+- `databaseSchemaReady=true` and `schema.ready=true`;
+- zero missing migrations / tables / columns / contract errors;
+- at least 25 applied migrations;
+- explicit presence of migrations 023 / 024 / 025;
+- non-demo operator session;
+- programme-grain Capital projection;
+- Capital ledger hash-chain verification PASS.
+
+This is admission tooling only. It does not change the current Render runtime truth: the direct-created `mfw-authority` still lacks the secure Blueprint `fromDatabase` binding and remains blocked from PostgreSQL production admission.

@@ -24,10 +24,19 @@ async function main(){
   pushIf(errors,readyResult.response.status!==200,'ready_http_'+readyResult.response.status);
   pushIf(errors,ready.ready!==true||ready.status!=='ready','production_not_ready');
   pushIf(errors,ready.dataMode!=='postgres','data_mode_not_postgres');
+  pushIf(errors,ready.requirePostgres!==true,'postgres_guard_not_enabled');
+  pushIf(errors,ready.databaseConfigured!==true,'database_not_configured');
   pushIf(errors,ready.databaseSchemaReady!==true,'schema_not_ready');
+  pushIf(errors,schema.ready!==true,'schema_reconciliation_not_ready');
+  pushIf(errors,(schema.missingMigrations||[]).length!==0,'schema_missing_migrations');
+  pushIf(errors,(schema.missingTables||[]).length!==0,'schema_missing_tables');
+  pushIf(errors,(schema.missingColumns||[]).length!==0,'schema_missing_columns');
+  pushIf(errors,(schema.contractErrors||[]).length!==0,'schema_contract_errors');
+  pushIf(errors,!Array.isArray(schema.migrations)||schema.migrations.length<25,'migration_set_incomplete');
   pushIf(errors,expectedSha&&ready.releaseSha!==expectedSha,'release_sha_mismatch');
   pushIf(errors,!Array.isArray(schema.migrations)||!schema.migrations.includes('023_capital_authority.sql'),'capital_migration_missing');
   pushIf(errors,!Array.isArray(schema.migrations)||!schema.migrations.includes('024_capital_operator_admission.sql'),'operator_migration_missing');
+  pushIf(errors,!Array.isArray(schema.migrations)||!schema.migrations.includes('025_organisation_credential_revocations.sql'),'migration_floor_025_missing');
   pushIf(errors,!operatorSession,'operator_session_missing');
 
   let ledgerResult=null,projectionResult=null,verifyResult=null;
@@ -62,10 +71,18 @@ async function main(){
     expectedSha:expectedSha||null,
     releaseSha:ready.releaseSha||null,
     programmeKey,
-    postgresReady:ready.dataMode==='postgres'&&ready.databaseSchemaReady===true,
+    postgresReady:ready.dataMode==='postgres'&&ready.requirePostgres===true&&ready.databaseConfigured===true&&ready.databaseSchemaReady===true&&schema.ready===true,
+    schemaContract:{
+      migrationsApplied:Array.isArray(schema.migrations)?schema.migrations.length:0,
+      missingMigrations:schema.missingMigrations||[],
+      missingTables:schema.missingTables||[],
+      missingColumns:schema.missingColumns||[],
+      contractErrors:schema.contractErrors||[]
+    },
     migrations:{
       capital:Array.isArray(schema.migrations)&&schema.migrations.includes('023_capital_authority.sql'),
-      operatorAdmission:Array.isArray(schema.migrations)&&schema.migrations.includes('024_capital_operator_admission.sql')
+      operatorAdmission:Array.isArray(schema.migrations)&&schema.migrations.includes('024_capital_operator_admission.sql'),
+      platformFloor025:Array.isArray(schema.migrations)&&schema.migrations.includes('025_organisation_credential_revocations.sql')
     },
     operatorSessionSupplied:!!operatorSession,
     ledger:ledgerResult?{status:ledgerResult.response.status,rows:Array.isArray(ledgerResult.body&&ledgerResult.body.data)?ledgerResult.body.data.length:null}:null,
