@@ -596,3 +596,18 @@ Added deterministic read-only admission evidence:
 - contract test is part of `check:foundation`.
 
 This is evidence tooling only; it does not claim live PostgreSQL admission while Render Blueprint binding is still absent.
+
+
+## 2026-10-07 — Render Runtime Admission Proof
+
+Added `mfw-render-runtime-admission-v1`:
+
+- read-only Render service/Postgres/deploy verification;
+- exact deployed SHA proof;
+- `healthCheckPath=/ready` enforcement;
+- no external Postgres allowlist;
+- consumes deterministic Admission Evidence Bundle;
+- deterministic SHA-256 runtime receipt;
+- foundation regression coverage.
+
+No live PostgreSQL admission is claimed by this change.
