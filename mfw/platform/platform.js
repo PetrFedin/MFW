@@ -437,7 +437,7 @@
       '<section class="today-hero" data-phase="'+h(life.phase)+'"><div><div class="drawer-kicker">'+h(phaseLabel)+' · '+h(life.start||'—')+' → '+h(life.end||'—')+'</div><h3>'+h(phaseCopy)+'</h3><p>Lifecycle определяется опубликованными датами MFW/BFS, а не вручную выбранным demo-state.</p></div><div class="lifecycle-rail"><span class="'+(life.phase==='before'?'active':'done')+'">BEFORE</span><i>→</i><span class="'+(life.phase==='live'?'active':life.phase==='after'?'done':'')+'">LIVE</span><i>→</i><span class="'+(life.phase==='after'?'active':'')+'">AFTER</span></div></section>'+
       '<div class="today-kpis"><div><b>'+h(saved)+'</b><span>saved</span></div><div><b>'+h(followed)+'</b><span>followed</span></div><div><b>'+h(favorites)+'</b><span>favorites</span></div><div><b>'+h(replayConfirmed)+'</b><span>confirmed replay assets</span></div></div>'+
       phaseCards+
-      (life.phase==='after'?'<div class="today-truth"><b>POST-EVENT TRUTH</b><span>Replay показывается как доступный только при подтверждённом media state. Follow-up и Deal Room не считаются продажей без отдельного outcome evidence.</span></div>':'')+
+      (life.phase==='after'?'<div class="today-truth"><b>ПОСЛЕСОБЫТИЙНЫЕ ФАКТЫ</b><span>Запись показывается доступной только при подтверждённом состоянии медиа. Последующее сопровождение и Комната сделки не считаются продажей без отдельного доказательства результата.</span></div>':'')+
       '<div class="hub-note">«Сейчас» — read-only lifecycle projection. Она не меняет agenda, access или коммерческую truth без соответствующего server action.</div>';
     [].slice.call(document.querySelectorAll('[data-today-agenda]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.todayKind,b.dataset.todayAgenda);};});
     [].slice.call(document.querySelectorAll('[data-today-action]')).forEach(function(b){b.onclick=function(){
@@ -591,7 +591,7 @@
         '<div><b>VERIFIED</b><span>outcome confirmed by admitted external integration</span></div>'+
       '</div></section>'+
       '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ BFS NETWORKING</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ MFW BRANDS</button></div>'+
-      '<div class="hub-note">PREVIEW boundary: Deal Room показывает будущий product contract. Production lifecycle, ACL, documents, due dates, idempotency и audit допускаются только после Phase 0 PostgreSQL и formal policy.</div>';
+      '<div class="hub-note">Граница предпросмотра: Комната сделки показывает будущий продуктовый контракт. Рабочий жизненный цикл, ACL, документы, сроки, идемпотентность и аудит допускаются только после Phase 0 PostgreSQL и формальной политики.</div>';
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
   }
 
@@ -1086,7 +1086,7 @@
       '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE УСЛОВИЕ</b></div>'+
       streams.map(function(x){return '<div class="economics-row"><span>'+h(x.payer)+'</span><span>'+h(x.product)+'</span><code>'+h(x.formula)+'</code><em>'+h(x.recognition)+'</em></div>';}).join('')+'</div>'+
       '<div class="economics-proof-grid"><article><b>OBSERVED</b><span>Product actions and delivery events.</span></article><article><b>REPORTED</b><span>Partner-declared outcomes.</span></article><article><b>VERIFIED</b><span>Admitted external confirmation.</span></article><article><b>MODELLED</b><span>Scenario economics with explicit assumptions.</span></article></div>'+
-      '<div class="hub-note">Unit economics, CAC, ROI, GMV, ARR and MRR are only factual when their source dataset and calculation period are available. Demo placeholders are intentionally absent.</div>';
+      '<div class="hub-note">Юнит-экономика, CAC, ROI, GMV, ARR и MRR считаются фактическими только при наличии исходного набора данных и периода расчёта. Демонстрационные подстановки намеренно отсутствуют.</div>';
   }
 
   function committeePolicy(){return INVESTOR_MODEL.investmentCommittee||{};}
