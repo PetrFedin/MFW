@@ -40,6 +40,7 @@
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
+  var pendingEventRoute=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
   function ruCode(value){
@@ -1514,7 +1515,8 @@
     root.innerHTML=cards.map(function(x){var style=x.image?' style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.86)),url(\''+h(x.image)+'\')"':'';return '<button class="investor-ecosystem-card" data-gallery-event="'+x.event+'"'+style+'><span>'+x.label+'</span><b>'+x.title+'</b><small>'+x.copy+'</small></button>';}).join('');
     [].slice.call(root.querySelectorAll('[data-gallery-event]')).forEach(function(b){b.onclick=function(){openEvent(b.dataset.galleryEvent);};});
   }
-  function openEvent(event){
+  function openEvent(event,route){
+    pendingEventRoute=route||null;
     var mfw=event==='mfw',bfs=event==='bfs',made=event==='made';
     document.body.classList.toggle('bfs-mode',bfs);
     document.body.classList.toggle('made-mode',made);
@@ -1668,10 +1670,16 @@
     if(!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-open-account')openAccount();
     if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
-    if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode);
+    if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode,e.data.route||null);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });
-  frame.addEventListener('load',notifyFrame);
+  frame.addEventListener('load',function(){
+    notifyFrame();
+    if(pendingEventRoute){
+      var route=pendingEventRoute;pendingEventRoute=null;
+      try{frame.contentWindow.postMessage({type:'mfp-route',route:route},'*');}catch(e){}
+    }
+  });
   updateNetworkStatus();
   registerServiceWorker();
   hydrateMadeDirectory();
