@@ -1181,7 +1181,7 @@
         '<article><span>BASELINE KPI</span><b>'+Math.round(rec.current*10)/10+'%</b><small>'+h(rec.intervention.kpi)+'</small></article>'+
         '<article><span>MODELLED TARGET</span><b>'+Math.round(rec.pilotTarget*10)/10+'%</b><small>assumption, не обещание результата</small></article>'+
         '<article><span>ИЗМЕРЕННЫЙ РЕЗУЛЬТАТ</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'синтетический результат пилота')+'</small></article>'+
-        '<article><span>РЕШЕНИЕ</span><b>'+h(decision||'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
+        '<article><span>РЕШЕНИЕ</span><b>'+h(decision?ruCode(decision):'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
       '</div>'+
       '<section class="committee-evidence-plan"><div><div class="drawer-kicker">ДОКАЗАТЕЛЬСТВА PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
       '<section class="committee-pilot"><div><span>PILOT DESIGN</span><b>'+h(rec.intervention.pilot)+'</b></div><div><span>STOP / SCALE LOGIC</span><b>'+h((policy.governance||{}).scale||'')+'</b><small>'+h((policy.governance||{}).iterate||'')+' '+h((policy.governance||{}).stop||'')+'</small></div></section>'+
