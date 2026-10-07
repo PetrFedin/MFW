@@ -2291,3 +2291,129 @@ Rules:
 - the English locale remains supported and must not be broken by RU-first copy changes.
 
 CI now includes a Russian-first UI contract covering core Investor / Capital / Organisation surfaces.
+
+
+## 2026-10-07 — Institutional Trust Runtime vNext
+
+This layer begins only after the current Organisation Credential implementation is repository-qualified. It upgrades a single signed credential into an interoperable institutional trust service.
+
+### Standards baseline
+
+Use stable standards as interoperability targets, not bespoke wallet protocols:
+
+- W3C Verifiable Credentials Data Model 2.0 Recommendation: https://www.w3.org/TR/vc-data-model-2.0/
+- W3C Bitstring Status List v1.0 Recommendation: https://www.w3.org/TR/vc-bitstring-status-list/
+- OpenID for Verifiable Presentations 1.0 Final: https://openid.net/specs/openid-4-verifiable-presentations-1_0-final.html
+- OpenID for Verifiable Credential Issuance 1.0 Final: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-final.html
+- OpenID Federation 1.0 Final for multi-organisation trust anchors: https://openid.net/specs/openid-federation-1_0-final.html
+
+### Issuer Key Lifecycle Authority — P0
+
+Introduce a persistent issuer-key registry with explicit states:
+
+`PROVISIONED -> ACTIVE -> VERIFY_ONLY -> RETIRED`, plus `COMPROMISED`.
+
+Requirements:
+
+- private keys never live in source/default configuration;
+- every credential binds to issuer + key ID + algorithm + issued_at;
+- rotation never invalidates historical verification solely because a key is no longer used for issuance;
+- compromise can invalidate affected credentials without rewriting participation history;
+- public verification metadata exposes active and historical verification keys;
+- all key-state transitions are append-only audited.
+
+### Status List / Revocation Distribution — P0
+
+Move from per-credential database lookup to a scalable signed status surface compatible with W3C Bitstring Status List semantics.
+
+The status service must support:
+
+- revoked;
+- suspended;
+- current;
+- status-list generation/version;
+- cache headers and deterministic refresh;
+- fail-closed behaviour when a verifier cannot obtain required status data.
+
+No participant PII belongs in the public status list.
+
+### OpenID4VCI / OpenID4VP Interoperability — P1
+
+Add optional wallet-compatible issuance/presentation for scoped credentials such as:
+
+- Verified Organisation;
+- Verified Buyer;
+- Verified Brand Representative;
+- BFS Speaker/Delegate;
+- Integration Partner.
+
+The platform remains able to verify credentials through its direct API; wallet protocols are an interoperability layer, not a new source of truth.
+
+### Institutional Federation — P1
+
+Use OpenID Federation concepts for trusted organisation ecosystems where justified:
+
+- fashion councils;
+- universities;
+- city institutions;
+- trade associations;
+- partner platforms;
+- accredited event operators.
+
+Federation metadata may establish which issuer/verifier is trusted for which credential class. Federation membership must not grant Deal Room or user-data access.
+
+### Verification Receipts / Transparency — P1
+
+For high-value B2B checks, optionally create a privacy-minimal verification receipt:
+
+- verifier organisation;
+- credential type;
+- credential/status hash;
+- policy version;
+- result;
+- timestamp.
+
+Do not store the disclosed presentation payload when a hash/reference is enough.
+
+This gives enterprise partners auditable proof that a credential was checked before admission/meeting/access.
+
+### Delegated Agent Credential — EXPERIMENTAL / GOVERNED
+
+Prepare for AI/automation clients without granting autonomous commercial authority.
+
+An organisation may issue a short-lived delegation to a software agent containing:
+
+- principal organisation/user;
+- exact scopes;
+- event/Deal Room boundary;
+- spending/commitment ceiling if applicable;
+- expiry;
+- human approval requirement.
+
+Agents may search, prepare, propose, schedule and verify. They must not create binding commercial commitments outside an explicit delegated policy.
+
+### Commercial products
+
+Potential recurring products:
+
+- Verification API;
+- Enterprise Issuer/Verifier Gateway;
+- federation membership / partner onboarding;
+- credential lifecycle dashboard;
+- certified integration programme;
+- event-to-event portable professional identity;
+- white-label credential rail for partner events.
+
+### Acceptance gate
+
+Do not claim this layer complete until:
+
+1. key rotation preserves old-valid verification;
+2. compromised key/status propagation is tested end-to-end;
+3. a verifier can validate without private MFW database access;
+4. minimum-disclosure presentation is demonstrated;
+5. federation trust is scope-specific;
+6. agent delegation expires/revokes independently of human identity;
+7. historical participation remains intact after credential revoke.
+
+**Economic effect:** identity verification, partner onboarding and cross-event trust become reusable infrastructure rather than event-by-event manual work, creating recurring B2B verification/federation revenue and legitimate switching cost.
