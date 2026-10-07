@@ -10,18 +10,32 @@ const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
 const { shouldRunReverificationCatchup } = require('./reverification-catchup');
 const { OrganisationRegistry } = require('./organisation-registry');
 const { OrganisationCredentialAuthority } = require('./organisation-credential');
+const {
+  CAPITAL_EVENT_TYPES,
+  CAPITAL_AGGREGATE_TYPES,
+  normalizeEvidenceRefs,
+  capitalEventEnvelope,
+  capitalHash,
+  capitalProjectionFromRows,
+  capitalProjectionBreakdown,
+  capitalProjectionForType,
+  capitalDecisionGate,
+  validateCapitalTransition,
+  verifyCapitalChainRows
+} = require('./capital-authority');
 let Pool = null;
 try { ({ Pool } = require('pg')); } catch (_) {}
 
 const PORT = Number(process.env.PORT || 10000);
 const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
-const VERSION = 'mfw-authority-v9-mvp-golden-path';
+const VERSION = 'mfw-authority-v11-capital-operator-admission';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
 const RELEASE_SHA = String(process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
 const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
+const ADMIN_TOKEN_CONFIGURED = !!process.env.MFW_ADMIN_TOKEN && process.env.MFW_ADMIN_TOKEN !== 'mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_WEBHOOK_SECRET = process.env.MFW_TELEGRAM_WEBHOOK_SECRET || '';
 const VK_SERVICE_TOKEN = process.env.MFW_VK_SERVICE_TOKEN || '';
@@ -73,7 +87,9 @@ function validateInvestorBuild(){
   const migration012Path=path.join(__dirname,'migrations','012_schema_reconciliation.sql');
   const migration020Path=path.join(__dirname,'migrations','020_journey_closure.sql');
   const migration022Path=path.join(__dirname,'migrations','022_persistent_organisation_registry.sql');
-  const migration023Path=path.join(__dirname,'migrations','023_organisation_credential_revocations.sql');
+  const migration023Path=path.join(__dirname,'migrations','023_capital_authority.sql');
+  const migration024Path=path.join(__dirname,'migrations','024_capital_operator_admission.sql');
+  const migration025Path=path.join(__dirname,'migrations','025_organisation_credential_revocations.sql');
   const manifestPath=path.join(__dirname,'..','mfw','manifest.webmanifest');
   const frontend=fs.readFileSync(frontendPath,'utf8');
   const admin=fs.readFileSync(adminPath,'utf8');
@@ -98,6 +114,8 @@ function validateInvestorBuild(){
   const migration020=fs.readFileSync(migration020Path,'utf8');
   const migration022=fs.readFileSync(migration022Path,'utf8');
   const migration023=fs.readFileSync(migration023Path,'utf8');
+  const migration024=fs.readFileSync(migration024Path,'utf8');
+  const migration025=fs.readFileSync(migration025Path,'utf8');
   new Function(frontend);
   new Function(admin);
   new Function(platformSource);
@@ -155,8 +173,14 @@ function validateInvestorBuild(){
   for(const required of ['professional_organisations','professional_organisation_memberships','professional_organisation_participation','organisation_id']){
     if(migration022.indexOf(required)<0)throw new Error('missing_persistent_organisation_registry:'+required);
   }
-  for(const required of ['professional_organisation_credential_revocations','credential_sha256','revoked_by']){
-    if(migration023.indexOf(required)<0)throw new Error('missing_organisation_credential_revocation_contract:'+required);
+  for(const required of ['capital_ledger_events','idempotency_key','previous_event_hash','event_hash','reject_capital_ledger_mutation']){
+    if(migration023.indexOf(required)<0)throw new Error('missing_capital_authority_migration:'+required);
+  }
+  for(const required of ['capital_operator_grants','operator_role','approved_by','expires_at','evidence_refs']){
+    if(migration024.indexOf(required)<0)throw new Error('missing_capital_operator_admission:'+required);
+  }
+  for(const required of ['professional_organisation_credential_revocations','credential_sha256','revoked_by','revoked_at']){
+    if(migration025.indexOf(required)<0)throw new Error('missing_organisation_credential_revocation:'+required);
   }
   for(const required of ["'waitlist'","'invite_only'"]){
     if(migration001.indexOf(required)<0)throw new Error('missing_core_access_mode_contract:'+required);
@@ -326,7 +350,7 @@ function json(res,status,data,extraHeaders={}) {
     'Content-Type':'application/json; charset=utf-8',
     'Content-Length':Buffer.byteLength(body),
     'Access-Control-Allow-Origin':ORIGIN,
-    'Access-Control-Allow-Headers':'Content-Type, Authorization, X-MFW-Admin',
+    'Access-Control-Allow-Headers':'Content-Type, Authorization, X-MFW-Admin, Idempotency-Key, X-Request-Id',
     'Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS',
     'Vary':'Origin',
     'Cache-Control':'no-store',
@@ -735,8 +759,8 @@ async function checkDatabaseSchema(){
     'app_installations','brand_access','social_reverification_runs','notification_preferences',
     'content_impressions','notification_deliveries','social_auth_flows',
     'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations',
-    'professional_follows','b2b_leads','professional_organisations','professional_organisation_memberships','professional_organisation_participation','professional_organisation_credential_revocations',
-    'partner_programs','brand_program_memberships','partner_service_applications'
+    'professional_follows','b2b_leads','professional_organisations','professional_organisation_memberships','professional_organisation_participation',
+    'partner_programs','brand_program_memberships','partner_service_applications','capital_ledger_events','capital_operator_grants'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
@@ -749,7 +773,11 @@ async function checkDatabaseSchema(){
     ['event_registrations','registration_type'],['event_registrations','organisation'],['event_registrations','job_title'],['event_registrations','purpose'],['event_registrations','submitted_payload'],
     ['brand_content_posts','external_key'],['platform_registrations','organisation_id'],['social_auth_flows','code_verifier'],['social_auth_flows','expires_at'],
     ['brand_program_memberships','status'],['brand_program_memberships','moderation_status'],['brand_program_memberships','external_ref'],
-    ['partner_service_applications','service_code'],['partner_service_applications','status'],['partner_service_applications','event_brand']
+    ['partner_service_applications','service_code'],['partner_service_applications','status'],['partner_service_applications','event_brand'],
+    ['capital_ledger_events','programme_key'],['capital_ledger_events','aggregate_type'],['capital_ledger_events','aggregate_id'],['capital_ledger_events','aggregate_seq'],
+    ['capital_ledger_events','event_type'],['capital_ledger_events','actor_subject'],['capital_ledger_events','actor_role'],['capital_ledger_events','occurred_at'],
+    ['capital_ledger_events','points'],['capital_ledger_events','evidence_refs'],['capital_ledger_events','idempotency_key'],['capital_ledger_events','previous_event_hash'],['capital_ledger_events','event_hash'],
+    ['capital_operator_grants','operator_role'],['capital_operator_grants','status'],['capital_operator_grants','approved_by'],['capital_operator_grants','expires_at'],['capital_operator_grants','evidence_refs']
   ];
   const cols=await pool.query(`SELECT table_name,column_name FROM information_schema.columns
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[[...new Set(requiredColumns.map(x=>x[0]))]]);
@@ -772,6 +800,11 @@ async function checkDatabaseSchema(){
   for(const required of ['registered','waitlist','invited','confirmed','cancelled','no_show','attended']){
     if(!registrationDef.includes(required))contractErrors.push('event_registration_status_missing:'+required);
   }
+
+  const capitalTrigger=await pool.query(`SELECT tgname
+    FROM pg_trigger tg JOIN pg_class t ON t.oid=tg.tgrelid
+    WHERE t.relname='capital_ledger_events' AND tg.tgname='trg_capital_ledger_immutable' AND NOT tg.tgisinternal LIMIT 1`);
+  if(!capitalTrigger.rowCount)contractErrors.push('capital_ledger_immutability_trigger_missing');
 
   const ready=!missingMigrations.length&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
   return {
@@ -1572,6 +1605,115 @@ function rateLimit(req){
   return n<=180;
 }
 
+function secureCapitalAdminOk(req){
+  if(!ADMIN_TOKEN_CONFIGURED)return false;
+  const supplied=String(req.headers['x-mfw-admin']||'');
+  const expected=String(ADMIN_TOKEN);
+  if(!supplied||supplied.length!==expected.length)return false;
+  try{return crypto.timingSafeEqual(Buffer.from(supplied),Buffer.from(expected));}catch(_){return false;}
+}
+function bearerToken(req){
+  const auth=String(req.headers.authorization||'');
+  return auth.startsWith('Bearer ')?auth.slice(7):'';
+}
+async function capitalActor(req){
+  if(!pool)return null;
+  const token=bearerToken(req);
+  const actor=sessionFromRequest(req);
+  if(!actor||actor.demo===true||actor.operator!==true)return null;
+  if(!['Organizer','Staff'].includes(String(actor.role||'')))return null;
+  const tokenHash=crypto.createHash('sha256').update(token).digest('hex');
+  const r=await pool.query(`SELECT cog.user_id,cog.operator_role,cog.status,cog.expires_at,s.expires_at AS session_expires_at,s.revoked_at,u.status AS user_status
+    FROM capital_operator_grants cog
+    JOIN users u ON u.id=cog.user_id
+    JOIN sessions s ON s.user_id=cog.user_id AND s.token_hash=$2
+    WHERE cog.user_id::text=$1
+    LIMIT 1`,[String(actor.sub),tokenHash]);
+  if(!r.rowCount)return null;
+  const grant=r.rows[0],now=Date.now();
+  if(grant.status!=='active'||grant.user_status!=='active'||grant.revoked_at)return null;
+  if(grant.expires_at&&new Date(grant.expires_at).getTime()<=now)return null;
+  if(grant.session_expires_at&&new Date(grant.session_expires_at).getTime()<=now)return null;
+  if(String(grant.operator_role)!==String(actor.role))return null;
+  return actor;
+}
+async function issueCapitalOperatorSession(userId){
+  if(!pool)throw Object.assign(new Error('postgres_required'),{status:503});
+  const r=await pool.query(`SELECT cog.user_id,cog.operator_role,cog.status,cog.expires_at,p.display_name,u.status AS user_status
+    FROM capital_operator_grants cog
+    JOIN users u ON u.id=cog.user_id
+    LEFT JOIN profiles p ON p.user_id=cog.user_id
+    WHERE cog.user_id::text=$1 LIMIT 1`,[String(userId)]);
+  if(!r.rowCount)throw Object.assign(new Error('capital_operator_grant_required'),{status:403});
+  const g=r.rows[0],now=Date.now();
+  if(g.status!=='active'||g.user_status!=='active')throw Object.assign(new Error('capital_operator_not_active'),{status:403});
+  if(g.expires_at&&new Date(g.expires_at).getTime()<=now)throw Object.assign(new Error('capital_operator_grant_expired'),{status:403});
+  const exp=now+4*60*60*1000;
+  const payload={typ:'session',sub:String(g.user_id),role:String(g.operator_role),name:String(g.display_name||'Capital Operator'),iat:now,exp,demo:false,operator:true};
+  const token=signPayload(payload);
+  const tokenHash=crypto.createHash('sha256').update(token).digest('hex');
+  await pool.query(`INSERT INTO sessions(user_id,token_hash,expires_at)
+    VALUES($1,$2,to_timestamp($3/1000.0))`,[g.user_id,tokenHash,exp]);
+  return {token,payload};
+}
+
+async function appendCapitalEvent(req,body){
+  if(!pool)throw Object.assign(new Error('postgres_required'),{status:503});
+  const actor=await capitalActor(req);
+  if(!actor)throw Object.assign(new Error('capital_authority_role_required'),{status:403});
+  const eventType=String(body.eventType||'');
+  const aggregateType=String(body.aggregateType||'');
+  const programmeKey=String(body.programmeKey||'mfw_programme').trim();
+  const aggregateId=String(body.aggregateId||'').trim();
+  const idempotencyKey=String(body.idempotencyKey||req.headers['idempotency-key']||'').trim();
+  const occurredAt=body.occurredAt?new Date(body.occurredAt):new Date();
+  const points=body.points==null?null:Number(body.points);
+  if(!CAPITAL_EVENT_TYPES.has(eventType))throw Object.assign(new Error('invalid_capital_event_type'),{status:400});
+  if(!CAPITAL_AGGREGATE_TYPES.has(aggregateType))throw Object.assign(new Error('invalid_capital_aggregate_type'),{status:400});
+  if(!programmeKey||!aggregateId)throw Object.assign(new Error('capital_aggregate_required'),{status:400});
+  if(!idempotencyKey)throw Object.assign(new Error('idempotency_key_required'),{status:400});
+  if(Number.isNaN(occurredAt.getTime()))throw Object.assign(new Error('invalid_occurred_at'),{status:400});
+  if(points!=null&&(!Number.isFinite(points)||points<0))throw Object.assign(new Error('invalid_points'),{status:400});
+
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const seen=await client.query(`SELECT * FROM capital_ledger_events WHERE idempotency_key=$1 LIMIT 1`,[idempotencyKey]);
+    if(seen.rowCount){await client.query('COMMIT');return {row:seen.rows[0],created:false};}
+    const lockKey=programmeKey+'|'+aggregateType+'|'+aggregateId;
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[lockKey]);
+    const seenAfterLock=await client.query(`SELECT * FROM capital_ledger_events WHERE idempotency_key=$1 LIMIT 1`,[idempotencyKey]);
+    if(seenAfterLock.rowCount){await client.query('COMMIT');return {row:seenAfterLock.rows[0],created:false};}
+    const history=await client.query(`SELECT aggregate_seq,event_hash,event_type,points,payload FROM capital_ledger_events
+      WHERE programme_key=$1 AND aggregate_type=$2 AND aggregate_id=$3 ORDER BY aggregate_seq ASC`,[programmeKey,aggregateType,aggregateId]);
+    const prev=history.rows[history.rows.length-1]||null;
+    const seq=prev?Number(prev.aggregate_seq)+1:1;
+    const previousEventHash=prev?String(prev.event_hash):null;
+    validateCapitalTransition(history.rows,{eventType,points,evidenceRefs:body.evidenceRefs,payload:body.payload});
+    const envelope=capitalEventEnvelope({
+      programmeKey,aggregateType,aggregateId,aggregateSeq:seq,eventType,
+      actorSubject:actor.sub,actorRole:actor.role,authMethod:'session',
+      occurredAt:occurredAt.toISOString(),points,evidenceRefs:body.evidenceRefs,
+      payload:body.payload,idempotencyKey,requestId:req.headers['x-request-id']||body.requestId||null,previousEventHash
+    });
+    const eventHash=capitalHash(envelope);
+    const inserted=await client.query(`INSERT INTO capital_ledger_events(
+      programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,actor_subject,actor_role,auth_method,
+      occurred_at,points,evidence_refs,payload,idempotency_key,request_id,previous_event_hash,event_hash
+    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16)
+    RETURNING *`,[
+      envelope.programmeKey,envelope.aggregateType,envelope.aggregateId,envelope.aggregateSeq,envelope.eventType,
+      envelope.actorSubject,envelope.actorRole,envelope.authMethod,envelope.occurredAt,envelope.points,
+      JSON.stringify(envelope.evidenceRefs),JSON.stringify(envelope.payload),envelope.idempotencyKey,envelope.requestId,
+      envelope.previousEventHash,eventHash
+    ]);
+    await client.query('COMMIT');
+    return {row:inserted.rows[0],created:true};
+  }catch(err){
+    await client.query('ROLLBACK').catch(()=>{});
+    throw err;
+  }finally{client.release();}
+}
 async function router(req,res){
   if(req.method==='OPTIONS') return json(res,204,{});
   if(!rateLimit(req)) return json(res,429,{error:'rate_limited'});
@@ -1709,13 +1851,13 @@ async function router(req,res){
   if(req.method==='POST'&&p==='/v1/network/organisations/claim'){
     const session=sessionFromRequest(req);
     if(!session||!session.sub)return json(res,401,{error:'session_required'});
-    const body=await readJson(req).catch(()=>null);
-    if(!body)return json(res,400,{error:'invalid_json'});
+    const body=await readBody(req);
     try{
       const data=await organisationRegistry.claimForUser(session.sub,body);
       return json(res,200,{data,authority:'self_claim_unverified'});
     }catch(err){return json(res,400,{error:String(err&&err.message||err)});}
   }
+
   if(req.method==='GET'&&p==='/v1/events'){
     const eventBrand=String(url.searchParams.get('eventBrand')||'mfw').toLowerCase();
     const all=url.searchParams.get('all')==='1';
@@ -2390,9 +2532,138 @@ async function router(req,res){
     return json(res,200,{data:{brandId,favorite}});
   }
 
+  if(p==='/v1/admin/capital/operators'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
+    if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
+    const r=await pool.query(`SELECT cog.user_id AS "userId",cog.operator_role AS "operatorRole",cog.status,cog.approved_by AS "approvedBy",
+      cog.approved_at AS "approvedAt",cog.expires_at AS "expiresAt",cog.evidence_refs AS "evidenceRefs",cog.reason,
+      p.display_name AS "displayName",u.email,u.phone
+      FROM capital_operator_grants cog JOIN users u ON u.id=cog.user_id LEFT JOIN profiles p ON p.user_id=cog.user_id
+      ORDER BY cog.updated_at DESC LIMIT 200`);
+    return json(res,200,{data:r.rows,authority:'capital_operator_admission'});
+  }
+  if(p==='/v1/admin/capital/operators'&&req.method==='POST'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
+    if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
+    const body=await readBody(req),userId=String(body.userId||''),role=String(body.operatorRole||'');
+    if(!/^[0-9a-f-]{36}$/i.test(userId))return json(res,400,{error:'valid_user_id_required'});
+    if(!['Organizer','Staff'].includes(role))return json(res,400,{error:'invalid_operator_role'});
+    const evidenceRefs=normalizeEvidenceRefs(body.evidenceRefs);
+    if(!evidenceRefs.length)return json(res,400,{error:'operator_appointment_evidence_required'});
+    const expiresAt=body.expiresAt?new Date(body.expiresAt):null;
+    if(expiresAt&&Number.isNaN(expiresAt.getTime()))return json(res,400,{error:'invalid_expires_at'});
+    const exists=await pool.query('SELECT id FROM users WHERE id::text=$1 AND status=$2 LIMIT 1',[userId,'active']);
+    if(!exists.rowCount)return json(res,404,{error:'active_user_not_found'});
+    const r=await pool.query(`INSERT INTO capital_operator_grants(user_id,operator_role,status,approved_at,expires_at,evidence_refs,reason)
+      VALUES($1,$2,'active',now(),$3,$4::jsonb,$5)
+      ON CONFLICT(user_id) DO UPDATE SET operator_role=EXCLUDED.operator_role,status='active',approved_at=now(),expires_at=EXCLUDED.expires_at,
+        evidence_refs=EXCLUDED.evidence_refs,reason=EXCLUDED.reason,updated_at=now()
+      RETURNING user_id AS "userId",operator_role AS "operatorRole",status,approved_at AS "approvedAt",expires_at AS "expiresAt",evidence_refs AS "evidenceRefs",reason`,
+      [userId,role,expiresAt?expiresAt.toISOString():null,JSON.stringify(evidenceRefs),String(body.reason||'').slice(0,500)||null]);
+    return json(res,201,{data:r.rows[0],authority:'capital_operator_admission'});
+  }
+  if(req.method==='PATCH'&&p.startsWith('/v1/admin/capital/operators/')){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
+    if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
+    const userId=decodeURIComponent(p.slice('/v1/admin/capital/operators/'.length)),body=await readBody(req);
+    const status=String(body.status||'');
+    if(!['active','suspended','revoked'].includes(status))return json(res,400,{error:'invalid_operator_status'});
+    const r=await pool.query(`UPDATE capital_operator_grants SET status=$2,reason=COALESCE($3,reason),updated_at=now()
+      WHERE user_id::text=$1 RETURNING user_id AS "userId",operator_role AS "operatorRole",status,expires_at AS "expiresAt",reason`,
+      [userId,status,String(body.reason||'').slice(0,500)||null]);
+    if(!r.rowCount)return json(res,404,{error:'capital_operator_not_found'});
+    if(status!=='active')await pool.query('UPDATE sessions SET revoked_at=now() WHERE user_id::text=$1 AND revoked_at IS NULL',[userId]);
+    return json(res,200,{data:r.rows[0],authority:'capital_operator_admission'});
+  }
+  if(p==='/v1/admin/capital/operator-session'&&req.method==='POST'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital_operator_admission',persistence:'postgres_only'});
+    if(!secureCapitalAdminOk(req))return json(res,403,{error:'secure_admin_required'});
+    const body=await readBody(req);
+    try{
+      const out=await issueCapitalOperatorSession(String(body.userId||''));
+      return json(res,201,{data:{session:out.token,expiresAt:new Date(out.payload.exp).toISOString(),role:out.payload.role,userId:out.payload.sub},authority:'capital_operator_admission'});
+    }catch(err){return json(res,err.status||400,{error:err.message||'operator_session_rejected'});}
+  }
+
+  if(p==='/v1/capital/events'&&req.method==='POST'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const body=await readBody(req);
+    try{
+      const result=await appendCapitalEvent(req,body);
+      return json(res,result.created?201:200,{data:result.row,created:result.created,authority:'capital_ledger',immutable:true});
+    }catch(err){
+      return json(res,err.status||400,{error:err.message||'capital_event_rejected'});
+    }
+  }
+  if(p==='/v1/capital/ledger'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const aggregateType=url.searchParams.get('aggregateType');
+    const aggregateId=url.searchParams.get('aggregateId');
+    const limit=Math.max(1,Math.min(500,Number(url.searchParams.get('limit')||200)));
+    const params=[programmeKey];let where='programme_key=$1';
+    if(aggregateType){params.push(String(aggregateType));where+=' AND aggregate_type=$'+params.length;}
+    if(aggregateId){params.push(String(aggregateId));where+=' AND aggregate_id=$'+params.length;}
+    params.push(limit);
+    const limitParam='$'+params.length;
+    const r=await pool.query(`SELECT * FROM capital_ledger_events WHERE ${where}
+      ORDER BY recorded_at ASC,aggregate_type,aggregate_id,aggregate_seq ASC LIMIT ${limitParam}`,params);
+    return json(res,200,{data:r.rows,authority:'capital_ledger',immutable:true});
+  }
+
+  if(p==='/v1/capital/verify'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,actor_subject,actor_role,auth_method,
+      occurred_at,points,evidence_refs,payload,idempotency_key,request_id,previous_event_hash,event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 ORDER BY aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
+    const verification=verifyCapitalChainRows(r.rows);
+    return json(res,verification.ok?200:409,{data:{programmeKey,...verification},authority:'capital_ledger'});
+  }
+
+  if(p==='/v1/capital/decision-gate'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const aggregateType=String(url.searchParams.get('aggregateType')||'programme');
+    const aggregateId=String(url.searchParams.get('aggregateId')||'').trim();
+    const metric=String(url.searchParams.get('metric')||'').trim();
+    const direction=String(url.searchParams.get('direction')||'increase').trim().toLowerCase();
+    const target=Number(url.searchParams.get('target'));
+    const nextTranchePoints=Number(url.searchParams.get('nextTranchePoints')||0);
+    const minimumEvidenceClass=String(url.searchParams.get('minimumEvidenceClass')||'OBSERVED').trim().toUpperCase();
+    const onTargetMiss=String(url.searchParams.get('onTargetMiss')||'ITERATE').trim().toUpperCase();
+    if(!CAPITAL_AGGREGATE_TYPES.has(aggregateType))return json(res,400,{error:'invalid_capital_aggregate_type'});
+    if(!aggregateId)return json(res,400,{error:'aggregate_id_required'});
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,points,payload,
+      actor_subject,actor_role,occurred_at,recorded_at,evidence_refs,event_hash,previous_event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 AND aggregate_type=$2 AND aggregate_id=$3
+      ORDER BY aggregate_seq ASC`,[programmeKey,aggregateType,aggregateId]);
+    const gate=capitalDecisionGate(r.rows,{metric,direction,target,nextTranchePoints,minimumEvidenceClass,onTargetMiss});
+    return json(res,200,{data:{programmeKey,aggregateType,aggregateId,gate},authority:'capital_ledger',writeAuthority:false,
+      decisionBoundary:'recommendation_only_no_approval_no_release'});
+  }
+
+  if(p==='/v1/capital/projection'&&req.method==='GET'){
+    if(!pool)return json(res,503,{error:'postgres_required',authority:'capital',persistence:'postgres_only'});
+    const actor=await capitalActor(req);if(!actor)return json(res,403,{error:'capital_authority_role_required'});
+    const programmeKey=String(url.searchParams.get('programmeKey')||'mfw_programme');
+    const aggregateType=String(url.searchParams.get('aggregateType')||'').trim();
+    if(aggregateType&&!CAPITAL_AGGREGATE_TYPES.has(aggregateType))return json(res,400,{error:'invalid_capital_aggregate_type'});
+    const r=await pool.query(`SELECT programme_key,aggregate_type,aggregate_id,aggregate_seq,event_type,points,payload,
+      actor_subject,actor_role,occurred_at,recorded_at,evidence_refs,event_hash,previous_event_hash
+      FROM capital_ledger_events WHERE programme_key=$1 ORDER BY recorded_at ASC,aggregate_type,aggregate_id,aggregate_seq ASC`,[programmeKey]);
+    const breakdown=capitalProjectionBreakdown(r.rows);
+    const projection=aggregateType?capitalProjectionForType(r.rows,aggregateType):null;
+    return json(res,200,{data:{programmeKey,aggregateType:aggregateType||null,projection,breakdown,events:r.rowCount,latest:r.rows[r.rows.length-1]||null,
+      projectionRule:aggregateType?'single_aggregate_type':'mixed_hierarchy_no_single_total'},authority:'capital_ledger'});
+  }
+
   if(req.method==='GET'&&p==='/v1/owner/control-tower'){
     const actor=sessionFromRequest(req);if(!actor)return json(res,401,{error:'authentication_required'});
-    const url=new URL(req.url,'http://localhost');
     const retentionRate=Math.max(0,Math.min(1,Number(url.searchParams.get('retentionRate')||0.30)));
     const clvRealization=Math.max(0,Math.min(1,Number(url.searchParams.get('clvRealization')||0.50)));
     return json(res,200,{data:await brand365Store.ownerControlTower({retentionRate,clvRealization})});

@@ -39,3 +39,14 @@ button,input,select,textarea{touch-action:manipulation}
 
 /* MADE_IN_MOSCOW_CROSS_PLATFORM_BADGE_2026_10_02 */
 .made-verified-bfs{display:inline-flex;align-items:center;margin:6px 0 4px;padding:5px 7px;background:#ff4a43;color:#fff;font-size:7px;font-weight:950;letter-spacing:.07em;line-height:1.1;border-radius:2px}@media(max-width:680px){.made-verified-bfs{font-size:6.5px;max-width:190px}}
+
+
+/* Investor demo media wave · 2026-10-06 */
+.bfs-media-deck{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 16px 18px;background:#0a0d13}
+.bfs-media-card,.bfs-video-card{min-height:180px;border:1px solid rgba(255,255,255,.14);border-radius:18px;overflow:hidden;padding:14px;background:#111827 center/cover no-repeat;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;text-decoration:none}
+.bfs-media-card span,.bfs-video-card span{font-size:8px;letter-spacing:.14em;font-weight:950;color:#f6d74f}
+.bfs-media-card b,.bfs-video-card b{font-size:18px;line-height:.95}
+.bfs-video-card{background:linear-gradient(145deg,#f0ce41,#e96c2c);color:#101010}
+.bfs-video-card span{color:#101010}.bfs-video-card small{font-size:9px}
+@media(max-width:800px){.bfs-media-deck{grid-template-columns:repeat(2,1fr)}.bfs-media-card,.bfs-video-card{min-height:150px}}
+@media(max-width:430px){.bfs-media-deck{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.bfs-media-card,.bfs-video-card{flex:0 0 78%;min-height:148px;scroll-snap-align:start}}

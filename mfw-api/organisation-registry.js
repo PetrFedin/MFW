@@ -137,7 +137,7 @@ class OrganisationRegistry{
       bfsOrganisations:byBrand('bfs'),
       madeOrganisations:byBrand('made_in_moscow'),
       crossEventOrganisations:[...brandsByOrg.values()].filter(set=>set.size>=2).length,
-      authority:'persistent_organisation_registry',
+      authority:'persistent_organisation_registry'
     };
   }
 
@@ -171,7 +171,7 @@ class OrganisationRegistry{
       summary:{
         participationRecords:participation.length,
         eventBrands:[...new Set(participation.map(x=>x.eventBrand))].sort(),
-        crossEvent: new Set(participation.map(x=>x.eventBrand)).size>=2
+        crossEvent:new Set(participation.map(x=>x.eventBrand)).size>=2
       },
       disclosureBoundary:{
         userProfilesIncluded:false,

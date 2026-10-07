@@ -2016,3 +2016,278 @@ Compounding assets:
 **Sequencing:** Network Trust Passport -> persistent org registry -> reference flow -> institutional publishing -> service network -> cross-event continuity -> enterprise association distribution.
 
 **Moat:** each event becomes an acquisition and verification cycle for a persistent fashion-industry graph rather than a one-off audience database.
+
+## Platform economics wave — Partner Data API and developer distribution
+
+This wave turns selected MFW/BFS capabilities into a governed B2B platform surface for brands, sponsors, media, city partners and technology partners.
+
+### Partner API Authority — ADOPT
+
+Expose only explicitly approved API resources such as:
+
+- public programme/session/show metadata;
+- public brand/designer/speaker profiles;
+- public collections/looks/content;
+- organisation-scoped campaign/performance summaries;
+- privacy-safe benchmark outputs;
+- approved meeting/Deal Room status for the owning organisation;
+- approved venue/map/accessibility data;
+- public replay/chapter metadata.
+
+Never expose raw participant-level interest, private Deal Room content or cross-organisation CRM data.
+
+### Contract-first API — ADOPT
+
+Use versioned OpenAPI contracts.
+
+Reference:
+
+https://github.com/OpenAPITools/openapi-generator
+
+Generate/test client SDKs from the contract rather than maintaining undocumented hand-written partner clients.
+
+Each API version declares:
+
+- resource schema;
+- auth scope;
+- pagination/filtering;
+- rate limit;
+- freshness;
+- deprecation date;
+- data-classification level.
+
+### Event / Webhook Contract — ADOPT
+
+For approved partner events use versioned webhook/event schemas.
+
+AsyncAPI tooling may be used as a contract/documentation layer:
+
+https://github.com/asyncapi/cli
+
+Candidate events:
+
+- programme item changed;
+- replay published;
+- partner campaign result updated;
+- Deal Room request changed;
+- meeting confirmed/cancelled;
+- credential/pass state changed where appropriate.
+
+Every delivery is signed, idempotent and scoped.
+
+### Developer Portal — ADOPT
+
+Provide:
+
+- API documentation;
+- sandbox/demo tenant;
+- example SDK usage;
+- webhook verifier;
+- changelog;
+- rate limits;
+- data/privacy rules;
+- status/deprecation notices.
+
+Sandbox contains synthetic/demo data only.
+
+### Usage Metering / Commercial Plans — ADAPT
+
+Reference:
+
+https://github.com/openmeterio/openmeter
+
+If API commercialisation requires usage billing, meter only approved dimensions:
+
+- API calls;
+- data export jobs;
+- webhook deliveries;
+- intelligence report generation.
+
+Metering must not become CRM/business authority.
+
+### API Product Tiers — ADOPT
+
+Possible packages:
+
+- Public Programme API;
+- Brand/Sponsor Analytics API;
+- Fashion Intelligence API;
+- Media/Replay API;
+- Enterprise Partner API.
+
+Entitlements remain explicit organisation-scoped permissions.
+
+### Additional acceptance
+
+- every endpoint maps to an approved canonical/read-model source;
+- private participant/Deal Room data cannot be requested by broader scopes;
+- API versioning/deprecation is explicit;
+- webhook signatures/retries are testable;
+- usage metering cannot affect business truth;
+- partner access can be revoked without deleting historical audit.
+
+**Sequencing:** stable public/read models + Fashion Intelligence -> OpenAPI contracts -> auth/scopes -> developer portal -> webhooks -> commercial metering.
+
+**Commercial framing:** MFW/BFS becomes an ecosystem platform whose data and capabilities can power media, sponsors, city partners and brand systems, increasing switching costs and recurring B2B revenue.
+
+## Defensibility wave — Fashion Network Trust Passport and portable professional credentials
+
+This wave creates a governed trust layer for the persistent MFW/BFS professional network. It is not a social popularity score.
+
+### Network Trust Passport — ADOPT
+
+Create a passport projection for eligible professional entities:
+
+- brand/designer;
+- buyer;
+- organisation;
+- speaker/delegate;
+- media/partner;
+- approved service provider.
+
+Passport dimensions may include:
+
+- identity/organisation verification;
+- role verification;
+- event participation history;
+- meeting attendance/reliability;
+- Deal Room response/completion history;
+- submitted/approved company profile;
+- verified commercial outcome where voluntarily evidenced;
+- current credential/status;
+- policy incidents/suspensions where legally appropriate and visible only to authorised operators.
+
+Every dimension exposes source class, period and freshness.
+
+### No universal reputation score — REQUIRED
+
+Do not reduce trust to one opaque number.
+
+Show explainable dimensions such as:
+
+- identity verified;
+- meeting reliability: numerator/denominator/period;
+- response reliability;
+- verified event participation;
+- organisation membership;
+- credential status.
+
+Do not infer creditworthiness, wealth, politics, ethnicity or hidden buyer intent.
+
+### Portable Professional Credential — ADAPT
+
+Reference standard:
+
+https://github.com/w3c/vc-data-model
+
+Where useful, issue W3C Verifiable Credential-compatible attestations such as:
+
+- MFW Verified Buyer;
+- MFW Verified Brand Representative;
+- BFS Speaker;
+- Verified Organisation;
+- Deal Room Integration Partner.
+
+Each credential declares:
+
+- issuer;
+- subject;
+- credential type;
+- exact scope;
+- evidence reference;
+- issued_at;
+- expiry/review date;
+- status/revocation endpoint.
+
+Credential proves the stated attestation only; it is not an endorsement of commercial quality.
+
+### Credential Signature / Verification — ADAPT
+
+Use cryptographic signing/status mechanisms appropriate to the chosen VC implementation.
+
+For software/integration artefacts, Sigstore/Cosign-style signatures may be used:
+
+https://github.com/sigstore/cosign
+
+Do not reuse software-signing identities as participant identities.
+
+### Verified Network Directory — ADOPT
+
+Create a searchable directory where authorised users can filter by:
+
+- verified role;
+- organisation;
+- market/category/topic;
+- event participation;
+- opted-in meeting availability;
+- credential status.
+
+Private contact/commercial data remains hidden until the existing relationship/meeting flow permits it.
+
+### Trust-informed Matchmaking — ADOPT
+
+The matchmaking engine may use bounded trust dimensions such as verified identity and demonstrated meeting attendance.
+
+It must not penalise new participants simply for lacking history.
+
+New verified entrants receive a neutral/no-history state rather than a low score.
+
+### Credential Portability / Handoff — CONDITIONAL
+
+Where a partner system can verify VC-compatible credentials, allow selected credentials to be presented externally.
+
+The external verifier receives only the minimum claim required.
+
+### Additional acceptance
+
+- every trust dimension resolves to evidence and period;
+- no opaque universal reputation score exists;
+- new users are not treated as untrustworthy solely for lacking history;
+- credentials have scope, issuer, status and revocation;
+- private Deal Room content never enters the public trust passport;
+- credential revocation does not rewrite historical event participation.
+
+**Sequencing:** verified identity/org + meeting/Deal Room history -> trust dimensions -> credential issuer/status registry -> verified directory -> trust-aware matchmaking.
+
+**Moat:** repeated event participation creates a longitudinal professional trust graph that is difficult to reproduce without the network's verified history.
+
+## 2026-10-06 implementation review — Capital Authority and governed decision gate
+
+This implementation wave re-read the current master plan before further capital-governance work.
+
+Confirmed dependency rules:
+- durable PostgreSQL admission remains the production gate for persistent authority;
+- new scheduled/stateful operational flows remain sequenced behind pg-boss/outbox and formal policy;
+- decision-support outputs must preserve Observed / Attributed / Incremental / Modelled truth classes;
+- recommendation/read-model logic must not silently become approval, release or accounting authority.
+
+Implemented in the current investor branch:
+- immutable Capital Authority (migration 023);
+- durable Capital Operator Admission (migration 024);
+- Organisation Credential revocation ledger (migration 025);
+- hierarchy-safe capital projections that refuse a misleading mixed-hierarchy total;
+- read-only Capital Decision Gate derived from immutable ledger measurements.
+
+Capital Decision Gate boundary:
+- evaluates KPI target vs latest matching measurement;
+- enforces explicit minimum evidence/truth class;
+- returns SCALE / ITERATE / STOP / HOLD recommendation state;
+- is read-only and cannot approve, commit, release or spend capital;
+- remains subordinate to Capital Authority and future formal policy;
+- production admission still requires Phase 0 exact-SHA PostgreSQL proof.
+
+Next dependency-controlled sequence:
+Phase 0 admission -> branch/CI reconciliation -> pg-boss/outbox -> formal policy -> governed tranche command workflow -> external/committee integrations.
+## 2026-10-06 localisation rule — Russian-first product UI
+
+Russian is the default and primary interface language for the MFW platform.
+
+Rules:
+- when Russian locale is active, user-facing copy should be Russian by default;
+- English remains acceptable for proper product/brand names, standards, protocol names, machine identifiers and widely recognised abbreviations;
+- common abbreviations such as KPI, CRM, B2B, API, ARR/MRR, GMV, CLV, CAC and ROI should expose a Russian explanation via title/tooltip or equivalent accessible help where practical;
+- internal API enums/state codes must not be translated in transport or persistence; translate only their visible presentation;
+- MFW / BFS / Made visual identities stay distinct, but language policy is shared;
+- the English locale remains supported and must not be broken by RU-first copy changes.
+
+CI now includes a Russian-first UI contract covering core Investor / Capital / Organisation surfaces.

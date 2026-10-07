@@ -314,3 +314,565 @@ across the complete 7-device matrix.
 
 The participant companion shell is on cache revision `mfp-shell-2026-10-03-p2`.
 Platform JS/CSS use the matching `20261003p2` asset revision so mobile/CDN clients do not mix old companion code with the new lifecycle UI.
+
+## Investor media system — 2026-10-06
+
+A stateless investor-demo media layer now connects the three ecosystem directions without changing authority boundaries:
+
+- MFW: current-season runway/editorial imagery plus official external video references;
+- BFS: separate international/business media deck;
+- «Сделано в Москве»: separate brand-growth/editorial media layer;
+- shared investor gallery shows all three experiences together and routes directly into each;
+- a central media manifest records source pages, asset URLs and the non-licence boundary;
+- major hero/story slots are assigned distinct media rather than reusing one image repeatedly;
+- new responsive QA asserts that the three investor ecosystem cards use three distinct backgrounds.
+
+No event access, Verified status, commercial outcome, analytics KPI or production-readiness claim is inferred from media. Phase 0 PostgreSQL admission remains unchanged.
+
+## Trust Passport MVP preview — 2026-10-06
+
+Implemented from the newest defensibility/trust section of the master plan as a dependency-safe preview:
+
+- dedicated Trust Passport tab in the shared Hub;
+- six explainable dimensions: identity, role, event participation, meeting reliability, organisation affiliation and commercial outcome evidence;
+- explicit source/scope/freshness framing;
+- neutral no-history principle for new verified participants;
+- no universal/opaque reputation score;
+- no inference of wealth, creditworthiness, politics, ethnicity or hidden buyer intent;
+- portable credential / verified-directory / trust-aware matchmaking shown only as future governed capabilities;
+- guided investor route now includes Trust Passport before Owner value.
+
+Production credential issuer/status registry and revocation remain gated behind durable identity/history, PostgreSQL and formal policy review.
+
+## Investor revenue architecture — 2026-10-06
+
+The shared investor value layer now shows five monetisation surfaces without presenting hypothetical figures as actual revenue:
+
+- partner / sponsor product;
+- Brand365 / brand CRM tooling;
+- professional B2B / Deal Room;
+- privacy-safe fashion intelligence;
+- partner API / enterprise integrations.
+
+Each surface is labelled by the evidence required before it can be treated as a commercial result. The UI explicitly states that engagement, meetings and structured requests are not revenue.
+
+This remains a product/commercial architecture preview. Actual ARR/MRR, unit economics and realised revenue require production contracts, billing/payment evidence and production analytics.
+
+## Investor proof operating layer — 2026-10-06
+
+The investor MVP now has one shared evidence model feeding four operating surfaces:
+
+- Investor Proof;
+- Partner / Sponsor Console;
+- Brand Business Cockpit;
+- Investment / Economics Dashboard.
+
+The proof chain is:
+
+user/profile -> explicit interest -> brand -> meeting -> structured commercial intent -> external handoff -> D30 -> D90 -> D365
+
+Two modes are intentionally separated:
+
+- LIVE PROOF: only current account/product signals are shown; missing stages are labelled NOT EVIDENCED.
+- SYNTHETIC CASE: a full illustrative case is shown with SYNTHETIC evidence labels and is never presented as production performance.
+
+Evidence taxonomy remains explicit:
+
+OBSERVED / REPORTED / VERIFIED / MODELLED / SYNTHETIC / NOT EVIDENCED.
+
+Partner Console uses package -> inventory -> campaign -> delivery -> handoff -> report -> settlement, with recognised revenue gated behind appropriate contract/billing/payment evidence.
+
+Brand Cockpit uses exposure -> relationship -> buyer signal -> match -> meeting -> Deal Room -> request -> handoff -> outcome and adds D30/D90/D365 continuity.
+
+Economics maps payer -> product -> formula -> revenue-recognition gate and deliberately shows no factual ARR/MRR without source contracts and billing data.
+
+A machine-readable evidence manifest is available at `mfw/platform/evidence-package.json`.
+
+## Evidence Control Tower — 2026-10-06
+
+Investor Proof is now an Evidence Control Tower with two explicit views:
+
+### Case Dossier
+
+A selected buyer x brand relationship expands into a chronological dossier:
+
+source -> seen -> saved -> recommended -> meeting proposed -> meeting held -> intent -> Deal Room -> external handoff -> D30 -> D90 -> D365
+
+Each transition exposes:
+
+- event/context;
+- timestamp/relative time;
+- human-readable reason;
+- evidence class;
+- evidence reference;
+- potentially affected revenue streams.
+
+LIVE PROOF derives only current account/product state and leaves missing stages NOT EVIDENCED.
+
+SYNTHETIC CASE provides three complete illustrative dossiers. Synthetic cases are clearly labelled and are not production KPI.
+
+### Portfolio View
+
+The synthetic investor portfolio aggregates:
+
+Audience -> Engagement -> Qualified Buyer -> Meeting -> Intent -> Deal -> Retention -> Revenue Evidence
+
+It also shows:
+
+- MFW / BFS / Made in Moscow contribution;
+- D30 / D90 / D365 retention;
+- evidence-class mix;
+- revenue surfaces touched.
+
+Portfolio numbers are scenario data only. A touched revenue surface is explicitly not counted as realised revenue.
+
+## Portfolio drill-down — 2026-10-06
+
+Evidence Control Tower now supports portfolio-to-dossier navigation.
+
+An investor can select any synthetic portfolio stage:
+
+Audience / Engagement / Qualified Buyer / Meeting / Intent / Deal / Retention / Revenue Evidence
+
+and see:
+
+- aggregate stage count;
+- conversion from the previous stage;
+- MFW / BFS / Made in Moscow cohort composition;
+- representative linked demo journeys;
+- evidence class for the representative transition;
+- direct navigation into the selected buyer x brand Case Dossier.
+
+Important truth boundary:
+
+- the aggregate cohort count remains synthetic scenario data;
+- representative dossiers are examples, not a fabricated row-level list of every synthetic journey;
+- opening a representative dossier never implies that all members of the aggregate cohort exist as materialised production records.
+
+## Filterable Portfolio Control Tower — 2026-10-06
+
+Portfolio View now supports simultaneous filters over the deterministic synthetic cohort cube:
+
+- period;
+- ecosystem (MFW / BFS / Made in Moscow);
+- buyer market;
+- brand category;
+- new / returning buyer;
+- evidence class;
+- retention horizon (D30 / D90 / D365);
+- revenue surface.
+
+The same filtered cohort recomputes:
+
+- Audience -> Engagement -> Qualified Buyer -> Meeting -> Intent -> Deal -> Retention -> Revenue Evidence;
+- ecosystem contribution;
+- selected retention horizon and all D30/D90/D365 comparison values;
+- revenue-surface touch counts;
+- stage drill-down and representative dossier eligibility.
+
+The synthetic cube contains 12 deterministic cohorts whose unfiltered total preserves the 1,200-journey demo portfolio.
+
+If a filter combination has no cohort, the UI returns an explicit zero state. It does not substitute a nearby cohort or estimate missing values.
+
+## Comparison / Scenario Mode — 2026-10-06
+
+Evidence Control Tower now includes a third view: Comparison / Scenario Mode.
+
+Two independent synthetic slices, A and B, can be configured side-by-side across the same cohort dimensions:
+
+- period;
+- ecosystem;
+- buyer market;
+- brand category;
+- new / returning buyer;
+- evidence class;
+- retention horizon;
+- revenue surface.
+
+Quick presets:
+
+- MFW vs BFS;
+- CIS vs GCC;
+- new vs returning buyer.
+
+The comparison calculates rates from the deterministic synthetic cohort cube:
+
+- Audience -> Qualified Buyer;
+- Qualified Buyer -> Meeting;
+- Meeting -> Intent;
+- Intent -> Deal-stage;
+- Intent -> selected D30/D90/D365 retention;
+- Deal-stage -> Revenue Evidence.
+
+The UI shows both values and the percentage-point delta A-B.
+
+Important boundary: a higher conversion in a selected synthetic slice is descriptive, not causal. It does not prove that the event, market or buyer type caused the difference, and no monetary uplift is inferred without real contracts/payment evidence.
+
+Russian is the default UI language for the shared investor/control-tower layer. English remains secondary/product terminology only where useful.
+
+## Opportunity Explanation Engine — 2026-10-06
+
+Comparison / Scenario Mode now includes a deterministic Opportunity Explanation layer.
+
+For the selected A/B scenarios it:
+
+- ranks the six comparison gaps by absolute percentage-point difference;
+- selects the largest gap as the primary opportunity/exposure to inspect;
+- shows a compact funnel-gap waterfall;
+- decomposes the selected rate gap by brand category and buyer market;
+- separates composition/mix effect from within-segment rate effect;
+- compares D30 / D90 / D365 retention gaps;
+- maps representative synthetic dossiers for each side when a materialised demo case matches the selected scenario;
+- links directly from the explanation back into the Case Dossier and its evidence references.
+
+The decomposition is symmetric:
+
+- mix effect captures differences in segment weights;
+- within-segment effect captures differences in segment rates;
+- their sum reproduces the aggregate A-B rate gap up to rounding.
+
+This is descriptive accounting decomposition only. It is not causal attribution, and it does not infer monetary uplift without real contract/billing/payment evidence.
+
+## Recommendation / Capital Allocation Layer — 2026-10-06
+
+Comparison / Scenario Mode now includes a modelled Recommendation / Capital Allocation layer.
+
+The engine:
+
+- maps the ranked scenario gaps to a fixed intervention catalog;
+- scores candidate interventions from:
+  - absolute percentage-point gap;
+  - affected denominator cohort scale;
+  - explicit leverage assumption;
+  - explicit effort assumption;
+- selects the top three interventions;
+- normalizes their relative scores into exactly 100 modelled pilot-budget points;
+- identifies the weaker scenario and strongest market/category driver;
+- names the KPI expected to move;
+- creates an explicitly MODELLED pilot target;
+- declares evidence required before an intervention can be treated as successful;
+- links representative dossiers where materialised demo evidence exists;
+- includes a Pilot -> Measure -> Verify -> Scale/Stop governance path.
+
+Priority score:
+
+|gap pp| x sqrt(affected denominator / max scenario population) x leverage / effort.
+
+The 100 points are not currency and are not an approved budget. Real capital allocation requires intervention costs, capacity, contractual constraints, risk limits and investment-committee approval.
+
+Pilot targets are scenario assumptions only. No recommendation is represented as guaranteed uplift.
+
+## Investment Committee Workspace — 2026-10-06
+
+The investment operating loop is now closed in the investor MVP:
+
+Recommendation -> Mini Business Case -> Review -> Demo Approval -> Pilot Running -> Measured -> Scale / Iterate / Stop.
+
+Each mini business case contains:
+
+- named owner;
+- modelled pilot-budget request in non-monetary points;
+- baseline KPI;
+- modelled KPI target;
+- evidence plan;
+- pilot design;
+- measured synthetic result;
+- decision state;
+- current-session decision log.
+
+The workspace uses an in-memory demo state machine only:
+
+DRAFT -> IN_REVIEW -> APPROVED -> PILOT_RUNNING -> MEASURED -> DECIDED.
+
+The final decision follows explicit demo rules:
+
+- SCALE: measured KPI meets/exceeds target and the evidence gate is complete;
+- ITERATE: KPI improves vs baseline but misses target, or evidence remains incomplete;
+- STOP: KPI does not improve, a material guardrail breaks, or evidence quality is insufficient.
+
+No approval, pilot state or measured result is persisted to production authority. The UI explicitly labels all of these states as DEMO / SYNTHETIC.
+
+Production implementation still requires server-side actor identity, immutable decision/evidence history, timestamps, role-based approval permissions and auditability.
+
+## Programme Capital Control — 2026-10-06
+
+The investor MVP now includes portfolio-level capital governance above individual Investment Committee cases.
+
+Modelled programme envelope:
+
+- envelope: 150 pilot points;
+- requested: 128;
+- approved: 100;
+- committed: 85;
+- spent: 58;
+- measured: 46;
+- scaled: 22;
+- stopped: 6;
+- uncommitted reserve: 50;
+- committed-but-unspent: 27.
+
+Core capital rule:
+
+Committed-but-unspent is not free capital.
+
+Only:
+
+1. uncommitted programme reserve; and
+2. capital explicitly released from a STOP / closed commitment
+
+may enter reallocation capacity.
+
+The demo includes an explicit release action for the unused 3-point balance of a stopped Deal Room SLA pilot. Before release, reallocation capacity is 50. After release it becomes 53 and committed-but-unspent falls from 27 to 24.
+
+Programme view includes:
+
+- Requested -> Approved -> Committed -> Spent -> Measured -> Scaled / Stopped;
+- MFW / BFS / Made in Moscow capital map;
+- pilot-level table;
+- blockers and at-risk commitments;
+- evidence completeness;
+- reallocation opportunities;
+- programme-level ITERATE / REVIEW signal.
+
+All values are modelled pilot points, not currency, actual accounting spend or approved corporate budgets.
+
+## Capital Reallocation Optimizer — 2026-10-06
+
+Programme Capital Control now includes a gate-aware Capital Reallocation Optimizer.
+
+The optimizer compares the next 10 / 20 / 30 modelled points across:
+
+- MFW;
+- BRICS+ Fashion Summit;
+- Made in Moscow.
+
+Each candidate is evaluated on:
+
+- capital-at-risk relief;
+- modelled KPI leverage;
+- evidence readiness;
+- tranche absorption capacity.
+
+Decision score:
+
+30% risk relief + 25% KPI leverage + 30% evidence readiness + 15% absorption.
+
+Evidence governance overrides upside:
+
+- READY: evidence readiness >= 80%;
+- CONDITIONAL: 60% to <80%;
+- HOLD: below 60% or hard evidence blocker;
+- HOLD candidates receive score 0 regardless of modelled upside.
+
+Current demo candidate states:
+
+- MFW professional discovery: READY;
+- BFS matchmaking optimizer: CONDITIONAL;
+- Made in Moscow meeting-intent pack: HOLD due to incomplete evidence plan.
+
+For each 10/20/30-point scenario the UI shows:
+
+- how much the vertical can absorb;
+- modelled KPI lift;
+- capital-at-risk relief;
+- evidence readiness;
+- evidence required before the next tranche;
+- a modelled recommendation for committee review.
+
+The optimizer does not approve capital. It only produces a candidate decision for Investment Committee review.
+
+Reallocation capacity remains constrained by Programme Capital rules: uncommitted reserve + explicit releases only.
+
+## Portfolio Scenario Simulator — 2026-10-06
+
+Programme Capital Control now includes a Portfolio Scenario Simulator above the single-destination reallocation optimizer.
+
+For a selected 10 / 20 / 30-point next-quarter budget, the simulator enumerates eligible mixes across:
+
+- MFW;
+- BRICS+ Fashion Summit;
+- Made in Moscow;
+- explicit Reserve.
+
+Scenario step: 10 points.
+
+Ranking dimensions:
+
+- 30% capital-at-risk reduction;
+- 25% modelled KPI leverage;
+- 20% evidence confidence;
+- 10% diversification;
+- 15% optionality / reserve.
+
+Governance constraints apply before ranking:
+
+- HOLD candidates cannot receive new capital;
+- CONDITIONAL allocations remain committee-gated;
+- vertical allocations cannot exceed absorption caps or available programme reallocation capacity;
+- unallocated budget remains Reserve by design and is scored as optionality;
+- the simulator ranks mixes but does not approve or commit capital.
+
+The simulator shows the top five eligible mixes for 20/30-point budgets and all available mixes for a 10-point budget. A pure Reserve scenario is included, so optionality is an explicit portfolio decision rather than an accidental capacity remainder.
+
+All risk reduction and KPI values are model assumptions. They are not guaranteed outcomes, currency or ROI.
+
+## Portfolio Proposal Handoff — 2026-10-06
+
+The best Portfolio Scenario Simulator mix can now be handed directly into the Investment Committee Workspace as a demo Portfolio Allocation Proposal.
+
+Flow:
+
+Portfolio Scenario Simulator -> Best Mix -> Portfolio Allocation Proposal -> Review -> Approved Demo Allocation.
+
+The proposal includes:
+
+- selected programme budget;
+- MFW / BFS / Made / Reserve mix;
+- modelled portfolio score;
+- modelled risk relief;
+- modelled KPI leverage;
+- proposal status.
+
+Proposal state is in-memory demo state only:
+
+DRAFT -> IN_REVIEW -> APPROVED_DEMO.
+
+This handoff does not create commitments, accounting entries or corporate approvals. Production implementation requires server-side actors, immutable proposal/approval history, approval authority and linkage to programme commitment records.
+
+## Server-side Capital Authority — 2026-10-06
+
+Capital governance now has a durable server-side authority contract in mfw-api.
+
+migration 023 adds capital_ledger_events as an append-only PostgreSQL ledger.
+
+Capital events now have:
+
+- aggregate sequence;
+- authenticated non-demo actor;
+- actor role;
+- occurred_at + server recorded_at;
+- evidence references;
+- idempotency key;
+- request id;
+- previous event hash;
+- event hash.
+
+Database mutation protection rejects UPDATE / DELETE / TRUNCATE.
+
+The API exposes:
+
+- POST /v1/capital/events;
+- GET /v1/capital/ledger;
+- GET /v1/capital/projection;
+- GET /v1/capital/verify.
+
+There is no memory fallback. Capital endpoints fail closed without PostgreSQL.
+
+Capital writes require a non-demo Organizer/Staff session.
+
+Server-side invariants reject:
+
+- approval > requested;
+- commitment > approved;
+- release > unspent commitment;
+- spend > net commitment;
+- measurement before spend;
+- measurement without metric/measuredValue;
+- decision before measurement;
+- invalid decision outside SCALE / ITERATE / STOP;
+- evidence-gated events without evidence refs.
+
+Hash chains can be independently replayed by /v1/capital/verify.
+
+The frontend Programme Capital Control remains explicitly MODELLED/DEMO until PostgreSQL production admission and a real authority-backed UI projection are green.
+
+## Capital Authority UI bridge — 2026-10-06
+
+Programme Capital Control now has a read-only bridge to the server Capital Authority.
+
+Behavior:
+
+- non-demo Organizer/Staff session -> read /v1/capital/projection + /v1/capital/verify;
+- display authoritative PostgreSQL projection and chain integrity;
+- demo session -> AUTHORITY PROTECTED, no authority query, no fallback write;
+- synthetic Investment Committee / simulator actions remain demo-state only and are never persisted to Capital Authority.
+
+This keeps investor demonstration separate from corporate authority while making the UI ready to surface real ledger state after production admission.
+
+## Capital Operator Admission — 2026-10-06
+
+Migration 024 adds durable Capital Authority operator grants. Migration 025 adds the organisation credential revocation ledger.
+
+Capital access is no longer based on signed claims alone. Every capital request now re-checks:
+
+- non-demo operator session;
+- Organizer/Staff role;
+- active capital_operator_grants row;
+- active user;
+- grant expiry;
+- persisted session expiry/revocation.
+
+Operator bootstrap requires an explicitly configured non-default MFW_ADMIN_TOKEN. Grant suspension/revocation revokes active persisted sessions.
+
+This closes the practical gap where Capital Authority existed but no non-demo operator admission path was available.
+
+## Capital Authority machine admission — 2026-10-06
+
+Added mfw-api/check-capital-admission.js and npm run check:capital-admission.
+
+The check is read-only and requires MFW_CAPITAL_OPERATOR_SESSION. It verifies exact release SHA, migrations 023/024, ledger access, projection access and hash-chain integrity without polluting the immutable ledger with synthetic production events.
+## Capital projection grain safety and Decision Gate — 2026-10-06
+
+Capital Authority was hardened against portfolio double counting.
+
+The previous generic programme projection could become ambiguous when equivalent economic state was represented across multiple aggregate levels such as programme, portfolio proposal, business case and pilot.
+
+The API now:
+- exposes hierarchy breakdown by aggregate type;
+- returns a single total only when an explicit aggregateType grain is requested;
+- marks mixed-hierarchy responses as mixed_hierarchy_no_single_total;
+- requires the production admission checker to request programme grain explicitly.
+
+A read-only Capital Decision Gate is also available over immutable ledger history.
+
+Inputs:
+- programme / aggregate identity;
+- KPI metric;
+- direction;
+- target;
+- proposed next tranche points;
+- minimum evidence class;
+- target-miss policy.
+
+Outputs:
+- SCALE / ITERATE / STOP / HOLD recommendation;
+- target-met state;
+- measured value;
+- truth class;
+- source measurement event hash;
+- reason codes.
+
+The gate does not approve or release capital and has no write authority. It is a deterministic read model over existing ledger events.
+
+Truth classes recognised by the gate:
+- MODELLED;
+- OBSERVED;
+- ATTRIBUTED;
+- INCREMENTAL.
+
+Production write workflow for tranche release remains gated by durable PostgreSQL admission, formal authorization policy and durable jobs/outbox.
+## Russian-first interface contract — 2026-10-06
+
+Russian is now explicitly treated as the primary MFW interface language.
+
+Investor, Capital, Organisation Network, Partner, Brand, Trust and Deal Room surfaces are being normalised so that the Russian locale contains minimal English outside:
+- product/brand names;
+- protocol/standard names;
+- machine identifiers;
+- accepted abbreviations.
+
+Visible machine states are mapped separately from API/storage enums, so localisation does not mutate authority contracts.
+
+Abbreviations receive accessible explanations where practical, including KPI, CRM, B2B, API, ARR/MRR, GMV, CLV, CAC and ROI.
+
+Responsive QA now runs qa/russian-first-contract.test.js before browser device tests.

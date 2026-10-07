@@ -1,0 +1,632 @@
+{
+  "packageVersion": "2026-10-06-proof-v1",
+  "project": "Moscow Fashion Platform",
+  "scope": "Investor MVP evidence index",
+  "generatedFor": "demo",
+  "claims": [
+    {
+      "id": "three_ecosystems",
+      "claim": "MFW, BRICS+ Fashion Summit and Made in Moscow are connected by one platform shell.",
+      "status": "implemented",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/index.html",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "one_identity",
+      "claim": "The shared shell maintains one profile with event-scoped MFW/BFS registrations and separate Made in Moscow brand verification.",
+      "status": "implemented_demo",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "cross_event_discovery",
+      "claim": "Discover and agenda can span MFW and BFS; Made brands appear only from the verified roster authority.",
+      "status": "implemented",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "deal_room",
+      "claim": "Deal Room lifecycle is represented as a read-only product contract preview.",
+      "status": "preview_only",
+      "evidenceClass": "not_evidenced",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "trust_passport",
+      "claim": "Trust Passport is an explainable read-only preview without a universal reputation score.",
+      "status": "preview_only",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "revenue_architecture",
+      "claim": "Five monetisation surfaces and evidence gates are represented without claiming realised ARR/MRR.",
+      "status": "modelled",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/index.html"
+      ]
+    },
+    {
+      "id": "remote_media_rights",
+      "claim": "Remote public media is source-owned and is not treated as a commercial-use licence.",
+      "status": "boundary_recorded",
+      "evidenceClass": "observed",
+      "evidence": [
+        "docs/MFW_INVESTOR_MEDIA_SOURCES_2026-10-06.md"
+      ]
+    },
+    {
+      "id": "production_postgres",
+      "claim": "This investor UI wave does not itself prove production PostgreSQL readiness.",
+      "status": "not_claimed",
+      "evidenceClass": "not_evidenced",
+      "evidence": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "id": "cross_event_identity_graph",
+      "claim": "One platform subject is projected across MFW, BFS and Made in Moscow while event registrations, credentials and Made brand verification remain scoped.",
+      "status": "implemented_preview",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/index.html"
+      ]
+    },
+    {
+      "id": "investor_proof_layer",
+      "claim": "The investor MVP exposes a nine-stage evidence chain with separate live and synthetic modes.",
+      "status": "implemented_preview",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "partner_console",
+      "claim": "Partner/Sponsor Console maps package through settlement and keeps recognised revenue behind evidence gates.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "brand_cockpit",
+      "claim": "Brand Cockpit maps exposure through commercial outcome and shows D30/D90/D365 continuity.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "economics_dashboard",
+      "claim": "Economics maps payer, product, formula and revenue-recognition gate without factual ARR/MRR placeholders.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js"
+      ]
+    },
+    {
+      "id": "evidence_control_tower",
+      "claim": "Investor Proof is implemented as an Evidence Control Tower with Case Dossier and Portfolio View.",
+      "status": "implemented_preview",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css"
+      ]
+    },
+    {
+      "id": "case_dossier",
+      "claim": "Synthetic investor dossiers expose source, viewed/saved signals, recommendation reason, meeting, intent, Deal Room, handoff, D30/D90/D365, evidence class/reference and potential revenue surfaces.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "portfolio_view",
+      "claim": "Synthetic portfolio aggregates Audience → Engagement → Qualified Buyer → Meeting → Intent → Deal → Retention → Revenue Evidence while retaining explicit synthetic labelling.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "portfolio_drilldown",
+      "claim": "Portfolio funnel stages drill down into ecosystem cohort composition and representative dossiers, then into per-transition evidence references.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "filterable_portfolio_control_tower",
+      "claim": "Portfolio View supports simultaneous filtering by period, ecosystem, buyer market, brand category, buyer type, evidence class, retention horizon and revenue surface, with deterministic recalculation from the synthetic cohort cube.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "comparison_scenario_mode",
+      "claim": "Evidence Control Tower supports side-by-side A/B scenario comparison across the same synthetic cohort dimensions with percentage-point deltas.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "russian_default_ui",
+      "claim": "The shared investor and Evidence Control Tower UI uses Russian as the default surface language.",
+      "status": "implemented",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/index.html",
+        "mfw/platform/platform.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "opportunity_explanation_engine",
+      "claim": "Comparison Mode decomposes the largest A/B rate gap into ranked funnel differences, market/category mix and within-segment effects, retention-horizon gaps and representative dossier evidence links.",
+      "status": "implemented_preview",
+      "evidenceClass": "synthetic",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "recommendation_capital_allocation",
+      "claim": "Comparison Mode ranks three modelled interventions, normalizes relative priority into 100 non-monetary pilot-budget points, declares target KPI and required evidence, and links representative dossiers when available.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "investment_committee_workspace",
+      "claim": "A modelled recommendation can be opened as a demo mini business case and progressed through review, demo approval, pilot, measurement and SCALE/ITERATE/STOP decision with evidence gating.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "programme_capital_control",
+      "claim": "The investor MVP includes portfolio-level modelled capital governance across requested, approved, committed, spent, measured, scaled and stopped states, with MFW/BFS/Made allocation, blockers, evidence completeness and explicit release before STOP commitments become reallocatable.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "capital_reallocation_optimizer",
+      "claim": "Programme Capital Control compares the next 10/20/30 modelled points across MFW, BFS and Made using risk relief, modelled KPI leverage, evidence readiness and absorption, with READY/CONDITIONAL/HOLD gates and next-tranche evidence requirements.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "portfolio_scenario_simulator",
+      "claim": "Programme Capital Control simulates eligible 10/20/30-point portfolio mixes across MFW, BFS, Made and Reserve, applying HOLD exclusion, committee gating, absorption caps and ranking by risk reduction, KPI leverage, evidence confidence, diversification and optionality.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "portfolio_proposal_handoff",
+      "claim": "The best modelled portfolio mix can be handed into the Investment Committee Workspace as an in-memory demo Portfolio Allocation Proposal and progressed through DRAFT, IN_REVIEW and APPROVED_DEMO without creating commitments.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw/platform/platform.css",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "server_capital_authority",
+      "claim": "The backend includes a PostgreSQL-only append-only Capital Authority with immutable ledger events, authenticated non-demo actors, idempotency, per-aggregate sequencing, hash-chain verification, evidence references and domain invariants for approvals, commitments, releases, spend, measurements and decisions.",
+      "status": "implemented_not_production_admitted",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw-api/migrations/023_capital_authority.sql",
+        "mfw-api/server-v2.js",
+        "mfw-api/capital-authority-contract.test.js",
+        "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
+      ]
+    },
+    {
+      "id": "capital_authority_ui_bridge",
+      "claim": "Programme Capital Control can read authoritative capital projection and chain verification for authenticated non-demo Organizer/Staff sessions; demo sessions remain modelled and do not query or mutate Capital Authority.",
+      "status": "implemented_not_production_admitted",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw/platform/platform.js",
+        "mfw-api/server-v2.js",
+        "qa/responsive.spec.js"
+      ]
+    },
+    {
+      "id": "capital_operator_admission",
+      "claim": "Capital Authority access is guarded by PostgreSQL-backed operator grants and persisted revocable sessions. Demo sessions cannot self-elevate; bootstrap administration requires an explicitly configured non-default MFW_ADMIN_TOKEN.",
+      "status": "implemented_not_production_admitted",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw-api/migrations/024_capital_operator_admission.sql",
+        "mfw-api/server-v2.js",
+        "mfw-api/capital-authority-contract.test.js",
+        "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
+      ]
+    },
+    {
+      "id": "capital_authority_machine_admission",
+      "claim": "The repository includes a read-only Capital Authority production admission checker that verifies exact release SHA, PostgreSQL readiness, migrations 023/024, operator-authenticated ledger/projection access and hash-chain integrity without creating synthetic ledger events.",
+      "status": "implemented_not_run_against_production",
+      "evidenceClass": "observed",
+      "evidence": [
+        "mfw-api/check-capital-admission.js",
+        "mfw-api/package.json",
+        "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
+      ]
+    }
+  ],
+  "rules": [
+    "No meeting or request is counted as revenue.",
+    "Observed, reported, verified, modelled and synthetic evidence remain distinct.",
+    "Synthetic demo cases are not production KPI evidence.",
+    "Production access/credential/commercial claims remain authority-gated."
+  ],
+  "guidedInvestorRoute": {
+    "steps": 15,
+    "scope": [
+      "MFW",
+      "BFS",
+      "Made in Moscow",
+      "One ID",
+      "Identity Graph",
+      "Investor Proof",
+      "Partner Console",
+      "Brand Cockpit",
+      "Deal Room",
+      "Trust Passport",
+      "Economics",
+      "Owner Value"
+    ],
+    "status": "implemented_preview"
+  },
+  "controlTower": {
+    "views": [
+      "Case Dossier",
+      "Portfolio View"
+    ],
+    "caseStages": 12,
+    "portfolioStages": 8,
+    "syntheticCases": 3,
+    "boundary": "Portfolio counts and dossier scenarios are illustrative/synthetic unless separately evidenced by production authority.",
+    "drilldown": {
+      "stages": [
+        "AUDIENCE",
+        "ENGAGEMENT",
+        "QUALIFIED BUYER",
+        "MEETING",
+        "INTENT",
+        "DEAL",
+        "RETENTION",
+        "REVENUE EVIDENCE"
+      ],
+      "ecosystems": [
+        "MFW",
+        "BFS",
+        "MADE"
+      ],
+      "boundary": "Aggregate synthetic cohort counts are not materialised row-level production records; only linked representative demo dossiers are navigable."
+    },
+    "filters": [
+      "period",
+      "ecosystem",
+      "buyer market",
+      "brand category",
+      "buyer type",
+      "evidence class",
+      "retention horizon",
+      "revenue surface"
+    ],
+    "filterBoundary": "Filters recompute only deterministic synthetic cohorts. Unsupported combinations produce zero state; no imputation or nearest-cohort substitution.",
+    "comparison": {
+      "presets": [
+        "MFW vs BFS",
+        "CIS vs GCC",
+        "new vs returning"
+      ],
+      "metrics": [
+        "Audience to Qualified Buyer",
+        "Qualified Buyer to Meeting",
+        "Meeting to Intent",
+        "Intent to Deal-stage",
+        "Intent to D30/D90/D365 retention",
+        "Deal-stage to Revenue Evidence"
+      ],
+      "boundary": "Descriptive synthetic comparison only; no causal attribution or monetary uplift inference."
+    },
+    "opportunityExplanation": {
+      "method": "symmetric composition/mix plus within-segment rate decomposition",
+      "dimensions": [
+        "brand category",
+        "buyer market"
+      ],
+      "retention": [
+        "D30",
+        "D90",
+        "D365"
+      ],
+      "evidenceLink": "representative materialised synthetic dossiers only",
+      "boundary": "Descriptive mathematical decomposition; not causal attribution and not monetary uplift."
+    },
+    "capitalAllocation": {
+      "interventions": 6,
+      "recommendations": 3,
+      "budgetPoints": 100,
+      "scoreFormula": "abs(gap_pp) * sqrt(affected_denominator / max_scenario_population) * leverage / effort",
+      "governance": [
+        "Pilot",
+        "Measure",
+        "Verify",
+        "Scale/Stop"
+      ],
+      "boundary": "Modelled relative pilot-resource allocation only; not currency, approved budget, causal uplift or ROI forecast."
+    },
+    "investmentCommittee": {
+      "states": [
+        "DRAFT",
+        "IN_REVIEW",
+        "APPROVED",
+        "PILOT_RUNNING",
+        "MEASURED",
+        "DECIDED"
+      ],
+      "decisions": [
+        "SCALE",
+        "ITERATE",
+        "STOP"
+      ],
+      "persistence": "in-memory demo session only",
+      "requiredProductionControls": [
+        "actor identity",
+        "immutable decision history",
+        "timestamps",
+        "role-based approval",
+        "auditable evidence links"
+      ],
+      "boundary": "No demo approval, pilot status or measured result is a production corporate decision."
+    },
+    "programmeCapital": {
+      "envelopePoints": 150,
+      "baseline": {
+        "requested": 128,
+        "approved": 100,
+        "committed": 85,
+        "spent": 58,
+        "measured": 46,
+        "scaled": 22,
+        "stopped": 6,
+        "uncommittedReserve": 50,
+        "committedUnspent": 27
+      },
+      "reallocationRule": "Only uncommitted reserve plus explicitly released STOP/closed commitments are reallocatable.",
+      "releaseExample": {
+        "intervention": "deal-room-sla",
+        "releasedPoints": 3,
+        "reallocationCapacityBefore": 50,
+        "reallocationCapacityAfter": 53
+      },
+      "boundary": "Modelled pilot points only; not currency, actual accounting spend or approved corporate capital."
+    },
+    "reallocationOptimizer": {
+      "tranches": [
+        10,
+        20,
+        30
+      ],
+      "ecosystems": [
+        "MFW",
+        "BFS",
+        "Made in Moscow"
+      ],
+      "scoreWeights": {
+        "riskRelief": 0.3,
+        "kpiLeverage": 0.25,
+        "evidenceReadiness": 0.3,
+        "absorption": 0.15
+      },
+      "gates": {
+        "ready": ">=80% evidence readiness",
+        "conditional": "60%-<80%",
+        "hold": "<60% or hard blocker"
+      },
+      "rule": "HOLD candidates score 0 regardless of upside; optimizer recommends but does not approve capital.",
+      "capacityBoundary": "Only uncommitted reserve plus explicitly released STOP/closed commitments are available."
+    },
+    "portfolioScenarioSimulator": {
+      "budgets": [
+        10,
+        20,
+        30
+      ],
+      "step": 10,
+      "dimensions": [
+        "MFW",
+        "BFS",
+        "Made in Moscow",
+        "Reserve"
+      ],
+      "weights": {
+        "riskReduction": 0.3,
+        "kpiLeverage": 0.25,
+        "evidenceConfidence": 0.2,
+        "diversification": 0.1,
+        "optionality": 0.15
+      },
+      "constraints": [
+        "HOLD cannot receive new capital",
+        "CONDITIONAL remains committee-gated",
+        "absorption caps apply",
+        "unallocated budget remains Reserve"
+      ],
+      "boundary": "Modelled portfolio ranking only; not approval, commitment, currency or realised ROI."
+    },
+    "portfolioProposalHandoff": {
+      "flow": [
+        "Portfolio Scenario Simulator",
+        "Best Mix",
+        "Portfolio Allocation Proposal",
+        "IN_REVIEW",
+        "APPROVED_DEMO"
+      ],
+      "persistence": "in-memory demo session only",
+      "boundary": "No commitment, accounting entry or production corporate approval is created."
+    },
+    "capitalAuthority": {
+      "persistence": "postgres_only",
+      "migration": "023_capital_authority.sql",
+      "eventTypes": [
+        "REQUEST_RECORDED",
+        "APPROVAL_RECORDED",
+        "COMMITMENT_RECORDED",
+        "RELEASE_RECORDED",
+        "SPEND_RECORDED",
+        "MEASUREMENT_RECORDED",
+        "DECISION_RECORDED"
+      ],
+      "writeAuthority": "authenticated non-demo Organizer/Staff",
+      "integrity": [
+        "append-only trigger",
+        "idempotency key",
+        "aggregate sequence",
+        "previous_event_hash",
+        "SHA-256 event_hash",
+        "verification endpoint"
+      ],
+      "api": [
+        "POST /v1/capital/events",
+        "GET /v1/capital/ledger",
+        "GET /v1/capital/projection",
+        "GET /v1/capital/verify"
+      ],
+      "boundary": "Implemented in repository but not production-admitted until PostgreSQL migration 023 and deployed exact-SHA verification are green.",
+      "uiBridge": {
+        "mode": "read-only",
+        "eligibleSession": "non-demo Organizer/Staff",
+        "demoBehavior": "authority protected; modelled cockpit remains local demo",
+        "writeBoundary": "Synthetic investor actions are not persisted to Capital Authority."
+      },
+      "operatorAdmission": {
+        "migration": "024_capital_operator_admission.sql",
+        "grantStates": [
+          "active",
+          "suspended",
+          "revoked"
+        ],
+        "roles": [
+          "Organizer",
+          "Staff"
+        ],
+        "sessionPersistence": "sessions table",
+        "perRequestValidation": [
+          "operator claim",
+          "grant active",
+          "user active",
+          "grant not expired",
+          "session not expired",
+          "session not revoked",
+          "role matches grant"
+        ],
+        "bootstrapBoundary": "Requires explicitly configured non-default MFW_ADMIN_TOKEN; shared-secret bootstrap is transitional until enterprise IAM/SSO."
+      },
+      "admissionCheck": {
+        "command": "npm run check:capital-admission",
+        "requiredEnv": [
+          "MFW_EXPECTED_SHA",
+          "MFW_CAPITAL_OPERATOR_SESSION"
+        ],
+        "mode": "read_only",
+        "verifies": [
+          "ready",
+          "postgres",
+          "exact_sha",
+          "migration_023",
+          "migration_024",
+          "ledger_access",
+          "projection_access",
+          "hash_chain_integrity"
+        ],
+        "boundary": "Not production PASS until executed successfully against the deployed exact SHA."
+      }
+    }
+  },
+  "language": {
+    "default": "ru",
+    "secondary": "en",
+    "scope": "shared investor/control-tower shell"
+  }
+}

@@ -19,13 +19,58 @@
   var hubModal=document.getElementById('hubModal');
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
+  var investorDemoIndex=0;
+  var investorDemoActive=false;
   var AUTHORITY='https://mfw-authority.onrender.com';
+  var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
+  var INVESTOR_MODEL=window.MFP_INVESTOR_MODEL||{};
+  var proofMode='live';
+  var controlTowerView='case';
+  var selectedControlCase='buyer-brand-alpha';
+  var selectedPortfolioStage='INTENT';
+  var committeeSelectedId=null;
+  var committeeCases={};
+  var programmeReleased={};
+  var programmeReallocationTarget='mfw';
+  var programmeOptimizerTranche=10;
+  var programmeScenarioBudget=30;
+  var programmeScenarioProposal=null;
+  var portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+  var scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+  var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
+  function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
+  function ruCode(value){
+    var v=String(value==null?'':value).toUpperCase();
+    var map={
+      READY:'ГОТОВО',CONDITIONAL:'УСЛОВНО',HOLD:'ПАУЗА',
+      SCALE:'МАСШТАБИРОВАТЬ',ITERATE:'ДОРАБОТАТЬ',STOP:'ОСТАНОВИТЬ',
+      DRAFT:'ЧЕРНОВИК',IN_REVIEW:'НА РАССМОТРЕНИИ',APPROVED:'ОДОБРЕНО',
+      APPROVED_DEMO:'ОДОБРЕНО В ДЕМО',PILOT_RUNNING:'ПИЛОТ ИДЁТ',MEASURED:'ИЗМЕРЕНО',DECIDED:'РЕШЕНИЕ ПРИНЯТО',
+      OBSERVED:'НАБЛЮДАЕМОЕ',REPORTED:'ЗАЯВЛЕННОЕ',VERIFIED:'ПОДТВЕРЖДЁННОЕ',MODELLED:'МОДЕЛЬНОЕ',
+      ATTRIBUTED:'АТРИБУТИРОВАННОЕ',INCREMENTAL:'ИНКРЕМЕНТАЛЬНОЕ',
+      COMPLETE:'ПОЛНО',INCOMPLETE:'НЕПОЛНО',PENDING:'ОЖИДАЕТ',
+      REQUESTED:'ЗАПРОШЕНО',COMMITTED:'ЗАРЕЗЕРВИРОВАНО',SPENT:'ИСПОЛЬЗОВАНО',RELEASED:'ОСВОБОЖДЕНО',SCALED:'МАСШТАБИРОВАНО',STOPPED:'ОСТАНОВЛЕНО'
+    };
+    return map[v]||String(value==null?'':value);
+  }
   function formatWhen(v){try{return new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch(e){return String(v||'');}}
   function accessToken(){try{return localStorage.getItem('mfwAccessToken')||'';}catch(e){return '';}}
   function setAccessToken(v){try{if(v)localStorage.setItem('mfwAccessToken',v);else localStorage.removeItem('mfwAccessToken');}catch(e){}}
+  function sessionClaims(){
+    var token=accessToken();if(!token)return null;
+    try{
+      var p=token.split('.')[1]||'',s=p.replace(/-/g,'+').replace(/_/g,'/');
+      while(s.length%4)s+='=';
+      return JSON.parse(atob(s));
+    }catch(e){return null;}
+  }
+  function capitalAuthorityEligible(){
+    var p=sessionClaims();
+    return !!(p&&p.demo!==true&&p.operator===true&&['Organizer','Staff'].indexOf(String(p.role||''))>=0);
+  }
   function displayName(){return ((accountState.profile.firstName||'')+' '+(accountState.profile.lastName||'')).trim()||'MFW User';}
   async function ensureAuthoritySession(role,force){
     var token=accessToken();
@@ -46,17 +91,17 @@
   }
   async function loadOrganisationNetworkProof(){
     var root=document.getElementById('organisationNetworkProof');if(!root)return;
-    root.innerHTML='<span>ORGANISATION NETWORK · loading authority…</span>';
+    root.innerHTML='<span>СЕТЬ ОРГАНИЗАЦИЙ · ЗАГРУЗКА ДАННЫХ ИЗ РЕЕСТРА…</span>';
     try{
       var out=await authorityFetch('/v1/network/organisations/summary',{method:'GET'}),d=out.data||{};
       root.innerHTML=
-        '<div><strong>'+Number(d.activeOrganisations||0)+'</strong><span>active organisations</span></div>'+
-        '<div><strong>'+Number(d.verifiedOrganisations||0)+'</strong><span>verified</span></div>'+
-        '<div><strong>'+Number(d.activeRepresentatives||0)+'</strong><span>representatives</span></div>'+
-        '<div><strong>'+Number(d.crossEventOrganisations||0)+'</strong><span>cross-event</span></div>'+
-        '<small>MFW '+Number(d.mfwOrganisations||0)+' · BFS '+Number(d.bfsOrganisations||0)+' · MADE '+Number(d.madeOrganisations||0)+' · '+Number(d.participationRecords||0)+' participation records · '+h(out.source||'authority')+'</small>';
+        '<div><strong>'+Number(d.activeOrganisations||0)+'</strong><span>активных организаций</span></div>'+
+        '<div><strong>'+Number(d.verifiedOrganisations||0)+'</strong><span>подтверждено</span></div>'+
+        '<div><strong>'+Number(d.activeRepresentatives||0)+'</strong><span>представителей</span></div>'+
+        '<div><strong>'+Number(d.crossEventOrganisations||0)+'</strong><span>между событиями</span></div>'+
+        '<small>MFW '+Number(d.mfwOrganisations||0)+' · BFS '+Number(d.bfsOrganisations||0)+' · MADE '+Number(d.madeOrganisations||0)+' · '+Number(d.participationRecords||0)+' записей об участии · '+h(out.source||'authority')+'</small>';
     }catch(e){
-      root.innerHTML='<span>ORGANISATION NETWORK · authority unavailable</span>';
+      root.innerHTML='<span>СЕТЬ ОРГАНИЗАЦИЙ · СЕРВЕРНЫЙ РЕЕСТР НЕДОСТУПЕН</span>';
     }
   }
   function eventRoleMode(code,roleId){
@@ -115,8 +160,8 @@
       ? '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+' · '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4><p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p><small>'+h((current.relationship&&current.relationship.relationshipRole)||'representative')+(current.relationship&&current.relationship.roleTitle?' · '+h(current.relationship.roleTitle):'')+'</small><div class="organisation-proof"><span>'+h(current.activeRepresentativeCount||1)+' representatives</span><span>'+h(current.participationCount||0)+' participation records</span></div></article>'
       : '<p class="organisation-empty">Привяжите профиль к организации. Это создаёт persistent identity, но не подтверждает организацию автоматически.</p>';
     var rows=(organisationState.items||[]).slice(0,12);
-    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' shown</span></div>'+
-      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' history</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
+    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' показано</span></div>'+
+      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' записей истории</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
   }
   async function loadOrganisationRegistry(){
     if(organisationState.loading)return;
@@ -145,7 +190,7 @@
     return out;
   }
 
-  var DEFAULT_PROFILE={firstName:'Alex',lastName:'Morgan',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Fashion Industry',title:'Guest',country:'Russia'};
+  var DEFAULT_PROFILE={firstName:'Алексей',lastName:'Иванов',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Индустрия моды',title:'Гость',country:'Россия'};
   var INTEREST_OPTIONS=[
     {id:'runway',label:'Показы'},
     {id:'emerging_brands',label:'Новые бренды'},
@@ -153,12 +198,12 @@
     {id:'menswear',label:'Мужская мода'},
     {id:'accessories',label:'Аксессуары'},
     {id:'sustainable',label:'Устойчивая мода'},
-    {id:'business',label:'Fashion business'},
-    {id:'retail',label:'Retail / Buying'},
-    {id:'technology',label:'Fashion Tech / AI'},
+    {id:'business',label:'Модный бизнес'},
+    {id:'retail',label:'Ретейл / закупки'},
+    {id:'technology',label:'Модные технологии / ИИ'},
     {id:'international',label:'Международные рынки'},
     {id:'lectures',label:'Лекторий / дискуссии'},
-    {id:'networking',label:'B2B / networking'}
+    {id:'networking',label:'B2B / деловые связи'}
   ];
   function selectedInterests(){return safeJson('mfpInterests.v1',[]);}
   function setSelectedInterests(v){try{localStorage.setItem('mfpInterests.v1',JSON.stringify(v));}catch(e){}}
@@ -252,7 +297,7 @@
         var out=await authorityFetch('/v1/me/recommendations',{method:'GET'});
         recs=(out.data||[]).map(function(r){
           var reason=(r.reasons||[]).map(function(x){return x.replace('interest:','интерес · ').replace('favorite_brand:','любимый бренд · ').replace('followed_brand:','подписка · ').replace(/_/g,' ');}).join(' · ');
-          return {type:String(r.eventBrand||'mfw').toUpperCase()+' · RECOMMENDED',title:r.title,body:formatWhen(r.startsAt)+' · '+(r.metadata&&r.metadata.venueLabel||r.metadata&&r.metadata.hall||''),path:reason||'programme relevance',event:r.eventBrand||'mfw',id:r.id,score:r.score};
+          return {type:String(r.eventBrand||'mfw').toUpperCase()+' · РЕКОМЕНДУЕМ',title:r.title,body:formatWhen(r.startsAt)+' · '+(r.metadata&&r.metadata.venueLabel||r.metadata&&r.metadata.hall||''),path:reason||'релевантность программе',event:r.eventBrand||'mfw',id:r.id,score:r.score};
         });server=true;
       }catch(e){}
     }
@@ -261,22 +306,22 @@
       (data.mfw.brands||[]).forEach(function(b){
         if((interests.mfwFavorites||[]).indexOf(b.id)>=0||(interests.mfwFollowed||[]).indexOf(b.id)>=0){
           var show=(data.mfw.events||[]).filter(function(e){return e.id===b.showId;})[0];
-          recs.push({type:'MFW · BRAND',title:b.name,body:show?(show.date+' · '+show.time+' · '+show.venue):'Следите за обновлениями бренда',path:'Favorite / Follow → Show → Reminder → Replay → Reward',event:'mfw'});
+          recs.push({type:'MFW · БРЕНД',title:b.name,body:show?(show.date+' · '+show.time+' · '+show.venue):'Следите за обновлениями бренда',path:'Избранное / подписка → показ → напоминание → запись → награда',event:'mfw'});
         }
       });
       Object.keys(interests.bfsSaved||{}).filter(function(k){return interests.bfsSaved[k];}).forEach(function(id){
         var ss=(data.bfs.sessions||[]).filter(function(x){return x.id===id;})[0];
-        if(ss)recs.push({type:'BFS · SESSION',title:ss.title,body:ss.date+' · '+ss.time+' · '+ss.hall,path:'Saved session → Speaker → Meeting → Lead',event:'bfs'});
+        if(ss)recs.push({type:'BFS · СЕССИЯ',title:ss.title,body:ss.date+' · '+ss.time+' · '+ss.hall,path:'Сохранённая сессия → спикер → встреча → лид',event:'bfs'});
       });
     }
     if(!recs.length){
       recs=[
-        {type:'MFW · START HERE',title:'Добавьте любимый бренд',body:'MFW → Бренды → Follow или ♥ Favorite',path:'Brand → Show → LIVE / Replay → Reward',event:'mfw'},
-        {type:'BFS · START HERE',title:'Сохраните интересную сессию',body:'BFS → Программа → добавьте сессию',path:'Session → Speaker → Meeting → Lead',event:'bfs'}
+        {type:'MFW · НАЧАТЬ ЗДЕСЬ',title:'Добавьте любимый бренд',body:'MFW → Бренды → подписаться или добавить в избранное',path:'Бренд → показ → прямой эфир / запись → награда',event:'mfw'},
+        {type:'BFS · НАЧАТЬ ЗДЕСЬ',title:'Сохраните интересную сессию',body:'BFS → Программа → добавьте сессию',path:'Сессия → спикер → встреча → лид',event:'bfs'}
       ];
     }
     grid.innerHTML=recs.slice(0,8).map(function(r){
-      return '<article class="rec-card"><div class="rec-type">'+h(r.type)+(server?' · SERVER':'')+'</div><h3>'+h(r.title)+'</h3><p>'+h(r.body)+'</p><div class="rec-path">'+h(r.path)+'</div><div class="rec-actions"><button data-rec-event="'+h(r.event)+'">ОТКРЫТЬ '+h(String(r.event).toUpperCase())+'</button>'+(r.id?'<button class="secondary" data-rec-agenda="'+h(r.id)+'" data-rec-kind="'+h(r.event)+'">В ПРОГРАММУ</button>':'')+'</div></article>';
+      return '<article class="rec-card"><div class="rec-type">'+h(r.type)+(server?' · СЕРВЕР':'')+'</div><h3>'+h(r.title)+'</h3><p>'+h(r.body)+'</p><div class="rec-path">'+h(r.path)+'</div><div class="rec-actions"><button data-rec-event="'+h(r.event)+'">ОТКРЫТЬ '+h(String(r.event).toUpperCase())+'</button>'+(r.id?'<button class="secondary" data-rec-agenda="'+h(r.id)+'" data-rec-kind="'+h(r.event)+'">В ПРОГРАММУ</button>':'')+'</div></article>';
     }).join('');
     [].slice.call(document.querySelectorAll('[data-rec-event]')).forEach(function(b){b.onclick=function(){forYouModal.classList.add('hidden');openEvent(b.dataset.recEvent);};});
     [].slice.call(document.querySelectorAll('[data-rec-agenda]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.recKind,b.dataset.recAgenda);};});
@@ -287,8 +332,8 @@
       favorite:(interests.mfwFavorites||[]).length+Object.keys(interests.bfsFavorites||{}).filter(function(k){return interests.bfsFavorites[k];}).length
     };
     document.getElementById('ownerFunnel').innerHTML='<h3>Ваш путь</h3><div class="funnel-grid">'+
-      [['REGISTER',counts.registered],['SAVE',counts.saved],['FOLLOW',counts.followed],['FAVORITE',counts.favorite]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
-      '</div><div class="funnel-note">'+(server?'Рекомендации рассчитаны server-side из explicit interests + follows + favorites.':'Локальный fallback до появления server-сессии.')+'</div>';
+      [['РЕГИСТРАЦИИ',counts.registered],['СОХРАНЕНО',counts.saved],['ПОДПИСКИ',counts.followed],['ИЗБРАННОЕ',counts.favorite]].map(function(x){return '<div class="funnel-step"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('')+
+      '</div><div class="funnel-note">'+(server?'Рекомендации рассчитаны на сервере из явных интересов, подписок и избранного.':'Локальный резервный режим до появления серверной сессии.')+'</div>';
   }
 
   function agendaLoad(){return safeJson('mfpAgenda.v1',[]);}
@@ -337,13 +382,13 @@
     (data.mfw.events||[]).forEach(function(x){out.push({kind:'mfw-event',event:'MFW',openEvent:'mfw',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.type+' · '+x.venue});});
     (data.bfs.speakers||[]).forEach(function(x){out.push({kind:'bfs-speaker',event:'BFS',openEvent:'bfs',id:x.id,title:x.name,subtitle:x.role,meta:x.org});});
     (data.bfs.sessions||[]).forEach(function(x){out.push({kind:'bfs-session',event:'BFS',openEvent:'bfs',id:x.id,title:x.title,subtitle:x.date+' · '+x.time,meta:x.topic+' · '+x.hall});});
-    madeVerifiedBrands.forEach(function(x){out.push({kind:'made-brand',event:'MADE',openEvent:'made',id:x.id,title:x.name,subtitle:x.city||'Москва',meta:'Made in Moscow Verified · canonical MFW brand'});});
+    madeVerifiedBrands.forEach(function(x){out.push({kind:'made-brand',event:'MADE',openEvent:'made',id:x.id,title:x.name,subtitle:x.city||'Москва',meta:'Подтверждено «Сделано в Москве» · канонический бренд MFW'});});
     return out;
   }
   function sourceBadge(event){
-    if(event==='MADE')return '<span class="source-badge made-source">VERIFIED ROSTER</span>';
+    if(event==='MADE')return '<span class="source-badge made-source">ПОДТВЕРЖДЁННЫЙ РЕЕСТР</span>';
     var s=(window.MFP_DATA&&window.MFP_DATA.sources||{})[event==='MFW'?'mfw':'bfs'];
-    return s?'<span class="source-badge">OFFICIAL · '+h(window.MFP_DATA.syncedAt||'')+'</span>':'';
+    return s?'<span class="source-badge">ОФИЦИАЛЬНЫЙ ИСТОЧНИК · '+h(window.MFP_DATA.syncedAt||'')+'</span>':'';
   }
   function isoDay(d){
     var x=d instanceof Date?d:new Date(d);
@@ -392,7 +437,7 @@
       '<section class="today-hero" data-phase="'+h(life.phase)+'"><div><div class="drawer-kicker">'+h(phaseLabel)+' · '+h(life.start||'—')+' → '+h(life.end||'—')+'</div><h3>'+h(phaseCopy)+'</h3><p>Lifecycle определяется опубликованными датами MFW/BFS, а не вручную выбранным demo-state.</p></div><div class="lifecycle-rail"><span class="'+(life.phase==='before'?'active':'done')+'">BEFORE</span><i>→</i><span class="'+(life.phase==='live'?'active':life.phase==='after'?'done':'')+'">LIVE</span><i>→</i><span class="'+(life.phase==='after'?'active':'')+'">AFTER</span></div></section>'+
       '<div class="today-kpis"><div><b>'+h(saved)+'</b><span>saved</span></div><div><b>'+h(followed)+'</b><span>followed</span></div><div><b>'+h(favorites)+'</b><span>favorites</span></div><div><b>'+h(replayConfirmed)+'</b><span>confirmed replay assets</span></div></div>'+
       phaseCards+
-      (life.phase==='after'?'<div class="today-truth"><b>POST-EVENT TRUTH</b><span>Replay показывается как доступный только при подтверждённом media state. Follow-up и Deal Room не считаются продажей без отдельного outcome evidence.</span></div>':'')+
+      (life.phase==='after'?'<div class="today-truth"><b>ПОСЛЕСОБЫТИЙНЫЕ ФАКТЫ</b><span>Запись показывается доступной только при подтверждённом состоянии медиа. Последующее сопровождение и Комната сделки не считаются продажей без отдельного доказательства результата.</span></div>':'')+
       '<div class="hub-note">«Сейчас» — read-only lifecycle projection. Она не меняет agenda, access или коммерческую truth без соответствующего server action.</div>';
     [].slice.call(document.querySelectorAll('[data-today-agenda]')).forEach(function(b){b.onclick=function(){addAgenda(b.dataset.todayKind,b.dataset.todayAgenda);};});
     [].slice.call(document.querySelectorAll('[data-today-action]')).forEach(function(b){b.onclick=function(){
@@ -465,10 +510,10 @@
       }catch(e){}
     }
     var conflicts=server?serverConflicts:agendaConflicts(items);
-    var alert=conflicts&&conflicts.length?'<div class="agenda-alert"><b>Найдено пересечений: '+conflicts.length+'</b><br>'+conflicts.map(function(x){return server?(h(x.titleA)+' ↔ '+h(x.titleB)):(h(x.date)+': '+h(x.a.title)+' ↔ '+h(x.b.title));}).join('<br>')+'</div>':'<div class="agenda-alert agenda-ok"><b>Конфликтов не найдено.</b> '+(server?'SERVER CHECK':'LOCAL PLANNING')+'</div>';
+    var alert=conflicts&&conflicts.length?'<div class="agenda-alert"><b>Найдено пересечений: '+conflicts.length+'</b><br>'+conflicts.map(function(x){return server?(h(x.titleA)+' ↔ '+h(x.titleB)):(h(x.date)+': '+h(x.a.title)+' ↔ '+h(x.b.title));}).join('<br>')+'</div>':'<div class="agenda-alert agenda-ok"><b>Конфликтов не найдено.</b> '+(server?'ПРОВЕРКА СЕРВЕРОМ':'ЛОКАЛЬНОЕ ПЛАНИРОВАНИЕ')+'</div>';
     hubContent.innerHTML=alert+'<div class="agenda-list">'+items.map(function(x){
       var when=x.startsAt?formatWhen(x.startsAt):(h(x.date)+'<br>'+h(x.time)+(x.end?'–'+h(x.end):''));
-      return '<article class="agenda-item"><div class="agenda-time"><span class="agenda-event">'+h(x.eventCode||String(x.kind||'').toUpperCase())+'</span><br>'+when+'</div><div><h3>'+h(x.title)+'</h3><p>'+h(x.venue||x.hall||'')+(x.reminderMinutes!=null?' · reminder '+h(x.reminderMinutes)+' min':'')+'</p></div><button class="agenda-action" data-remove-kind="'+h(x.kind)+'" data-remove-id="'+h(x.id)+'">УБРАТЬ</button></article>';
+      return '<article class="agenda-item"><div class="agenda-time"><span class="agenda-event">'+h(x.eventCode||String(x.kind||'').toUpperCase())+'</span><br>'+when+'</div><div><h3>'+h(x.title)+'</h3><p>'+h(x.venue||x.hall||'')+(x.reminderMinutes!=null?' · напоминание '+h(x.reminderMinutes)+' мин':'')+'</p></div><button class="agenda-action" data-remove-kind="'+h(x.kind)+'" data-remove-id="'+h(x.id)+'">УБРАТЬ</button></article>';
     }).join('')+'</div>'+(items.length?'':'<div class="hub-note">Добавьте показы MFW и сессии BFS — здесь появится единый маршрут.</div>');
     [].slice.call(document.querySelectorAll('[data-remove-id]')).forEach(function(b){b.onclick=function(){removeAgenda(b.dataset.removeKind,b.dataset.removeId);};});
   }
@@ -478,10 +523,10 @@
         var out=await authorityFetch('/v1/me/wallet',{method:'GET'}),d=out.data||{},offers=d.offers||[],claims=d.claims||[];
         var offerCards=offers.map(function(o){
           var e=o.eligibility||{},progress=e.progress||[],days=progress.reduce(function(m,x){return Math.max(m,Number(x.currentDays||0));},0);
-          return '<article class="wallet-card '+(e.eligible?'':'locked')+'"><div class="kind">MFW · '+(e.eligible?'ELIGIBLE':'PROGRESS')+'</div><h3>'+h(o.titleRu||o.titleEn||'Reward')+'</h3><div class="days">'+h(days)+' / '+h(o.minContinuousDays||30)+'</div><div class="wallet-progress"><i style="width:'+Math.min(100,Math.round(days/Math.max(1,Number(o.minContinuousDays||30))*100))+'%"></i></div><small>'+h((progress.filter(function(x){return !x.ok;})[0]||{}).detail||'Условия выполнены')+'</small>'+(e.eligible?'<button class="wallet-action" data-claim-offer="'+h(o.id)+'">ПОЛУЧИТЬ НАГРАДУ</button>':'')+'</article>';
+          return '<article class="wallet-card '+(e.eligible?'':'locked')+'"><div class="kind">MFW · '+(e.eligible?'ДОСТУПНО':'ПРОГРЕСС')+'</div><h3>'+h(o.titleRu||o.titleEn||'Reward')+'</h3><div class="days">'+h(days)+' / '+h(o.minContinuousDays||30)+'</div><div class="wallet-progress"><i style="width:'+Math.min(100,Math.round(days/Math.max(1,Number(o.minContinuousDays||30))*100))+'%"></i></div><small>'+h((progress.filter(function(x){return !x.ok;})[0]||{}).detail||'Условия выполнены')+'</small>'+(e.eligible?'<button class="wallet-action" data-claim-offer="'+h(o.id)+'">ПОЛУЧИТЬ НАГРАДУ</button>':'')+'</article>';
         }).join('');
-        var claimCards=claims.map(function(x){return '<article class="wallet-card"><div class="kind">CLAIM · '+h(String(x.status).toUpperCase())+'</div><h3>'+h(x.titleRu||x.titleEn||x.brandName||'Reward')+'</h3><small>'+h(x.brandName||'')+'</small>'+(x.status==='issued'?'<button class="wallet-action" data-wallet-qr="'+h(x.id)+'">ОТКРЫТЬ QR</button>':'')+'</article>';}).join('');
-        hubContent.innerHTML='<div class="wallet-summary">'+h(d.summary&&d.summary.eligibleOffers||0)+' eligible · '+h(d.summary&&d.summary.issued||0)+' issued · '+h(d.summary&&d.summary.redeemed||0)+' redeemed</div><div class="wallet-grid">'+offerCards+claimCards+'</div>'+(offerCards||claimCards?'':'<div class="hub-note">Подпишитесь на бренд MFW и выполните условия loyalty campaign.</div>');
+        var claimCards=claims.map(function(x){return '<article class="wallet-card"><div class="kind">CLAIM · '+h(String(x.status).toUpperCase())+'</div><h3>'+h(x.titleRu||x.titleEn||x.brandName||'Награда')+'</h3><small>'+h(x.brandName||'')+'</small>'+(x.status==='issued'?'<button class="wallet-action" data-wallet-qr="'+h(x.id)+'">ОТКРЫТЬ QR</button>':'')+'</article>';}).join('');
+        hubContent.innerHTML='<div class="wallet-summary">'+h(d.summary&&d.summary.eligibleOffers||0)+' доступно · '+h(d.summary&&d.summary.issued||0)+' выдано · '+h(d.summary&&d.summary.redeemed||0)+' redeemed</div><div class="wallet-grid">'+offerCards+claimCards+'</div>'+(offerCards||claimCards?'':'<div class="hub-note">Подпишитесь на бренд MFW и выполните условия loyalty campaign.</div>');
         [].slice.call(document.querySelectorAll('[data-claim-offer]')).forEach(function(b){b.onclick=async function(){try{await authorityFetch('/v1/loyalty/offers/'+encodeURIComponent(b.dataset.claimOffer)+'/claim',{method:'POST',body:'{}'});renderWallet();}catch(e){alert(e.message);}};});
         [].slice.call(document.querySelectorAll('[data-wallet-qr]')).forEach(function(b){b.onclick=async function(){try{var q=await authorityFetch('/v1/loyalty/claims/'+encodeURIComponent(b.dataset.walletQr)+'/qr',{method:'POST',body:'{}'});hubContent.innerHTML='<div class="wallet-qr-view"><button class="wallet-action" id="walletBack">← WALLET</button><h3>Одноразовая привилегия</h3><img alt="Reward QR" src="'+h(q.data.qrDataUrl)+'"><small>QR короткоживущий и повторно проверяется сервером при redemption.</small></div>';document.getElementById('walletBack').onclick=renderWallet;}catch(e){alert(e.message);}};});
         return;
@@ -499,15 +544,15 @@
     try{
       var out=await authorityFetch('/v1/owner/control-tower',{method:'GET'});
       var x=out.data||{},s=x.summary||{},brands=x.brands||[],cohorts=x.cohorts||[],migration=x.migration||[],acq=x.acquisitionMix||[],scenarios=x.scenarios||[],ce=x.crossEvent||{},cb=x.crossBrand||{};
-      var brandRows=brands.slice(0,10).map(function(b){return '<div class="tower-row"><b>'+b.name+'</b><span>'+b.customers+' customers</span><span>'+money(b.attributableGmv)+' attr. GMV</span><span>'+money(b.incrementalGmv)+' incr. GMV</span><span>'+money(b.predictedClv)+' CLV</span></div>';}).join('');
+      var brandRows=brands.slice(0,10).map(function(b){return '<div class="tower-row"><b>'+b.name+'</b><span>'+b.customers+' клиентов</span><span>'+money(b.attributableGmv)+' attr. GMV</span><span>'+money(b.incrementalGmv)+' incr. GMV</span><span>'+money(b.predictedClv)+' CLV</span></div>';}).join('');
       var cohortRows=cohorts.slice(0,8).map(function(q){return '<div class="cohort-row"><b>'+q.cohort+'</b><span>'+q.customers+'</span><span>'+pct(q.customers?q.m1/q.customers:0)+'</span><span>'+pct(q.customers?q.m3/q.customers:0)+'</span><span>'+pct(q.customers?q.m6/q.customers:0)+'</span></div>';}).join('');
       var migrationRows=migration.slice(0,6).map(function(m){return '<div class="migration-row"><span>'+m.from+'</span><i>→</i><span>'+m.to+'</span><b>'+m.users+'</b></div>';}).join('');
-      var acqRows=acq.slice(0,6).map(function(a){return '<div class="tower-row"><b>'+a.source+'</b><span>'+a.acquired+' acquired</span><span>CAC '+(a.cac==null?'—':money(a.cac))+'</span><span>ROI '+(a.roi==null?'—':pct(a.roi))+'</span><span>'+money(a.revenue)+' revenue</span></div>';}).join('');
+      var acqRows=acq.slice(0,6).map(function(a){return '<div class="tower-row"><b>'+a.source+'</b><span>'+a.acquired+' привлечено</span><span>CAC '+(a.cac==null?'—':money(a.cac))+'</span><span>ROI '+(a.roi==null?'—':pct(a.roi))+'</span><span>'+money(a.revenue)+' выручка</span></div>';}).join('');
       var scenarioRows=scenarios.map(function(v){return '<div class="scenario-card"><span>MODELLED · '+v.label+'</span><b>'+money(v.illustrativeValue)+'</b><small>illustrative ecosystem value</small><em>GMV uplift '+pct(v.gmvUplift)+' · retention uplift '+pct(v.retentionUplift)+' · CLV realization '+pct(v.clvRealization)+'</em></div>';}).join('');
-      hubContent.innerHTML='<div class="drawer-kicker">OWNER CONTROL TOWER · SERVER AUTHORITY</div><h3 class="tower-title">MFW Audience → Commercial Asset</h3>'+
-        '<div class="metric-legend"><span>OBSERVED</span><span>ATTRIBUTED</span><span>INCREMENTAL</span><span>MODELLED</span></div>'+
+      hubContent.innerHTML='<div class="drawer-kicker">ЦЕНТР УПРАВЛЕНИЯ ВЛАДЕЛЬЦА · СЕРВЕРНЫЕ ДАННЫЕ</div><h3 class="tower-title">Аудитория MFW → коммерческий актив</h3>'+
+        '<div class="metric-legend"><span>НАБЛЮДАЕМОЕ</span><span>АТРИБУТИРОВАННОЕ</span><span>ИНКРЕМЕНТАЛЬНОЕ</span><span>МОДЕЛЬНОЕ</span></div>'+
         '<div class="analytics-grid">'+
-        [['BRANDS',s.brands||0],['CUSTOMERS',s.customers||0],['RETENTION',pct(s.ecosystemRetention)],['ATTR. GMV',money(s.attributableGmv)],['INCR. GMV',money(s.incrementalGmv)],['PREDICTED CLV',money(s.predictedClv)]].map(function(a){return '<div class="analytics-stat"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>';}).join('')+'</div>'+
+        [['БРЕНДЫ',s.brands||0],['КЛИЕНТЫ',s.customers||0],['УДЕРЖАНИЕ',pct(s.ecosystemRetention)],['АТРИБ. '+abbr('GMV','Gross Merchandise Value — валовая стоимость товаров'),money(s.attributableGmv)],['ИНКР. '+abbr('GMV','Gross Merchandise Value — валовая стоимость товаров'),money(s.incrementalGmv)],['ПРОГНОЗ '+abbr('CLV','Customer Lifetime Value — пожизненная ценность клиента'),money(s.predictedClv)]].map(function(a){return '<div class="analytics-stat"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>';}).join('')+'</div>'+
         '<div class="tower-section"><h3>Brand-by-brand contribution</h3><div class="tower-table">'+(brandRows||'<div class="hub-note">Нет коммерческих данных брендов.</div>')+'</div></div>'+
         '<div class="tower-split"><section><h3>Cohort retention</h3><div class="cohort-head"><b>COHORT</b><span>N</span><span>M1</span><span>M3</span><span>M6</span></div>'+(cohortRows||'<div class="hub-note">Нужна история покупок.</div>')+'</section><section><h3>Cross-brand migration</h3><div class="tower-mini"><b>'+pct(cb.migrationRate)+'</b><span>multi-brand buyers</span><small>'+Number(cb.avgBrandsPerBuyer||0).toFixed(1)+' brands / buyer</small></div>'+(migrationRows||'<div class="hub-note">Переходов пока нет.</div>')+'</section></div>'+
         '<div class="tower-split"><section><h3>MFW ↔ BFS cross-event</h3><div class="cross-event-ring"><b>'+pct(ce.overlapRate)+'</b><span>cross-event overlap</span></div><div class="tower-foot">'+(ce.mfwUsers||0)+' MFW · '+(ce.bfsUsers||0)+' BFS · '+(ce.crossEventUsers||0)+' both</div></section><section><h3>Acquisition-source mix</h3><div class="tower-table">'+(acqRows||'<div class="hub-note">Добавьте server acquisition events.</div>')+'</div></section></div>'+
@@ -522,32 +567,862 @@
     var preferred=(data.mfw.brands||[]).filter(function(x){return x.id===preferredId;})[0]||null;
     var context=preferred?preferred.name:'Выбранный бренд после подтверждённой встречи';
     hubContent.innerHTML=
-      '<div class="dealroom-preview-banner"><b>PREVIEW · NO COMMERCIAL DATA SAVED</b><span>Workflow демонстрируется до durable PostgreSQL + ACL/policy. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
-      '<div class="dealroom-hero"><div><div class="drawer-kicker">BUYER / BRAND DEAL ROOM</div><h3>Из встречи — в структурированный коммерческий follow-up.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>MEETING</span><i>→</i><span>SHORTLIST</span><i>→</i><span>REQUEST</span><i>→</i><span>RESPONSE</span><i>→</i><span>HANDOFF</span></div></div>'+
+      '<div class="dealroom-preview-banner"><b>ПРЕДПРОСМОТР · КОММЕРЧЕСКИЕ ДАННЫЕ НЕ СОХРАНЯЮТСЯ</b><span>Workflow демонстрируется до durable PostgreSQL + ACL/policy. Ни цена, MOQ, заказ или приватный документ здесь не сохраняются.</span></div>'+
+      '<div class="dealroom-hero"><div><div class="drawer-kicker">КОМНАТА СДЕЛКИ БАЙЕРА / БРЕНДА</div><h3>Из встречи — в структурированный коммерческий follow-up.</h3><p>'+h(context)+'</p></div><div class="dealroom-chain"><span>ВСТРЕЧА</span><i>→</i><span>ШОРТ-ЛИСТ</span><i>→</i><span>ЗАПРОС</span><i>→</i><span>ОТВЕТ</span><i>→</i><span>ПЕРЕДАЧА</span></div></div>'+
       '<div class="dealroom-stage-grid">'+
-        '<article><small>01 · RELATIONSHIP GATE</small><h4>Confirmed meeting</h4><p>Deal Room открывается только для авторизованной bilateral relationship.</p><span class="deal-status locked">SERVER ACL REQUIRED</span></article>'+
-        '<article><small>02 · BUYER SHORTLIST</small><h4>Looks / collection</h4><p>Look, collection, replay timecode, buyer note и interest level.</p><span class="deal-status">CANONICAL IDS ONLY</span></article>'+
-        '<article><small>03 · STRUCTURED REQUEST</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">AUDITABLE</span></article>'+
-        '<article><small>04 · BRAND RESPONSE</small><h4>Response evidence</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">PRIVATE SCOPE</span></article>'+
-        '<article><small>05 · HANDOFF</small><h4>External commerce</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">NO SILENT ORDER</span></article>'+
+        '<article><small>01 · RELATIONSHIP УСЛОВИЕ</small><h4>Подтверждённая встреча</h4><p>Deal Room открывается только для авторизованной bilateral relationship.</p><span class="deal-status locked">ТРЕБУЕТСЯ СЕРВЕРНОЕ УПРАВЛЕНИЕ ДОСТУПОМ</span></article>'+
+        '<article><small>02 · BUYER ШОРТ-ЛИСТ</small><h4>Образы / коллекция</h4><p>Look, collection, replay timecode, buyer note и interest level.</p><span class="deal-status">ТОЛЬКО КАНОНИЧЕСКИЕ ID</span></article>'+
+        '<article><small>03 · STRUCTURED ЗАПРОС</small><h4>Что нужно байеру?</h4><p>Не письмо «пришлите всё», а типизированный запрос со сроком и ответственным.</p><span class="deal-status">АУДИРУЕМО</span></article>'+
+        '<article><small>04 · BRAND ОТВЕТ</small><h4>Доказательство ответа</h4><p>Ответ, approved document reference и следующий шаг без превращения MFW в ERP.</p><span class="deal-status">ПРИВАТНЫЙ КОНТУР</span></article>'+
+        '<article><small>05 · ПЕРЕДАЧА</small><h4>Внешняя коммерческая система</h4><p>CRM / PLM / wholesale-system reference только после явного handoff.</p><span class="deal-status">БЕЗ НЕЯВНОГО СОЗДАНИЯ ЗАКАЗА</span></article>'+
       '</div>'+
-      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>REQUEST TYPES</small><h4>Структурированный buyer intent</h4></div><span>DEMO TAXONOMY</span></div><div class="request-chip-grid">'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ЗАПРОС TYPES</small><h4>Структурированный намерение байера</h4></div><span>ДЕМОНСТРАЦИОННАЯ ТАКСОНОМИЯ</span></div><div class="request-chip-grid">'+
         ['LINE SHEET','WHOLESALE PRICE','AVAILABILITY','MOQ','DELIVERY WINDOW','SAMPLE','SHOWROOM APPOINTMENT','DISTRIBUTION / MARKET'].map(function(x){return '<button disabled>'+x+'</button>';}).join('')+
       '</div></section>'+
-      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>PRIVATE DOCUMENTS</small><h4>Контролируемый обмен</h4></div><span>ACL BEFORE DOWNLOAD</span></div><div class="deal-doc-grid">'+
-        '<article><b>Line sheet</b><span>versioned · buyer-scoped</span><em>LOCKED PREVIEW</em></article>'+
-        '<article><b>Lookbook</b><span>approved collection assets</span><em>LOCKED PREVIEW</em></article>'+
-        '<article><b>Brand deck</b><span>commercial presentation</span><em>LOCKED PREVIEW</em></article>'+
-        '<article><b>Sample / shipping</b><span>operational information</span><em>LOCKED PREVIEW</em></article>'+
+      '<section class="dealroom-section"><div class="dealroom-section-head"><div><small>ПРИВАТНЫЕ ДОКУМЕНТЫ</small><h4>Контролируемый обмен</h4></div><span>ПРОВЕРКА ДОСТУПА ПЕРЕД СКАЧИВАНИЕМ</span></div><div class="deal-doc-grid">'+
+        '<article><b>Line sheet</b><span>versioned · buyer-scoped</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Lookbook</b><span>approved collection assets</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Brand deck</b><span>commercial presentation</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
+        '<article><b>Sample / shipping</b><span>operational information</span><em>ЗАБЛОКИРОВАННЫЙ ПРЕДПРОСМОТР</em></article>'+
       '</div></section>'+
-      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>COMMERCIAL EVIDENCE</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
+      '<section class="dealroom-section evidence-classification"><div class="dealroom-section-head"><div><small>COMMERCIAL ДОКАЗАТЕЛЬСТВА</small><h4>Не считать запрос выручкой.</h4></div></div><div class="evidence-classes">'+
         '<div><b>OBSERVED</b><span>meeting / request / response inside MFW</span></div>'+
         '<div><b>REPORTED</b><span>commercial outcome voluntarily reported by partner</span></div>'+
         '<div><b>VERIFIED</b><span>outcome confirmed by admitted external integration</span></div>'+
       '</div></section>'+
       '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ BFS NETWORKING</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ MFW BRANDS</button></div>'+
-      '<div class="hub-note">PREVIEW boundary: Deal Room показывает будущий product contract. Production lifecycle, ACL, documents, due dates, idempotency и audit допускаются только после Phase 0 PostgreSQL и formal policy.</div>';
+      '<div class="hub-note">Граница предпросмотра: Комната сделки показывает будущий продуктовый контракт. Рабочий жизненный цикл, ACL, документы, сроки, идемпотентность и аудит допускаются только после Phase 0 PostgreSQL и формальной политики.</div>';
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
+  }
+
+  function evidenceBadge(cls){
+    var labels={observed:'НАБЛЮДАЕМОЕ',reported:'ЗАЯВЛЕННОЕ',verified:'ПОДТВЕРЖДЁННОЕ',modelled:'МОДЕЛЬНОЕ',synthetic:'СИНТЕТИЧЕСКОЕ',not_evidenced:'НЕ ПОДТВЕРЖДЕНО'};
+    return '<span class="evidence-badge evidence-'+h(cls)+'">'+h(labels[cls]||String(cls||'UNKNOWN').toUpperCase())+'</span>';
+  }
+  function liveProofChain(){
+    var interest=getInterestState(),reg=(accountState.registrations.mfw||accountState.registrations.bfs),brandId=(interest.mfwFavorites||[])[0]||(interest.mfwFollowed||[])[0]||null;
+    var brand=(window.MFP_DATA&&window.MFP_DATA.mfw&&window.MFP_DATA.mfw.brands||[]).filter(function(x){return x.id===brandId;})[0];
+    var bfsMeeting=safeJson('bfsMeetingState',null);
+    var followed=(interest.mfwFollowed||[]).length+Object.keys(interest.bfsFollowed||{}).filter(function(k){return interest.bfsFollowed[k];}).length;
+    var favorite=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
+    var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
+    return [
+      {stage:'ИДЕНТИЧНОСТЬ',time:'NOW',value:reg?'Shared profile + event registration':'Shared profile only',evidence:reg?'observed':'not_evidenced'},
+      {stage:'INTEREST',time:'NOW',value:(favorite||followed||saved)?((favorite+' favorite · '+followed+' follow · '+saved+' saved')):'No explicit signal yet',evidence:(favorite||followed||saved)?'observed':'not_evidenced'},
+      {stage:'BRAND',time:'NOW',value:brand?brand.name:'No MFW brand selected',evidence:brand?'observed':'not_evidenced'},
+      {stage:'ВСТРЕЧА',time:'NOW',value:bfsMeeting?((bfsMeeting.delegate||'BFS contact')+' · '+String(bfsMeeting.status||'requested').toUpperCase()):'No meeting evidence in current local state',evidence:bfsMeeting?'observed':'not_evidenced'},
+      {stage:'INTENT',time:'NOW',value:'Requires explicit Deal Room / request evidence',evidence:'not_evidenced'},
+      {stage:'ПЕРЕДАЧА',time:'NOW',value:'Requires admitted external reference',evidence:'not_evidenced'},
+      {stage:'30 DAYS',time:'D30',value:'Requires verified continuity history',evidence:'not_evidenced'},
+      {stage:'90 DAYS',time:'D90',value:'Requires repeat/follow-up history',evidence:'not_evidenced'},
+      {stage:'365 DAYS',time:'D365',value:'Requires longitudinal cross-event history',evidence:'not_evidenced'}
+    ];
+  }
+  function proofChain(){
+    return proofMode==='synthetic'&&INVESTOR_MODEL.syntheticCase?INVESTOR_MODEL.syntheticCase.chain:liveProofChain();
+  }
+  function proofModeToggle(){
+    return '<div class="proof-mode-toggle"><button data-proof-mode="live" class="'+(proofMode==='live'?'active':'')+'" >LIVE-ДАННЫЕ</button><button data-proof-mode="synthetic" class="'+(proofMode==='synthetic'?'active':'')+'" >СИНТЕТИЧЕСКИЙ КЕЙС</button></div>';
+  }
+  function bindProofMode(){
+    [].slice.call(document.querySelectorAll('[data-proof-mode]')).forEach(function(b){b.onclick=function(){proofMode=b.dataset.proofMode;renderHub();};});
+  }
+  function renderIdentityGraph(){
+    var interest=getInterestState(),mfwReg=accountState.registrations.mfw,bfsReg=accountState.registrations.bfs;
+    var followed=(interest.mfwFollowed||[]).length+Object.keys(interest.bfsFollowed||{}).filter(function(k){return interest.bfsFollowed[k];}).length;
+    var favorite=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
+    var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ · ОДИН СУБЪЕКТ / РАЗДЕЛЬНЫЕ ПРАВА</div>'+
+      '<div class="identity-graph">'+
+        '<article class="identity-node center"><span>СУБЪЕКТ ПЛАТФОРМЫ</span><b>'+h(displayName())+'</b><small>'+h(accountState.profile.company||'Организация не указана')+' · '+h(accountState.profile.country||'—')+'</small></article>'+
+        '<article class="identity-node mfw"><span>MFW</span><b>'+(mfwReg?h(String(mfwReg.registrationType||'registered').toUpperCase()) :'НЕТ РЕГИСТРАЦИИ')+'</b><small>доступ в рамках события · '+saved+' сохранённых сигналов</small></article>'+
+        '<article class="identity-node bfs"><span>BFS</span><b>'+(bfsReg?h(String(bfsReg.registrationType||'registered').toUpperCase()) :'НЕТ РЕГИСТРАЦИИ')+'</b><small>доступ в рамках события · профессиональный слой встреч</small></article>'+
+        '<article class="identity-node made"><span>MADE IN MOSCOW</span><b>ОБЩИЙ ID ПОЛЬЗОВАТЕЛЯ</b><small>статус подтверждения бренда остаётся отдельным серверным статусом</small></article>'+
+        '<article class="identity-node signals"><span>ГРАФ ОТНОШЕНИЙ</span><b>'+h(followed)+' подписок · '+h(favorite)+' избранных</b><small>только явные сигналы · без вывода скрытого намерения</small></article>'+
+      '</div>'+
+      '<div class="identity-edge-grid"><div><b>ОБЩЕЕ</b><span>профиль · интересы · поиск · continuity отношений</span></div><div><b>РАЗДЕЛЬНО</b><span>регистрация MFW/BFS · QR/access · верификация бренда Made</span></div><div><b>НАКАПЛИВАЕТСЯ</b><span>повторное участие · встречи · evidence Deal Room · trust history</span></div></div>'+
+      '<div class="identity-principle"><b>ПОЧЕМУ ЭТО ВАЖНО</b><span>Без общего графа идентичности MFW, BFS и «Сделано в Москве» остаются тремя несвязанными продуктами. С ним каждое явно разрешённое взаимодействие усиливает одну долгосрочную fashion-связь, сохраняя отдельные права каждого события.</span></div>'+
+      '<div class="hub-note">Это проекция поверх канонических identity и явных сигналов. Она не является authority прав доступа и не объединяет event credentials или права верификации брендов «Сделано в Москве».</div>';
+  }
+
+  function controlTowerModel(){return INVESTOR_MODEL.controlTower||{cases:[],syntheticPortfolio:{funnel:[]}};}
+  function selectedControlTowerCase(){
+    var rows=controlTowerModel().cases||[];
+    return rows.filter(function(x){return x.id===selectedControlCase;})[0]||rows[0]||null;
+  }
+  function controlTowerTabs(){
+    return '<div class="control-view-tabs"><button data-control-view="case" class="'+(controlTowerView==='case'?'active':'')+'">ДОСЬЕ КЕЙСА</button><button data-control-view="portfolio" class="'+(controlTowerView==='portfolio'?'active':'')+'">ПОРТФЕЛЬ</button><button data-control-view="comparison" class="'+(controlTowerView==='comparison'?'active':'')+'">СРАВНЕНИЕ</button></div>';
+  }
+  function bindControlTower(){
+    [].slice.call(document.querySelectorAll('[data-control-view]')).forEach(function(b){b.onclick=function(){controlTowerView=b.dataset.controlView;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-control-case]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.controlCase;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-proof-mode]')).forEach(function(b){b.onclick=function(){proofMode=b.dataset.proofMode;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-proof-open]')).forEach(function(b){b.onclick=function(){hubTab=b.dataset.proofOpen;renderHub();};});
+    [].slice.call(document.querySelectorAll('[data-portfolio-stage]')).forEach(function(b){b.onclick=function(){selectedPortfolioStage=b.dataset.portfolioStage;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-open-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.openDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-close-drill]')).forEach(function(b){b.onclick=function(){selectedPortfolioStage='';renderInvestorProof();};});
+  }
+  function renderCaseDossier(){
+    var synthetic=proofMode==='synthetic',tower=controlTowerModel(),rows=tower.cases||[],active=selectedControlTowerCase();
+    var liveChain=liveProofChain();
+    if(!synthetic){
+      active={
+        id:'live-current',
+        label:'ТЕКУЩИЙ LIVE-КЕЙС',
+        participant:{name:displayName(),role:(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor',organisation:accountState.profile.company||'—',market:accountState.profile.country||'—',source:'Текущее состояние общего аккаунта'},
+        brand:{name:'Текущая явная связь с брендом',category:'Выведено только из явных saved/follow/favorite',origin:'MFW/BFS/Made'},
+        potentialRevenueStreams:[],
+        dossier:liveChain.map(function(x,i){return {stage:x.stage,time:x.time,event:i<3?'PLATFORM':'ДОКАЗАТЕЛЬСТВА',detail:x.value,reason:x.evidence==='not_evidenced'?'В текущем состоянии нет допустимого evidence.':'Явно зафиксированное текущее состояние продукта/аккаунта.',evidence:x.evidence,ref:x.evidence==='not_evidenced'?'—':'local://current-state/'+String(x.stage).toLowerCase().replace(/\s+/g,'-')};})
+      };
+    }
+    var selector=synthetic?'<div class="case-selector">'+rows.map(function(x){return '<button data-control-case="'+h(x.id)+'" class="'+(active&&active.id===x.id?'active':'')+'"><span>'+h(x.label)+'</span><b>'+h(x.participant.role)+' × '+h(x.brand.category)+'</b></button>';}).join('')+'</div>':'';
+    var streams=(INVESTOR_MODEL.revenueStreams||[]).filter(function(x){return (active.potentialRevenueStreams||[]).indexOf(x.id)>=0;});
+    return '<div class="control-case">'+selector+
+      '<section class="dossier-head"><div><div class="drawer-kicker">'+(synthetic?'ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КЕЙС':'LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')+'</div><h3>'+h(active.participant.name)+' → '+h(active.brand.name)+'</h3><p>'+h(active.participant.role)+' · '+h(active.participant.organisation)+' · '+h(active.participant.market)+'<br>'+h(active.participant.source)+'</p></div><div class="dossier-brand"><span>БРЕНД / КОНТРАГЕНТ</span><b>'+h(active.brand.name)+'</b><small>'+h(active.brand.category)+' · '+h(active.brand.origin)+'</small></div></section>'+
+      '<div class="dossier-timeline">'+(active.dossier||[]).map(function(x,i){return '<article><div class="dossier-index">'+String(i+1).padStart(2,'0')+'</div><div class="dossier-main"><div><span>'+h(x.stage)+'</span><i>'+h(x.time)+' · '+h(x.event)+'</i></div><b>'+h(x.detail)+'</b><p>'+h(x.reason)+'</p><code>'+h(x.ref||'—')+'</code></div>'+evidenceBadge(x.evidence)+'</article>';}).join('')+'</div>'+
+      '<section class="dossier-revenue"><div><span>ПОТЕНЦИАЛЬНО ЗАТРОНУТЫЕ REVENUE STREAMS</span><b>'+(streams.length?h(streams.map(function(x){return x.product;}).join(' · ')):'В текущем live-state revenue stream не подтверждён')+'</b></div><small>Потенциальный stream ≠ фактическая выручка. Признание выручки всё равно требует contract + billable event + payment evidence.</small></section>'+
+      '<div class="proof-actions"><button data-proof-open="partner">КАБИНЕТ ПАРТНЁРА</button><button data-proof-open="brand">КАБИНЕТ БРЕНДА</button><button data-proof-open="economics">ЭКОНОМИКА</button><a href="./evidence-package.json" target="_blank" rel="noopener">ДОКАЗАТЕЛЬСТВА PACKAGE ↗</a></div>'+
+    '</div>';
+  }
+  function pct(a,b){return b?Math.round((a/b)*100):0;}
+  function portfolioCohortsFor(filters){
+    filters=filters||portfolioFilters;
+    var p=controlTowerModel().syntheticPortfolio||{},rows=(p.cohorts||[]).slice();
+    return rows.filter(function(x){
+      return (filters.period==='all'||x.period===filters.period)&&
+        (filters.ecosystem==='all'||x.ecosystem===filters.ecosystem)&&
+        (filters.market==='all'||x.market===filters.market)&&
+        (filters.category==='all'||x.category===filters.category)&&
+        (filters.buyerType==='all'||x.buyerType===filters.buyerType)&&
+        (filters.evidence==='all'||x.evidence===filters.evidence)&&
+        (filters.revenueSurface==='all'||x.revenueSurface===filters.revenueSurface);
+    });
+  }
+  function portfolioCohorts(){return portfolioCohortsFor(portfolioFilters);}
+  function sumField(rows,key){return rows.reduce(function(s,x){return s+Number(x[key]||0);},0);}
+  function filteredPortfolioFor(filters){
+    filters=filters||portfolioFilters;
+    var rows=portfolioCohortsFor(filters),ret=filters.retention||'D30';
+    var funnel=[
+      {stage:'AUDIENCE',count:sumField(rows,'audience'),evidence:'synthetic'},
+      {stage:'ENGAGEMENT',count:sumField(rows,'engagement'),evidence:'synthetic'},
+      {stage:'QUALIFIED BUYER',count:sumField(rows,'qualifiedBuyer'),evidence:'synthetic'},
+      {stage:'ВСТРЕЧА',count:sumField(rows,'meeting'),evidence:'synthetic'},
+      {stage:'INTENT',count:sumField(rows,'intent'),evidence:'synthetic'},
+      {stage:'DEAL',count:sumField(rows,'deal'),evidence:'synthetic'},
+      {stage:'УДЕРЖАНИЕ',count:rows.reduce(function(s,x){return s+Number((x.retention||{})[ret]||0);},0),evidence:'synthetic'},
+      {stage:'REVENUE ДОКАЗАТЕЛЬСТВА',count:sumField(rows,'revenueEvidence'),evidence:'synthetic'}
+    ];
+    var ecosystems=['mfw','bfs','made'].map(function(id){
+      var sub=rows.filter(function(x){return x.ecosystem===id;});
+      return {id:id,label:id==='mfw'?'MFW':id==='bfs'?'BFS':'MADE',journeys:sumField(sub,'audience'),qualifiedBuyers:sumField(sub,'qualifiedBuyer'),meetings:sumField(sub,'meeting'),intents:sumField(sub,'intent')};
+    });
+    var retention=['D30','D90','D365'].map(function(period){var eligible=sumField(rows,'intent');var retained=rows.reduce(function(s,x){return s+Number((x.retention||{})[period]||0);},0);return {period:period,eligible:eligible,retained:retained};});
+    var revenue=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.potentialRevenueStreams||[]).map(function(x){
+      var touched=rows.filter(function(r){return r.revenueSurface===x.id;}).reduce(function(s,r){return s+Number(r.audience||0);},0);
+      return Object.assign({},x,{journeysTouched:touched});
+    });
+    return {rows:rows,population:sumField(rows,'audience'),funnel:funnel,ecosystems:ecosystems,retention:retention,revenue:revenue};
+  }
+  function filteredPortfolio(){return filteredPortfolioFor(portfolioFilters);}
+  function ruOption(key,v){
+    var maps={
+      period:{all:'Все периоды'},
+      ecosystem:{all:'Все',mfw:'MFW',bfs:'BRICS+ Fashion Summit',made:'Сделано в Москве'},
+      market:{all:'Все рынки',CIS:'СНГ',Europe:'Европа',GCC:'GCC',Asia:'Азия'},
+      category:{all:'Все категории',Contemporary:'Contemporary',Womenswear:'Женская одежда',Menswear:'Мужская одежда',Accessories:'Аксессуары',Tech:'Fashion Tech'},
+      buyerType:{all:'Все',new:'Новый',returning:'Возвращающийся'},
+      evidence:{all:'Все классы',verified:'Проверено',reported:'Заявлено партнёром',synthetic:'Синтетика'},
+      retention:{D30:'D30',D90:'D90',D365:'D365'},
+      revenueSurface:{all:'Все поверхности',brand:'Brand365 / CRM',professional:'B2B / Deal Room',partner:'Партнёр / спонсор',intelligence:'Аналитика',api:'API / Enterprise'}
+    };
+    return maps[key]&&maps[key][v]||String(v);
+  }
+  function portfolioFilterSelect(key,label,values){
+    return '<label><span>'+h(label)+'</span><select data-portfolio-filter="'+h(key)+'">'+values.map(function(v){return '<option value="'+h(v)+'"'+(portfolioFilters[key]===v?' selected':'')+'>'+h(ruOption(key,v))+'</option>';}).join('')+'</select></label>';
+  }
+  function portfolioFilterBar(){
+    var opt=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.filterOptions)||{};
+    return '<div class="portfolio-filters">'+
+      portfolioFilterSelect('period','Период',opt.period||['all'])+
+      portfolioFilterSelect('ecosystem','Экосистема',opt.ecosystem||['all'])+
+      portfolioFilterSelect('market','Рынок байера',opt.market||['all'])+
+      portfolioFilterSelect('category','Категория бренда',opt.category||['all'])+
+      portfolioFilterSelect('buyerType','Тип байера',opt.buyerType||['all'])+
+      portfolioFilterSelect('evidence','Класс evidence',opt.evidence||['all'])+
+      portfolioFilterSelect('retention','Горизонт retention',opt.retention||['D30'])+
+      portfolioFilterSelect('revenueSurface','Revenue surface',opt.revenueSurface||['all'])+
+      '<button data-reset-portfolio>СБРОСИТЬ</button>'+
+    '</div>';
+  }
+  function bindPortfolioFilters(){
+    [].slice.call(document.querySelectorAll('[data-portfolio-filter]')).forEach(function(s){s.onchange=function(){portfolioFilters[s.dataset.portfolioFilter]=s.value;renderInvestorProof();};});
+    var reset=document.querySelector('[data-reset-portfolio]');if(reset)reset.onclick=function(){portfolioFilters={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
+  }
+  function scenarioLabel(filters){
+    var parts=[];
+    if(filters.ecosystem!=='all')parts.push(String(filters.ecosystem).toUpperCase());
+    if(filters.market!=='all')parts.push(filters.market);
+    if(filters.buyerType!=='all')parts.push(filters.buyerType==='new'?'новые':'возвращающиеся');
+    if(filters.category!=='all')parts.push(filters.category);
+    if(filters.period!=='all')parts.push(filters.period);
+    return parts.length?parts.join(' · '):'Весь портфель';
+  }
+  function scenarioMetricSet(filters){
+    var fp=filteredPortfolioFor(filters),f=fp.funnel||[],by={};
+    f.forEach(function(x){by[x.stage]=Number(x.count||0);});
+    var intentBase=by['ВСТРЕЧА']||0,meetingBase=by['QUALIFIED BUYER']||0,dealBase=by['INTENT']||0,revBase=by['DEAL']||0;
+    return {
+      label:scenarioLabel(filters),population:fp.population,
+      qualifiedRate:pct(by['QUALIFIED BUYER']||0,by['AUDIENCE']||0),
+      meetingRate:pct(by['ВСТРЕЧА']||0,meetingBase),
+      intentRate:pct(by['INTENT']||0,intentBase),
+      dealRate:pct(by['DEAL']||0,dealBase),
+      retentionRate:pct(by['УДЕРЖАНИЕ']||0,by['INTENT']||0),
+      revenueEvidenceRate:pct(by['REVENUE ДОКАЗАТЕЛЬСТВА']||0,revBase),
+      intent:by['INTENT']||0,deal:by['DEAL']||0,retention:by['УДЕРЖАНИЕ']||0,revenueEvidence:by['REVENUE ДОКАЗАТЕЛЬСТВА']||0
+    };
+  }
+  function scenarioSelect(side,key,label,values){
+    var filters=side==='a'?scenarioA:scenarioB;
+    return '<label><span>'+h(label)+'</span><select data-scenario-side="'+side+'" data-scenario-key="'+key+'">'+values.map(function(v){return '<option value="'+h(v)+'"'+(filters[key]===v?' selected':'')+'>'+h(ruOption(key,v))+'</option>';}).join('')+'</select></label>';
+  }
+  function scenarioPanel(side,title){
+    var opt=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.filterOptions)||{};
+    var filters=side==='a'?scenarioA:scenarioB,metrics=scenarioMetricSet(filters);
+    return '<section class="scenario-panel scenario-'+side+'"><div class="scenario-title"><span>'+title+'</span><b>'+h(metrics.label)+'</b></div><div class="scenario-filters">'+
+      scenarioSelect(side,'period','Период',opt.period||['all'])+
+      scenarioSelect(side,'ecosystem','Экосистема',opt.ecosystem||['all'])+
+      scenarioSelect(side,'market','Рынок',opt.market||['all'])+
+      scenarioSelect(side,'category','Категория',opt.category||['all'])+
+      scenarioSelect(side,'buyerType','Тип байера',opt.buyerType||['all'])+
+      scenarioSelect(side,'evidence','Evidence',opt.evidence||['all'])+
+      scenarioSelect(side,'retention','Retention',opt.retention||['D30'])+
+      scenarioSelect(side,'revenueSurface','Revenue surface',opt.revenueSurface||['all'])+
+      '</div><div class="scenario-kpis"><article><span>Популяция</span><b>'+h(metrics.population)+'</b></article><article><span>Qualified buyer</span><b>'+h(metrics.qualifiedRate)+'%</b></article><article><span>Встреча</span><b>'+h(metrics.meetingRate)+'%</b></article><article><span>Коммерческий интерес</span><b>'+h(metrics.intentRate)+'%</b></article><article><span>Deal-stage</span><b>'+h(metrics.dealRate)+'%</b></article><article><span>'+h(filters.retention)+'</span><b>'+h(metrics.retentionRate)+'%</b></article><article><span>Revenue evidence</span><b>'+h(metrics.revenueEvidenceRate)+'%</b></article></div></section>';
+  }
+  function diffPp(a,b){var d=a-b;return (d>0?'+':'')+d+' п.п.';}
+  function comparisonInsight(){
+    var a=scenarioMetricSet(scenarioA),b=scenarioMetricSet(scenarioB),metrics=[
+      {key:'qualifiedRate',label:'конверсия в qualified buyer'},
+      {key:'meetingRate',label:'конверсия qualified → meeting'},
+      {key:'intentRate',label:'конверсия qualified → intent'},
+      {key:'dealRate',label:'конверсия intent → deal'},
+      {key:'retentionRate',label:'retention '+scenarioA.retention},
+      {key:'revenueEvidenceRate',label:'deal → revenue evidence'}
+    ];
+    return metrics.map(function(m){
+      var av=a[m.key],bv=b[m.key],winner=av===bv?'Равны':av>bv?'Сценарий A':'Сценарий B';
+      return '<article><span>'+h(m.label)+'</span><b>'+h(av)+'% vs '+h(bv)+'%</b><small>'+h(winner)+' · '+h(diffPp(av,bv))+' A к B</small></article>';
+    }).join('');
+  }
+  function rateRaw(n,d){return d?(Number(n||0)/Number(d)*100):0;}
+  function metricSpecs(){
+    return [
+      {key:'qualifiedRate',label:'Audience → qualified buyer',num:'qualifiedBuyer',den:'audience',inspect:'Проверить discovery, capture явного интереса и критерии qualification.'},
+      {key:'meetingRate',label:'Qualified buyer → meeting',num:'meeting',den:'qualifiedBuyer',inspect:'Проверить reason codes matchmaking, доступность слотов и bilateral acceptance.'},
+      {key:'intentRate',label:'Meeting → intent',num:'intent',den:'meeting',inspect:'Проверить качество встречи, category fit, line sheet и delivery information.'},
+      {key:'dealRate',label:'Intent → deal-stage',num:'deal',den:'intent',inspect:'Проверить Deal Room SLA, документы, MOQ, availability и скорость ответа бренда.'},
+      {key:'retentionRate',label:'Intent → retention',num:'retention',den:'intent',inspect:'Проверить Brand365 opt-in, follow-up journeys и причины повторного профессионального действия.'},
+      {key:'revenueEvidenceRate',label:'Deal-stage → revenue evidence',num:'revenueEvidence',den:'deal',inspect:'Проверить external outcome verification, contract/billing linkage и settlement evidence.'}
+    ];
+  }
+  function rowValue(row,key,filters){
+    if(key==='retention')return Number((row.retention||{})[(filters&&filters.retention)||'D30']||0);
+    return Number(row[key]||0);
+  }
+  function metricRawForRows(rows,spec,filters){
+    var n=rows.reduce(function(s,r){return s+rowValue(r,spec.num,filters);},0);
+    var d=rows.reduce(function(s,r){return s+rowValue(r,spec.den,filters);},0);
+    return {num:n,den:d,rate:rateRaw(n,d)};
+  }
+  function opportunityGap(){
+    var rowsA=portfolioCohortsFor(scenarioA),rowsB=portfolioCohortsFor(scenarioB);
+    var ranked=metricSpecs().map(function(spec){
+      var a=metricRawForRows(rowsA,spec,scenarioA),b=metricRawForRows(rowsB,spec,scenarioB);
+      return {spec:spec,a:a,b:b,gap:a.rate-b.rate,abs:Math.abs(a.rate-b.rate)};
+    }).sort(function(x,y){return y.abs-x.abs;});
+    return {ranked:ranked,target:ranked[0]||null};
+  }
+  function decompositionForDimension(dim,spec){
+    var rowsA=portfolioCohortsFor(scenarioA),rowsB=portfolioCohortsFor(scenarioB);
+    var all=(controlTowerModel().syntheticPortfolio&&controlTowerModel().syntheticPortfolio.cohorts)||[];
+    var values=Array.from(new Set(all.map(function(x){return x[dim];}))).filter(Boolean);
+    var totalA=metricRawForRows(rowsA,spec,scenarioA),totalB=metricRawForRows(rowsB,spec,scenarioB);
+    return values.map(function(v){
+      var aRows=rowsA.filter(function(x){return x[dim]===v;}),bRows=rowsB.filter(function(x){return x[dim]===v;});
+      var a=metricRawForRows(aRows,spec,scenarioA),b=metricRawForRows(bRows,spec,scenarioB);
+      var shareA=totalA.den?a.den/totalA.den:0,shareB=totalB.den?b.den/totalB.den:0;
+      var ra=a.den?a.rate/100:0,rb=b.den?b.rate/100:0;
+      var mix=(shareA-shareB)*((ra+rb)/2)*100;
+      var within=((shareA+shareB)/2)*(ra-rb)*100;
+      return {value:v,aRate:a.rate,bRate:b.rate,aDen:a.den,bDen:b.den,mix:mix,within:within,total:mix+within};
+    }).filter(function(x){return x.aDen||x.bDen;}).sort(function(x,y){return Math.abs(y.total)-Math.abs(x.total);});
+  }
+  function formatOne(v){var n=Math.round(Number(v||0)*10)/10;return (n>0?'+':'')+n.toFixed(1)+' п.п.';}
+  function explanationDimension(title,dim,target){
+    if(!target)return '';
+    var rows=decompositionForDimension(dim,target.spec),directA=scenarioA[dim],directB=scenarioB[dim];
+    var axisNote=(directA!=='all'&&directB!=='all'&&directA!==directB)?'<div class="explain-axis-note">Эта размерность уже задаёт ось сравнения: A = '+h(ruOption(dim,directA))+'; B = '+h(ruOption(dim,directB))+'. Разложение ниже показывает математический вклад доступных сегментов, но не причинность.</div>':'';
+    return '<section class="explain-dimension"><div class="drawer-kicker">'+h(title)+'</div>'+axisNote+
+      '<div class="explain-driver-list">'+rows.map(function(x){return '<article><div><span>'+h(ruOption(dim,x.value))+'</span><b>'+Math.round(x.aRate)+'% A · '+Math.round(x.bRate)+'% B</b></div><div><small>mix '+h(formatOne(x.mix))+'</small><small>within '+h(formatOne(x.within))+'</small><em>'+h(formatOne(x.total))+'</em></div></article>';}).join('')+'</div></section>';
+  }
+  function retentionExplanation(){
+    var rowsA=portfolioCohortsFor(scenarioA),rowsB=portfolioCohortsFor(scenarioB),periods=['D30','D90','D365'];
+    var items=periods.map(function(period){
+      var fa=Object.assign({},scenarioA,{retention:period}),fb=Object.assign({},scenarioB,{retention:period});
+      var a=metricRawForRows(rowsA,{num:'retention',den:'intent'},fa),b=metricRawForRows(rowsB,{num:'retention',den:'intent'},fb);
+      return {period:period,a:a.rate,b:b.rate,gap:a.rate-b.rate};
+    });
+    var top=items.slice().sort(function(x,y){return Math.abs(y.gap)-Math.abs(x.gap);})[0];
+    return '<section class="explain-retention"><div class="drawer-kicker">RETENTION HORIZON</div><div class="retention-compare">'+items.map(function(x){return '<article class="'+(top&&top.period===x.period?'active':'')+'"><span>'+x.period+'</span><b>'+Math.round(x.a)+'% A · '+Math.round(x.b)+'% B</b><small>Δ '+h(formatOne(x.gap))+'</small></article>';}).join('')+'</div><div class="hub-note">Максимальный retention-gap в этом сравнении: '+h(top?top.period:'—')+'. Он рассчитан относительно intent cohort каждого сценария.</div></section>';
+  }
+  function caseMatchesScenario(x,filters){
+    var t=x.portfolioTags||{};
+    return (filters.period==='all'||t.period===filters.period)&&
+      (filters.ecosystem==='all'||t.ecosystem===filters.ecosystem)&&
+      (filters.market==='all'||t.market===filters.market)&&
+      (filters.category==='all'||t.category===filters.category)&&
+      (filters.buyerType==='all'||t.buyerType===filters.buyerType)&&
+      (filters.evidence==='all'||t.evidence===filters.evidence)&&
+      (filters.revenueSurface==='all'||t.revenueSurface===filters.revenueSurface);
+  }
+  function dossierStepForMetric(x,target,filters){
+    if(!x||!target)return null;
+    var wanted=target.spec.key==='qualifiedRate'?'RECOMMENDED':target.spec.key==='meetingRate'?'ВСТРЕЧА HELD':target.spec.key==='intentRate'?'INTENT':target.spec.key==='dealRate'?'DEAL ROOM':target.spec.key==='retentionRate'?((filters.retention||'D30').replace('D','')+' DAYS'):'ПЕРЕДАЧА';
+    return (x.dossier||[]).filter(function(d){return d.stage===wanted;})[0]||(x.dossier||[])[x.dossier.length-1]||null;
+  }
+  function representativeExplanation(target){
+    var cases=controlTowerModel().cases||[];
+    function side(label,filters){
+      var rows=cases.filter(function(x){return caseMatchesScenario(x,filters);}).slice(0,2);
+      return '<div class="explain-dossiers-side"><div class="drawer-kicker">'+label+'</div>'+(rows.length?rows.map(function(x){var step=dossierStepForMetric(x,target,filters);return '<article><div><span>'+h(x.label)+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small><code>'+h(step&&step.ref||'—')+'</code></div><button data-explanation-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></article>';}).join(''):'<div class="explain-empty">Для этого synthetic slice нет материализованного representative dossier. Агрегат не превращается в выдуманные row-level кейсы.</div>')+'</div>';
+    }
+    return '<section class="explain-dossiers"><div class="drawer-kicker">REPRESENTATIVE ДОКАЗАТЕЛЬСТВА</div><div class="explain-dossiers-grid">'+side('СЦЕНАРИЙ A',scenarioA)+side('СЦЕНАРИЙ B',scenarioB)+'</div></section>';
+  }
+  function renderOpportunityExplanation(){
+    var gap=opportunityGap(),target=gap.target;if(!target)return '';
+    var leader=target.gap===0?'Разрыва нет':target.gap>0?'Сценарий A':'Сценарий B';
+    return '<section class="opportunity-explanation">'+
+      '<div class="opportunity-head"><div><div class="drawer-kicker">OPPORTUNITY EXPLANATION · МАТЕМАТИЧЕСКОЕ РАЗЛОЖЕНИЕ</div><h4>'+h(leader)+' · крупнейший gap: '+h(target.spec.label)+'</h4><p>A '+Math.round(target.a.rate)+'% · B '+Math.round(target.b.rate)+'% · Δ '+h(formatOne(target.gap))+'. Ниже показано, из каких наблюдаемых компонентов synthetic cohort cube складывается разница.</p></div><div class="opportunity-action"><span>ЧТО ПРОВЕРИТЬ</span><b>'+h(target.spec.inspect)+'</b></div></div>'+
+      '<div class="gap-waterfall">'+gap.ranked.map(function(x){return '<article><span>'+h(x.spec.label)+'</span><b>'+Math.round(x.a.rate)+'% / '+Math.round(x.b.rate)+'%</b><small>'+h(formatOne(x.gap))+'</small><i style="width:'+Math.min(100,Math.round(x.abs))+'%"></i></article>';}).join('')+'</div>'+
+      '<div class="explain-dim-grid">'+explanationDimension('ВКЛАД КАТЕГОРИЙ','category',target)+explanationDimension('ВКЛАД РЫНКОВ','market',target)+'</div>'+
+      retentionExplanation()+representativeExplanation(target)+
+      '<div class="explain-method"><b>Метод</b><span>Для категорий и рынков общий rate-gap раскладывается симметрично на composition/mix effect и within-segment rate effect. Их сумма воспроизводит разницу A−B с округлением. Это бухгалтерское математическое разложение, а не causal attribution.</span></div>'+
+    '</section>';
+  }
+  function interventionForMetric(key){
+    return (INVESTOR_MODEL.interventionCatalog||[]).filter(function(x){return x.metric===key;})[0]||null;
+  }
+  function strongestDriver(target){
+    if(!target)return {label:'Весь выбранный cohort',detail:'Нет доступного segment decomposition'};
+    var dims=[
+      {name:'category',label:'Категория',rows:decompositionForDimension('category',target.spec)},
+      {name:'market',label:'Рынок',rows:decompositionForDimension('market',target.spec)}
+    ];
+    var candidates=[];
+    dims.forEach(function(d){(d.rows||[]).slice(0,2).forEach(function(x){candidates.push({dimension:d.name,dimensionLabel:d.label,value:x.value,total:x.total,abs:Math.abs(x.total),aRate:x.aRate,bRate:x.bRate});});});
+    candidates.sort(function(a,b){return b.abs-a.abs;});
+    var top=candidates[0];
+    return top?{label:top.dimensionLabel+': '+ruOption(top.dimension,top.value),detail:Math.round(top.aRate)+'% A · '+Math.round(top.bRate)+'% B · вклад '+formatOne(top.total)}:{label:'Весь выбранный cohort',detail:'Нет segment decomposition'};
+  }
+  function recommendationSet(){
+    var gap=opportunityGap(),ranked=gap.ranked||[];
+    var rows=ranked.map(function(x){
+      var intervention=interventionForMetric(x.spec.key);if(!intervention)return null;
+      var weak=x.gap===0?'A/B':x.gap>0?'B':'A';
+      var weakFilters=weak==='B'?scenarioB:scenarioA;
+      var weakMetric=weak==='B'?x.b:x.a;
+      var denominator=Math.max(Number(x.a.den||0),Number(x.b.den||0));
+      var population=Math.max(1,scenarioMetricSet(scenarioA).population,scenarioMetricSet(scenarioB).population);
+      var scale=Math.sqrt(denominator/population);
+      var raw=x.abs*scale*Number(intervention.leverage||1)/Math.max(1,Number(intervention.effort||1));
+      var driver=strongestDriver(x);
+      var current=weakMetric.rate;
+      var modelledLift=Math.min(5,Math.max(1,Math.round((x.abs/2)*10)/10));
+      var pilotTarget=Math.min(100,current+modelledLift);
+      return {gap:x,intervention:intervention,weak:weak,weakFilters:weakFilters,denominator:denominator,raw:raw,driver:driver,current:current,modelledLift:modelledLift,pilotTarget:pilotTarget};
+    }).filter(Boolean).sort(function(a,b){return b.raw-a.raw;}).slice(0,3);
+    var total=rows.reduce(function(s,x){return s+x.raw;},0);
+    var allocated=0;
+    rows.forEach(function(x,i){
+      var points=i===rows.length-1?100-allocated:Math.round((total?x.raw/total:1/Math.max(1,rows.length))*100);
+      x.points=Math.max(0,points);allocated+=x.points;
+    });
+    return rows;
+  }
+  function recommendationDossiers(rec){
+    var cases=controlTowerModel().cases||[],filters=rec.weakFilters||scenarioA;
+    var matched=cases.filter(function(x){return caseMatchesScenario(x,filters);}).slice(0,2);
+    return matched.length?matched.map(function(x){var step=dossierStepForMetric(x,rec.gap,filters);return '<button data-capital-dossier="'+h(x.id)+'"><span>'+h(x.participant.name)+' → '+h(x.brand.name)+'</span><small>'+h(step&&step.ref||'—')+'</small></button>';}).join(''):'<div class="allocation-no-dossier">Нет materialised dossier для этого slice; recommendation остаётся aggregate/modelled.</div>';
+  }
+  function renderCapitalAllocation(){
+    var recs=recommendationSet();
+    return '<section class="capital-allocation">'+
+      '<div class="allocation-head"><div><div class="drawer-kicker">RECOMMENDATION / CAPITAL ALLOCATION · MODELLED</div><h4>Куда направить следующий pilot-budget.</h4><p>Топ‑3 действий ранжируются по observed synthetic gap, масштабу denominator cohort и заранее объявленным leverage/effort assumptions.</p></div><div class="allocation-budget"><span>MODELLED PILOT BUDGET</span><b>100</b><small>условных points · не ₽</small></div></div>'+
+      '<div class="allocation-cards">'+recs.map(function(r,i){
+        var it=r.intervention;
+        return '<article class="allocation-card"><div class="allocation-rank"><span>#0'+(i+1)+'</span><b>'+h(r.points)+' pts</b></div>'+
+          '<div class="allocation-bar"><i style="width:'+h(r.points)+'%"></i></div>'+
+          '<div class="allocation-stage">'+h(it.stage)+'</div><h5>'+h(it.action)+'</h5>'+
+          '<p>'+h(it.hypothesis)+'</p>'+
+          '<div class="allocation-meta"><div><span>ЦЕЛЕВОЙ СЦЕНАРИЙ</span><b>'+h(r.weak==='A'?'A':r.weak==='B'?'B':'A/B')+'</b></div><div><span>СЕГМЕНТ-ДРАЙВЕР</span><b>'+h(r.driver.label)+'</b><small>'+h(r.driver.detail)+'</small></div><div><span>KPI</span><b>'+h(it.kpi)+'</b></div><div><span>PILOT TARGET · MODELLED</span><b>'+Math.round(r.current*10)/10+'% → '+Math.round(r.pilotTarget*10)/10+'%</b><small>assumption: закрыть до '+h(r.modelledLift)+' п.п. gap, максимум +5 п.п.</small></div></div>'+
+          '<div class="allocation-evidence"><span>ДОКАЗАТЕЛЬСТВА УСЛОВИЕ</span>'+it.evidenceNeeded.map(function(x){return '<i>✓ '+h(x)+'</i>';}).join('')+'</div>'+
+          '<div class="allocation-footer"><div><span>OWNER</span><b>'+h(it.owner)+'</b></div><div><span>PILOT</span><b>'+h(it.pilot)+'</b></div></div>'+
+          '<div class="allocation-dossiers"><span>REPRESENTATIVE ДОКАЗАТЕЛЬСТВА</span>'+recommendationDossiers(r)+'</div><button class="allocation-open-case" data-open-committee="'+h(it.id)+'">ОТКРЫТЬ МИНИ-БИЗНЕС-КЕЙС →</button>'+
+        '</article>';
+      }).join('')+'</div>'+
+      '<div class="allocation-method"><b>Priority score</b><span>|gap, п.п.| × √(затронутый denominator / max population) × leverage ÷ effort. Затем scores нормализуются до 100 pilot-budget points. Leverage/effort — явные model assumptions из intervention catalog, не финансовая оценка.</span></div>'+
+      '<div class="allocation-governance"><div><b>1 · PILOT</b><span>Запустить ограниченную интервенцию с заранее зафиксированным cohort.</span></div><div><b>2 · MEASURE</b><span>Собрать указанный evidence gate и KPI.</span></div><div><b>3 · VERIFY</b><span>Сравнить с baseline/holdout и проверить качество evidence.</span></div><div><b>4 · SCALE / STOP</b><span>Масштабировать только после подтверждения; иначе остановить или переработать.</span></div></div>'+
+      '<div class="hub-note">100 points — только относительное распределение внимания/экспериментального ресурса внутри demo. Реальный бюджет требует стоимости интервенций, capacity, контрактов, risk limits и утверждения investment committee.</div>'+
+    '</section>';
+  }
+  function renderComparisonMode(){
+    return '<div class="comparison-warning"><b>СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ</b><span>Сравнение показывает различия в cohort cube. Оно не доказывает причинность и не является production KPI.</span></div>'+
+      '<div class="comparison-presets"><button data-comparison-preset="mfw-bfs">MFW vs BFS</button><button data-comparison-preset="cis-gcc">СНГ vs GCC</button><button data-comparison-preset="new-returning">Новые vs возвращающиеся</button><button data-comparison-reset>СБРОСИТЬ</button></div>'+
+      '<div class="scenario-grid">'+scenarioPanel('a','СЦЕНАРИЙ A')+scenarioPanel('b','СЦЕНАРИЙ B')+'</div>'+
+      '<section class="comparison-result"><div class="drawer-kicker">СРАВНЕНИЕ КЛЮЧЕВЫХ КОНВЕРСИЙ</div><div class="comparison-metrics">'+comparisonInsight()+'</div>'+
+      '<div class="hub-note">«Сильнее» здесь означает более высокий рассчитанный показатель внутри выбранного synthetic slice. Это не причинный вывод о том, почему один рынок или event лучше другого.</div></section>'+renderOpportunityExplanation()+renderCapitalAllocation();
+  }
+  function bindComparison(){
+    [].slice.call(document.querySelectorAll('[data-scenario-side]')).forEach(function(s){s.onchange=function(){var target=s.dataset.scenarioSide==='a'?scenarioA:scenarioB;target[s.dataset.scenarioKey]=s.value;renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-comparison-preset]')).forEach(function(b){b.onclick=function(){
+      var base={period:'all',ecosystem:'all',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
+      scenarioA=Object.assign({},base);scenarioB=Object.assign({},base);
+      if(b.dataset.comparisonPreset==='mfw-bfs'){scenarioA.ecosystem='mfw';scenarioB.ecosystem='bfs';}
+      if(b.dataset.comparisonPreset==='cis-gcc'){scenarioA.market='CIS';scenarioB.market='GCC';}
+      if(b.dataset.comparisonPreset==='new-returning'){scenarioA.buyerType='new';scenarioB.buyerType='returning';}
+      renderInvestorProof();
+    };});
+    var reset=document.querySelector('[data-comparison-reset]');if(reset)reset.onclick=function(){scenarioA={period:'all',ecosystem:'mfw',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};renderInvestorProof();};
+    [].slice.call(document.querySelectorAll('[data-explanation-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.explanationDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-capital-dossier]')).forEach(function(b){b.onclick=function(){selectedControlCase=b.dataset.capitalDossier;controlTowerView='case';proofMode='synthetic';renderInvestorProof();};});
+    [].slice.call(document.querySelectorAll('[data-open-committee]')).forEach(function(b){b.onclick=function(){committeeSelectedId=b.dataset.openCommittee;hubTab='committee';renderHub();};});
+  }
+  function portfolioStageData(stage){
+    var fp=filteredPortfolio(),row=(fp.funnel||[]).filter(function(x){return x.stage===stage;})[0];
+    if(!row)return null;
+    var rows=fp.rows||[],breakdown={mfw:0,bfs:0,made:0};
+    rows.forEach(function(x){
+      var value=stage==='AUDIENCE'?x.audience:stage==='ENGAGEMENT'?x.engagement:stage==='QUALIFIED BUYER'?x.qualifiedBuyer:stage==='ВСТРЕЧА'?x.meeting:stage==='INTENT'?x.intent:stage==='DEAL'?x.deal:stage==='УДЕРЖАНИЕ'?((x.retention||{})[portfolioFilters.retention]||0):x.revenueEvidence;
+      breakdown[x.ecosystem]=(breakdown[x.ecosystem]||0)+Number(value||0);
+    });
+    var cases=(controlTowerModel().cases||[]).filter(function(x){
+      var t=x.portfolioTags||{};
+      return (portfolioFilters.ecosystem==='all'||t.ecosystem===portfolioFilters.ecosystem)&&
+        (portfolioFilters.market==='all'||t.market===portfolioFilters.market)&&
+        (portfolioFilters.category==='all'||t.category===portfolioFilters.category)&&
+        (portfolioFilters.buyerType==='all'||t.buyerType===portfolioFilters.buyerType)&&
+        (portfolioFilters.evidence==='all'||t.evidence===portfolioFilters.evidence)&&
+        (portfolioFilters.revenueSurface==='all'||t.revenueSurface===portfolioFilters.revenueSurface)&&
+        (portfolioFilters.period==='all'||t.period===portfolioFilters.period);
+    }).map(function(x){return x.id;});
+    return {total:row.count,breakdown:breakdown,representativeCases:cases};
+  }
+  function renderPortfolioDrilldown(stage){
+    var p=controlTowerModel().syntheticPortfolio||{},funnel=p.funnel||[],row=portfolioStageData(stage),cases=controlTowerModel().cases||[];
+    if(!row)return '';
+    var idx=funnel.findIndex(function(x){return x.stage===stage;}),prev=idx>0?funnel[idx-1]:null;
+    var selectedCases=(row.representativeCases||[]).map(function(id){return cases.filter(function(x){return x.id===id;})[0];}).filter(Boolean);
+    var b=row.breakdown||{};
+    return '<section class="portfolio-drilldown">'+
+      '<div class="portfolio-drill-head"><div><div class="drawer-kicker">DRILL-DOWN COHORT · СИНТЕТИКА</div><h4>'+h(stage)+' = '+h(row.total)+'</h4><p>'+(prev?('Конверсия из '+h(prev.stage)+': '+pct(Number(row.total||0),Number(prev.count||0))+'%'):'Базовая когорта портфеля')+'. Показан агрегат; representative dossiers ниже — примеры, а не полный row-level export.</p></div><button data-close-drill>×</button></div>'+
+      '<div class="cohort-breakdown"><article><span>MFW</span><b>'+h(b.mfw||0)+'</b><small>'+pct(Number(b.mfw||0),Number(row.total||0))+'%</small></article><article><span>BFS</span><b>'+h(b.bfs||0)+'</b><small>'+pct(Number(b.bfs||0),Number(row.total||0))+'%</small></article><article><span>MADE</span><b>'+h(b.made||0)+'</b><small>'+pct(Number(b.made||0),Number(row.total||0))+'%</small></article></div>'+
+      '<div class="representative-journeys"><div class="drawer-kicker">РЕПРЕЗЕНТАТИВНЫЕ ДОСЬЕ</div>'+selectedCases.map(function(x){var step=(x.dossier||[]).filter(function(d){return d.stage===stage|| (stage==='DEAL'&&d.stage==='DEAL ROOM') || (stage==='REVENUE ДОКАЗАТЕЛЬСТВА'&&['ПЕРЕДАЧА','90 DAYS','365 DAYS'].indexOf(d.stage)>=0);})[0]||x.dossier[x.dossier.length-1];return '<article><div><span>'+h(x.label)+' · '+h(String(x.primaryEcosystem||'platform').toUpperCase())+'</span><b>'+h(x.participant.name)+' → '+h(x.brand.name)+'</b><small>'+h(step&&step.detail||'Representative journey')+'</small></div><div>'+evidenceBadge(step&&step.evidence||'synthetic')+'<button data-open-dossier="'+h(x.id)+'">ОТКРЫТЬ ДОСЬЕ →</button></div></article>';}).join('')+'</div>'+
+      '<div class="hub-note">Число '+h(row.total)+' — агрегат synthetic-сценария. Материализованы только показанные выше representative demo journeys.</div>'+
+    '</section>';
+  }
+  function renderPortfolioView(){
+    var portfolio=controlTowerModel().syntheticPortfolio||{},fp=filteredPortfolio(),funnel=fp.funnel||[];
+    var max=funnel.length?Math.max.apply(null,funnel.map(function(x){return Number(x.count||0);})):1;
+    var zero=fp.population===0;
+    return '<div class="portfolio-warning"><b>ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ ПОРТФЕЛЬ</b><span>Все значения пересчитываются из детерминированного synthetic cohort cube. Это не production KPI.</span></div>'+
+      portfolioFilterBar()+
+      '<section class="portfolio-head"><div><div class="drawer-kicker">ДОКАЗАТЕЛЬСТВА CONTROL TOWER · ФИЛЬТРУЕМЫЙ ПОРТФЕЛЬ</div><h3>Где именно сеть создаёт наиболее сильную конверсию и сетевую ценность.</h3><p>Все фильтры одновременно пересчитывают воронку, вклад экосистем, retention и покрытие revenue surfaces.</p></div><div class="portfolio-pop"><span>ОТОБРАННАЯ ПОПУЛЯЦИЯ</span><b>'+h(fp.population)+'</b><small>синтетических journeys</small></div></section>'+
+      (zero?'<div class="portfolio-empty"><b>НЕТ ПОДХОДЯЩЕГО СИНТЕТИЧЕСКОГО COHORT</b><span>Для этого набора фильтров в demo cube нет данных. Значения не подменяются ближайшим сегментом.</span></div>':'')+
+      '<div class="portfolio-funnel">'+funnel.map(function(x,i){var prev=i?Number(funnel[i-1].count||0):Number(x.count||0);return '<button class="portfolio-stage '+(selectedPortfolioStage===x.stage?'active':'')+'" data-portfolio-stage="'+h(x.stage)+'"><div class="portfolio-bar"><i style="width:'+Math.max(0,Math.round(Number(x.count||0)/(max||1)*100))+'%"></i></div><span>'+h(x.stage)+'</span><b>'+h(x.count)+'</b><small>'+(i?'conversion '+pct(Number(x.count||0),prev)+'%':'base cohort')+'</small>'+evidenceBadge(x.evidence)+'</button>';}).join('')+'</div>'+
+      renderPortfolioDrilldown(selectedPortfolioStage)+
+      '<div class="portfolio-lower"><section><div class="drawer-kicker">ВКЛАД ЭКОСИСТЕМ</div><div class="portfolio-table">'+(fp.ecosystems||[]).map(function(x){return '<div><b>'+h(x.label)+'</b><span>'+h(x.journeys)+' цепочек</span><span>'+h(x.qualifiedBuyers)+' квалифицировано</span><span>'+h(x.meetings)+' встреч</span><span>'+h(x.intents)+' намерений</span></div>';}).join('')+'</div></section>'+
+      '<section><div class="drawer-kicker">RETENTION</div><div class="retention-tower">'+(fp.retention||[]).map(function(x){return '<article class="'+(portfolioFilters.retention===x.period?'active':'')+'"><span>'+h(x.period)+'</span><b>'+h(x.retained)+'</b><small>'+pct(Number(x.retained||0),Number(x.eligible||0))+'% of intent cohort</small></article>';}).join('')+'</div></section></div>'+
+      '<section class="portfolio-revenue"><div class="drawer-kicker">ЗАТРОНУТЫЕ REVENUE SURFACES · НЕ ВЫРУЧКА</div><div>'+(fp.revenue||[]).map(function(x){var stream=(INVESTOR_MODEL.revenueStreams||[]).filter(function(s){return s.id===x.id;})[0]||{};return '<article class="'+(portfolioFilters.revenueSurface===x.id?'active':'')+'"><span>'+h(stream.payer||x.id)+'</span><b>'+h(stream.product||x.id)+'</b><small>'+h(x.journeysTouched)+' filtered journeys touched</small></article>';}).join('')+'</div></section>'+
+      '<div class="hub-note">Фильтры работают только на детерминированном synthetic cohort cube. Для реальных portfolio KPI потребуются admitted event facts, cohort governance и контроль свежести источников.</div>';
+  }
+  function renderInvestorProof(){
+    var synthetic=proofMode==='synthetic';
+    hubContent.innerHTML=
+      '<div class="control-tower-top"><div><div class="drawer-kicker">ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ</div><h3>Каждый переход должен иметь доказательство.</h3><p>Досье отвечает на вопрос «что произошло с конкретной связкой байер × бренд». Портфель — «что происходит со всей сетью». Сравнение — «какой срез сильнее по выбранным метрикам».</p></div><div>'+controlTowerTabs()+proofModeToggle()+'</div></div>'+
+      (controlTowerView==='comparison'?renderComparisonMode():(controlTowerView==='portfolio'?renderPortfolioView():renderCaseDossier()))+
+      '<div class="proof-rules">'+(INVESTOR_MODEL.proofRules||[]).map(function(x){return '<span>✓ '+h(x)+'</span>';}).join('')+'</div>';
+    bindControlTower();
+    bindPortfolioFilters();
+    bindComparison();
+  }
+  function renderPartnerConsole(){
+    var rows=INVESTOR_MODEL.partnerConsole||[];
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">КАБИНЕТ ПАРТНЁРА / СПОНСОРА · ПРЕДПРОСМОТР</div>'+
+      '<div class="operating-hero"><div><h3>Пакет → инвентарь → кампания → исполнение → отчёт → расчёты.</h3><p>Партнёр видит не «охваты ради охватов», а контракт, активированный инвентарь, доказательство доставки и основание для расчётов.</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="partner-flow">'+rows.map(function(x,i){return '<article><span>0'+(i+1)+' · '+h(x.stage)+'</span><b>'+h(x.owner)+'</b><small>'+h(x.proof)+'</small><em>'+h(x.revenueGate)+'</em></article>';}).join('')+'</div>'+
+      '<section class="console-boundary"><b>ГРАНИЦА ПРИЗНАНИЯ ВЫРУЧКИ</b><span>Показ кампании, сканирование или передача лида являются доказательством исполнения; признание выручки всё равно требует соответствующего договорного, биллингового или платёжного подтверждения.</span></section>';
+    bindProofMode();
+  }
+  function renderBrandCockpit(){
+    var funnel=INVESTOR_MODEL.brandFunnel||[],chain=proofChain();
+    var stageMap={};chain.forEach(function(x){stageMap[x.stage]=x;});
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">БИЗНЕС-КАБИНЕТ БРЕНДА · ПРЕДПРОСМОТР MVP</div>'+
+      '<div class="operating-hero"><div><h3>Не «сколько лайков», а где именно бренд теряет намерение байера.</h3><p>Аудитория, профессиональные сигналы, встреча, Комната сделки и непрерывность на горизонте 365 дней собраны в одну управляемую воронку.</p></div>'+proofModeToggle()+'</div>'+
+      '<div class="brand-funnel">'+funnel.map(function(x){var live=stageMap[x.stage]||null;return '<article><span>'+h(x.stage)+'</span><b>'+h(x.proof)+'</b>'+(live?evidenceBadge(live.evidence):evidenceBadge(proofMode==='synthetic'?'synthetic':'not_evidenced'))+'</article>';}).join('')+'</div>'+
+      '<div class="continuity-grid"><article><span>D30</span><b>Relationship retained</b><small>Verified follow / campaign / reward / return evidence.</small></article><article><span>D90</span><b>Professional continuation</b><small>Follow-up, repeat meeting or brand action.</small></article><article><span>D365</span><b>Network compounding</b><small>Cross-event return and accumulated trust history.</small></article></div>'+
+      '<div class="hub-note">В production бренд видит только свою first-party аудиторию и privacy-safe benchmark; competitor-level private data не раскрывается.</div>';
+    bindProofMode();
+  }
+  function renderEconomics(){
+    var streams=INVESTOR_MODEL.revenueStreams||[];
+    hubContent.innerHTML=
+      '<div class="drawer-kicker">INVESTMENT / ЭКОНОМИКА DASHBOARD · MODEL CONTRACT</div>'+
+      '<div class="economics-hero"><h3>Кто платит → за какой продукт → по какой формуле → когда это становится выручкой.</h3><p>До появления договоров и платежных данных здесь нет фактических ARR/MRR. Формулы показывают экономическую архитектуру, а не результат.</p></div>'+
+      '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE УСЛОВИЕ</b></div>'+
+      streams.map(function(x){return '<div class="economics-row"><span>'+h(x.payer)+'</span><span>'+h(x.product)+'</span><code>'+h(x.formula)+'</code><em>'+h(x.recognition)+'</em></div>';}).join('')+'</div>'+
+      '<div class="economics-proof-grid"><article><b>OBSERVED</b><span>Product actions and delivery events.</span></article><article><b>REPORTED</b><span>Partner-declared outcomes.</span></article><article><b>VERIFIED</b><span>Admitted external confirmation.</span></article><article><b>MODELLED</b><span>Scenario economics with explicit assumptions.</span></article></div>'+
+      '<div class="hub-note">Юнит-экономика, CAC, ROI, GMV, ARR и MRR считаются фактическими только при наличии исходного набора данных и периода расчёта. Демонстрационные подстановки намеренно отсутствуют.</div>';
+  }
+
+  function committeePolicy(){return INVESTOR_MODEL.investmentCommittee||{};}
+  function recommendationByIntervention(id){
+    return recommendationSet().filter(function(x){return x.intervention&&x.intervention.id===id;})[0]||null;
+  }
+  function ensureCommitteeCase(rec){
+    if(!rec)return null;
+    var id=rec.intervention.id;
+    if(!committeeCases[id]){
+      committeeCases[id]={
+        status:'DRAFT',
+        approval:'ОЖИДАЕТ',
+        pilotStatus:'NOT_STARTED',
+        measured:null,
+        evidenceCollected:0,
+        decision:null,
+        history:[{state:'DRAFT',label:'Бизнес-кейс создан в демонстрационной сессии'}]
+      };
+    }
+    return committeeCases[id];
+  }
+  function measuredOutcome(rec){
+    var factor=Number((committeePolicy().resultProfiles||{})[rec.intervention.id]);
+    if(!Number.isFinite(factor))factor=.75;
+    var lift=Number(rec.modelledLift||0)*factor;
+    return Math.max(0,Math.min(100,Number(rec.current||0)+lift));
+  }
+  function committeeEvidenceState(rec,state){
+    var total=(rec.intervention.evidenceNeeded||[]).length;
+    if(state.measured===null)return {complete:0,total:total,ratio:0};
+    var factor=Number((committeePolicy().resultProfiles||{})[rec.intervention.id]);
+    var complete=factor>=1?total:factor>=.5?Math.max(0,total-1):Math.max(1,total-2);
+    return {complete:complete,total:total,ratio:total?complete/total:0};
+  }
+  function committeeDecision(rec,state){
+    var ev=committeeEvidenceState(rec,state);
+    if(state.measured===null)return null;
+    if(state.measured>=rec.pilotTarget&&ev.complete===ev.total)return 'SCALE';
+    if(state.measured>rec.current&&ev.ratio>=.6)return 'ITERATE';
+    return 'STOP';
+  }
+  function committeeAction(id,action){
+    var rec=recommendationByIntervention(id);if(!rec)return;
+    var state=ensureCommitteeCase(rec);if(!state)return;
+    if(action==='submit'&&state.status==='DRAFT'){state.status='IN_REVIEW';state.history.push({state:'IN_REVIEW',label:'Отправлено на рассмотрение'});}
+    else if(action==='approve'&&state.status==='IN_REVIEW'){state.status='APPROVED';state.approval='APPROVED_DEMO';state.history.push({state:'APPROVED',label:'Одобрено в демонстрационном пространстве'});}
+    else if(action==='start'&&state.status==='APPROVED'){state.status='PILOT_RUNNING';state.pilotStatus='RUNNING';state.history.push({state:'PILOT_RUNNING',label:'Пилот запущен'});}
+    else if(action==='measure'&&state.status==='PILOT_RUNNING'){
+      state.status='MEASURED';state.pilotStatus='MEASURED';state.measured=measuredOutcome(rec);
+      var ev=committeeEvidenceState(rec,state);state.evidenceCollected=ev.complete;
+      state.history.push({state:'MEASURED',label:'Результат измерен: '+Math.round(state.measured*10)/10+'%'});
+    } else if(action==='decide'&&state.status==='MEASURED'){
+      state.status='DECIDED';state.decision=committeeDecision(rec,state);
+      state.history.push({state:'DECIDED',label:'Решение: '+state.decision});
+    } else if(action==='reset'){
+      delete committeeCases[id];
+    }
+    committeeSelectedId=id;renderInvestmentCommittee();
+  }
+  function committeeStatusLabel(v){
+    return {DRAFT:'ЧЕРНОВИК',IN_REVIEW:'НА РАССМОТРЕНИИ',APPROVED:'ОДОБРЕНО · DEMO',PILOT_RUNNING:'ПИЛОТ ИДЁТ',MEASURED:'ИЗМЕРЕНО',DECIDED:'РЕШЕНИЕ ПРИНЯТО'}[v]||v;
+  }
+  function committeeActionButton(rec,state){
+    if(state.status==='DRAFT')return '<button data-committee-action="submit" data-committee-id="'+h(rec.intervention.id)+'">ОТПРАВИТЬ НА REVIEW →</button>';
+    if(state.status==='IN_REVIEW')return '<button data-committee-action="approve" data-committee-id="'+h(rec.intervention.id)+'">ОДОБРИТЬ DEMO PILOT →</button>';
+    if(state.status==='APPROVED')return '<button data-committee-action="start" data-committee-id="'+h(rec.intervention.id)+'">ЗАПУСТИТЬ PILOT →</button>';
+    if(state.status==='PILOT_RUNNING')return '<button data-committee-action="measure" data-committee-id="'+h(rec.intervention.id)+'">ЗАФИКСИРОВАТЬ РЕЗУЛЬТАТ →</button>';
+    if(state.status==='MEASURED')return '<button data-committee-action="decide" data-committee-id="'+h(rec.intervention.id)+'">ПРИНЯТЬ SCALE / ITERATE / STOP →</button>';
+    return '<button data-committee-action="reset" data-committee-id="'+h(rec.intervention.id)+'">СБРОСИТЬ DEMO CASE</button>';
+  }
+  function renderInvestmentCommittee(){
+    var recs=recommendationSet();
+    if(!committeeSelectedId&&recs[0])committeeSelectedId=recs[0].intervention.id;
+    var rec=recommendationByIntervention(committeeSelectedId)||recs[0];
+    if(!rec){hubContent.innerHTML='<div class="portfolio-empty"><b>НЕТ ДОСТУПНОЙ РЕКОМЕНДАЦИИ</b><span>Сначала сформируйте Comparison / Scenario Mode.</span></div>';return;}
+    committeeSelectedId=rec.intervention.id;
+    var state=ensureCommitteeCase(rec),ev=committeeEvidenceState(rec,state),decision=state.decision||committeeDecision(rec,state),policy=committeePolicy();
+    var measured=state.measured===null?'—':(Math.round(state.measured*10)/10+'%');
+    var proposalHtml='';
+    if(programmeScenarioProposal){
+      var ps=programmeScenarioProposal,sc=ps.scenario||{};
+      proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' баллов · оценка '+h(sc.score)+' · снижение риска '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ruCode(ps.status))+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
+    }
+    hubContent.innerHTML=proposalHtml+
+      '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КОНТУР</b><span>Все одобрения, статусы пилота и измеренные результаты ниже существуют только в текущей демонстрационной сессии и не являются реальными корпоративными решениями.</span></div>'+
+      '<div class="committee-recommendations">'+recs.map(function(x){return '<button data-committee-select="'+h(x.intervention.id)+'" class="'+(x.intervention.id===committeeSelectedId?'active':'')+'"><span>'+h(x.points)+' pts</span><b>'+h(x.intervention.action)+'</b><small>'+h(x.intervention.stage)+'</small></button>';}).join('')+'</div>'+
+      '<section class="committee-case-head"><div><div class="drawer-kicker">МИНИ-БИЗНЕС-КЕЙС</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>СТАТУС</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' модельных баллов бюджета</small></div></section>'+
+      '<div class="committee-case-grid">'+
+        '<article><span>ОТВЕТСТВЕННЫЙ</span><b>'+h(rec.intervention.owner)+'</b></article>'+
+        '<article><span>ЗАПРОС БЮДЖЕТА</span><b>'+h(rec.points)+' баллов пилота</b><small>не ₽ · относительное демонстрационное распределение</small></article>'+
+        '<article><span>BASELINE KPI</span><b>'+Math.round(rec.current*10)/10+'%</b><small>'+h(rec.intervention.kpi)+'</small></article>'+
+        '<article><span>MODELLED TARGET</span><b>'+Math.round(rec.pilotTarget*10)/10+'%</b><small>assumption, не обещание результата</small></article>'+
+        '<article><span>ИЗМЕРЕННЫЙ РЕЗУЛЬТАТ</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'синтетический результат пилота')+'</small></article>'+
+        '<article><span>РЕШЕНИЕ</span><b>'+h(decision?ruCode(decision):'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
+      '</div>'+
+      '<section class="committee-evidence-plan"><div><div class="drawer-kicker">ДОКАЗАТЕЛЬСТВА PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
+      '<section class="committee-pilot"><div><span>PILOT DESIGN</span><b>'+h(rec.intervention.pilot)+'</b></div><div><span>STOP / SCALE LOGIC</span><b>'+h((policy.governance||{}).scale||'')+'</b><small>'+h((policy.governance||{}).iterate||'')+' '+h((policy.governance||{}).stop||'')+'</small></div></section>'+
+      '<div class="committee-state-flow">'+(policy.states||[]).map(function(x){var active=x===state.status;return '<span class="'+(active?'active':'')+'">'+h(committeeStatusLabel(x))+'</span>';}).join('<i>→</i>')+'</div>'+
+      '<div class="committee-actions">'+committeeActionButton(rec,state)+'<button class="secondary" data-committee-action="reset" data-committee-id="'+h(rec.intervention.id)+'">RESET DEMO</button></div>'+
+      '<section class="committee-history"><div class="drawer-kicker">DECISION LOG · CURRENT SESSION</div>'+state.history.map(function(x){return '<div><b>'+h(committeeStatusLabel(x.state))+'</b><span>'+h(x.label)+'</span></div>';}).join('')+'</section>'+
+      '<div class="hub-note">Workspace демонстрирует governance contract. Реальный approval должен жить в серверной authority с actor identity, timestamps, immutable decision/evidence history и role-based permissions.</div>';
+    [].slice.call(document.querySelectorAll('[data-portfolio-proposal-action]')).forEach(function(b){b.onclick=function(){
+      if(!programmeScenarioProposal)return;
+      var a=b.dataset.portfolioProposalAction;
+      if(a==='submit'&&programmeScenarioProposal.status==='DRAFT'){programmeScenarioProposal.status='IN_REVIEW';programmeScenarioProposal.history.push({state:'IN_REVIEW',label:'Portfolio allocation отправлен на review'});}
+      else if(a==='approve'&&programmeScenarioProposal.status==='IN_REVIEW'){programmeScenarioProposal.status='APPROVED_DEMO';programmeScenarioProposal.history.push({state:'APPROVED_DEMO',label:'Portfolio allocation одобрен только в demo workspace'});}
+      else if(a==='reset'){programmeScenarioProposal=null;}
+      renderInvestmentCommittee();
+    };});
+    [].slice.call(document.querySelectorAll('[data-committee-select]')).forEach(function(b){b.onclick=function(){committeeSelectedId=b.dataset.committeeSelect;renderInvestmentCommittee();};});
+    [].slice.call(document.querySelectorAll('[data-committee-action]')).forEach(function(b){b.onclick=function(){committeeAction(b.dataset.committeeId,b.dataset.committeeAction);};});
+  }
+
+  function programmeCapitalModel(){return INVESTOR_MODEL.programmeCapital||{};}
+  function programmeRows(){
+    var model=programmeCapitalModel(),catalog=INVESTOR_MODEL.interventionCatalog||[];
+    return (model.defaultExecution||[]).map(function(x){
+      var it=catalog.filter(function(i){return i.id===x.intervention;})[0]||{};
+      var remaining=Math.max(0,Number(x.committed||0)-Number(x.spent||0));
+      var released=Number(programmeReleased[x.intervention]||0);
+      var measured=x.status==='MEASURED'?Number(x.spent||0):0;
+      return Object.assign({},x,{action:it.action||x.intervention,owner:it.owner||'—',remaining:remaining,released:released,measured:measured});
+    });
+  }
+  function programmeTotals(){
+    var model=programmeCapitalModel(),rows=programmeRows();
+    var t={envelope:Number(model.envelopePoints||0),requested:0,approved:0,committed:0,spent:0,measured:0,scaled:0,stopped:0,released:0,blocked:0};
+    rows.forEach(function(x){
+      t.requested+=Number(x.requested||0);t.approved+=Number(x.approved||0);t.committed+=Number(x.committed||0);t.spent+=Number(x.spent||0);t.measured+=Number(x.measured||0);t.released+=Number(x.released||0);
+      if(x.decision==='SCALE')t.scaled+=Number(x.spent||0);
+      if(x.decision==='STOP')t.stopped+=Number(x.spent||0);
+      if(x.status==='APPROVED'||x.status==='PILOT_RUNNING'||!x.evidenceComplete&&x.status==='MEASURED')t.blocked+=Number(x.committed||0)-Number(x.spent||0);
+    });
+    t.uncommitted=Math.max(0,t.envelope-t.approved);
+    t.committedUnspent=Math.max(0,t.committed-t.spent-t.released);
+    t.reallocationCapacity=t.uncommitted+t.released;
+    return t;
+  }
+  function ecosystemCapital(){
+    var rows=programmeRows(),ids=['mfw','bfs','made'];
+    return ids.map(function(id){
+      var rr=rows.filter(function(x){return x.ecosystem===id;}),sum=function(k){return rr.reduce(function(s,x){return s+Number(x[k]||0);},0);};
+      return {id:id,label:id==='mfw'?'MFW':id==='bfs'?'BFS':'Сделано в Москве',requested:sum('requested'),approved:sum('approved'),committed:sum('committed'),spent:sum('spent'),measured:sum('measured')};
+    });
+  }
+  function blockerRows(){
+    var model=programmeCapitalModel(),rows=programmeRows();
+    return (model.blockers||[]).map(function(b){
+      var row=rows.filter(function(x){return x.intervention===b.intervention;})[0]||{};
+      return Object.assign({},b,{ecosystem:row.ecosystem||'—',action:row.action||b.intervention,atRisk:Math.max(0,Number(row.committed||0)-Number(row.spent||0))});
+    });
+  }
+  function releasableRows(){
+    return programmeRows().filter(function(x){return x.decision==='STOP'&&x.remaining>0;});
+  }
+  function programmeRelease(id){
+    var row=programmeRows().filter(function(x){return x.intervention===id;})[0];if(!row)return;
+    programmeReleased[id]=Math.max(0,row.remaining);
+    renderProgrammeCapital();
+  }
+  function optimizerPolicy(){return (programmeCapitalModel().optimizer)||{};}
+  function optimizerMetricLabel(key){
+    return {qualifiedRate:'Audience → Qualified Buyer',meetingRate:'Qualified Buyer → Meeting',intentRate:'Meeting → Intent',dealRate:'Intent → Deal-stage',retentionRate:'Intent → Retention',revenueEvidenceRate:'Deal-stage → Revenue Evidence'}[key]||key;
+  }
+  function optimizerCandidate(candidate,tranche){
+    var policy=optimizerPolicy(),t=programmeTotals(),available=Math.min(Number(tranche||0),Number(candidate.absorptionCap||0),Number(t.reallocationCapacity||0));
+    var readiness=Number(candidate.evidenceReadiness||0),hard=!!candidate.hardBlock;
+    var gate=hard?'HOLD':readiness>=Number(policy.evidenceReadyThreshold||.8)?'READY':readiness>=Number(policy.conditionalThreshold||.6)?'CONDITIONAL':'HOLD';
+    var riskRelief=Math.min(Number(candidate.riskAtRisk||0),Number(candidate.riskReliefPer10||0)*(available/10));
+    var kpiLift=Math.min(Number(candidate.maxKpiLift||0),Number(candidate.kpiLiftPer10||0)*(available/10));
+    var riskScore=Number(candidate.riskAtRisk||0)>0?(riskRelief/Number(candidate.riskAtRisk||1)):(candidate.mode==='SCALE'?.5:0);
+    var kpiScore=Number(candidate.maxKpiLift||0)>0?(kpiLift/Number(candidate.maxKpiLift||1)):0;
+    var absorption=Number(tranche||0)>0?available/Number(tranche):0;
+    var w=policy.scoreWeights||{};
+    var score=100*((Number(w.riskRelief||.3)*riskScore)+(Number(w.kpiLeverage||.25)*kpiScore)+(Number(w.evidenceReadiness||.3)*readiness)+(Number(w.absorption||.15)*absorption));
+    if(gate==='HOLD')score=0;
+    return Object.assign({},candidate,{requestedTranche:Number(tranche||0),available:available,gate:gate,riskRelief:riskRelief,kpiLift:kpiLift,absorption:absorption,score:Math.round(score*10)/10});
+  }
+  function optimizerRows(tranche){
+    return (optimizerPolicy().candidates||[]).map(function(x){return optimizerCandidate(x,tranche);}).sort(function(a,b){return b.score-a.score;});
+  }
+  function optimizerRecommendation(tranche){
+    var rows=optimizerRows(tranche),ready=rows.filter(function(x){return x.gate==='READY';}),conditional=rows.filter(function(x){return x.gate==='CONDITIONAL';});
+    var pick=ready[0]||conditional[0]||null;
+    return {rows:rows,pick:pick};
+  }
+  function simulatorPolicy(){return (optimizerPolicy().portfolioSimulator)||{};}
+  function candidateMapForBudget(budget){
+    var rows=optimizerRows(budget),map={};
+    rows.forEach(function(x){map[x.ecosystem]=x;});
+    return map;
+  }
+  function scenarioMixes(budget){
+    var step=Number(simulatorPolicy().step||10),map=candidateMapForBudget(budget),out=[];
+    for(var m=0;m<=budget;m+=step){
+      for(var b=0;b<=budget-m;b+=step){
+        for(var md=0;md<=budget-m-b;md+=step){
+          var alloc={mfw:m,bfs:b,made:md};
+          var reserve=Math.max(0,budget-m-b-md),eligible=true,conditional=false;
+          ['mfw','bfs','made'].forEach(function(id){
+            var cand=map[id];
+            if(!cand){reserve+=alloc[id];alloc[id]=0;return;}
+            if(cand.gate==='HOLD'&&alloc[id]>0){eligible=false;}
+            if(cand.gate==='CONDITIONAL'&&alloc[id]>0){conditional=true;}
+            var cap=Math.min(Number(cand.absorptionCap||0),Number(programmeTotals().reallocationCapacity||0));
+            if(alloc[id]>cap){reserve+=alloc[id]-cap;alloc[id]=cap;}
+          });
+          if(!eligible)continue;
+          var used=alloc.mfw+alloc.bfs+alloc.made;
+          reserve=Math.max(reserve,budget-used);
+        var riskRelief=0,kpi=0,evidenceWeighted=0,evidenceWeight=0,active=0;
+        ['mfw','bfs','made'].forEach(function(id){
+          var pts=alloc[id],cand=map[id];if(!cand||pts<=0)return;
+          active++;
+          var ratio=pts/10;
+          riskRelief+=Math.min(Number(cand.riskAtRisk||0),Number(cand.riskReliefPer10||0)*ratio);
+          kpi+=Math.min(Number(cand.maxKpiLift||0),Number(cand.kpiLiftPer10||0)*ratio);
+          evidenceWeighted+=Number(cand.evidenceReadiness||0)*pts;
+          evidenceWeight+=pts;
+        });
+        var evidence=evidenceWeight?evidenceWeighted/evidenceWeight:1;
+        var diversification=Math.min(1,active/3);
+        var optionality=budget?reserve/budget:1;
+        var maxRisk=(optimizerPolicy().candidates||[]).reduce(function(s,x){return s+Number(x.riskAtRisk||0);},0)||1;
+        var maxKpi=(optimizerPolicy().candidates||[]).reduce(function(s,x){return s+Number(x.maxKpiLift||0);},0)||1;
+        var w=simulatorPolicy().weights||{};
+        var score=100*((Number(w.riskReduction||.3)*(riskRelief/maxRisk))+(Number(w.kpiLeverage||.25)*(kpi/maxKpi))+(Number(w.evidenceConfidence||.2)*evidence)+(Number(w.diversification||.1)*diversification)+(Number(w.optionality||.15)*optionality));
+          out.push({alloc:alloc,reserve:reserve,riskRelief:riskRelief,kpi:kpi,evidence:evidence,diversification:diversification,optionality:optionality,conditional:conditional,score:Math.round(score*10)/10});
+        }
+      }
+    }
+    var seen={};
+    out=out.filter(function(x){var key=[x.alloc.mfw,x.alloc.bfs,x.alloc.made,x.reserve].join('|');if(seen[key])return false;seen[key]=true;return true;});
+    return out.sort(function(a,b){return b.score-a.score;});
+  }
+  function scenarioLabelMix(x){
+    var parts=[];
+    if(x.alloc.mfw)parts.push(x.alloc.mfw+' MFW');
+    if(x.alloc.bfs)parts.push(x.alloc.bfs+' BFS');
+    if(x.alloc.made)parts.push(x.alloc.made+' MADE');
+    if(x.reserve)parts.push(x.reserve+' RESERVE');
+    return parts.length?parts.join(' + '):'100% RESERVE';
+  }
+  function renderPortfolioScenarioSimulator(){
+    var policy=simulatorPolicy(),rows=scenarioMixes(programmeScenarioBudget),top=rows.slice(0,5),best=top[0]||null;
+    return '<section class="portfolio-simulator">'+
+      '<div class="simulator-head"><div><div class="drawer-kicker">СИМУЛЯТОР СЦЕНАРИЕВ ПОРТФЕЛЯ · МОДЕЛЬНО</div><h4>Как распределить '+h(programmeScenarioBudget)+' points между MFW / BFS / Made / Reserve.</h4><p>Перебираются допустимые mix-сценарии с шагом '+h(policy.step||10)+' points. HOLD-направления не получают новый capital; CONDITIONAL остаются committee-gated.</p></div><div class="simulator-best"><span>ОЦЕНКА ЛУЧШЕГО СЦЕНАРИЯ</span><b>'+(best?h(best.score):'—')+'</b><small>/ 100 · modelled</small></div></div>'+
+      '<div class="simulator-budgets">'+(policy.budgets||[10,20,30]).map(function(x){return '<button data-sim-budget="'+h(x)+'" class="'+(Number(x)===Number(programmeScenarioBudget)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
+      '<div class="simulator-table"><div class="simulator-row head"><b>СЦЕНАРИЙ</b><b>ОЦЕНКА</b><b>РИСК ↓</b><b>KPI ↑</b><b>ДОКАЗАТЕЛЬСТВА</b><b>ДИВЕРСИФИКАЦИЯ</b><b>ГИБКОСТЬ</b><b>УСЛОВИЕ</b></div>'+
+      top.map(function(x,i){return '<div class="simulator-row '+(i===0?'best':'')+'"><span>#0'+(i+1)+' · '+h(scenarioLabelMix(x))+'</span><b>'+h(x.score)+'</b><b>'+Math.round(x.riskRelief*10)/10+'</b><b>+'+Math.round(x.kpi*10)/10+' п.п.</b><b>'+Math.round(x.evidence*100)+'%</b><b>'+Math.round(x.diversification*100)+'%</b><b>'+Math.round(x.optionality*100)+'%</b><em>'+(x.conditional?'CONDITIONAL':'READY')+'</em></div>';}).join('')+'</div>'+
+      '<div class="simulator-recommendation"><div><span>ЛУЧШЕЕ РАСПРЕДЕЛЕНИЕ</span><b>'+(best?h(scenarioLabelMix(best)):'—')+'</b><small>'+(best?('score '+h(best.score)+' · снижение риска '+Math.round(best.riskRelief*10)/10+' pts · KPI +'+Math.round(best.kpi*10)/10+' п.п.'):'Нет допустимого сценария')+'</small></div><div><span>ПОЧЕМУ</span><b>'+(best?(best.reserve>0?'Часть budget оставлена в reserve для optionality.':'Весь budget размещён в eligible направления.'):'—')+'</b><small>Сценарий ранжируется по risk reduction, KPI leverage, evidence confidence, diversification и optionality.</small></div></div>'+(best?'<button class="simulator-submit" data-sim-propose>ПЕРЕДАТЬ ЛУЧШЕЕ РАСПРЕДЕЛЕНИЕ В INVESTMENT COMMITTEE →</button>':'')+
+      '<div class="simulator-method"><b>Правила</b><span>'+Object.keys(policy.rules||{}).map(function(k){return h(policy.rules[k]);}).join(' · ')+'</span></div>'+
+    '</section>';
+  }
+
+  function renderReallocationOptimizer(){
+    var policy=optimizerPolicy(),t=programmeTotals(),result=optimizerRecommendation(programmeOptimizerTranche),pick=result.pick;
+    return '<section class="reallocation-optimizer">'+
+      '<div class="optimizer-head"><div><div class="drawer-kicker">ОПТИМИЗАТОР ПЕРЕРАСПРЕДЕЛЕНИЯ КАПИТАЛА · МОДЕЛЬНО</div><h4>Куда направить следующие '+h(programmeOptimizerTranche)+' points.</h4><p>Сравнение учитывает capital-at-risk relief, modelled KPI leverage, evidence readiness и способность vertical принять выбранный tranche.</p></div><div class="optimizer-capacity"><span>ДОСТУПНАЯ ЁМКОСТЬ</span><b>'+h(t.reallocationCapacity)+'</b><small>резерв + явно освобождённый капитал only</small></div></div>'+
+      '<div class="optimizer-tranches">'+(policy.trancheOptions||[10,20,30]).map(function(x){return '<button data-optimizer-tranche="'+h(x)+'" class="'+(Number(x)===Number(programmeOptimizerTranche)?'active':'')+'">'+h(x)+' POINTS</button>';}).join('')+'</div>'+
+      '<div class="optimizer-grid">'+result.rows.map(function(x){
+        var label=x.ecosystem==='mfw'?'MFW':x.ecosystem==='bfs'?'BFS':'Сделано в Москве';
+        return '<article class="optimizer-card '+String(x.gate).toLowerCase()+'"><div class="optimizer-card-head"><span>'+h(label)+' · '+h(ruCode(x.mode))+'</span><b>'+h(ruCode(x.gate))+'</b></div><h5>'+h(x.bottleneck)+'</h5>'+
+          '<div class="optimizer-score"><span>ОЦЕНКА РЕШЕНИЯ</span><b>'+h(x.score)+'</b><small>/ 100 · modelled</small></div>'+
+          '<div class="optimizer-metrics"><div><span>МОЖЕТ ПРИНЯТЬ</span><b>'+h(x.available)+' / '+h(x.requestedTranche)+'</b></div><div><span>СНИЖЕНИЕ РИСКА</span><b>'+Math.round(x.riskRelief*10)/10+' pts</b></div><div><span>KPI</span><b>'+h(optimizerMetricLabel(x.metric))+'</b></div><div><span>МОДЕЛЬНЫЙ РОСТ KPI</span><b>+'+Math.round(x.kpiLift*10)/10+' п.п.</b></div><div><span>ГОТОВНОСТЬ ДОКАЗАТЕЛЬСТВ</span><b>'+Math.round(Number(x.evidenceReadiness||0)*100)+'%</b></div></div>'+
+          '<div class="optimizer-evidence"><span>ДО СЛЕДУЮЩЕГО ТРАНША</span>'+((x.evidenceBeforeNext||[]).map(function(e){return '<i>○ '+h(e)+'</i>';}).join(''))+'</div>'+
+          '<div class="optimizer-gate-note">'+(x.gate==='READY'?'Можно выносить как модельного кандидата на следующее рассмотрение инвесткомитета.':x.gate==='CONDITIONAL'?'Транш условный: сначала закрыть обозначенные пробелы в доказательствах.':'ПАУЗА: новый транш не рекомендован до устранения критического пробела в доказательствах.')+'</div></article>';
+      }).join('')+'</div>'+
+      '<div class="optimizer-recommendation"><div><span>МОДЕЛЬНАЯ РЕКОМЕНДАЦИЯ</span><b>'+(pick?(h(pick.ecosystem==='mfw'?'MFW':pick.ecosystem==='bfs'?'BFS':'Сделано в Москве')+' · '+h(pick.available)+' pts · '+h(pick.gate)):'HOLD / NO ELIGIBLE OPTION')+'</b><small>'+(pick?('score '+h(pick.score)+' · expected KPI +'+Math.round(pick.kpiLift*10)/10+' п.п. · at-risk relief '+Math.round(pick.riskRelief*10)/10+' pts'):'Нет варианта, прошедшего evidence gate.')+'</small></div><div><span>СЛЕДУЮЩИЙ ТРАНШ УСЛОВИЕ</span><b>'+(pick?h((pick.evidenceBeforeNext||[])[0]||'Evidence review required'):'Evidence remediation required')+'</b><small>Оптимизатор не утверждает капитал; он формирует кандидата для Инвестиционного комитета.</small></div></div>'+
+      '<div class="optimizer-method"><b>Score</b><span>30% risk relief + 25% KPI leverage + 30% evidence readiness + 15% absorption. Статус «ПАУЗА» получает оценку 0 независимо от потенциального эффекта. Все эффекты — модельные допущения.</span></div>'+
+    '</section>';
+  }
+
+  async function hydrateCapitalAuthorityStatus(){
+    var root=document.getElementById('capitalAuthorityStatus');if(!root||!capitalAuthorityEligible())return;
+    try{
+      var results=await Promise.all([
+        authorityFetch('/v1/capital/projection?programmeKey=mfw_programme',{method:'GET'}),
+        authorityFetch('/v1/capital/verify?programmeKey=mfw_programme',{method:'GET'})
+      ]);
+      var projection=results[0]&&results[0].data&&results[0].data.projection||{};
+      var verify=results[1]&&results[1].data||{};
+      root.innerHTML='<div><div class="drawer-kicker">СЕРВЕРНЫЙ РЕЕСТР КАПИТАЛА · АКТУАЛЬНАЯ ПРОЕКЦИЯ</div><h4>POSTGRESQL · СЕРВЕРНЫЙ ИСТОЧНИК ИСТИНЫ · '+(verify.ok?'ЦЕПОЧКА ПРОВЕРЕНА':'ОШИБКА ПРОВЕРКИ ЦЕПОЧКИ')+'</h4><p>'+h(results[0].data&&results[0].data.events||0)+' immutable events · requested '+h(projection.requested||0)+' · approved '+h(projection.approved||0)+' · net committed '+h(projection.netCommitted||0)+' · spent '+h(projection.spent||0)+'</p></div><div class="capital-authority-kpis"><span>'+h(verify.aggregates||0)+' aggregates</span><span>'+h(verify.events||0)+' verified events</span><span>'+(verify.ok?'INTEGRITY PASS':'INTEGRITY FAIL')+'</span></div>';
+      root.classList.toggle('authority-fail',!verify.ok);
+    }catch(e){
+      root.innerHTML='<div><div class="drawer-kicker">СЕРВЕРНЫЙ РЕЕСТР КАПИТАЛА</div><h4>СЕРВЕРНЫЙ РЕЕСТР НЕ ДОПУЩЕН</h4><p>'+h(e&&e.message||'capital authority unavailable')+'</p></div><div class="capital-authority-kpis"><span>БЕЗ РЕЗЕРВНОЙ ПОДМЕНЫ</span><span>ТРЕБУЕТСЯ POSTGRESQL</span></div>';
+      root.classList.add('authority-fail');
+    }
+  }
+
+  function renderProgrammeCapital(){
+    var model=programmeCapitalModel(),rows=programmeRows(),t=programmeTotals(),eco=ecosystemCapital(),blockers=blockerRows(),releasable=releasableRows();
+    var stages=[
+      ['ЗАПРОШЕНО',t.requested],['ОДОБРЕНО',t.approved],['ЗАРЕЗЕРВИРОВАНО',t.committed],['ИСПОЛЬЗОВАНО',t.spent],['ИЗМЕРЕНО',t.measured],['МАСШТАБИРОВАНО',t.scaled],['ОСТАНОВЛЕНО',t.stopped]
+    ];
+    hubContent.innerHTML=
+      '<div class="programme-warning"><b>УПРАВЛЕНИЕ КАПИТАЛОМ ПРОГРАММЫ · ДЕМО / МОДЕЛЬНО</b><span>Все значения — модельные баллы пилота. Это не ₽, не фактические расходы и не утверждённый инвестиционный бюджет.</span></div>'+
+      '<section class="programme-head"><div><div class="drawer-kicker">УПРАВЛЕНИЕ КАПИТАЛОМ НА УРОВНЕ ПОРТФЕЛЯ</div><h3>Где капитал запрошен, закреплён, потрачен, измерен — и что можно перераспределить.</h3><p>Зарезервированный, но не использованный капитал отделён от свободного резерва. Освобождение остановленного кейса требует отдельного решения.</p></div><div class="programme-envelope"><span>ОБЩИЙ ЛИМИТ ПРОГРАММЫ</span><b>'+h(t.envelope)+'</b><small>модельные баллы</small></div></section>'+'<section class="capital-authority-status" id="capitalAuthorityStatus"><div><div class="drawer-kicker">СЕРВЕРНЫЙ РЕЕСТР КАПИТАЛА</div><h4>'+(capitalAuthorityEligible()?'Проверяем серверный реестр…':'ДЕМОНСТРАЦИОННЫЙ РЕЖИМ · СЕРВЕРНЫЙ РЕЕСТР ЗАЩИЩЁН')+'</h4><p>'+(capitalAuthorityEligible()?'Чтение проекции и проверка хеш-цепочки доступны только рабочей сессии Организатора/Сотрудника.':'Модельный интерфейс не подменяет серверный реестр PostgreSQL. Демонстрационная сессия не имеет доступа к /v1/capital/*.')+'</p></div><div class="capital-authority-kpis"><span>ТОЛЬКО POSTGRESQL</span><span>ТОЛЬКО ДОБАВЛЕНИЕ</span><span>ХЕШ-ЦЕПОЧКА</span></div></section>'+
+      '<div class="programme-stage-grid">'+stages.map(function(x){return '<article><span>'+h(x[0])+'</span><b>'+h(x[1])+'</b></article>';}).join('')+'</div>'+
+      '<div class="programme-capacity-grid"><article><span>НЕЗАРЕЗЕРВИРОВАННЫЙ РЕЗЕРВ</span><b>'+h(t.uncommitted)+'</b><small>доступно без снятия резервирования</small></article><article><span>ЗАРЕЗЕРВИРОВАНО · НЕ ИСПОЛЬЗОВАНО</span><b>'+h(t.committedUnspent)+'</b><small>не свободный капитал</small></article><article><span>ЯВНО ОСВОБОЖДЕНО</span><b>'+h(t.released)+'</b><small>освобождено отдельным решением</small></article><article><span>ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ</span><b>'+h(t.reallocationCapacity)+'</b><small>reserve + explicit releases</small></article></div>'+
+      '<section class="programme-ecosystems"><div class="drawer-kicker">КАРТА КАПИТАЛА MFW / BFS / MADE</div><div>'+eco.map(function(x){return '<article><b>'+h(x.label)+'</b><span>requested '+h(x.requested)+'</span><span>approved '+h(x.approved)+'</span><span>committed '+h(x.committed)+'</span><span>spent '+h(x.spent)+'</span><span>measured '+h(x.measured)+'</span></article>';}).join('')+'</div></section>'+
+      '<section class="programme-table"><div class="programme-row head"><b>ПИЛОТ</b><b>НАПРАВЛЕНИЕ</b><b>ЗАПР.</b><b>ОДОБР.</b><b>РЕЗЕРВ</b><b>ИСП.</b><b>СТАТУС / РЕШЕНИЕ</b></div>'+rows.map(function(x){return '<div class="programme-row"><span>'+h(x.action)+'</span><span>'+h(String(x.ecosystem).toUpperCase())+'</span><b>'+h(x.requested)+'</b><b>'+h(x.approved)+'</b><b>'+h(x.committed)+'</b><b>'+h(x.spent)+'</b><em>'+h(ruCode(x.status))+(x.decision?' · '+h(ruCode(x.decision)):'')+'</em></div>';}).join('')+'</section>'+
+      '<div class="programme-lower"><section class="programme-blockers"><div class="drawer-kicker">БЛОКИРОВКИ / ПОД РИСКОМ</div>'+blockers.map(function(x){return '<article><div><span>'+h(String(x.ecosystem).toUpperCase())+' · '+h(x.code)+'</span><b>'+h(x.action)+'</b><small>'+h(x.label)+'</small></div><em>'+h(x.atRisk)+' pts at risk</em></article>';}).join('')+'</section>'+
+      '<section class="programme-evidence"><div class="drawer-kicker">ПОЛНОТА ДОКАЗАТЕЛЬСТВ</div>'+rows.map(function(x){var done=x.evidenceComplete;return '<article><span>'+h(x.action)+'</span><b class="'+(done?'done':'pending')+'">'+(done?'ПОЛНО':'НЕПОЛНО')+'</b></article>';}).join('')+'</section></div>'+
+      '<section class="programme-reallocation"><div><div class="drawer-kicker">ВОЗМОЖНОСТИ ПЕРЕРАСПРЕДЕЛЕНИЯ</div><h4>'+h(t.reallocationCapacity)+' points потенциальной ёмкости</h4><p>'+h(t.uncommitted)+' points — uncommitted reserve. '+h(t.released)+' points — явно released. Committed-unspent не включён.</p></div>'+
+      '<div class="reallocation-actions">'+(releasable.length?releasable.map(function(x){var already=Number(programmeReleased[x.intervention]||0)>0;return '<article><span>'+h(x.action)+'</span><b>'+h(x.remaining)+' pts STOP остатка</b><button data-programme-release="'+h(x.intervention)+'" '+(already?'disabled':'')+'>'+(already?'RELEASED':'RELEASE TO POOL')+'</button></article>';}).join(''):'<div class="allocation-no-dossier">Нет STOP-кейсов с неиспользованным commitment.</div>')+'</div></section>'+
+      '<section class="programme-decision"><div><span>РЕКОМЕНДУЕМЫЙ СЛЕДУЮЩИЙ ШАГ</span><b>'+(t.reallocationCapacity>0?'Перераспределять только из доступной capacity, начиная с highest-ranked recommendation.':'Не перераспределять: свободной capacity нет.')+'</b></div><div><span>СИГНАЛ ПО ПРОГРАММЕ</span><b>'+(blockers.length?'ITERATE / REVIEW':'CONTINUE')+'</b><small>'+h(blockers.length)+' blocker(s) требуют review</small></div></section>'+
+      renderReallocationOptimizer()+renderPortfolioScenarioSimulator()+'<div class="programme-rules">'+Object.keys(model.rules||{}).map(function(k){return '<span>✓ '+h(model.rules[k])+'</span>';}).join('')+'</div>'+
+      '<div class="hub-note">Production-версия должна считать это из immutable approvals, commitments, spend events, measurement snapshots и release decisions. Здесь показан model contract и demo state, а не бухгалтерский ledger.</div>';
+    hydrateCapitalAuthorityStatus();
+    [].slice.call(document.querySelectorAll('[data-programme-release]')).forEach(function(b){b.onclick=function(){programmeRelease(b.dataset.programmeRelease);};});
+    [].slice.call(document.querySelectorAll('[data-optimizer-tranche]')).forEach(function(b){b.onclick=function(){programmeOptimizerTranche=Number(b.dataset.optimizerTranche||10);renderProgrammeCapital();};});
+    [].slice.call(document.querySelectorAll('[data-sim-budget]')).forEach(function(b){b.onclick=function(){programmeScenarioBudget=Number(b.dataset.simBudget||30);renderProgrammeCapital();};});
+    var propose=document.querySelector('[data-sim-propose]');if(propose)propose.onclick=function(){
+      var top=scenarioMixes(programmeScenarioBudget)[0];if(!top)return;
+      programmeScenarioProposal={budget:programmeScenarioBudget,scenario:top,status:'DRAFT',history:[{state:'DRAFT',label:'Portfolio allocation proposal создан из simulator'}]};
+      hubTab='committee';renderHub();
+    };
+  }
+
+  function renderTrustPassportPreview(){
+    hubContent.innerHTML=
+      '<div class="trust-preview-banner"><b>ПАСПОРТ ДОВЕРИЯ · ПРЕДПРОСМОТР ТОЛЬКО ДЛЯ ЧТЕНИЯ</b><span>Только объяснимые измерения доверия. Без универсального рейтинга репутации и без вывода скрытых частных характеристик.</span></div>'+
+      '<section class="trust-hero"><div><div class="drawer-kicker">СЕТЕВОЙ ПАСПОРТ ДОВЕРИЯ</div><h3>Доверие как проверяемые факты, а не «магический рейтинг».</h3><p>Каждый статус связан с источником, периодом и возможностью ревокации. Новому участнику без истории показывается нейтральный статус / нет истории, а не низкая оценка.</p></div><div class="trust-credential"><span>ДЕМОНСТРАЦИОННОЕ ПОДТВЕРЖДЕНИЕ</span><b>ПОДТВЕРЖДЁННЫЙ БАЙЕР MFW</b><small>issuer · scope · issued_at · review date · status</small></div></section>'+
+      '<div class="trust-dimension-grid">'+
+        '<article><small>ИДЕНТИЧНОСТЬ</small><b>Подтверждённая идентичность</b><span>Источник: серверный реестр регистраций</span><em>DEMO / EXPLAINABLE</em></article>'+
+        '<article><small>ROLE</small><b>Роль байера</b><span>Source: event accreditation</span><em>EVENT-SCOPED</em></article>'+
+        '<article><small>PARTICIPATION</small><b>История участия</b><span>MFW / BFS participation only when evidenced</span><em>HISTORICAL</em></article>'+
+        '<article><small>ВСТРЕЧАS</small><b>Надёжность встреч</b><span>Shown as numerator / denominator / period</span><em>БЕЗ НЕПРОЗРАЧНОЙ ОЦЕНКИ</em></article>'+
+        '<article><small>ORGANISATION</small><b>Подтверждённая связь с организацией</b><span>Organisation membership with freshness</span><em>REVOCABLE</em></article>'+
+        '<article><small>COMMERCIAL</small><b>Доказательство результата</b><span>Observed / Reported / Verified remain separate</span><em>NO CREDIT INFERENCE</em></article>'+
+      '</div>'+
+      '<section class="trust-rules"><div><b>ЧТО ЭТО ДАЁТ</b><span>Verified directory · trust-aware matchmaking · portable credential handoff</span></div><div><b>ЧЕГО ЭТО НЕ ДЕЛАЕТ</b><span>Без выводов о благосостоянии, кредитоспособности, политике, этничности, скрытых намерениях или универсальной репутации.</span></div></section>'+
+      '<div class="trust-flow"><span>ИДЕНТИЧНОСТЬ / ORG</span><i>→</i><span>EVENT HISTORY</span><i>→</i><span>ВСТРЕЧА ДОКАЗАТЕЛЬСТВА</span><i>→</i><span>CREDENTIAL</span><i>→</i><span>ПОДТВЕРЖДЁННЫЙ КАТАЛОГ</span></div>'+
+      '<div class="hub-note">Preview only: production issuer/status registry, revocation and portable credentials remain dependency-gated behind durable identity, PostgreSQL history and policy review.</div>';
   }
 
   function renderHub(){
@@ -556,13 +1431,21 @@
     else if(hubTab==='directory')renderDirectory();
     else if(hubTab==='agenda')renderAgenda();
     else if(hubTab==='wallet')renderWallet();
+    else if(hubTab==='graph')renderIdentityGraph();
+    else if(hubTab==='proof')renderInvestorProof();
+    else if(hubTab==='partner')renderPartnerConsole();
+    else if(hubTab==='brand')renderBrandCockpit();
     else if(hubTab==='dealroom')renderDealRoomPreview();
+    else if(hubTab==='trust')renderTrustPassportPreview();
+    else if(hubTab==='economics')renderEconomics();
+    else if(hubTab==='committee')renderInvestmentCommittee();
+    else if(hubTab==='capital')renderProgrammeCapital();
     else renderOwner();
   }
   function updateNetworkStatus(){
     var el=document.getElementById('networkStatus');if(!el)return;
     var online=navigator.onLine!==false;
-    el.textContent=online?'ONLINE':'OFFLINE · PUBLIC CACHE ONLY';
+    el.textContent=online?'ОНЛАЙН':'ОФЛАЙН · ТОЛЬКО ПУБЛИЧНЫЙ КЭШ';
     el.classList.toggle('offline',!online);
     document.body.classList.toggle('offline-mode',!online);
   }
@@ -573,6 +1456,63 @@
   function openDiscover(focusSearch){
     hubTab='directory';renderHub();hubModal.classList.remove('hidden');
     if(focusSearch)setTimeout(function(){var input=document.getElementById('directorySearch');if(input)input.focus();},0);
+  }
+  var INVESTOR_DEMO=[
+    {title:'Moscow Fashion Platform',copy:'Один вход. Три разные fashion-вертикали. Один relationship graph.',action:function(){closeSharedOverlays();openEvent('mfw');}},
+    {title:'01 · Moscow Fashion Week',copy:'Runway, content, brands and buyer workflow.',action:function(){closeSharedOverlays();openEvent('mfw');}},
+    {title:'02 · BRICS+ Fashion Summit',copy:'Business programme, delegates, organisations and B2B.',action:function(){closeSharedOverlays();openEvent('bfs');}},
+    {title:'03 · Сделано в Москве',copy:'Verified brands, showroom, Buyer Bridge and Brand365 continuity.',action:function(){closeSharedOverlays();openEvent('made');}},
+    {title:'04 · One ID / separate rights',copy:'Shared identity with event-scoped registrations and separate verification boundaries.',action:function(){closeSharedOverlays();openAccount();}},
+    {title:'05 · Cross-event Identity Graph',copy:'One subject connects three event contexts without collapsing their rights.',action:function(){closeSharedOverlays();hubTab='graph';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'06 · Investor Proof',copy:'User → signal → brand → meeting → intent → handoff → 30/90/365 evidence.',action:function(){closeSharedOverlays();hubTab='proof';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'07 · Partner Console',copy:'Package → inventory → delivery → reporting → settlement evidence.',action:function(){closeSharedOverlays();hubTab='partner';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'08 · Brand Cockpit',copy:'Audience → buyer conversion → relationship continuity.',action:function(){closeSharedOverlays();hubTab='brand';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'09 · Deal Room',copy:'Meeting → structured request → external handoff → outcome evidence.',action:function(){closeSharedOverlays();hubTab='dealroom';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'10 · Trust Passport',copy:'Explainable credentials and longitudinal trust history.',action:function(){closeSharedOverlays();hubTab='trust';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'11 · Economics',copy:'Payer → product → formula → revenue-recognition gate.',action:function(){closeSharedOverlays();hubTab='economics';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'12 · Investment Committee',copy:'Recommendation → approval → pilot → measure → scale / iterate / stop.',action:function(){closeSharedOverlays();hubTab='committee';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'13 · Programme Capital Control',copy:'Requested → approved → committed → spent → measured → scale / stop across MFW, BFS and Made.',action:function(){closeSharedOverlays();hubTab='capital';renderHub();hubModal.classList.remove('hidden');}},
+    {title:'14 · Owner value',copy:'Commercial architecture and 365-day relationship value without invented ARR/MRR.',action:function(){closeSharedOverlays();valueModal.classList.remove('hidden');}}
+  ];
+  function closeSharedOverlays(){
+    [accountDrawer,registrationModal,investorModal,valueModal,forYouModal,hubModal].forEach(function(el){if(el)el.classList.add('hidden');});
+  }
+  function renderInvestorPilot(){
+    var pilot=document.getElementById('investorPilot');if(!pilot)return;
+    pilot.classList.toggle('hidden',!investorDemoActive);
+    if(!investorDemoActive)return;
+    var step=INVESTOR_DEMO[investorDemoIndex]||INVESTOR_DEMO[0];
+    document.getElementById('investorPilotStep').textContent=String(investorDemoIndex+1).padStart(2,'0')+' / '+String(INVESTOR_DEMO.length).padStart(2,'0');
+    document.getElementById('investorPilotTitle').textContent=step.title;
+    document.getElementById('investorPilotCopy').textContent=step.copy;
+    document.getElementById('investorPilotPrev').disabled=investorDemoIndex===0;
+    document.getElementById('investorPilotNext').textContent=investorDemoIndex===INVESTOR_DEMO.length-1?'ЗАВЕРШИТЬ':'ДАЛЬШЕ →';
+  }
+  function runInvestorStep(index){
+    investorDemoIndex=Math.max(0,Math.min(INVESTOR_DEMO.length-1,index));
+    investorDemoActive=true;
+    var step=INVESTOR_DEMO[investorDemoIndex];
+    if(step&&step.action)step.action();
+    renderInvestorPilot();
+  }
+  function startInvestorDemo(){
+    investorDemoIndex=0;investorDemoActive=true;runInvestorStep(0);
+  }
+  function nextInvestorDemo(){
+    if(investorDemoIndex>=INVESTOR_DEMO.length-1){investorDemoActive=false;closeSharedOverlays();openEvent('mfw');renderInvestorPilot();return;}
+    runInvestorStep(investorDemoIndex+1);
+  }
+  function previousInvestorDemo(){runInvestorStep(investorDemoIndex-1);}
+  function stopInvestorDemo(){investorDemoActive=false;closeSharedOverlays();renderInvestorPilot();}
+  function renderInvestorGallery(){
+    var root=document.getElementById('investorEcosystemGallery');if(!root)return;
+    var cards=[
+      {event:'mfw',label:'MFW',title:'MOSCOW FASHION WEEK',copy:'Runway · city culture · brands · buyer journey',image:MEDIA.mfw&&MEDIA.mfw.images&&MEDIA.mfw.images.hero},
+      {event:'bfs',label:'BFS',title:'BRICS+ FASHION SUMMIT',copy:'Business programme · delegates · international B2B',image:MEDIA.bfs&&MEDIA.bfs.images&&MEDIA.bfs.images.hero},
+      {event:'made',label:'MADE',title:'СДЕЛАНО В МОСКВЕ',copy:'Verified · digital showroom · Buyer Bridge · Brand365',image:MEDIA.made&&MEDIA.made.images&&MEDIA.made.images.hero}
+    ];
+    root.innerHTML=cards.map(function(x){var style=x.image?' style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.86)),url(\''+h(x.image)+'\')"':'';return '<button class="investor-ecosystem-card" data-gallery-event="'+x.event+'"'+style+'><span>'+x.label+'</span><b>'+x.title+'</b><small>'+x.copy+'</small></button>';}).join('');
+    [].slice.call(root.querySelectorAll('[data-gallery-event]')).forEach(function(b){b.onclick=function(){openEvent(b.dataset.galleryEvent);};});
   }
   function openEvent(event){
     var mfw=event==='mfw',bfs=event==='bfs',made=event==='made';
@@ -674,7 +1614,11 @@
   };
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
-  document.getElementById('investorBtn').onclick=function(){investorModal.classList.remove('hidden');loadOrganisationNetworkProof();};
+  document.getElementById('investorBtn').onclick=function(){renderInvestorGallery();investorModal.classList.remove('hidden');loadOrganisationNetworkProof();};
+  document.getElementById('investorDemoStart').onclick=startInvestorDemo;
+  document.getElementById('investorPilotNext').onclick=nextInvestorDemo;
+  document.getElementById('investorPilotPrev').onclick=previousInvestorDemo;
+  document.getElementById('investorPilotClose').onclick=stopInvestorDemo;
   document.getElementById('valueBtn').onclick=function(){valueModal.classList.remove('hidden');};
   document.getElementById('forYouBtn').onclick=function(){renderForYou();forYouModal.classList.remove('hidden');};
   document.getElementById('hubBtn').onclick=function(){openDiscover(true);};
@@ -682,7 +1626,23 @@
   document.getElementById('forYouClose').onclick=function(){forYouModal.classList.add('hidden');};
   document.getElementById('valueClose').onclick=function(){valueModal.classList.add('hidden');};
   document.getElementById('investorClose').onclick=function(){investorModal.classList.add('hidden');};
-  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){var step=b.dataset.investorStep;var narrative=document.getElementById('investorNarrative');if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge, Brand365 continuity и partner evidence.';}if(step==='4'){loadOrganisationNetworkProof();narrative.textContent='Persistent Organisation Registry показывает организации, представителей и историю участия между MFW / BFS / Made. Self-claim не равен verification.';}if(step==='5'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');narrative.textContent='Deal Room связывает buyer intent с запросом, ответом, внешним handoff и доказательной классификацией результата.';}};});
+  [].slice.call(document.querySelectorAll('[data-investor-step]')).forEach(function(b){b.onclick=function(){
+    var step=b.dataset.investorStep,narrative=document.getElementById('investorNarrative');
+    if(step==='1'){openEvent('mfw');narrative.textContent='MFW: runway, LIVE, brands, buyer workflow и Brand365.';}
+    if(step==='2'){openEvent('bfs');narrative.textContent='BFS: programme, speakers, delegates и B2B.';}
+    if(step==='3'){openEvent('made');narrative.textContent='Сделано в Москве: verified roster, digital showroom, buyer bridge и continuity.';}
+    if(step==='4'){loadOrganisationNetworkProof();investorModal.classList.add('hidden');openAccount();}
+    if(step==='5'){hubTab='graph';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='6'){hubTab='proof';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='7'){hubTab='partner';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='8'){hubTab='brand';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='9'){hubTab='dealroom';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='10'){hubTab='trust';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='11'){hubTab='economics';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='12'){hubTab='committee';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='13'){hubTab='capital';renderHub();investorModal.classList.add('hidden');hubModal.classList.remove('hidden');}
+    if(step==='14'){investorModal.classList.add('hidden');valueModal.classList.remove('hidden');}
+  };});
   document.getElementById('accountClose').onclick=closeAccount;
   document.getElementById('registrationClose').onclick=closeRegistration;
   accountDrawer.addEventListener('click',function(e){if(e.target===accountDrawer)closeAccount();});
@@ -700,6 +1660,7 @@
   document.addEventListener('keydown',function(e){
     if((e.metaKey||e.ctrlKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();openDiscover(true);return;}
     if(e.key==='Escape'){
+      if(investorDemoActive){stopInvestorDemo();return;}
       [hubModal,forYouModal,valueModal,investorModal,registrationModal,accountDrawer].forEach(function(el){if(el&&!el.classList.contains('hidden'))el.classList.add('hidden');});
     }
   });
@@ -714,6 +1675,7 @@
   updateNetworkStatus();
   registerServiceWorker();
   hydrateMadeDirectory();
+  renderInvestorGallery();
   var saved='mfw';try{saved=localStorage.getItem('mfp.activeEvent')||'mfw';}catch(e){}
   var requested=null;try{requested=new URLSearchParams(location.search).get('event');}catch(e){}
   var initial=['mfw','bfs','made'].indexOf(requested)>=0?requested:(saved==='bfs'?'bfs':saved==='made'?'made':'mfw');

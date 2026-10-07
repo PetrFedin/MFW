@@ -33,7 +33,7 @@ The authority itself runs `migrate()` before opening the HTTP server. Every migr
 
 For the free web-service contour, the Blueprint therefore does not depend on a separate pre-deploy migration step. Startup is fail-closed:
 
-`DATABASE_URL -> migrations 001-021 -> schema reconciliation -> demo/bootstrap -> deep self-test -> listen`
+`DATABASE_URL -> migrations 001-025 -> schema reconciliation -> demo/bootstrap -> deep self-test -> listen`
 
 If migration or reconciliation fails, the process exits before becoming ready.
 
@@ -87,7 +87,7 @@ The current Render MCP surface does not expose the generated database credential
 After secure binding:
 
 1. deploy `mfw-authority`;
-2. startup applies migrations 001-021;
+2. startup applies migrations 001-025;
 3. `GET /ready` returns 200;
 4. `dataMode=postgres`;
 5. `databaseSchema.ready=true`;
@@ -130,3 +130,31 @@ Use the exact runtime names consumed by `server-v2.js`:
 - `MFW_ES256_SEED`
 
 Do not use the obsolete Blueprint-only aliases `TELEGRAM_BOT_TOKEN`, `VK_CLIENT_ID`, `VK_CLIENT_SECRET` or `MFW_JWT_SECRET`.
+
+## Capital Authority admission extension
+
+Migration 023 adds the PostgreSQL-only immutable Capital Authority.
+
+Production admission for programme-capital writes additionally requires:
+
+- capital_ledger_events present;
+- immutability trigger present;
+- /v1/capital/events fail-closed without PostgreSQL;
+- /v1/capital/verify reports an intact hash chain after a test event sequence;
+- non-demo Organizer/Staff actor identity.
+
+The frontend modelled Programme Capital Control remains demo-only until these checks pass on the exact deployed SHA.
+
+## Capital Operator Admission extension
+
+Migration 024 adds capital_operator_grants. Migration 025 adds professional_organisation_credential_revocations for verified organisation credential revocation state.
+
+Capital Authority production admission additionally requires:
+
+- an explicitly configured non-default MFW_ADMIN_TOKEN for bootstrap operator administration;
+- no public/demo session can become a Capital Authority actor;
+- operator grants are active, evidence-backed and optionally expiring;
+- issued operator sessions are persisted in sessions and revocable;
+- capital requests re-check grant + user + persisted session on every request.
+
+The shared-secret bootstrap is transitional. Enterprise rollout should replace it with organization SSO/MFA while retaining the same grant and ledger authority boundaries.

@@ -276,3 +276,293 @@ Evidence before final cache rotation:
 - complete matrix: 360×800, 375×667, 393×852, 430×932, 744×1133, 1024×1366, 1440×900.
 
 Final participant shell cache revision: `mfp-shell-2026-10-03-p2`.
+
+## 2026-10-06 — Investor demo media system
+
+Completed a presentation-focused, pre-Phase-0-safe visual wave:
+
+- centralized MFW / BFS / Made in Moscow media manifest and provenance document;
+- current MFW editorial imagery distributed across distinct storytelling slots;
+- MFW official-video links surfaced separately from the technical demo stream;
+- BFS editorial media deck with its own international/business visual language;
+- Made in Moscow editorial hero/story layer with explicit no-Verified-inference boundary;
+- shared three-ecosystem investor gallery and cross-platform value bridge;
+- PWA cache revision rotated to `mfp-shell-2026-10-06-i1`;
+- responsive QA now checks that investor ecosystem media is present and non-duplicated.
+
+Remote public assets remain source-owned. Commercial/public campaign reuse requires rights confirmation; the demo does not claim a licence.
+
+## 2026-10-06 — Trust Passport preview
+
+Added a read-only defensibility layer to the investor MVP:
+
+- Trust Passport Hub tab;
+- explainable credential dimensions instead of one score;
+- explicit no-history state principle;
+- prohibited inference categories called out in-product;
+- eight-step guided investor demo now includes the trust/credential moat;
+- responsive QA covers the trust preview.
+
+No portable credential is actually issued by this preview and no production trust decision is made client-side.
+
+## 2026-10-06 — Investor proof operating layer
+
+Added the next investor-MVP wave:
+
+- shared investor proof model;
+- live-proof vs clearly labelled synthetic demo case;
+- nine-stage evidence chain through D365;
+- Partner / Sponsor Console preview;
+- Brand Business Cockpit preview;
+- buyer conversion funnel;
+- investment/economics dashboard with payer/product/formula/revenue-gate;
+- machine-readable evidence package manifest;
+- guided investor route expanded to 12 steps;
+- responsive QA coverage for all new surfaces.
+
+No synthetic/modelled value is treated as production KPI or realised revenue.
+
+## 2026-10-06 — Evidence Control Tower
+
+Upgraded Investor Proof into a two-mode Evidence Control Tower:
+
+- Case Dossier with three synthetic buyer x brand journeys;
+- per-transition reason, evidence class and evidence reference;
+- explicit potential revenue-stream mapping;
+- Portfolio View across eight funnel stages;
+- ecosystem contribution for MFW / BFS / Made in Moscow;
+- D30 / D90 / D365 retention;
+- evidence mix and revenue-surface touch map;
+- responsive QA for live/synthetic separation and portfolio truth boundaries.
+
+No synthetic portfolio count is presented as production performance.
+
+## 2026-10-06 — Filterable Portfolio Control Tower
+
+Added multi-dimensional investor analytics filters to Portfolio View:
+
+- period / ecosystem / buyer market / brand category;
+- buyer type / evidence class / retention horizon / revenue surface;
+- deterministic recalculation from the synthetic cohort cube;
+- synchronized funnel, ecosystem mix, retention and revenue-surface views;
+- zero-state handling for unsupported filter combinations;
+- responsive QA for filtered calculations and reset behavior.
+
+All filtered values remain synthetic scenario data and are not production KPI.
+
+## 2026-10-06 — Comparison / Scenario Mode
+
+Added side-by-side investor scenario comparison:
+
+- independent A/B filter sets;
+- MFW vs BFS preset;
+- CIS vs GCC preset;
+- new vs returning preset;
+- conversion, retention and revenue-evidence rates;
+- percentage-point deltas;
+- responsive comparison layout;
+- Russian-first Control Tower labels and filters.
+
+All comparison outputs remain deterministic synthetic scenario metrics, not production KPI or causal conclusions.
+
+## 2026-10-06 — Opportunity Explanation Engine
+
+Added decision-support explanations to Comparison Mode:
+
+- largest funnel gap detection;
+- six-stage gap ranking;
+- category and market decomposition;
+- composition/mix vs within-segment contributions;
+- D30/D90/D365 retention explanation;
+- representative dossier evidence links;
+- explicit inspect-next recommendation for the selected bottleneck;
+- responsive QA for the explanation layer.
+
+All outputs are synthetic descriptive analysis, not causal claims or realised economic impact.
+
+## 2026-10-06 — Recommendation / Capital Allocation
+
+Added a modelled investment decision layer to Comparison Mode:
+
+- six-item intervention catalog mapped to the funnel;
+- deterministic opportunity scoring;
+- top-three intervention ranking;
+- 100-point normalized pilot resource allocation;
+- target scenario and strongest segment driver;
+- KPI and modelled pilot target;
+- evidence gate per intervention;
+- owner and pilot design;
+- representative dossier links;
+- Pilot / Measure / Verify / Scale-or-Stop governance;
+- QA asserting three recommendations and exactly 100 allocated points.
+
+The allocation is a transparent scenario model, not a monetary budget or realised ROI forecast.
+
+## 2026-10-06 — Investment Committee Workspace
+
+Added the final governance loop to the investor MVP:
+
+- recommendation opens directly into a mini business case;
+- owner / budget request / baseline / modelled target / evidence plan;
+- demo approval and pilot state machine;
+- deterministic synthetic measured result;
+- SCALE / ITERATE / STOP decision logic;
+- evidence-completeness gating;
+- current-session decision log;
+- guided investor route extended through the committee workspace;
+- PWA cache rotated to p2;
+- QA updated to use scoped/exact selectors after Russian-first UI changes.
+
+Committee actions are demo-only and are not production corporate approvals.
+
+## 2026-10-06 — Programme Capital Control
+
+Added portfolio-level capital governance:
+
+- 150-point modelled programme envelope;
+- requested / approved / committed / spent / measured / scaled / stopped states;
+- MFW / BFS / Made capital allocation views;
+- blocker and evidence-completeness views;
+- strict separation of uncommitted reserve and committed-but-unspent capital;
+- explicit STOP commitment release before reallocation;
+- reallocation capacity calculation;
+- guided investor route extended to 15 steps;
+- responsive QA for programme totals and release semantics.
+
+No programme values are represented as real currency or accounting records.
+
+## 2026-10-06 — Capital Reallocation Optimizer
+
+Added gate-aware programme reallocation decision support:
+
+- 10 / 20 / 30 modelled-point tranche comparison;
+- MFW / BFS / Made alternatives;
+- capital-at-risk relief;
+- modelled KPI lift;
+- evidence readiness;
+- absorption caps;
+- READY / CONDITIONAL / HOLD gates;
+- next-tranche evidence requirements;
+- recommendation candidate for Investment Committee;
+- explicit linkage to current reallocation capacity;
+- responsive QA;
+- PWA cache rotated to p3.
+
+Optimizer outputs are model assumptions, not approvals, guaranteed KPI uplift, currency or ROI.
+
+## 2026-10-06 — Portfolio Scenario Simulator
+
+Added portfolio-mix optimization above the single-destination capital optimizer:
+
+- 10 / 20 / 30-point programme budget simulation;
+- MFW / BFS / Made / Reserve combinations;
+- explicit Reserve-only and partial-Reserve scenarios;
+- HOLD exclusion before ranking;
+- CONDITIONAL committee gating;
+- absorption-cap enforcement;
+- ranking by risk reduction / KPI leverage / evidence confidence / diversification / optionality;
+- top-scenario recommendation and rationale;
+- responsive QA;
+- PWA cache rotated to p4.
+
+The simulator is modelled decision support only and does not approve capital or forecast realised ROI.
+
+## 2026-10-06 — Portfolio Proposal Handoff
+
+Connected Portfolio Scenario Simulator to Investment Committee Workspace:
+
+- best mix can open as a Portfolio Allocation Proposal;
+- DRAFT -> IN_REVIEW -> APPROVED_DEMO demo flow;
+- proposal includes allocation mix, score, risk relief and KPI leverage;
+- no automatic commitment is created;
+- responsive QA added;
+- PWA cache rotated to p5.
+
+Portfolio proposal approvals remain demo-session state only.
+
+## 2026-10-06 — Immutable Capital Authority
+
+Added the enterprise capital authority foundation:
+
+- migration 023_capital_authority.sql;
+- append-only capital_ledger_events;
+- DB trigger blocking UPDATE / DELETE / TRUNCATE;
+- per-aggregate sequence and SHA-256 hash chain;
+- concurrent idempotency protection with advisory transaction lock;
+- non-demo Organizer/Staff actor requirement;
+- PostgreSQL-only fail-closed API;
+- request / approval / commitment / release / spend / measurement / decision events;
+- server-side capital state invariants;
+- ledger / projection / chain verification endpoints;
+- capital authority contract test;
+- mfw-api foundation checks added to PR CI.
+
+No frontend modelled capital value is promoted to production truth by this change alone.
+
+## 2026-10-06 — Capital Operator Admission
+
+Added migration 024_capital_operator_admission.sql and production-oriented operator admission:
+
+- durable Organizer/Staff capital grants;
+- active / suspended / revoked lifecycle;
+- optional grant expiry;
+- appointment evidence refs;
+- non-default secure admin bootstrap requirement;
+- persisted 4-hour operator sessions;
+- per-request grant + user + session revalidation;
+- session revocation on grant suspension/revocation;
+- demo sessions cannot self-elevate;
+- normalized PostgreSQL-only fail-closed responses;
+- Idempotency-Key and X-Request-Id allowed by CORS for ledger clients.
+
+Final enterprise IAM / SSO is still a later production hardening layer.
+
+## 2026-10-06 — Capital Authority admission checker
+
+Added read-only production admission tooling for Capital Authority:
+
+- exact SHA check;
+- migrations 023/024 check;
+- operator session requirement;
+- ledger/projection access check;
+- hash-chain verification check;
+- no synthetic ledger writes.
+
+Also raised the general production migration floor from 21 to 24.
+## 2026-10-06 — Hierarchy-safe Capital Projection + Decision Gate
+
+Hardened Capital Authority decision support:
+
+- removed ambiguous mixed-hierarchy total from /v1/capital/projection;
+- added per-aggregate-type and per-aggregate breakdown;
+- explicit aggregateType is required for a single authoritative total;
+- admission checker now validates programme projection grain;
+- added regression coverage preventing programme + pilot double counting;
+- added deterministic read-only Capital Decision Gate;
+- gate evaluates KPI target, truth class and evidence presence;
+- gate returns SCALE / ITERATE / STOP / HOLD recommendation only;
+- recommendation carries source measurement event hash;
+- no approval, commitment, release or spend is created by the gate.
+
+This wave explicitly follows the Integration Master Plan dependency rule: persistent tranche workflow remains sequenced behind durable PostgreSQL admission plus pg-boss/outbox and formal policy.
+## 2026-10-06 — Russian-first investor and capital UI
+
+Added a Russian-first localisation hardening wave:
+
+- Russian is the primary visible language across Investor / Capital / Organisation / Partner / Brand / Trust / Deal Room surfaces;
+- visible technical state labels are translated through presentation mappings while API/storage enum values remain unchanged;
+- common abbreviations expose Russian explanations using accessible title/tooltips;
+- core English headings such as Owner / Investor Route, Evidence Control Tower, Programme Capital Control and Mini Business Case were replaced in the Russian locale;
+- added qa/russian-first-contract.test.js;
+- Responsive QA now fails if key investor/capital headings regress back to English.
+
+English locale support remains a separate requirement and is not replaced by this RU-first policy.
+
+
+## 2026-10-06 — Canonical migration ordering through 025
+
+- preserved Capital Authority as migration 023;
+- preserved Capital Operator Admission as migration 024;
+- placed organisation credential revocation ledger at migration 025 to avoid duplicate numeric prefixes;
+- added a migration-order CI contract requiring unique contiguous numbering;
+- Phase 0 PostgreSQL admission now expects migrations 001-025.

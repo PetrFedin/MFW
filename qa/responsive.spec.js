@@ -132,6 +132,558 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
+test('guided investor demo traverses all three ecosystems and shared layers', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#investorBtn').click();
+  await page.locator('#investorDemoStart').click();
+  await expect(page.locator('#investorPilot')).toBeVisible();
+  await expect(page.locator('#investorPilotStep')).toHaveText('01 / 15');
+
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
+
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('#accountDrawer')).not.toHaveClass(/hidden/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="graph"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="proof"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="partner"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="brand"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="dealroom"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="trust"]')).toHaveClass(/active/);
+  await expect(page.getByText('БЕЗ НЕПРОЗРАЧНОЙ ОЦЕНКИ')).toBeVisible();
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="economics"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('[data-hub-tab="capital"]')).toHaveClass(/active/);
+  await page.locator('#investorPilotNext').click();
+  await expect(page.locator('#valueModal')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#investorPilotStep')).toHaveText('15 / 15');
+});
+
+test('investor media gallery keeps three ecosystem visuals distinct', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#investorBtn').click();
+  const cards = page.locator('.investor-ecosystem-card');
+  await expect(cards).toHaveCount(3);
+  const backgrounds = await cards.evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
+  expect(new Set(backgrounds).size).toBe(3);
+  expect(backgrounds.every((x) => x && x !== 'none')).toBeTruthy();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investor-three-ecosystems.png') });
+});
+
+test('Cross-event identity graph keeps shared identity and scoped rights separate', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="graph"]').click();
+  await expect(page.locator('#hubContent > .drawer-kicker').first()).toContainText('СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ');
+  await expect(page.locator('.identity-node')).toHaveCount(5);
+  await expect(page.getByText('ОБЩИЙ ID ПОЛЬЗОВАТЕЛЯ')).toBeVisible();
+  await expect(page.getByText(/статус подтверждения бренда остаётся отдельным серверным статусом/i)).toBeVisible();
+  await expect(page.getByText(/не объединяет.*права верификации брендов/i)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('cross-event-identity-graph.png') });
+});
+
+test('Evidence Control Tower distinguishes live dossier from synthetic dossier and portfolio', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await expect(page.locator('.control-tower-top .drawer-kicker')).toContainText('ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ');
+  await expect(page.getByText('LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')).toBeVisible();
+  await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
+  await expect(page.getByText('НЕ ПОДТВЕРЖДЕНО').first()).toBeVisible();
+
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await expect(page.getByText('ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КЕЙС')).toBeVisible();
+  await expect(page.locator('.case-selector button')).toHaveCount(3);
+  await expect(page.locator('.dossier-timeline article')).toHaveCount(12);
+  await expect(page.locator('.dossier-timeline .evidence-synthetic')).toHaveCount(12);
+
+  await page.locator('[data-control-view="portfolio"]').click();
+  await expect(page.getByText('ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ ПОРТФЕЛЬ')).toBeVisible();
+  await expect(page.locator('.portfolio-funnel .portfolio-stage')).toHaveCount(8);
+  await expect(page.locator('.retention-tower article')).toHaveCount(3);
+  await expect(page.getByText('ЗАТРОНУТЫЕ REVENUE SURFACES · НЕ ВЫРУЧКА')).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('evidence-control-tower-portfolio.png') });
+});
+
+test('Portfolio drill-down opens synthetic cohorts and representative dossiers', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="portfolio"]').click();
+
+  await page.locator('[data-portfolio-stage="INTENT"]').click();
+  await expect(page.getByText('INTENT = 65')).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article')).toHaveCount(3);
+  await expect(page.getByText('MFW').last()).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article').filter({ hasText: 'MFW' }).locator('b')).toHaveText('31');
+  await expect(page.getByText('BFS').last()).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article').filter({ hasText: 'BFS' }).locator('b')).toHaveText('29');
+  await expect(page.getByText('MADE').last()).toBeVisible();
+  await expect(page.locator('.cohort-breakdown article').filter({ hasText: 'MADE' }).locator('b')).toHaveText('5');
+  await expect(page.locator('.representative-journeys article')).toHaveCount(3);
+  await expect(page.getByText(/Показан агрегат; representative dossiers ниже — примеры/)).toBeVisible();
+
+  await page.locator('[data-open-dossier="buyer-brand-alpha"]').click();
+  await expect(page.getByText('Demo Buyer A → Demo Brand A')).toBeVisible();
+  await expect(page.getByText('demo://deal-room/request-001')).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-intent-drilldown.png') });
+});
+
+test('Filterable Portfolio Control Tower recalculates funnel retention and ecosystem mix', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="portfolio"]').click();
+
+  await expect(page.locator('[data-portfolio-filter]')).toHaveCount(8);
+  await expect(page.locator('.portfolio-pop b')).toHaveText('1200');
+
+  await page.locator('[data-portfolio-filter="ecosystem"]').selectOption('bfs');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('360');
+  await expect(page.locator('[data-portfolio-stage="INTENT"] > b')).toHaveText('29');
+
+  await page.locator('[data-portfolio-filter="market"]').selectOption('CIS');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('90');
+  await expect(page.locator('[data-portfolio-stage="INTENT"] > b')).toHaveText('7');
+
+  await page.locator('[data-portfolio-filter="retention"]').selectOption('D365');
+  await expect(page.locator('.retention-tower article.active b')).toHaveText('2');
+
+  await page.locator('[data-portfolio-filter="revenueSurface"]').selectOption('api');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('90');
+  await expect(page.locator('.portfolio-revenue article.active')).toHaveCount(1);
+
+  await page.locator('[data-portfolio-stage="INTENT"]').click();
+  await expect(page.getByText('INTENT = 7')).toBeVisible();
+  await expect(page.getByText('BFS').last()).toBeVisible();
+  await expect(page.getByText('7', { exact: true }).last()).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-filters.png') });
+});
+
+test('Filterable Portfolio Control Tower exposes honest zero state', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="portfolio"]').click();
+
+  await page.locator('[data-portfolio-filter="ecosystem"]').selectOption('made');
+  await page.locator('[data-portfolio-filter="market"]').selectOption('Asia');
+  await expect(page.locator('.portfolio-pop b')).toHaveText('0');
+  await expect(page.getByText('НЕТ ПОДХОДЯЩЕГО СИНТЕТИЧЕСКОГО COHORT')).toBeVisible();
+  await expect(page.locator('[data-portfolio-stage="AUDIENCE"] > b')).toHaveText('0');
+  await expectNoDocumentOverflow(page);
+
+  await page.locator('[data-reset-portfolio]').click();
+  await expect(page.locator('.portfolio-pop b')).toHaveText('1200');
+});
+
+test('Comparison Mode compares synthetic slices side by side in Russian by default', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  await expect(page.getByText('СРАВНЕНИЕ СИНТЕТИЧЕСКИХ СЦЕНАРИЕВ')).toBeVisible();
+  await expect(page.locator('.scenario-a .scenario-title > span')).toHaveText('СЦЕНАРИЙ A');
+  await expect(page.locator('.scenario-b .scenario-title > span')).toHaveText('СЦЕНАРИЙ B');
+  await expect(page.locator('[data-scenario-side="a"]')).toHaveCount(8);
+  await expect(page.locator('[data-scenario-side="b"]')).toHaveCount(8);
+  await expect(page.locator('.comparison-metrics article')).toHaveCount(6);
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="ecosystem"]')).toHaveValue('mfw');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="ecosystem"]')).toHaveValue('bfs');
+
+  await page.locator('[data-comparison-preset="cis-gcc"]').click();
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="market"]')).toHaveValue('CIS');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="market"]')).toHaveValue('GCC');
+
+  await page.locator('[data-comparison-preset="new-returning"]').click();
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="buyerType"]')).toHaveValue('new');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="buyerType"]')).toHaveValue('returning');
+
+  await expect(page.getByText(/не доказывает причинность/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('comparison-mode-ru.png') });
+});
+
+test('Opportunity Explanation decomposes scenario gap and links representative evidence', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  await expect(page.getByText(/OPPORTUNITY EXPLANATION/)).toBeVisible();
+  await expect(page.locator('.gap-waterfall article')).toHaveCount(6);
+  await expect(page.locator('.explain-dimension')).toHaveCount(2);
+  await expect(page.locator('.retention-compare article')).toHaveCount(3);
+  await expect(page.getByText(/composition\/mix effect/i)).toBeVisible();
+  await expect(page.getByText(/не causal attribution/i)).toBeVisible();
+
+  await page.locator('[data-comparison-preset="new-returning"]').click();
+  await expect(page.locator('[data-scenario-side="a"][data-scenario-key="buyerType"]')).toHaveValue('new');
+  await expect(page.locator('[data-scenario-side="b"][data-scenario-key="buyerType"]')).toHaveValue('returning');
+
+  const dossierButtons = page.locator('[data-explanation-dossier]');
+  if (await dossierButtons.count()) {
+    await dossierButtons.first().click();
+    await expect(page.locator('.dossier-timeline article')).toHaveCount(12);
+  }
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('opportunity-explanation.png') });
+});
+
+test('Capital Allocation ranks three interventions and normalizes modelled pilot budget to 100 points', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  await expect(page.getByText(/RECOMMENDATION \/ CAPITAL ALLOCATION/)).toBeVisible();
+  await expect(page.locator('.allocation-card')).toHaveCount(3);
+  await expect(page.locator('.allocation-budget b')).toHaveText('100');
+  await expect(page.locator('.allocation-budget small')).toContainText('условных points · не ₽');
+  await expect(page.locator('.allocation-evidence')).toHaveCount(3);
+  await expect(page.locator('.allocation-governance > div')).toHaveCount(4);
+
+  const points = await page.locator('.allocation-rank b').allTextContents();
+  const sum = points.reduce((s, x) => s + Number((x.match(/\d+/) || ['0'])[0]), 0);
+  expect(sum).toBe(100);
+
+  await expect(page.locator('.allocation-method b')).toHaveText('Priority score');
+  await expect(page.locator('.allocation-method span')).toContainText('Leverage/effort — явные model assumptions');
+  await expect(page.locator('.capital-allocation > .hub-note')).toContainText('Реальный бюджет требует стоимости интервенций');
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('capital-allocation.png') });
+});
+
+test('Capital Allocation recommendations react to scenario presets', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  const before = await page.locator('.allocation-card h5').allTextContents();
+  await page.locator('[data-comparison-preset="cis-gcc"]').click();
+  const after = await page.locator('.allocation-card h5').allTextContents();
+  expect(after.length).toBe(3);
+  expect(before.length).toBe(3);
+  await expect(page.locator('.allocation-card')).toHaveCount(3);
+  await expect(page.locator('.allocation-meta')).toHaveCount(3);
+  await expectNoDocumentOverflow(page);
+});
+
+test('Investment Committee Workspace closes recommendation to decision loop in demo state', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="committee"]').click();
+
+  await expect(page.getByText(/ИНВЕСТИЦИОННЫЙ КОМИТЕТ · ДЕМОНСТРАЦИОННЫЙ/)).toBeVisible();
+  await expect(page.locator('.committee-recommendations button')).toHaveCount(3);
+  await expect(page.locator('.committee-case-grid article')).toHaveCount(6);
+  await expect(page.getByText(/не являются реальными корпоративными решениями/)).toBeVisible();
+  await expect(page.locator('.committee-status b')).toHaveText('ЧЕРНОВИК');
+
+  const activeId = await page.locator('.committee-recommendations button.active').getAttribute('data-committee-select');
+  await page.locator('[data-committee-action="submit"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('НА РАССМОТРЕНИИ');
+
+  await page.locator('[data-committee-action="approve"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('ОДОБРЕНО · DEMO');
+
+  await page.locator('[data-committee-action="start"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('ПИЛОТ ИДЁТ');
+
+  await page.locator('[data-committee-action="measure"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('ИЗМЕРЕНО');
+  await expect(page.locator('.committee-evidence-plan span.done').first()).toBeVisible();
+
+  await page.locator('[data-committee-action="decide"][data-committee-id="' + activeId + '"]').click();
+  await expect(page.locator('.committee-status b')).toHaveText('РЕШЕНИЕ ПРИНЯТО');
+  await expect(page.locator('.committee-case-grid article').filter({ hasText: 'РЕШЕНИЕ' }).locator('b')).toHaveText(/МАСШТАБИРОВАТЬ|ДОРАБОТАТЬ|ОСТАНОВИТЬ/);
+  await expect(page.locator('.committee-history > div:not(.drawer-kicker)')).toHaveCount(6);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investment-committee-workspace.png') });
+});
+
+test('Capital Allocation opens selected recommendation as committee business case', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await page.locator('[data-control-view="comparison"]').click();
+
+  const recommendation = page.locator('.allocation-card').first();
+  const title = await recommendation.locator('h5').textContent();
+  await recommendation.locator('[data-open-committee]').click();
+  await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
+  await expect(page.locator('.committee-case-head h3')).toHaveText(title);
+  await expect(page.locator('.committee-status small')).toContainText('модельных баллов бюджета');
+  await expectNoDocumentOverflow(page);
+});
+
+test('Programme Capital Control separates reserve commitments spend and measured outcomes', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.getByText(/УПРАВЛЕНИЕ КАПИТАЛОМ ПРОГРАММЫ/)).toBeVisible();
+  await expect(page.locator('.programme-envelope b')).toHaveText('150');
+  await expect(page.locator('#capitalAuthorityStatus')).toContainText('ДЕМОНСТРАЦИОННЫЙ РЕЖИМ · СЕРВЕРНЫЙ РЕЕСТР ЗАЩИЩЁН');
+  await expect(page.locator('#capitalAuthorityStatus')).toContainText('ТОЛЬКО POSTGRESQL');
+  const stages = page.locator('.programme-stage-grid article');
+  await expect(stages).toHaveCount(7);
+  await expect(stages.filter({ hasText: 'ЗАПРОШЕНО' }).locator('b')).toHaveText('128');
+  await expect(stages.filter({ hasText: 'ОДОБРЕНО' }).locator('b')).toHaveText('100');
+  await expect(stages.filter({ hasText: 'ЗАРЕЗЕРВИРОВАНО' }).locator('b')).toHaveText('85');
+  await expect(stages.filter({ hasText: 'ИСПОЛЬЗОВАНО' }).locator('b')).toHaveText('58');
+  await expect(stages.filter({ hasText: 'ИЗМЕРЕНО' }).locator('b')).toHaveText('46');
+  await expect(stages.filter({ hasText: 'МАСШТАБИРОВАНО' }).locator('b')).toHaveText('22');
+  await expect(stages.filter({ hasText: 'ОСТАНОВЛЕНО' }).locator('b')).toHaveText('6');
+
+  const capacity = page.locator('.programme-capacity-grid article');
+  await expect(capacity.filter({ hasText: 'НЕЗАРЕЗЕРВИРОВАННЫЙ РЕЗЕРВ' }).locator('b')).toHaveText('50');
+  await expect(capacity.filter({ hasText: 'ЗАРЕЗЕРВИРОВАНО · НЕ ИСПОЛЬЗОВАНО' }).locator('b')).toHaveText('27');
+  await expect(capacity.filter({ hasText: 'ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ' }).locator('b')).toHaveText('50');
+  await expect(page.locator('.programme-ecosystems article')).toHaveCount(3);
+  await expect(page.locator('.programme-row:not(.head)')).toHaveCount(5);
+  await expect(page.locator('.programme-blockers article')).toHaveCount(3);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('programme-capital-control.png') });
+});
+
+test('Programme Capital Control requires explicit release before STOP commitment becomes reallocatable', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  const capacity = page.locator('.programme-capacity-grid article');
+  await expect(capacity.filter({ hasText: 'ЯВНО ОСВОБОЖДЕНО' }).locator('b')).toHaveText('0');
+  await expect(capacity.filter({ hasText: 'ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ' }).locator('b')).toHaveText('50');
+
+  const release = page.locator('[data-programme-release="deal-room-sla"]');
+  await expect(release).toBeVisible();
+  await release.click();
+
+  await expect(capacity.filter({ hasText: 'ЯВНО ОСВОБОЖДЕНО' }).locator('b')).toHaveText('3');
+  await expect(capacity.filter({ hasText: 'ЗАРЕЗЕРВИРОВАНО · НЕ ИСПОЛЬЗОВАНО' }).locator('b')).toHaveText('24');
+  await expect(capacity.filter({ hasText: 'ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ' }).locator('b')).toHaveText('53');
+  await expect(page.locator('[data-programme-release="deal-room-sla"]')).toBeDisabled();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Capital Reallocation Optimizer compares 10 20 30 point tranches with evidence gates', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.getByText(/ОПТИМИЗАТОР ПЕРЕРАСПРЕДЕЛЕНИЯ КАПИТАЛА/)).toBeVisible();
+  await expect(page.locator('.optimizer-tranches button')).toHaveCount(3);
+  await expect(page.locator('.optimizer-card')).toHaveCount(3);
+  await expect(page.locator('.optimizer-card.ready')).toHaveCount(1);
+  await expect(page.locator('.optimizer-card.conditional')).toHaveCount(1);
+  await expect(page.locator('.optimizer-card.hold')).toHaveCount(1);
+  await expect(page.locator('.optimizer-card.hold')).toContainText('Сделано в Москве');
+  await expect(page.locator('.optimizer-card.hold')).toContainText('ПАУЗА');
+
+  await expect(page.locator('.optimizer-recommendation').first()).toContainText('MFW');
+  await expect(page.locator('.optimizer-capacity b')).toHaveText('50');
+
+  await page.locator('[data-optimizer-tranche="20"]').click();
+  await expect(page.getByRole('heading', { name: /Куда направить следующие 20 points/ })).toBeVisible();
+  await expect(page.locator('[data-optimizer-tranche="20"]')).toHaveClass(/active/);
+  await expect(page.locator('.optimizer-card').filter({ hasText: 'BFS' })).toContainText('20 / 20');
+
+  await page.locator('[data-optimizer-tranche="30"]').click();
+  await expect(page.getByRole('heading', { name: /Куда направить следующие 30 points/ })).toBeVisible();
+  await expect(page.locator('.optimizer-card').filter({ hasText: 'BFS' })).toContainText('20 / 30');
+  await expect(page.locator('.optimizer-card').filter({ hasText: 'Сделано в Москве' })).toContainText('10 / 30');
+  await expect(page.locator('.optimizer-method')).toContainText('Статус «ПАУЗА» получает оценку 0');
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('capital-reallocation-optimizer.png') });
+});
+
+test('Capital Reallocation Optimizer capacity follows explicit programme releases', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.locator('.optimizer-capacity b')).toHaveText('50');
+  await page.locator('[data-programme-release="deal-room-sla"]').click();
+  await expect(page.locator('.optimizer-capacity b')).toHaveText('53');
+  await expect(page.locator('.optimizer-recommendation')).toContainText(/Оптимизатор не утверждает капитал|МОДЕЛЬНАЯ РЕКОМЕНДАЦИЯ/);
+  await expectNoDocumentOverflow(page);
+});
+
+test('Portfolio Scenario Simulator ranks eligible capital mixes for 10 20 30 point budgets', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await expect(page.getByText(/СИМУЛЯТОР СЦЕНАРИЕВ ПОРТФЕЛЯ/)).toBeVisible();
+  await expect(page.locator('.simulator-budgets button')).toHaveCount(3);
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
+  await expect(page.locator('.simulator-row.best')).toHaveCount(1);
+  await expect(page.locator('.simulator-table')).not.toContainText('MADE');
+  await expect(page.locator('.simulator-method')).toContainText(/ПАУЗА.*не могут получать новый капитал/i);
+
+  const best30 = await page.locator('.simulator-row.best span').textContent();
+  await page.locator('[data-sim-budget="10"]').click();
+  await expect(page.getByRole('heading', { name: /Как распределить 10 points/ })).toBeVisible();
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(3);
+  const best10 = await page.locator('.simulator-row.best span').textContent();
+
+  await page.locator('[data-sim-budget="20"]').click();
+  await expect(page.getByRole('heading', { name: /Как распределить 20 points/ })).toBeVisible();
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
+  const best20 = await page.locator('.simulator-row.best span').textContent();
+
+  expect(best30).toBeTruthy();
+  expect(best20).toBeTruthy();
+  expect(best10).toBeTruthy();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-scenario-simulator.png') });
+});
+
+test('Portfolio Scenario Simulator preserves reserve optionality and capacity rules', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+
+  await page.locator('[data-sim-budget="30"]').click();
+  await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
+  await expect(page.locator('.simulator-table')).toContainText('RESERVE');
+  await expect(page.locator('.simulator-method')).toContainText('Нераспределённый бюджет остаётся резервом и сохраняет гибкость');
+  await expect(page.locator('.simulator-method')).toContainText('Ни одно направление не может получить больше своей ёмкости освоения');
+  await expectNoDocumentOverflow(page);
+});
+
+test('Best portfolio mix hands off into Investment Committee proposal workflow', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="capital"]').click();
+  await page.locator('[data-sim-budget="30"]').click();
+
+  const bestMix = await page.locator('.simulator-row.best span').textContent();
+  await page.locator('[data-sim-propose]').click();
+  await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
+  await expect(page.locator('.committee-portfolio-proposal')).toBeVisible();
+  await expect(page.locator('.committee-portfolio-proposal h4')).toHaveText(bestMix.replace(/^#01 · /,''));
+  await expect(page.locator('.proposal-status b')).toHaveText('ЧЕРНОВИК');
+
+  await page.locator('[data-portfolio-proposal-action="submit"]').click();
+  await expect(page.locator('.proposal-status b')).toHaveText('НА РАССМОТРЕНИИ');
+
+  await page.locator('[data-portfolio-proposal-action="approve"]').click();
+  await expect(page.locator('.proposal-status b')).toHaveText('ОДОБРЕНО В ДЕМО');
+  await expect(page.locator('.committee-portfolio-proposal')).toContainText('не approval authority');
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('portfolio-proposal-handoff.png') });
+});
+
+test('Control Tower Russian labels remain the default surface language', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await expect(page.getByText('ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ДОСЬЕ КЕЙСА' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ПОРТФЕЛЬ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'СРАВНЕНИЕ' })).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Evidence Control Tower synthetic case exposes reason evidence ref and revenue boundary', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await page.locator('[data-proof-mode="synthetic"]').click();
+  await expect(page.getByText(/Buyer role \+ category overlap \+ explicit saved look/)).toBeVisible();
+  await expect(page.getByText('demo://recommendation/buyer-brand-alpha')).toBeVisible();
+  await expect(page.getByText(/Потенциальный stream ≠ фактическая выручка/)).toBeVisible();
+  await page.locator('[data-control-case="buyer-brand-gamma"]').click();
+  await expect(page.getByText('Demo Buyer C → Demo Brand C')).toBeVisible();
+  await expect(page.locator('.evidence-badge.evidence-reported').filter({ hasText: /^ЗАЯВЛЕННОЕ$/ })).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Partner Console keeps revenue recognition behind evidence gates', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="partner"]').click();
+  await expect(page.locator('.partner-flow article')).toHaveCount(7);
+  await expect(page.getByText('ГРАНИЦА ПРИЗНАНИЯ ВЫРУЧКИ')).toBeVisible();
+  await expect(page.getByText(/признание выручки всё равно требует/i)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Brand Cockpit exposes buyer conversion and 30 90 365 continuity', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="brand"]').click();
+  await expect(page.locator('.brand-funnel article')).toHaveCount(9);
+  await expect(page.locator('.continuity-grid article')).toHaveCount(3);
+  await expect(page.locator('.continuity-grid span', { hasText: /^D30$/ })).toBeVisible();
+  await expect(page.locator('.continuity-grid span', { hasText: /^D90$/ })).toBeVisible();
+  await expect(page.locator('.continuity-grid span', { hasText: /^D365$/ })).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Economics maps payer product formula and revenue gate without fake KPI', async ({ page }) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="economics"]').click();
+  await expect(page.locator('.economics-row:not(.head)')).toHaveCount(5);
+  await expect(page.getByText(/нет фактических ARR\/MRR/i)).toBeVisible();
+  await expect(page.getByText(/Демонстрационные подстановки намеренно отсутствуют/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+});
+
+test('Trust Passport preview is explainable and avoids a universal score', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="trust"]').click();
+  await expect(page.getByText('ПАСПОРТ ДОВЕРИЯ · ПРЕДПРОСМОТР ТОЛЬКО ДЛЯ ЧТЕНИЯ')).toBeVisible();
+  await expect(page.locator('.trust-dimension-grid article')).toHaveCount(6);
+  await expect(page.getByText('БЕЗ НЕПРОЗРАЧНОЙ ОЦЕНКИ')).toBeVisible();
+  await expect(page.getByText('Без выводов о благосостоянии, кредитоспособности, политике, этничности, скрытых намерениях или универсальной репутации.')).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('trust-passport-preview.png') });
+});
+
+test('investor value layer separates monetisation hypotheses from revenue truth', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#valueBtn').click();
+  await expect(page.locator('.revenue-grid article')).toHaveCount(5);
+  await expect(page.getByText('Правило признания выручки')).toBeVisible();
+  await expect(page.getByText(/Вовлечение, встреча или запрос сами по себе не являются выручкой/)).toBeVisible();
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('investor-revenue-architecture.png') });
+});
+
 test('premium companion Discover stays usable across the platform', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
@@ -160,7 +712,7 @@ test('lifecycle Now reflects post-event truth after the published programme', as
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="today"]').click();
   await expect(page.locator('.today-hero')).toHaveAttribute('data-phase', 'after');
-  await expect(page.getByText('POST-EVENT TRUTH')).toBeVisible();
+  await expect(page.getByText('ПОСЛЕСОБЫТИЙНЫЕ ФАКТЫ')).toBeVisible();
   await expect(page.locator('.today-action-grid button')).toHaveCount(4);
   await expect(page.locator('.today-programme article')).toHaveCount(0);
   await expectNoDocumentOverflow(page);
@@ -191,7 +743,7 @@ test('Deal Room preview is read-only and viewport safe', async ({ page }, testIn
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="dealroom"]').click();
-  await expect(page.getByText('PREVIEW · NO COMMERCIAL DATA SAVED')).toBeVisible();
+  await expect(page.getByText('ПРЕДПРОСМОТР · КОММЕРЧЕСКИЕ ДАННЫЕ НЕ СОХРАНЯЮТСЯ')).toBeVisible();
   await expect(page.locator('.dealroom-stage-grid article')).toHaveCount(5);
   const requestButtons = page.locator('.request-chip-grid button');
   await expect(requestButtons).toHaveCount(8);
@@ -221,7 +773,7 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toContain('mfp-shell-2026-10-03-p2');
+  expect(await swResponse.text()).toMatch(/mfp-shell-2026-10-06-p\d+/);
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);

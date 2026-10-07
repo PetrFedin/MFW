@@ -2,14 +2,21 @@
   'use strict';
 
   var API='https://mfw-authority.onrender.com';
+  var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems&&window.MFP_MEDIA.ecosystems.mfw||{};
+  var MEDIA_IMAGES=MEDIA.images||{};
   var VISUALS={
-    runway:'https://static.tildacdn.com/tild3538-3661-4962-a431-363531303736/2026-03-15_215933.jpg',
-    backstage:'https://static.tildacdn.com/tild3633-6561-4664-b432-343062643365/2026-03-16_144258.jpg',
-    street:'https://static.tildacdn.com/tild3538-3661-4962-a431-363531303736/2026-03-15_215933.jpg',
-    designer:'https://static.tildacdn.com/tild3537-3433-4464-a232-383839323139/VB1_09898.jpg'
+    opening:MEDIA_IMAGES.hero||'https://static.tildacdn.com/tild3538-3661-4962-a431-363531303736/2026-03-15_215933.jpg',
+    today:MEDIA_IMAGES.today||'https://static.tildacdn.com/tild3633-6561-4664-b432-343062643365/2026-03-16_144258.jpg',
+    runway:MEDIA_IMAGES.runway||'https://static.tildacdn.com/tild3538-3661-4962-a431-363531303736/2026-03-15_215933.jpg',
+    backstage:MEDIA_IMAGES.backstage||'https://static.tildacdn.com/tild3633-6561-4664-b432-343062643365/2026-03-16_144258.jpg',
+    designer:MEDIA_IMAGES.designer||'https://static.tildacdn.com/tild3537-3433-4464-a232-383839323139/VB1_09898.jpg',
+    street:MEDIA_IMAGES.recap||MEDIA_IMAGES.hero,
+    recap:MEDIA_IMAGES.recap||MEDIA_IMAGES.today,
+    technology:MEDIA_IMAGES.technology||MEDIA_IMAGES.designer
   };
-  var VISUAL_SOURCE='Moscow Fashion Week official published materials · March 2026';
+  var VISUAL_SOURCE='Moscow Fashion Week official/current published materials · media manifest 2026-10-06';
   var DEMO_VIDEO='https://videos.pexels.com/video-files/19863106/19863106-uhd_2160_3840_30fps.mp4';
+  var OFFICIAL_VIDEO_LINKS=Array.isArray(MEDIA.videos)?MEDIA.videos:[];
   var streamPollTimer=null;
   var passRefreshTimer=null;
   var scannerStream=null;
@@ -348,7 +355,7 @@
 
   function openingExperience(){
     return '<div class="opening-experience">'+
-      '<div class="opening-media" style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.82)),url('+VISUALS.runway+')"></div>'+
+      '<div class="opening-media" style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.82)),url('+VISUALS.opening+')"></div>'+
       '<div class="opening-grain"></div>'+
       '<div class="opening-copy"><div class="opening-mark"><span>MOSCOW</span><span>FASHION WEEK</span></div>'+
       '<div class="opening-season">26 SEP — 01 OCT · 2026</div>'+
@@ -363,7 +370,7 @@
     var isNight=(new Date().getHours()>=19||new Date().getHours()<6);
     return '<main class="'+(isNight?'night-state':'day-state')+'">'+
       '<div class="today-masthead"><div><div class="eyebrow">'+t('dayOne')+'</div><h1>'+t('todayTitle')+'</h1></div><div class="day-orbit">'+(isNight?'NIGHT':'DAY')+'</div></div>'+
-      '<section class="fashion-hero" style="background-image:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.86)),url('+VISUALS.runway+')">'+
+      '<section class="fashion-hero" style="background-image:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.86)),url('+VISUALS.today+')">'+
         '<div class="fashion-hero-top"><span class="live-tag"><span class="dot"></span> LIVE NOW</span><span class="native-partner">PARTNER EXPERIENCE · DEMO</span></div>'+
         '<div class="fashion-hero-bottom"><div class="eyebrow">MFW OPENING RUNWAY · HALL 1</div><div class="fashion-title">THE CITY<br>IS WATCHING.</div><div class="hero-meta">LOOK '+esc(String((state.stream&&state.stream.currentLook)||14).padStart(2,'0'))+' / '+esc((state.stream&&state.stream.totalLooks)||32)+'</div>'+
         '<div class="action-row"><button class="action light" data-tab="live">'+t('watchLive')+'</button><button class="action glass" data-action="sponsor-experience">Experience</button></div></div>'+
@@ -424,7 +431,7 @@
       '<div class="live-progress"><span style="width:'+(Math.max(4,Math.min(100,(current/Number(stream.totalLooks||32))*100)))+'%"></span></div>'+
       '<div class="section-head"><h2>'+t('lookByLook')+'</h2><span class="link">'+t('synced')+'</span></div>'+
       '<div class="visual-look-rail live-rail">'+[current-2,current-1,current,current+1,current+2].filter(function(n){return n>0&&n<=Number(stream.totalLooks||32);}).map(function(n){return '<button class="visual-look '+(n===current?'current':'')+'" data-action="save-look" data-look="look-'+n+'">'+lookVisual(n)+'</button>';}).join('')+'</div>'+
-      '<div class="live-editorial-card" style="background-image:linear-gradient(90deg,rgba(0,0,0,.78),rgba(0,0,0,.22)),url('+VISUALS.backstage+')"><div><div class="eyebrow">BACKSTAGE · LIVE LAYER</div><b>'+T('Что происходит<br>за кулисами сейчас','What is happening<br>backstage right now')+'</b><button class="action light" data-action="brand" data-id="b1">'+t('openBrand')+'</button></div></div>'+
+      '<div class="official-media-rail">'+(OFFICIAL_VIDEO_LINKS.length?OFFICIAL_VIDEO_LINKS.map(function(v,i){return '<a class="official-media-link" href="'+esc(v.url)+'" target="_blank" rel="noopener"><span>OFFICIAL VIDEO '+String(i+1).padStart(2,'0')+'</span><b>'+esc(v.label)+'</b><small>Открыть запись ↗</small></a>';}).join(''):'')+'</div>'+'<div class="live-editorial-card" style="background-image:linear-gradient(90deg,rgba(0,0,0,.78),rgba(0,0,0,.22)),url('+VISUALS.technology+')"><div><div class="eyebrow">BACKSTAGE · LIVE LAYER</div><b>'+T('Что происходит<br>за кулисами сейчас','What is happening<br>backstage right now')+'</b><button class="action light" data-action="brand" data-id="b1">'+t('openBrand')+'</button></div></div>'+
       '<div class="section-head"><h2>'+t('next')+'</h2><span class="link">18:00</span></div>'+
       '<div class="card premium-card"><div class="eyebrow">UP NEXT · HALL 2</div><div class="event-name">New Names: Moscow</div><div class="sub">Персональное напоминание за 10 минут · 4 минуты пешком.</div><div class="action-row"><button class="action primary" data-action="toggle-event" data-id="e2">Добавить</button><button class="action ghost" data-action="route">Маршрут</button></div></div>'+
       '<div class="replay-state"><div><div class="eyebrow">REPLAY READY</div><b>'+t('replayReady')+'</b><p>Video + looks + captions + brand story.</p></div><span class="replay-icon">▶</span></div>'+
@@ -843,7 +850,7 @@
   }
 
   function postShowRecap(){
-    openSheet('<div class="recap-hero" style="background-image:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.88)),url('+VISUALS.street+')"><div><div class="eyebrow">YOUR MFW · DAY 1</div><h1>ВАШ ДЕНЬ<br>В МОДЕ.</h1><p>Персональный recap после завершения программы.</p></div></div>'+
+    openSheet('<div class="recap-hero" style="background-image:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.88)),url('+VISUALS.recap+')"><div><div class="eyebrow">YOUR MFW · DAY 1</div><h1>ВАШ ДЕНЬ<br>В МОДЕ.</h1><p>Персональный recap после завершения программы.</p></div></div>'+
       '<div class="recap-stats"><div><b>'+state.myEvents.length+'</b><span>события</span></div><div><b>'+state.savedLooks.length+'</b><span>looks</span></div><div><b>'+state.savedBrands.length+'</b><span>brands</span></div><div><b>'+state.connections+'</b><span>contacts</span></div></div>'+
       '<div class="section-head"><h2>Вы сохранили</h2><span class="link">Сегодня</span></div><div class="visual-look-rail">'+[11,14,15].map(function(n){return '<div class="visual-look">'+lookVisual(n)+'</div>';}).join('')+'</div>'+
       '<div class="card premium-card"><div class="eyebrow">TOMORROW FOR YOU</div><div class="event-name">New Russian Names · 12:00</div><div class="sub">Рекомендация на основе сохранённых вами образов и брендов.</div><button class="action primary" data-action="toast" data-message="Добавлено в программу">Добавить на завтра</button></div>');

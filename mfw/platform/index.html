@@ -3,26 +3,26 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070707"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="../manifest.webmanifest"><link rel="icon" href="../icon.svg" type="image/svg+xml">
-<title>Moscow Fashion Platform</title><link rel="stylesheet" href="./platform.css?v=20261003p2">
+<title>Московская модная платформа</title><link rel="stylesheet" href="./platform.css?v=20261006i1">
 </head><body>
 <header class="platform-bar">
   <div class="platform-wordmark">MOSCOW<br>FASHION PLATFORM</div>
-  <nav class="event-switcher" aria-label="Event switcher">
+  <nav class="event-switcher" aria-label="Переключатель направлений">
     <button class="event-button active" data-event="mfw">MFW</button>
     <button class="event-button" data-event="bfs">BRICS+ FASHION SUMMIT</button>
     <button class="event-button" data-event="made">СДЕЛАНО В МОСКВЕ</button>
   </nav>
-  <div class="platform-actions"><button class="hub-button" id="hubBtn" aria-keyshortcuts="Control+K Meta+K">DISCOVER</button><button class="for-you-button" id="forYouBtn">ДЛЯ ВАС</button><button class="value-button" id="valueBtn">ЦЕННОСТЬ</button><button class="investor-button" id="investorBtn">ИНВЕСТОРУ</button><button class="account" id="accountBtn">ACCOUNT</button></div>
+  <div class="platform-actions"><button class="hub-button" id="hubBtn" aria-keyshortcuts="Control+K Meta+K">ПОИСК</button><button class="for-you-button" id="forYouBtn">ДЛЯ ВАС</button><button class="value-button" id="valueBtn">ЦЕННОСТЬ</button><button class="investor-button" id="investorBtn">ИНВЕСТОРУ</button><button class="account" id="accountBtn">ПРОФИЛЬ</button></div>
 </header>
 <main class="experience">
   <iframe id="eventFrame" title="Event experience" src="../index.html"></iframe>
 </main>
-<div class="event-note" id="eventNote">MFW · ORIGINAL EXPERIENCE</div><div class="network-status" id="networkStatus" role="status" aria-live="polite">ONLINE</div>
+<div class="event-note" id="eventNote">MFW · ОСНОВНОЙ ИНТЕРФЕЙС</div><div class="network-status" id="networkStatus" role="status" aria-live="polite">ОНЛАЙН</div>
 
 <div class="account-drawer hidden" id="accountDrawer" aria-hidden="true">
   <div class="drawer-card">
     <div class="drawer-head">
-      <div><div class="drawer-kicker">ONE PLATFORM ACCOUNT</div><h2>Профиль и доступы</h2></div>
+      <div><div class="drawer-kicker">ЕДИНЫЙ АККАУНТ ПЛАТФОРМЫ</div><h2>Профиль и доступы</h2></div>
       <button class="drawer-close" id="accountClose">×</button>
     </div>
     <form id="profileForm" class="profile-form">
@@ -36,23 +36,23 @@
       <button class="save-profile" type="submit">СОХРАНИТЬ ОБЩИЙ ПРОФИЛЬ</button>
     </form>
     <section class="organisation-panel" id="organisationPanel">
-      <div class="drawer-kicker">PERSISTENT ORGANISATION IDENTITY</div>
+      <div class="drawer-kicker">ПОСТОЯННЫЙ ПРОФИЛЬ ОРГАНИЗАЦИИ</div>
       <div class="organisation-head">
         <div>
           <h3>Организация между событиями</h3>
-          <p>Связывает MFW, BFS и «Сделано в Москве». Самостоятельная привязка остаётся <b>unverified</b>, пока её не подтвердит authority.</p>
+          <p>Связывает MFW, BFS и «Сделано в Москве». Самостоятельная привязка остаётся <b>неподтверждённой</b>, пока её не подтвердит серверный реестр.</p>
         </div>
         <span class="organisation-status" id="organisationStatus">НЕ ПРИВЯЗАНА</span>
       </div>
       <div class="organisation-current" id="organisationCurrent"></div>
       <form class="organisation-claim-form" id="organisationClaimForm">
         <label>Организация<input name="name" autocomplete="organization" required placeholder="Название компании / институции"></label>
-        <label>Тип<select name="organisationType"><option value="brand">Бренд</option><option value="buyer">Buyer / retailer</option><option value="media">Media</option><option value="institution">Институция</option><option value="service_provider">Service provider</option><option value="education">Education</option><option value="government">Government</option><option value="other">Другое</option></select></label>
-        <label>Роль<select name="relationshipRole"><option value="representative">Представитель</option><option value="owner">Owner</option><option value="buyer">Buyer</option><option value="speaker">Speaker</option><option value="delegate">Delegate</option><option value="media">Media</option><option value="service_provider">Service provider</option></select></label>
+        <label>Тип<select name="organisationType"><option value="brand">Бренд</option><option value="buyer">Байер / ретейлер</option><option value="media">СМИ</option><option value="institution">Институция</option><option value="service_provider">Поставщик услуг</option><option value="education">Образование</option><option value="government">Государственная организация</option><option value="other">Другое</option></select></label>
+        <label>Роль<select name="relationshipRole"><option value="representative">Представитель</option><option value="owner">Владелец</option><option value="buyer">Байер</option><option value="speaker">Спикер</option><option value="delegate">Делегат</option><option value="media">СМИ</option><option value="service_provider">Поставщик услуг</option></select></label>
         <label>Должность<input name="roleTitle" placeholder="Должность"></label>
         <label>Страна<input name="countryCode" maxlength="2" placeholder="RU"></label>
         <label>Город<input name="city" placeholder="Москва"></label>
-        <button class="save-profile" type="submit">ПРИВЯЗАТЬ К PERSISTENT ORGANISATION</button>
+        <button class="save-profile" type="submit">ПРИВЯЗАТЬ ОРГАНИЗАЦИЮ</button>
       </form>
       <div class="organisation-directory" id="organisationDirectory"></div>
     </section>
@@ -87,25 +87,39 @@
   </div>
 </div>
 
-<div class="value-modal hidden" id="valueModal"><div class="value-card"><button class="drawer-close" id="valueClose">×</button><div class="drawer-kicker">ПОЧЕМУ ПЛАТФОРМА НУЖНА ПОСЛЕ СОБЫТИЯ</div><h2>Не только билет.<br>Fashion relationship layer.</h2><div class="value-grid">
-<div><b>Посетителю</b><span>Любимые бренды и проекты</span><span>Персональная программа</span><span>Новости без поиска по соцсетям</span><span>30-дневные privileges</span></div>
-<div><b>Профессионалу</b><span>Buyer shortlist</span><span>B2B meetings</span><span>Deal Room / requests</span><span>Line sheets и follow-up</span></div>
-<div><b>Бренду</b><span>Owned followers</span><span>Favorites / intent</span><span>Reward campaigns</span><span>Post-event audience</span></div>
-<div><b>Владельцу</b><span>Registration → attendance</span><span>Engagement → follow</span><span>Reward → return</span><span>Meeting → lead</span></div>
-</div><div class="value-funnel"><span>REGISTER</span><i>→</i><span>ATTEND</span><i>→</i><span>ENGAGE</span><i>→</i><span>FOLLOW</span><i>→</i><span>FAVORITE</span><i>→</i><span>REWARD</span><i>→</i><span>RETURN</span></div><p>Это продуктовая модель MVP. Реальные KPI появляются только после подключения production analytics и реальных пользователей.</p></div></div>
-<div class="investor-modal hidden" id="investorModal"><div class="investor-card"><button class="drawer-close" id="investorClose">×</button><div class="drawer-kicker">OWNER / INVESTOR ROUTE</div><h2>Одна платформа.<br>Три направления.</h2><div class="investor-steps"><button data-investor-step="1"><b>01</b><span>MFW — существующий полноценный experience</span></button><button data-investor-step="2"><b>02</b><span>BFS — отдельный summit experience</span></button><button data-investor-step="3"><b>03</b><span>«Сделано в Москве» — verified brands, showroom, buyer bridge и evidence</span></button><button data-investor-step="4"><b>04</b><span>Один ID и профиль — три разные продуктовые оболочки</span></button><button data-investor-step="5"><b>05</b><span>Brand graph + Deal Room: interest → meeting → request → handoff → evidence</span></button></div><div class="investor-proof"><div><strong>3</strong><span>ecosystem directions</span></div><div><strong>1</strong><span>identity layer</span></div><div><strong>1</strong><span>brand graph</span></div><div><strong>365</strong><span>days continuity</span></div></div><div class="organisation-network-proof" id="organisationNetworkProof"><span>ORGANISATION NETWORK · authority check pending</span></div><p id="investorNarrative">Выберите шаг — приложение само откроет нужный контекст для демонстрации.</p></div></div><div class="hub-modal hidden" id="hubModal"><div class="hub-card">
+<div class="value-modal hidden" id="valueModal"><div class="value-card"><button class="drawer-close" id="valueClose">×</button><div class="drawer-kicker">ПОЧЕМУ ПЛАТФОРМА НУЖНА ПОСЛЕ СОБЫТИЯ</div><h2>Не только билет.<br>Слой долгосрочных связей.</h2><div class="value-grid">
+<div><b>Посетителю</b><span>Любимые бренды и проекты</span><span>Персональная программа</span><span>Новости без поиска по соцсетям</span><span>30-дневные привилегии</span></div>
+<div><b>Профессионалу</b><span>Шорт-лист байера</span><span><abbr title="Business-to-Business — взаимодействие между компаниями">B2B</abbr>-встречи</span><span>Комната сделки / запросы</span><span>Линейные листы и сопровождение</span></div>
+<div><b>Бренду</b><span>Собственная аудитория</span><span>Избранное / намерение</span><span>Кампании с наградами</span><span>Аудитория после события</span></div>
+<div><b>Владельцу</b><span>Регистрация → посещение</span><span>Вовлечение → подписка</span><span>Награда → возврат</span><span>Встреча → лид</span></div>
+</div><div class="value-funnel"><span>РЕГИСТРАЦИЯ</span><i>→</i><span>ПОСЕЩЕНИЕ</span><i>→</i><span>ВОВЛЕЧЕНИЕ</span><i>→</i><span>ПОДПИСКА</span><i>→</i><span>ИЗБРАННОЕ</span><i>→</i><span>НАГРАДА</span><i>→</i><span>ВОЗВРАТ</span></div><section class="revenue-architecture"><div class="drawer-kicker">АРХИТЕКТУРА ВЫРУЧКИ · БЕЗ ВЫДУМАННОГО <abbr title="Annual Recurring Revenue — годовая регулярная выручка">ARR</abbr></div><div class="revenue-grid"><article><span>01 · ПАРТНЁРЫ</span><b>Событийный / спонсорский продукт</b><small>Нативные форматы, кампании и измеряемое вовлечение.</small><em>ДОГОВОР + ДОКАЗАТЕЛЬСТВО ИСПОЛНЕНИЯ</em></article><article><span>02 · БРЕНДЫ</span><b>Brand365 / <abbr title="Customer Relationship Management — управление отношениями с клиентами">CRM</abbr>-инструменты</b><small>Непрерывная работа с аудиторией, кампании, кошелёк и собственный слой отношений.</small><em>ГИПОТЕЗА ПОДПИСКИ</em></article><article><span>03 · ПРОФЕССИОНАЛЬНЫЙ КОНТУР</span><b>B2B / Комната сделки</b><small>Встречи, структурированные запросы и передача в внешнюю коммерческую систему.</small><em>КОМИССИОННАЯ МОДЕЛЬ · УСЛОВНО</em></article><article><span>04 · АНАЛИТИКА</span><b>Аналитика с защитой приватности</b><small>Собственные данные организации + управляемые анонимные бенчмарки.</small><em>ТРЕБУЕТ ПОЛИТИКИ КОГОРТ</em></article><article><span>05 · ПЛАТФОРМА</span><b>Партнёрский <abbr title="Application Programming Interface — программный интерфейс">API</abbr> / корпоративный контур</b><small>Программа, медиа, аналитика и одобренные партнёрские интеграции.</small><em>API С КОНТРАКТОМ ПЕРЕД РЕАЛИЗАЦИЕЙ</em></article></div><div class="revenue-rule"><b>Правило признания выручки</b><span>Вовлечение, встреча или запрос сами по себе не являются выручкой. Выручка признаётся только при наличии соответствующего договорного, биллингового или платёжного подтверждения.</span></div></section><p>Это продуктовая модель MVP. Реальные <abbr title="Key Performance Indicator — ключевой показатель эффективности">KPI</abbr>, <abbr title="Annual / Monthly Recurring Revenue — годовая / месячная регулярная выручка">ARR/MRR</abbr> и юнит-экономика появляются только после рабочей аналитики, договоров и фактических транзакций.</p></div></div>
+<div class="investor-modal hidden" id="investorModal"><div class="investor-card"><button class="drawer-close" id="investorClose">×</button><div class="drawer-kicker">МАРШРУТ ВЛАДЕЛЬЦА / ИНВЕСТОРА</div><h2>Одна платформа.<br>Три направления.</h2><div id="investorEcosystemGallery" class="investor-ecosystem-gallery" aria-label="Три направления экосистемы"></div><div class="investor-bridge"><span>ЕДИНЫЙ ID</span><i>→</i><span>ПОИСК + ПЛАН</span><i>→</i><span>СВЯЗИ</span><i>→</i><span><abbr title="Business-to-Business — взаимодействие между компаниями">B2B</abbr> / 365</span><i>→</i><span>ДОКАЗАТЕЛЬСТВА</span></div><div class="investor-start-row"><button id="investorDemoStart" class="investor-demo-start">▶ ЗАПУСТИТЬ ДЕМО 7–10 МИН</button><span>15 шагов · три направления · единый инвестиционный цикл</span></div><div class="investor-steps"><button data-investor-step="1"><b>01</b><span>MFW — полноценный пользовательский опыт</span></button><button data-investor-step="2"><b>02</b><span>BFS — отдельный деловой контур саммита</span></button><button data-investor-step="3"><b>03</b><span>«Сделано в Москве» — проверенные бренды, шоурум, связь с байерами и доказательства</span></button><button data-investor-step="4"><b>04</b><span>Один ID и профиль — три разные продуктовые оболочки</span></button><button data-investor-step="5"><b>05</b><span>Сквозной граф идентичности: один субъект → три контекста → раздельные права</span></button><button data-investor-step="6"><b>06</b><span>Доказательства для инвестора: пользователь → сигнал → бренд → встреча → намерение → 30/90/365</span></button>
+<button data-investor-step="7"><b>07</b><span>Кабинет партнёра / спонсора: пакет → исполнение → отчёт → подтверждение расчётов</span></button>
+<button data-investor-step="8"><b>08</b><span>Кабинет бренда: аудитория → воронка байера → продолжение Brand365</span></button>
+<button data-investor-step="9"><b>09</b><span>Комната сделки: встреча → запрос → внешняя передача → доказательство результата</span></button>
+<button data-investor-step="10"><b>10</b><span>Паспорт доверия: объяснимые подтверждения вместо непрозрачного рейтинга</span></button>
+<button data-investor-step="11"><b>11</b><span>Экономика: плательщик → продукт → формула → условие признания выручки</span></button><button data-investor-step="12"><b>12</b><span>Инвесткомитет: рекомендация → одобрение → пилот → измеренный результат → масштабировать / остановить</span></button><button data-investor-step="13"><b>13</b><span>Управление капиталом программы: запрошено → одобрено → зарезервировано → использовано → измерено → масштабировать / остановить</span></button><button data-investor-step="14"><b>14</b><span>Ценность для владельца: точки монетизации + ценность отношений на горизонте 365 дней</span></button></div><div class="investor-proof"><div><strong>3</strong><span>направления экосистемы</span></div><div><strong>1</strong><span>единый слой идентичности</span></div><div><strong>1</strong><span>граф брендов и связей</span></div><div><strong>365</strong><span>дней непрерывной работы</span></div></div><div class="organisation-network-proof" id="organisationNetworkProof"><span>СЕТЬ ОРГАНИЗАЦИЙ · ПРОВЕРКА СЕРВЕРНОГО РЕЕСТРА</span></div><div class="investor-evidence-actions"><a href="./evidence-package.json" target="_blank" rel="noopener">ПАКЕТ ДОКАЗАТЕЛЬСТВ ↗</a></div><p id="investorNarrative">Выберите шаг — приложение само откроет нужный контекст для демонстрации.</p></div></div><div class="hub-modal hidden" id="hubModal"><div class="hub-card">
 <button class="drawer-close" id="hubClose">×</button>
-<div class="drawer-kicker">MOSCOW FASHION PLATFORM · PLAN / DISCOVER / CONNECT / ACCESS</div><h2>Ваш fashion hub</h2>
+<div class="drawer-kicker">МОСКОВСКАЯ МОДНАЯ ПЛАТФОРМА · ПЛАН / ПОИСК / СВЯЗИ / ДОСТУП</div><h2>Ваш центр модной экосистемы</h2>
 <div class="hub-tabs">
 <button data-hub-tab="today">Сейчас</button>
-<button class="active" data-hub-tab="directory">Discover</button>
+<button class="active" data-hub-tab="directory">Поиск</button>
 <button data-hub-tab="agenda">Мой календарь</button>
-<button data-hub-tab="wallet">Reward Wallet</button>
-<button data-hub-tab="dealroom">Deal Room</button>
-<button data-hub-tab="owner">Owner Analytics</button>
+<button data-hub-tab="wallet">Кошелёк наград</button>
+<button data-hub-tab="graph">Граф идентичности</button>
+<button data-hub-tab="proof">Центр доказательств</button>
+<button data-hub-tab="partner">Кабинет партнёра</button>
+<button data-hub-tab="brand">Кабинет бренда</button>
+<button data-hub-tab="dealroom">Комната сделки</button>
+<button data-hub-tab="trust">Паспорт доверия</button>
+<button data-hub-tab="economics">Экономика</button>
+<button data-hub-tab="committee">Инвесткомитет</button>
+<button data-hub-tab="capital">Капитал программы</button>
+<button data-hub-tab="owner">Аналитика владельца</button>
 </div>
 <div id="hubContent"></div>
 </div></div>
-<div class="for-you-modal hidden" id="forYouModal"><div class="for-you-card"><button class="drawer-close" id="forYouClose">×</button><div class="drawer-kicker">ПЕРСОНАЛЬНЫЙ FASHION GRAPH</div><h2>Для вас</h2><div class="for-you-grid" id="forYouGrid"></div><div class="owner-funnel" id="ownerFunnel"></div></div></div>
-<script src="./event-data.js"></script><script src="./platform.js?v=20261003p2"></script>
+<div class="investor-pilot hidden" id="investorPilot" aria-live="polite"><div><span id="investorPilotStep">01 / 15</span><b id="investorPilotTitle">Московская модная платформа</b><small id="investorPilotCopy">Демонстрация для инвестора</small></div><div class="investor-pilot-actions"><button id="investorPilotPrev">←</button><button id="investorPilotNext">ДАЛЬШЕ →</button><button id="investorPilotClose">×</button></div></div>
+<div class="for-you-modal hidden" id="forYouModal"><div class="for-you-card"><button class="drawer-close" id="forYouClose">×</button><div class="drawer-kicker">ПЕРСОНАЛЬНЫЙ ГРАФ МОДНЫХ ИНТЕРЕСОВ</div><h2>Для вас</h2><div class="for-you-grid" id="forYouGrid"></div><div class="owner-funnel" id="ownerFunnel"></div></div></div>
+<script src="./event-data.js"></script><script src="./media-manifest.js?v=20261006i1"></script><script src="./investor-proof-model.js?v=20261006p6"></script><script src="./platform.js?v=20261006p6"></script>
 </body></html>
