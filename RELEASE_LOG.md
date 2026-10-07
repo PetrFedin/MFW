@@ -566,3 +566,19 @@ English locale support remains a separate requirement and is not replaced by thi
 - placed organisation credential revocation ledger at migration 025 to avoid duplicate numeric prefixes;
 - added a migration-order CI contract requiring unique contiguous numbering;
 - Phase 0 PostgreSQL admission now expects migrations 001-025.
+
+
+## 2026-10-07 — Capital admission contract hardening
+
+Aligned the specialised Capital Authority admission checker with the platform-wide production gate:
+
+- require strict PostgreSQL guard;
+- require configured database binding;
+- require full schema reconciliation PASS;
+- require migration floor 001–025;
+- explicitly verify migrations 023 / 024 / 025;
+- preserve programme-grain projection and hash-chain verification checks;
+- added a regression contract to `check:foundation`;
+- corrected Capital Authority documentation from the stale migration-022/001–024 wording.
+
+No runtime PostgreSQL admission is claimed by this release. Render still requires secure Blueprint/internal database binding before Phase 0 can be declared green.
