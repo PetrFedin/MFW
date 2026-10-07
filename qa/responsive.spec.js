@@ -146,6 +146,7 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await page.locator('#profileForm input[name="email"]').fill('qa-ecosystem@example.test');
   await page.locator('#profileForm input[name="phone"]').fill('+10000000000');
   await page.locator('#profileForm button[type="submit"]').click();
+  await page.locator('#accountClose').click();
 
   await page.locator('[data-event="bfs"]').click();
   const bfs = page.frameLocator('#eventFrame');
@@ -198,7 +199,7 @@ test('Made verified brand deep-links into exact MFW brand and preserves brand co
   await made.locator('[data-made-open-mfw="masterpeace"]').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
   const mfw = page.frameLocator('#eventFrame');
-  await expect(mfw.getByRole('heading', { name: 'Masterpeace' })).toBeVisible();
+  await expect(mfw.locator('#modal h1').getByText('Masterpeace', { exact: true })).toBeVisible();
 
   await page.locator('[data-event="made"]').click();
   await expect(made.locator('[data-made-open-buyer="masterpeace"]')).toBeVisible();
@@ -227,7 +228,7 @@ test('live evidence distinguishes cross-event brand transition from meeting and 
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="proof"]').click();
-  await expect(page.getByText('CROSS-EVENT')).toBeVisible();
+  await expect(page.getByText('CROSS-EVENT', { exact: true })).toBeVisible();
   await expect(page.getByText(/Made → BFS · masterpeace/)).toBeVisible();
   await expect(page.getByText(/Requires explicit Deal Room \/ request evidence/)).toBeVisible();
   await expect(page.getByText(/Requires admitted external reference/)).toBeVisible();
