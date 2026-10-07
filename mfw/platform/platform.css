@@ -650,7 +650,7 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
   }
   .platform-wordmark{min-width:112px}
   .event-switcher{margin:0 auto;flex:0 1 auto;max-width:520px}
-  .event-button{min-height:38px;padding:7px 12px;font-size:8.5px}
+  .event-button{min-height:40px;padding:7px 12px;font-size:8.5px}
   .platform-actions{
     order:initial;
     width:auto;
@@ -659,7 +659,7 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
     padding:0;
     gap:4px;
   }
-  .platform-actions>button{min-height:38px;padding:7px 8px;font-size:7.5px}
+  .platform-actions>button{min-height:40px;padding:7px 8px;font-size:7.5px}
   .value-button,.for-you-button{display:none}
   .experience{height:calc(100dvh - 74px)}
 }
@@ -676,13 +676,13 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
     grid-template-columns:56px minmax(0,1fr) minmax(0,1fr);
     border-radius:14px;
   }
-  .event-button{min-height:36px;padding:6px 7px;font-size:8px}
+  .event-button{min-height:40px;padding:6px 7px;font-size:8px}
   .platform-actions{
     min-height:38px;
     grid-template-columns:1.12fr 1fr 1fr 1fr;
     gap:4px;
   }
-  .platform-actions>button{min-height:36px;padding:6px 2px;font-size:7.5px}
+  .platform-actions>button{min-height:40px;padding:6px 2px;font-size:7.5px}
   .value-button,.for-you-button{display:none!important}
   .experience{height:calc(100dvh - 88px)}
 }
