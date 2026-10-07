@@ -2440,3 +2440,34 @@ Rules:
 - this layer remains subordinate to MFW-INT-00 and cannot mark production ready while PostgreSQL admission is blocked.
 
 This strengthens the existing requirement for exact-head deployment evidence without moving pg-boss, formal policy or any other persistent capability ahead of MFW-INT-00.
+
+
+## 2026-10-07 — Render Runtime Admission Proof
+
+A read-only infrastructure proof layer is added under MFW-INT-00.
+
+Purpose:
+
+`canonical render.yaml -> live Render service/Postgres/deploy snapshot -> Admission Evidence Bundle -> deterministic runtime receipt`
+
+The verifier proves that the live infrastructure matches the declared production contract:
+
+- service ID/name/branch/plan/region/runtime;
+- `healthCheckPath=/ready`;
+- canonical authority start command;
+- existing free PostgreSQL 17 in Frankfurt;
+- no external Postgres IP allowlist;
+- live deploy exact SHA = expected SHA;
+- `mfw-admission-evidence-v1` is green on the same SHA;
+- runtime is PostgreSQL-backed with strict guard, schema ready and Golden Paths PASS.
+
+Rules:
+
+- verifier is read-only and never calls Render mutation APIs;
+- it never reads or serialises `DATABASE_URL` or database credentials;
+- it does not replace Blueprint/internal binding;
+- it must fail while the live service remains in memory mode or healthCheckPath drifts from `/ready`;
+- receipt is deterministic SHA-256 over canonical runtime evidence;
+- MFW-INT-00 remains open until both Admission Evidence and Render Runtime Admission PASS on the same exact deployed SHA.
+
+This does not advance pg-boss/outbox, formal policy or trust-runtime sequencing.
