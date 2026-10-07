@@ -243,3 +243,28 @@ Target PASS requires, on one exact SHA:
 - PostgreSQL mode + strict guard + schema ready + Golden Paths PASS.
 
 Current live state is expected to FAIL until the secure internal `DATABASE_URL` binding / Blueprint sync is actually applied.
+
+
+## 2026-10-07 — exact runtime baseline after PR #11
+
+Exact canonical source and deploy:
+
+- main SHA: `4bad237ee3bab227805f0cb605abaa37e987a3e4`;
+- Render deploy: `dep-db37a167bikc73btfto0`;
+- deploy status: **live**;
+- build/runtime startup: successful;
+- deep functional self-test: **PASS**.
+
+Production admission remains **blocked**:
+
+- `dataMode=memory`;
+- `MFW_REQUIRE_POSTGRES=false` in the live direct-created service;
+- `DATABASE_URL` is not configured in the live service;
+- `databaseSchemaReady=false`;
+- migrations 001–025 are required but not admitted in the live PostgreSQL contour;
+- social reverification is inactive with reason `postgres_required`;
+- live service `healthCheckPath` is still empty instead of `/ready`.
+
+The existing `mfw-postgres` remains free PostgreSQL 17 in Frankfurt, status `available`, with an empty external IP allowlist. The hosted Render connector therefore cannot query it directly, which preserves the intended no-public-database posture.
+
+The only valid next infrastructure transition is still an internal Render binding of the existing database to the existing authority service, then strict PostgreSQL guard + `/ready`, followed by exact-head redeploy and the Production + Capital Admission Evidence Bundle. No pg-boss/outbox or other persistent Phase 1 module is admitted before this gate.
