@@ -676,7 +676,13 @@ test('Trust Passport preview is explainable and avoids a universal score', async
 
 test('investor value layer separates monetisation hypotheses from revenue truth', async ({ page }, testInfo) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
-  await page.locator('#valueBtn').click();
+  const valueBtn = page.locator('#valueBtn');
+  if (await valueBtn.isVisible()) {
+    await valueBtn.click();
+  } else {
+    await page.locator('#investorBtn').click();
+    await page.locator('[data-investor-step="14"]').click();
+  }
   await expect(page.locator('.revenue-grid article')).toHaveCount(5);
   await expect(page.getByText('Правило признания выручки')).toBeVisible();
   await expect(page.getByText(/Вовлечение, встреча или запрос сами по себе не являются выручкой/)).toBeVisible();
