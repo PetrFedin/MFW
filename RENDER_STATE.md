@@ -224,3 +224,22 @@ and
 Therefore the remaining infrastructure action is a Render-side Blueprint apply/sync (or equivalent secure internal binding) for the existing canonical resources. The database password must not be copied into chat, source control or reconstructed through external tooling.
 
 The production migration floor is now 001–025. Capital admission tooling fails closed unless the full schema reconciliation contract is green.
+
+
+## 2026-10-07 — Runtime admission verifier
+
+Repository now includes a deterministic read-only Render Runtime Admission verifier.
+
+Target PASS requires, on one exact SHA:
+
+- live `mfw-authority` sourced from `main`;
+- free Frankfurt Node service;
+- `healthCheckPath=/ready`;
+- canonical start command;
+- existing free PostgreSQL 17 `mfw-postgres` available in Frankfurt;
+- database external IP allowlist empty;
+- exact deployed SHA match;
+- `mfw-admission-evidence-v1` PASS;
+- PostgreSQL mode + strict guard + schema ready + Golden Paths PASS.
+
+Current live state is expected to FAIL until the secure internal `DATABASE_URL` binding / Blueprint sync is actually applied.
