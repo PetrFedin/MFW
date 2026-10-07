@@ -188,11 +188,11 @@ test('Cross-event identity graph keeps shared identity and scoped rights separat
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="graph"]').click();
-  await expect(page.getByText('СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ', { exact: false })).toBeVisible();
+  await expect(page.locator('#hubContent > .drawer-kicker').first()).toContainText('СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ');
   await expect(page.locator('.identity-node')).toHaveCount(5);
-  await expect(page.getByText('ОБЩИЙ USER ID')).toBeVisible();
-  await expect(page.getByText(/статус бренда Verified остаётся отдельной authority/i)).toBeVisible();
-  await expect(page.getByText(/не объединяет event credentials/i)).toBeVisible();
+  await expect(page.getByText('ОБЩИЙ ID ПОЛЬЗОВАТЕЛЯ')).toBeVisible();
+  await expect(page.getByText(/статус подтверждения бренда остаётся отдельным серверным статусом/i)).toBeVisible();
+  await expect(page.getByText(/не объединяет.*права верификации брендов/i)).toBeVisible();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('cross-event-identity-graph.png') });
 });
@@ -548,7 +548,7 @@ test('Portfolio Scenario Simulator ranks eligible capital mixes for 10 20 30 poi
   await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
   await expect(page.locator('.simulator-row.best')).toHaveCount(1);
   await expect(page.locator('.simulator-table')).not.toContainText('MADE');
-  await expect(page.locator('.simulator-method')).toContainText(/ПАУЗА|не может получать новый капитал/i);
+  await expect(page.locator('.simulator-method')).toContainText(/ПАУЗА.*не могут получать новый капитал/i);
 
   const best30 = await page.locator('.simulator-row.best span').textContent();
   await page.locator('[data-sim-budget="10"]').click();
@@ -576,8 +576,8 @@ test('Portfolio Scenario Simulator preserves reserve optionality and capacity ru
   await page.locator('[data-sim-budget="30"]').click();
   await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
   await expect(page.locator('.simulator-table')).toContainText('RESERVE');
-  await expect(page.locator('.simulator-method')).toContainText('Unallocated budget remains reserve and preserves optionality');
-  await expect(page.locator('.simulator-method')).toContainText('No vertical can receive more than its absorption cap');
+  await expect(page.locator('.simulator-method')).toContainText('Нераспределённый бюджет остаётся резервом и сохраняет гибкость');
+  await expect(page.locator('.simulator-method')).toContainText('Ни одно направление не может получить больше своей ёмкости освоения');
   await expectNoDocumentOverflow(page);
 });
 
@@ -626,7 +626,7 @@ test('Evidence Control Tower synthetic case exposes reason evidence ref and reve
   await expect(page.getByText(/Потенциальный stream ≠ фактическая выручка/)).toBeVisible();
   await page.locator('[data-control-case="buyer-brand-gamma"]').click();
   await expect(page.getByText('Demo Buyer C → Demo Brand C')).toBeVisible();
-  await expect(page.locator('.evidence-badge.evidence-reported').filter({ hasText: /^REPORTED$/ })).toBeVisible();
+  await expect(page.locator('.evidence-badge.evidence-reported').filter({ hasText: /^ЗАЯВЛЕННОЕ$/ })).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
 
