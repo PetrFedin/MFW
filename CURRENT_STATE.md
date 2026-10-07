@@ -915,3 +915,19 @@ It composes the existing production and Capital admission contracts into one det
 The bundle does not mutate state and does not expose Capital Operator session tokens.
 
 Runtime truth is unchanged until Render applies the secure internal PostgreSQL binding: current Phase 0 remains blocked on infrastructure, not application code.
+
+
+## Render Runtime Admission Proof — 2026-10-07
+
+Added `mfw-render-runtime-admission-v1`, a read-only verifier for the live Render contour.
+
+It compares:
+
+- canonical authority service contract;
+- existing `mfw-postgres`;
+- exact live deploy SHA;
+- deterministic `mfw-admission-evidence-v1`.
+
+It fails on current known runtime drift such as missing `healthCheckPath=/ready`, memory mode, non-green admission, deploy SHA mismatch or an exposed PostgreSQL allowlist.
+
+This is proof tooling only. It does not apply `DATABASE_URL`, mutate Render or close MFW-INT-00 by itself.
