@@ -953,3 +953,29 @@ Domain boundaries remain explicit:
 Made in Moscow now exposes a shared-ID bridge showing MFW/BFS participation state, exact production-admission truth and direct navigation into the relevant MFW/BFS experiences. Verified brand cards link users into the MFW fashion journey and Buyer Bridge instead of behaving as isolated presentation cards.
 
 No real Made in Moscow Verified membership is claimed while PostgreSQL production admission and approved roster/import evidence remain unavailable.
+
+
+## Cross-ecosystem Brand Golden Path — 2026-10-07
+
+A canonical brand context can now move across ecosystem boundaries without creating a duplicate brand identity.
+
+Observed route:
+
+Made in Moscow Verified roster card
+-> canonical brandRef
+-> exact MFW brand deep link
+-> MFW show / collection / follow / favorite / shortlist
+-> same brandRef handed to BFS Buyer Bridge
+-> BFS meeting request carries brandId
+-> meeting / lead lifecycle
+-> Brand365 relationship and later evidence.
+
+Evidence semantics are intentionally strict:
+- opening a Made brand and moving it into MFW/BFS is OBSERVED navigation/context only;
+- shortlist is explicit buyer intent, not revenue;
+- meeting request is a meeting-request fact, not a completed meeting;
+- completed meeting/follow-up/qualified lead require their own lifecycle events;
+- Brand365 eligibility remains governed by its own verified continuity rules;
+- commercial outcome/revenue requires admitted outcome evidence and is never inferred from a cross-event click.
+
+The platform shell owns deep-link transport only. MFW remains canonical brand/show/collection authority, BFS remains meeting/networking/lead authority, and Made in Moscow remains verified-programme projection/discovery. The same brandRef is transported between them instead of matching by display name.
