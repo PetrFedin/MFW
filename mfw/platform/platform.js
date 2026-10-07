@@ -635,11 +635,11 @@
     hubContent.innerHTML=
       '<div class="drawer-kicker">СКВОЗНОЙ ГРАФ ИДЕНТИЧНОСТИ · ОДИН СУБЪЕКТ / РАЗДЕЛЬНЫЕ ПРАВА</div>'+
       '<div class="identity-graph">'+
-        '<article class="identity-node center"><span>СУБЪЕКТ ПЛАТФОРМЫ</span><b>'+h(displayName())+'</b><small>'+h(accountState.profile.company||'No organisation')+' · '+h(accountState.profile.country||'—')+'</small></article>'+
+        '<article class="identity-node center"><span>СУБЪЕКТ ПЛАТФОРМЫ</span><b>'+h(displayName())+'</b><small>'+h(accountState.profile.company||'Организация не указана')+' · '+h(accountState.profile.country||'—')+'</small></article>'+
         '<article class="identity-node mfw"><span>MFW</span><b>'+(mfwReg?h(String(mfwReg.registrationType||'registered').toUpperCase()) :'НЕТ РЕГИСТРАЦИИ')+'</b><small>доступ в рамках события · '+saved+' сохранённых сигналов</small></article>'+
         '<article class="identity-node bfs"><span>BFS</span><b>'+(bfsReg?h(String(bfsReg.registrationType||'registered').toUpperCase()) :'НЕТ РЕГИСТРАЦИИ')+'</b><small>доступ в рамках события · профессиональный слой встреч</small></article>'+
-        '<article class="identity-node made"><span>MADE IN MOSCOW</span><b>ОБЩИЙ USER ID</b><small>статус бренда Verified остаётся отдельной authority</small></article>'+
-        '<article class="identity-node signals"><span>ГРАФ ОТНОШЕНИЙ</span><b>'+h(followed)+' подписок · '+h(favorite)+' избранных</b><small>только явные сигналы · без вывода скрытого intent</small></article>'+
+        '<article class="identity-node made"><span>MADE IN MOSCOW</span><b>ОБЩИЙ ID ПОЛЬЗОВАТЕЛЯ</b><small>статус подтверждения бренда остаётся отдельным серверным статусом</small></article>'+
+        '<article class="identity-node signals"><span>ГРАФ ОТНОШЕНИЙ</span><b>'+h(followed)+' подписок · '+h(favorite)+' избранных</b><small>только явные сигналы · без вывода скрытого намерения</small></article>'+
       '</div>'+
       '<div class="identity-edge-grid"><div><b>ОБЩЕЕ</b><span>профиль · интересы · поиск · continuity отношений</span></div><div><b>РАЗДЕЛЬНО</b><span>регистрация MFW/BFS · QR/access · верификация бренда Made</span></div><div><b>НАКАПЛИВАЕТСЯ</b><span>повторное участие · встречи · evidence Deal Room · trust history</span></div></div>'+
       '<div class="identity-principle"><b>ПОЧЕМУ ЭТО ВАЖНО</b><span>Без общего графа идентичности MFW, BFS и «Сделано в Москве» остаются тремя несвязанными продуктами. С ним каждое явно разрешённое взаимодействие усиливает одну долгосрочную fashion-связь, сохраняя отдельные права каждого события.</span></div>'+
@@ -1172,16 +1172,16 @@
       proposalHtml='<section class="committee-portfolio-proposal"><div><div class="drawer-kicker">PORTFOLIO ALLOCATION PROPOSAL · DEMO</div><h4>'+h(scenarioLabelMix(sc))+'</h4><p>Budget '+h(ps.budget)+' баллов · оценка '+h(sc.score)+' · снижение риска '+Math.round(Number(sc.riskRelief||0)*10)/10+' pts · KPI +'+Math.round(Number(sc.kpi||0)*10)/10+' п.п.</p></div><div class="proposal-status"><span>STATUS</span><b>'+h(ruCode(ps.status))+'</b><small>не approval authority</small></div><div class="proposal-actions">'+(ps.status==='DRAFT'?'<button data-portfolio-proposal-action="submit">ОТПРАВИТЬ НА REVIEW →</button>':ps.status==='IN_REVIEW'?'<button data-portfolio-proposal-action="approve">ОДОБРИТЬ DEMO ALLOCATION →</button>':'<span>Portfolio proposal сохранён только в demo session.</span>')+'<button class="secondary" data-portfolio-proposal-action="reset">СБРОСИТЬ</button></div></section>';
     }
     hubContent.innerHTML=proposalHtml+
-      '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO / SYNTHETIC WORKSPACE</b><span>Все approvals, pilot status и measured results ниже существуют только в текущей demo-сессии и не являются реальными корпоративными решениями.</span></div>'+
+      '<div class="committee-warning"><b>ИНВЕСТИЦИОННЫЙ КОМИТЕТ · ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КОНТУР</b><span>Все одобрения, статусы пилота и измеренные результаты ниже существуют только в текущей демонстрационной сессии и не являются реальными корпоративными решениями.</span></div>'+
       '<div class="committee-recommendations">'+recs.map(function(x){return '<button data-committee-select="'+h(x.intervention.id)+'" class="'+(x.intervention.id===committeeSelectedId?'active':'')+'"><span>'+h(x.points)+' pts</span><b>'+h(x.intervention.action)+'</b><small>'+h(x.intervention.stage)+'</small></button>';}).join('')+'</div>'+
-      '<section class="committee-case-head"><div><div class="drawer-kicker">МИНИ-БИЗНЕС-КЕЙС</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>STATUS</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' modelled budget points</small></div></section>'+
+      '<section class="committee-case-head"><div><div class="drawer-kicker">МИНИ-БИЗНЕС-КЕЙС</div><h3>'+h(rec.intervention.action)+'</h3><p>'+h(rec.intervention.hypothesis)+'</p></div><div class="committee-status"><span>СТАТУС</span><b>'+h(committeeStatusLabel(state.status))+'</b><small>'+h(rec.points)+' модельных баллов бюджета</small></div></section>'+
       '<div class="committee-case-grid">'+
-        '<article><span>OWNER</span><b>'+h(rec.intervention.owner)+'</b></article>'+
-        '<article><span>BUDGET ЗАПРОС</span><b>'+h(rec.points)+' pilot points</b><small>не ₽ · относительный demo allocation</small></article>'+
+        '<article><span>ОТВЕТСТВЕННЫЙ</span><b>'+h(rec.intervention.owner)+'</b></article>'+
+        '<article><span>ЗАПРОС БЮДЖЕТА</span><b>'+h(rec.points)+' баллов пилота</b><small>не ₽ · относительное демонстрационное распределение</small></article>'+
         '<article><span>BASELINE KPI</span><b>'+Math.round(rec.current*10)/10+'%</b><small>'+h(rec.intervention.kpi)+'</small></article>'+
         '<article><span>MODELLED TARGET</span><b>'+Math.round(rec.pilotTarget*10)/10+'%</b><small>assumption, не обещание результата</small></article>'+
-        '<article><span>MEASURED RESULT</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'синтетический результат пилота')+'</small></article>'+
-        '<article><span>DECISION</span><b>'+h(decision||'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
+        '<article><span>ИЗМЕРЕННЫЙ РЕЗУЛЬТАТ</span><b>'+h(measured)+'</b><small>'+(state.measured===null?'ещё не измерено':'синтетический результат пилота')+'</small></article>'+
+        '<article><span>РЕШЕНИЕ</span><b>'+h(decision||'ОЖИДАЕТ')+'</b><small>'+(decision?h((policy.governance||{})[String(decision).toLowerCase()]||''):'решение ещё не принято')+'</small></article>'+
       '</div>'+
       '<section class="committee-evidence-plan"><div><div class="drawer-kicker">ДОКАЗАТЕЛЬСТВА PLAN</div><h4>'+h(ev.complete)+' / '+h(ev.total)+' собрано</h4></div><div>'+rec.intervention.evidenceNeeded.map(function(x,i){return '<span class="'+(i<ev.complete?'done':'pending')+'">'+(i<ev.complete?'✓':'○')+' '+h(x)+'</span>';}).join('')+'</div></section>'+
       '<section class="committee-pilot"><div><span>PILOT DESIGN</span><b>'+h(rec.intervention.pilot)+'</b></div><div><span>STOP / SCALE LOGIC</span><b>'+h((policy.governance||{}).scale||'')+'</b><small>'+h((policy.governance||{}).iterate||'')+' '+h((policy.governance||{}).stop||'')+'</small></div></section>'+
