@@ -776,3 +776,28 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
     margin-top:60px!important;
   }
 }
+
+
+/* RESPONSIVE_SHELL_STACKING_FIX_2026_10_07
+   Keep the compact two-row mobile shell physically above the event iframe. */
+.platform-bar{
+  position:relative;
+  z-index:30;
+  isolation:isolate;
+}
+.experience{
+  position:relative;
+  z-index:1;
+}
+@media (max-width:680px){
+  .platform-bar{
+    height:auto;
+    min-height:94px;
+    gap:4px;
+    padding:max(5px,env(safe-area-inset-top)) 8px 5px;
+  }
+  .experience{
+    height:calc(100vh - 94px);
+    height:calc(100dvh - 94px);
+  }
+}
