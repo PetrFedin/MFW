@@ -160,7 +160,7 @@ test('guided investor demo traverses all three ecosystems and shared layers', as
   await expect(page.locator('[data-hub-tab="dealroom"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-hub-tab="trust"]')).toHaveClass(/active/);
-  await expect(page.getByText('NO OPAQUE SCORE')).toBeVisible();
+  await expect(page.getByText('БЕЗ НЕПРОЗРАЧНОЙ ОЦЕНКИ')).toBeVisible();
   await page.locator('#investorPilotNext').click();
   await expect(page.locator('[data-hub-tab="economics"]')).toHaveClass(/active/);
   await page.locator('#investorPilotNext').click();
@@ -201,10 +201,10 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="proof"]').click();
-  await expect(page.locator('.control-tower-top .drawer-kicker')).toContainText('EVIDENCE CONTROL TOWER');
+  await expect(page.locator('.control-tower-top .drawer-kicker')).toContainText('ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ');
   await expect(page.getByText('LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')).toBeVisible();
   await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
-  await expect(page.getByText('NOT EVIDENCED').first()).toBeVisible();
+  await expect(page.getByText('НЕ ПОДТВЕРЖДЕНО').first()).toBeVisible();
 
   await page.locator('[data-proof-mode="synthetic"]').click();
   await expect(page.getByText('ДЕМОНСТРАЦИОННЫЙ / СИНТЕТИЧЕСКИЙ КЕЙС')).toBeVisible();
@@ -401,7 +401,7 @@ test('Investment Committee Workspace closes recommendation to decision loop in d
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="committee"]').click();
 
-  await expect(page.getByText(/ИНВЕСТИЦИОННЫЙ КОМИТЕТ · DEMO/)).toBeVisible();
+  await expect(page.getByText(/ИНВЕСТИЦИОННЫЙ КОМИТЕТ · ДЕМОНСТРАЦИОННЫЙ/)).toBeVisible();
   await expect(page.locator('.committee-recommendations button')).toHaveCount(3);
   await expect(page.locator('.committee-case-grid article')).toHaveCount(6);
   await expect(page.getByText(/не являются реальными корпоративными решениями/)).toBeVisible();
@@ -423,7 +423,7 @@ test('Investment Committee Workspace closes recommendation to decision loop in d
 
   await page.locator('[data-committee-action="decide"][data-committee-id="' + activeId + '"]').click();
   await expect(page.locator('.committee-status b')).toHaveText('РЕШЕНИЕ ПРИНЯТО');
-  await expect(page.locator('.committee-case-grid article').filter({ hasText: 'DECISION' }).locator('b')).toHaveText(/SCALE|ITERATE|STOP/);
+  await expect(page.locator('.committee-case-grid article').filter({ hasText: 'РЕШЕНИЕ' }).locator('b')).toHaveText(/МАСШТАБИРОВАТЬ|ДОРАБОТАТЬ|ОСТАНОВИТЬ/);
   await expect(page.locator('.committee-history > div:not(.drawer-kicker)')).toHaveCount(6);
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('investment-committee-workspace.png') });
@@ -441,7 +441,7 @@ test('Capital Allocation opens selected recommendation as committee business cas
   await recommendation.locator('[data-open-committee]').click();
   await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
   await expect(page.locator('.committee-case-head h3')).toHaveText(title);
-  await expect(page.locator('.committee-status small')).toContainText('modelled budget points');
+  await expect(page.locator('.committee-status small')).toContainText('модельных баллов бюджета');
   await expectNoDocumentOverflow(page);
 });
 
@@ -450,24 +450,24 @@ test('Programme Capital Control separates reserve commitments spend and measured
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="capital"]').click();
 
-  await expect(page.getByText(/PROGRAMME CAPITAL CONTROL/)).toBeVisible();
+  await expect(page.getByText(/УПРАВЛЕНИЕ КАПИТАЛОМ ПРОГРАММЫ/)).toBeVisible();
   await expect(page.locator('.programme-envelope b')).toHaveText('150');
-  await expect(page.locator('#capitalAuthorityStatus')).toContainText('DEMO MODE · AUTHORITY PROTECTED');
-  await expect(page.locator('#capitalAuthorityStatus')).toContainText('POSTGRES ONLY');
+  await expect(page.locator('#capitalAuthorityStatus')).toContainText('ДЕМОНСТРАЦИОННЫЙ РЕЖИМ · СЕРВЕРНЫЙ РЕЕСТР ЗАЩИЩЁН');
+  await expect(page.locator('#capitalAuthorityStatus')).toContainText('ТОЛЬКО POSTGRESQL');
   const stages = page.locator('.programme-stage-grid article');
   await expect(stages).toHaveCount(7);
-  await expect(stages.filter({ hasText: 'REQUESTED' }).locator('b')).toHaveText('128');
-  await expect(stages.filter({ hasText: 'APPROVED' }).locator('b')).toHaveText('100');
-  await expect(stages.filter({ hasText: 'COMMITTED' }).locator('b')).toHaveText('85');
-  await expect(stages.filter({ hasText: 'SPENT' }).locator('b')).toHaveText('58');
-  await expect(stages.filter({ hasText: 'MEASURED' }).locator('b')).toHaveText('46');
-  await expect(stages.filter({ hasText: 'SCALED' }).locator('b')).toHaveText('22');
-  await expect(stages.filter({ hasText: 'STOPPED' }).locator('b')).toHaveText('6');
+  await expect(stages.filter({ hasText: 'ЗАПРОШЕНО' }).locator('b')).toHaveText('128');
+  await expect(stages.filter({ hasText: 'ОДОБРЕНО' }).locator('b')).toHaveText('100');
+  await expect(stages.filter({ hasText: 'ЗАРЕЗЕРВИРОВАНО' }).locator('b')).toHaveText('85');
+  await expect(stages.filter({ hasText: 'ИСПОЛЬЗОВАНО' }).locator('b')).toHaveText('58');
+  await expect(stages.filter({ hasText: 'ИЗМЕРЕНО' }).locator('b')).toHaveText('46');
+  await expect(stages.filter({ hasText: 'МАСШТАБИРОВАНО' }).locator('b')).toHaveText('22');
+  await expect(stages.filter({ hasText: 'ОСТАНОВЛЕНО' }).locator('b')).toHaveText('6');
 
   const capacity = page.locator('.programme-capacity-grid article');
-  await expect(capacity.filter({ hasText: 'UNCOMMITTED RESERVE' }).locator('b')).toHaveText('50');
-  await expect(capacity.filter({ hasText: 'COMMITTED · UNSPENT' }).locator('b')).toHaveText('27');
-  await expect(capacity.filter({ hasText: 'REALLOCATION CAPACITY' }).locator('b')).toHaveText('50');
+  await expect(capacity.filter({ hasText: 'НЕЗАРЕЗЕРВИРОВАННЫЙ РЕЗЕРВ' }).locator('b')).toHaveText('50');
+  await expect(capacity.filter({ hasText: 'ЗАРЕЗЕРВИРОВАНО · НЕ ИСПОЛЬЗОВАНО' }).locator('b')).toHaveText('27');
+  await expect(capacity.filter({ hasText: 'ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ' }).locator('b')).toHaveText('50');
   await expect(page.locator('.programme-ecosystems article')).toHaveCount(3);
   await expect(page.locator('.programme-row:not(.head)')).toHaveCount(5);
   await expect(page.locator('.programme-blockers article')).toHaveCount(3);
@@ -481,16 +481,16 @@ test('Programme Capital Control requires explicit release before STOP commitment
   await page.locator('[data-hub-tab="capital"]').click();
 
   const capacity = page.locator('.programme-capacity-grid article');
-  await expect(capacity.filter({ hasText: 'EXPLICITLY RELEASED' }).locator('b')).toHaveText('0');
-  await expect(capacity.filter({ hasText: 'REALLOCATION CAPACITY' }).locator('b')).toHaveText('50');
+  await expect(capacity.filter({ hasText: 'ЯВНО ОСВОБОЖДЕНО' }).locator('b')).toHaveText('0');
+  await expect(capacity.filter({ hasText: 'ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ' }).locator('b')).toHaveText('50');
 
   const release = page.locator('[data-programme-release="deal-room-sla"]');
   await expect(release).toBeVisible();
   await release.click();
 
-  await expect(capacity.filter({ hasText: 'EXPLICITLY RELEASED' }).locator('b')).toHaveText('3');
-  await expect(capacity.filter({ hasText: 'COMMITTED · UNSPENT' }).locator('b')).toHaveText('24');
-  await expect(capacity.filter({ hasText: 'REALLOCATION CAPACITY' }).locator('b')).toHaveText('53');
+  await expect(capacity.filter({ hasText: 'ЯВНО ОСВОБОЖДЕНО' }).locator('b')).toHaveText('3');
+  await expect(capacity.filter({ hasText: 'ЗАРЕЗЕРВИРОВАНО · НЕ ИСПОЛЬЗОВАНО' }).locator('b')).toHaveText('24');
+  await expect(capacity.filter({ hasText: 'ЁМКОСТЬ ДЛЯ ПЕРЕРАСПРЕДЕЛЕНИЯ' }).locator('b')).toHaveText('53');
   await expect(page.locator('[data-programme-release="deal-room-sla"]')).toBeDisabled();
   await expectNoDocumentOverflow(page);
 });
@@ -500,14 +500,14 @@ test('Capital Reallocation Optimizer compares 10 20 30 point tranches with evide
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="capital"]').click();
 
-  await expect(page.getByText(/CAPITAL REALLOCATION OPTIMIZER/)).toBeVisible();
+  await expect(page.getByText(/ОПТИМИЗАТОР ПЕРЕРАСПРЕДЕЛЕНИЯ КАПИТАЛА/)).toBeVisible();
   await expect(page.locator('.optimizer-tranches button')).toHaveCount(3);
   await expect(page.locator('.optimizer-card')).toHaveCount(3);
   await expect(page.locator('.optimizer-card.ready')).toHaveCount(1);
   await expect(page.locator('.optimizer-card.conditional')).toHaveCount(1);
   await expect(page.locator('.optimizer-card.hold')).toHaveCount(1);
   await expect(page.locator('.optimizer-card.hold')).toContainText('Сделано в Москве');
-  await expect(page.locator('.optimizer-card.hold')).toContainText('HOLD');
+  await expect(page.locator('.optimizer-card.hold')).toContainText('ПАУЗА');
 
   await expect(page.locator('.optimizer-recommendation').first()).toContainText('MFW');
   await expect(page.locator('.optimizer-capacity b')).toHaveText('50');
@@ -521,7 +521,7 @@ test('Capital Reallocation Optimizer compares 10 20 30 point tranches with evide
   await expect(page.getByRole('heading', { name: /Куда направить следующие 30 points/ })).toBeVisible();
   await expect(page.locator('.optimizer-card').filter({ hasText: 'BFS' })).toContainText('20 / 30');
   await expect(page.locator('.optimizer-card').filter({ hasText: 'Сделано в Москве' })).toContainText('10 / 30');
-  await expect(page.locator('.optimizer-method')).toContainText('HOLD получает score 0');
+  await expect(page.locator('.optimizer-method')).toContainText('Статус «ПАУЗА» получает оценку 0');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('capital-reallocation-optimizer.png') });
 });
@@ -534,7 +534,7 @@ test('Capital Reallocation Optimizer capacity follows explicit programme release
   await expect(page.locator('.optimizer-capacity b')).toHaveText('50');
   await page.locator('[data-programme-release="deal-room-sla"]').click();
   await expect(page.locator('.optimizer-capacity b')).toHaveText('53');
-  await expect(page.locator('.optimizer-recommendation')).toContainText(/Optimizer не утверждает capital|MODELLED RECOMMENDATION/);
+  await expect(page.locator('.optimizer-recommendation')).toContainText(/Оптимизатор не утверждает капитал|МОДЕЛЬНАЯ РЕКОМЕНДАЦИЯ/);
   await expectNoDocumentOverflow(page);
 });
 
@@ -543,12 +543,12 @@ test('Portfolio Scenario Simulator ranks eligible capital mixes for 10 20 30 poi
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="capital"]').click();
 
-  await expect(page.getByText(/PORTFOLIO SCENARIO SIMULATOR/)).toBeVisible();
+  await expect(page.getByText(/СИМУЛЯТОР СЦЕНАРИЕВ ПОРТФЕЛЯ/)).toBeVisible();
   await expect(page.locator('.simulator-budgets button')).toHaveCount(3);
   await expect(page.locator('.simulator-row:not(.head)')).toHaveCount(5);
   await expect(page.locator('.simulator-row.best')).toHaveCount(1);
   await expect(page.locator('.simulator-table')).not.toContainText('MADE');
-  await expect(page.locator('.simulator-method')).toContainText('HOLD candidates cannot receive new capital');
+  await expect(page.locator('.simulator-method')).toContainText(/ПАУЗА|не может получать новый капитал/i);
 
   const best30 = await page.locator('.simulator-row.best span').textContent();
   await page.locator('[data-sim-budget="10"]').click();
@@ -592,13 +592,13 @@ test('Best portfolio mix hands off into Investment Committee proposal workflow',
   await expect(page.locator('[data-hub-tab="committee"]')).toHaveClass(/active/);
   await expect(page.locator('.committee-portfolio-proposal')).toBeVisible();
   await expect(page.locator('.committee-portfolio-proposal h4')).toHaveText(bestMix.replace(/^#01 · /,''));
-  await expect(page.locator('.proposal-status b')).toHaveText('DRAFT');
+  await expect(page.locator('.proposal-status b')).toHaveText('ЧЕРНОВИК');
 
   await page.locator('[data-portfolio-proposal-action="submit"]').click();
-  await expect(page.locator('.proposal-status b')).toHaveText('IN_REVIEW');
+  await expect(page.locator('.proposal-status b')).toHaveText('НА РАССМОТРЕНИИ');
 
   await page.locator('[data-portfolio-proposal-action="approve"]').click();
-  await expect(page.locator('.proposal-status b')).toHaveText('APPROVED_DEMO');
+  await expect(page.locator('.proposal-status b')).toHaveText('ОДОБРЕНО В ДЕМО');
   await expect(page.locator('.committee-portfolio-proposal')).toContainText('не approval authority');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('portfolio-proposal-handoff.png') });
@@ -609,7 +609,7 @@ test('Control Tower Russian labels remain the default surface language', async (
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="proof"]').click();
-  await expect(page.getByText('ЦЕНТР ДОКАЗАТЕЛЬСТВ · EVIDENCE CONTROL TOWER')).toBeVisible();
+  await expect(page.getByText('ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ')).toBeVisible();
   await expect(page.getByRole('button', { name: 'ДОСЬЕ КЕЙСА' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'ПОРТФЕЛЬ' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'СРАВНЕНИЕ' })).toBeVisible();
@@ -635,7 +635,7 @@ test('Partner Console keeps revenue recognition behind evidence gates', async ({
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="partner"]').click();
   await expect(page.locator('.partner-flow article')).toHaveCount(7);
-  await expect(page.getByText('REVENUE BOUNDARY')).toBeVisible();
+  await expect(page.getByText('ГРАНИЦА ПРИЗНАНИЯ ВЫРУЧКИ')).toBeVisible();
   await expect(page.getByText(/recognised revenue still requires/i)).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
@@ -666,10 +666,10 @@ test('Trust Passport preview is explainable and avoids a universal score', async
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="trust"]').click();
-  await expect(page.getByText('TRUST PASSPORT · READ-ONLY PREVIEW')).toBeVisible();
+  await expect(page.getByText('ПАСПОРТ ДОВЕРИЯ · ПРЕДПРОСМОТР ТОЛЬКО ДЛЯ ЧТЕНИЯ')).toBeVisible();
   await expect(page.locator('.trust-dimension-grid article')).toHaveCount(6);
-  await expect(page.getByText('NO OPAQUE SCORE')).toBeVisible();
-  await expect(page.getByText('No wealth, creditworthiness, politics, ethnicity, hidden intent or universal reputation score.')).toBeVisible();
+  await expect(page.getByText('БЕЗ НЕПРОЗРАЧНОЙ ОЦЕНКИ')).toBeVisible();
+  await expect(page.getByText('Без выводов о благосостоянии, кредитоспособности, политике, этничности, скрытых намерениях или универсальной репутации.')).toBeVisible();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('trust-passport-preview.png') });
 });
