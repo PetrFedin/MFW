@@ -266,7 +266,7 @@ test('Filterable Portfolio Control Tower recalculates funnel retention and ecosy
   await expect(page.locator('[data-portfolio-stage="INTENT"] > b')).toHaveText('7');
 
   await page.locator('[data-portfolio-filter="retention"]').selectOption('D365');
-  await expect(page.locator('[data-portfolio-stage="RETENTION"] > b')).toHaveText('2');
+  await expect(page.locator('.retention-tower article.active b')).toHaveText('2');
 
   await page.locator('[data-portfolio-filter="revenueSurface"]').selectOption('api');
   await expect(page.locator('.portfolio-pop b')).toHaveText('90');
@@ -636,7 +636,7 @@ test('Partner Console keeps revenue recognition behind evidence gates', async ({
   await page.locator('[data-hub-tab="partner"]').click();
   await expect(page.locator('.partner-flow article')).toHaveCount(7);
   await expect(page.getByText('ГРАНИЦА ПРИЗНАНИЯ ВЫРУЧКИ')).toBeVisible();
-  await expect(page.getByText(/recognised revenue still requires/i)).toBeVisible();
+  await expect(page.getByText(/признание выручки всё равно требует/i)).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
 
@@ -658,7 +658,7 @@ test('Economics maps payer product formula and revenue gate without fake KPI', a
   await page.locator('[data-hub-tab="economics"]').click();
   await expect(page.locator('.economics-row:not(.head)')).toHaveCount(5);
   await expect(page.getByText(/нет фактических ARR\/MRR/i)).toBeVisible();
-  await expect(page.getByText(/Demo placeholders are intentionally absent/)).toBeVisible();
+  await expect(page.getByText(/Демонстрационные подстановки намеренно отсутствуют/)).toBeVisible();
   await expectNoDocumentOverflow(page);
 });
 
@@ -678,8 +678,8 @@ test('investor value layer separates monetisation hypotheses from revenue truth'
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#valueBtn').click();
   await expect(page.locator('.revenue-grid article')).toHaveCount(5);
-  await expect(page.getByText('Revenue truth rule')).toBeVisible();
-  await expect(page.getByText(/Engagement, meeting or request is not revenue/)).toBeVisible();
+  await expect(page.getByText('Правило признания выручки')).toBeVisible();
+  await expect(page.getByText(/Вовлечение, встреча или запрос сами по себе не являются выручкой/)).toBeVisible();
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('investor-revenue-architecture.png') });
 });
@@ -712,7 +712,7 @@ test('lifecycle Now reflects post-event truth after the published programme', as
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="today"]').click();
   await expect(page.locator('.today-hero')).toHaveAttribute('data-phase', 'after');
-  await expect(page.getByText('POST-EVENT TRUTH')).toBeVisible();
+  await expect(page.getByText('ПОСЛЕСОБЫТИЙНЫЕ ФАКТЫ')).toBeVisible();
   await expect(page.locator('.today-action-grid button')).toHaveCount(4);
   await expect(page.locator('.today-programme article')).toHaveCount(0);
   await expectNoDocumentOverflow(page);
@@ -743,7 +743,7 @@ test('Deal Room preview is read-only and viewport safe', async ({ page }, testIn
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#hubBtn').click();
   await page.locator('[data-hub-tab="dealroom"]').click();
-  await expect(page.getByText('PREVIEW · NO COMMERCIAL DATA SAVED')).toBeVisible();
+  await expect(page.getByText('ПРЕДПРОСМОТР · КОММЕРЧЕСКИЕ ДАННЫЕ НЕ СОХРАНЯЮТСЯ')).toBeVisible();
   await expect(page.locator('.dealroom-stage-grid article')).toHaveCount(5);
   const requestButtons = page.locator('.request-chip-grid button');
   await expect(requestButtons).toHaveCount(8);
