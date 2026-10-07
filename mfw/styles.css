@@ -286,3 +286,102 @@ button,.action,.icon-btn,.nav-btn,.role-btn,.chip{touch-action:manipulation}
 .official-media-link b{font-size:13px;line-height:1.1}
 .official-media-link small{font-size:9px;color:#777}
 @media(max-width:430px){.official-media-rail{grid-template-columns:1fr}.official-media-link{min-height:92px}}
+
+
+/* LIVE_LOCAL_RESPONSIVE_2026_10_07
+   Distinct monitor / tablet / phone layouts. */
+@media (min-width:1101px){
+  body{background:#121212}
+  .app{
+    position:relative;
+    max-width:1180px;
+    min-height:100dvh;
+    margin:0 auto;
+    padding-bottom:32px!important;
+    box-shadow:0 0 90px rgba(0,0,0,.42)
+  }
+  .topbar{
+    min-height:72px;
+    padding:16px 30px 16px 118px;
+    border-bottom-color:#232323
+  }
+  .wordmark{font-size:20px}
+  main{padding:0 30px 42px 118px}
+  .bottom-nav{
+    position:fixed!important;
+    left:max(18px,calc(50% - 590px + 20px))!important;
+    top:92px!important;
+    bottom:auto!important;
+    transform:none!important;
+    width:76px!important;
+    min-height:0!important;
+    grid-template-columns:1fr!important;
+    gap:6px;
+    padding:8px!important;
+    border:1px solid #2d2d2d!important;
+    border-radius:20px;
+    background:rgba(10,10,10,.94)!important;
+    box-shadow:0 18px 55px rgba(0,0,0,.28)
+  }
+  .nav-btn{
+    min-height:66px!important;
+    padding:8px 4px!important;
+    border-radius:14px!important;
+    font-size:9px!important
+  }
+  .nav-btn b{font-size:20px!important;margin-bottom:4px}
+  .nav-btn.active{background:#181818!important}
+  .today-masthead{margin-top:24px}
+  .today-masthead h1{font-size:clamp(58px,6vw,88px);max-width:720px}
+  .fashion-hero{
+    min-height:min(72dvh,720px);
+    max-height:760px;
+    padding:24px;
+    border-radius:30px;
+    margin-top:16px
+  }
+  .fashion-title{
+    max-width:680px;
+    font-size:clamp(64px,7vw,98px);
+    line-height:.82
+  }
+  .fashion-hero-top{align-items:center}
+  .editorial-duo{gap:14px}
+  .editorial-story{min-height:340px}
+  .visual-look-rail{grid-auto-columns:24%}
+  .live-rail{grid-auto-columns:22%}
+  .section-head h2{font-size:34px}
+  .speaker-card{grid-template-columns:38% 1fr}
+  .speaker-card.reverse{grid-template-columns:1fr 38%}
+  .brand-editorial-hero{height:64vh;min-height:560px}
+  .market-hero{min-height:600px}
+}
+
+@media (min-width:700px) and (max-width:1100px){
+  .app{max-width:960px}
+  .bottom-nav{width:min(960px,100%)}
+  .topbar{padding-left:28px;padding-right:28px}
+  main{padding-left:28px;padding-right:28px}
+  .fashion-hero{min-height:min(70dvh,650px)}
+  .fashion-title{font-size:clamp(54px,7vw,72px);max-width:520px}
+  .visual-look-rail{grid-auto-columns:28%}
+  .editorial-story{min-height:310px}
+}
+
+@media (max-width:680px){
+  .opening-copy{
+    left:max(20px,env(safe-area-inset-left));
+    right:max(20px,env(safe-area-inset-right))
+  }
+  .opening-credit{
+    left:20px;
+    right:20px;
+    top:14px;
+    max-width:none;
+    text-align:left;
+    line-height:1.35
+  }
+  .opening-copy h1{font-size:clamp(50px,14.5vw,62px)}
+  .opening-copy p{font-size:12px;max-width:330px}
+  .opening-cta{min-height:56px}
+}
