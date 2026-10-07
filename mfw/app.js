@@ -1067,6 +1067,12 @@
     openSheet('<div class="eyebrow">NATIVE iOS</div><h1 style="font-size:42px">PUSH / APNs</h1><div class="card"><b>'+T('Готово к native shell','Ready for native shell')+'</b><p class="sub">'+T('В PWA push-кнопка не симулирует APNs. В iOS shell она вызывает системное разрешение и регистрацию APNs.','The PWA does not simulate APNs. In the iOS shell this action requests system permission and registers for APNs.')+'</p></div>');
   }
 
+  window.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='mfp-route'&&e.data.route){
+      window.MFWRoute(e.data.route);
+    }
+  });
+
   window.MFWRoute=function(route){
     if(!route)return;
     if(route.kind==='event'&&route.id){state.openingSeen=true;state.onboarding=true;state.tab='schedule';localStorage.setItem('mfwOpeningSeen','1');localStorage.setItem('mfwOnboarded','1');render();setTimeout(function(){openEvent(route.id);},0);return;}
