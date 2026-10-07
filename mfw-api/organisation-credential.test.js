@@ -38,7 +38,7 @@ function authority({configured=true}={}){
 
   const tampered={...credential,payload:{...credential.payload,portableProofSha256:'c'.repeat(64)}};
   const bad=await fx.service.verify(tampered);
-  assert.equal(bad.status,'INVALID_SIGNATURE');
+  assert.equal(bad.status,'INVALID_ENVELOPE_HASH');
 
   fx.setProofHash('b'.repeat(64));
   const stale=await fx.service.verify(credential);
