@@ -46,15 +46,19 @@ function load(path,label){
 }
 function normalizeService(raw){
   const d=raw.service||raw;
+  const details=d.serviceDetails||{};
+  const envDetails=details.envSpecificDetails||{};
   return {
     id:d.id||null,
     name:d.name||null,
     branch:d.branch||null,
-    plan:d.plan||null,
-    region:d.region||null,
-    runtime:d.runtime||null,
-    healthCheckPath:d.healthCheckPath==null?null:d.healthCheckPath,
-    startCommand:d.startCommand||null,
+    plan:d.plan||details.plan||null,
+    region:d.region||details.region||null,
+    runtime:d.runtime||details.runtime||details.env||null,
+    healthCheckPath:d.healthCheckPath==null
+      ? (details.healthCheckPath==null?null:details.healthCheckPath)
+      : d.healthCheckPath,
+    startCommand:d.startCommand||envDetails.startCommand||null,
     autoDeploy:d.autoDeploy||null,
     repo:d.repo||null
   };
