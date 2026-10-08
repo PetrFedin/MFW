@@ -657,7 +657,7 @@
       openSheet('<div class="eyebrow">CROSS-EVENT BRAND GRAPH V2 · READ ONLY</div><h1 style="font-size:42px">'+esc(d.brandName||brandId)+'</h1>'+
         '<div class="brand-graph-policy"><span>CANONICAL BRAND ID · '+esc(d.brandRef||brandId)+'</span><span>NO PII</span><span>NO REVENUE INFERENCE</span><span>NO UNIVERSAL SCORE</span></div>'+
         '<div class="brand-graph-coverage"><b>'+esc(coverage.evidencedStages||0)+' / '+esc(coverage.totalStages||7)+'</b><span>'+T('этапов имеют evidence','stages have evidence')+'</span><small>'+esc(coverage.dataMode||d.source||'')+' · '+esc(coverage.productionAdmitted?'PRODUCTION ADMITTED':'PREVIEW / NOT ADMITTED')+'</small></div>'+
-        '<div class="brand-graph-flow">'+cards+'</div>'+
+        '<div class="action-row"><button class="action primary" data-action="brand-relationship-timeline" data-id="'+esc(brandId)+'">'+T('История отношений','Relationship timeline')+'</button></div><div class="brand-graph-flow">'+cards+'</div>'+
         '<div class="demo-note"><b>'+T('Граф ничего не утверждает сам.','The graph asserts nothing by itself.')+'</b> '+T('Он только объединяет read-model из существующих authority. Каждый узел показывает собственный truth class и источник.','It only projects existing authorities. Every node exposes its own truth class and source.')+'</div>');
       document.querySelectorAll('[data-action="graph-route"]').forEach(function(btn){
         btn.onclick=function(){
@@ -667,6 +667,36 @@
         };
       });
     }catch(_){toast(T('Граф бренда недоступен','Brand graph unavailable'));}
+  }
+
+  function timelineDate(value){
+    if(!value)return T('Нет подтверждённой даты','No evidenced date');
+    try{return new Intl.DateTimeFormat(state.lang==='ru'?'ru-RU':'en-GB',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(value));}catch(_){return String(value);}
+  }
+
+  async function openBrandRelationshipTimeline(brandId){
+    openSheet('<div class="eyebrow">BRAND RELATIONSHIP TIMELINE · READ ONLY</div><h1 style="font-size:42px">'+T('ИСТОРИЯ<br>ОТНОШЕНИЙ','RELATIONSHIP<br>TIMELINE')+'</h1><div class="card skeleton" style="height:280px"></div>');
+    try{
+      var out=await api('/v1/brands/'+encodeURIComponent(brandId)+'/relationship-timeline');
+      var d=out.data||{},items=d.items||[];
+      var html=items.map(function(x){
+        var f=x.freshness||{},m=x.metrics||{},s=x.state||{};
+        var metricText=Object.keys(m).slice(0,4).map(function(k){return '<span><b>'+esc(k)+'</b> '+esc(String(m[k]))+'</span>';}).join('');
+        var stateText=Object.keys(s).slice(0,3).map(function(k){return esc(k)+': '+esc(String(s[k]));}).join(' · ');
+        return '<article class="brand-timeline-item" data-timeline-kind="'+esc(x.kind||'')+'">'+
+          '<div class="brand-timeline-date">'+esc(timelineDate(x.occurredAt))+'</div>'+
+          '<div class="brand-timeline-line"><span></span></div>'+
+          '<div class="brand-timeline-copy"><div class="eyebrow">'+esc(x.authority||'')+'</div><h3>'+esc(x.label||x.kind)+'</h3>'+
+          '<div class="graph-status">'+esc(graphTruthLabel(x.truthClass))+' · '+esc(f.state||'unknown')+(f.ageDays==null?'':' · '+esc(f.ageDays)+'d')+'</div>'+
+          (stateText?'<p>'+stateText+'</p>':'')+(metricText?'<div class="graph-metrics">'+metricText+'</div>':'')+
+          '<details><summary>'+T('Provenance','Provenance')+'</summary><p><b>Source class:</b> '+esc(x.sourceClass||'—')+'<br><b>Source ref:</b> '+esc(x.sourceRef||'—')+'<br><b>Occurred:</b> '+esc(x.occurredAt||'—')+(x.proofHash?'<br><b>Proof hash:</b> '+esc(x.proofHash):'')+'</p>'+(x.sourceUrl?'<p><a href="'+esc(x.sourceUrl)+'" target="_blank" rel="noopener">SOURCE ↗</a></p>':'')+'</details></div></article>';
+      }).join('');
+      openSheet('<div class="eyebrow">BRAND RELATIONSHIP TIMELINE · READ ONLY</div><h1 style="font-size:42px">'+esc(d.brandName||brandId)+'</h1>'+
+        '<div class="brand-graph-policy"><span>CANONICAL BRAND ID · '+esc(d.brandRef||brandId)+'</span><span>PROVENANCE</span><span>FRESHNESS</span><span>NO PII</span></div>'+
+        '<div class="brand-timeline-summary"><b>'+esc(items.length)+'</b><span>'+T('исторических evidence-событий','historical evidence events')+'</span><small>'+esc(d.source||'')+' · '+esc(d.productionAdmitted?'PRODUCTION ADMITTED':'PREVIEW / NOT ADMITTED')+'</small></div>'+
+        '<div class="brand-timeline">'+html+'</div>'+
+        '<div class="demo-note"><b>'+T('Verified commercial outcome требует внешнего order reference и evidence reference.','Verified commercial outcome requires an external order reference and an evidence reference.')+'</b> '+T('Shortlist, meeting и qualified lead сами по себе не считаются выручкой.','Shortlist, meeting and qualified lead are not revenue by themselves.')+'</div>');
+    }catch(_){toast(T('История бренда недоступна','Brand timeline unavailable'));}
   }
 
   async function openPressKit(eventId){
@@ -1781,6 +1811,7 @@
       else if(a==='perks')perks();
       else if(a==='mfw-365')openMfw365Feed();
       else if(a==='brand-network-graph')openBrandNetworkGraph(el.getAttribute('data-id')||'b1');
+      else if(a==='brand-relationship-timeline')openBrandRelationshipTimeline(el.getAttribute('data-id')||'b1');
       else if(a==='brand-365')openBrand365(el.getAttribute('data-id')||'b1');
       else if(a==='brand-loyalty')openBrandLoyalty(el.getAttribute('data-id')||'b1');
       else if(a==='loyalty-install'){registerLoyaltyInstall(!isStandaloneApp()).then(function(){openBrandLoyalty(el.getAttribute('data-brand')||'b1');});}
