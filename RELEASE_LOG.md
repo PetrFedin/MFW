@@ -631,4 +631,4 @@ Preserved boundaries:
 - verified commercial outcome requires external order reference plus explicit evidence reference;
 - projections remain read-only and not production-admitted while Phase 0 is open.
 
-Returned immediately to the Phase 0 PostgreSQL gate after merge. Live Render re-verification still shows memory mode, missing secure database binding, empty healthCheckPath and stale deployed SHA. No pg-boss/outbox work has been started ahead of admission.
+Returned immediately to the Phase 0 PostgreSQL gate after merge. Live Render now serves exact `main@f437135fbdc8074cce4b8acfc15eb06ddc14a86b`, but still shows memory mode, missing secure database binding and empty `healthCheckPath`. No pg-boss/outbox work has been started ahead of admission.
