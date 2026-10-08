@@ -48,7 +48,7 @@ async function hydrateVerifiedRoster(){
       if(grid)grid.innerHTML=rows.slice(0,12).map(function(b,i){
         var cls=['red','blue','cream'][i%3];
         return '<article class="brand-card '+cls+'"><div class="verified-pill">СДЕЛАНО В МОСКВЕ · VERIFIED</div><div><small>VERIFIED ROSTER</small><h3>'+esc(b.name)+'</h3><p>'+esc(b.city||'Москва')+' · canonical MFW brand</p><div class="brand-actions"><button data-made-open-mfw="'+esc(b.id)+'">ОТКРЫТЬ В MFW</button><button data-made-open-buyer="'+esc(b.id)+'">BUYER BRIDGE</button></div></div></article>';
-      }).join('');
+      }).join('')+'<article class="brand-card cream preview-card"><div><small>DEMO SLOT · PREVIEW ONLY</small><h3>Московский бренд</h3><p>Неподтверждённый preview не получает Verified badge и не считается участником программы.</p></div></article>';
       bindBrandActions();
     }
     var admission=document.getElementById('madeAdmissionState');
