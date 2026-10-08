@@ -256,7 +256,7 @@ test('Brand Graph BFS node deep-links with the same canonical brandRef', async (
   });
   await page.goto('/platform/index.html?event=mfw', { waitUntil: 'domcontentloaded' });
   const mfw = page.frameLocator('#eventFrame');
-  await mfw.evaluate(() => window.MFWRoute({ kind:'brand', id:'masterpeace' }));
+  await mfw.locator('body').evaluate(() => window.MFWRoute({ kind:'brand', id:'masterpeace' }));
   await mfw.locator('[data-action="brand-network-graph"]').click();
   await mfw.locator('[data-graph-node="meetings"] [data-action="graph-route"]').click();
   await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
