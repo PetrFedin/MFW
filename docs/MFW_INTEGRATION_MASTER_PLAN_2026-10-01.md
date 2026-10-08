@@ -2532,3 +2532,75 @@ The graph may render in memory/demo mode for UX qualification, but production au
 9. the projection remains read-only.
 
 **Moat:** longitudinal first-party event, buyer, professional-network and Brand365 history becomes an explainable brand relationship graph while each underlying domain retains its own authority.
+
+## 2026-10-08 — Brand Relationship Timeline
+
+### Purpose
+
+Turn the Cross-event Brand Graph from a current-state snapshot into a longitudinal, evidence-backed history for one canonical brandRef.
+
+Timeline stages:
+
+- first canonical brand appearance;
+- MFW participation;
+- Made in Moscow verification;
+- first buyer shortlist / buyer-interest evidence;
+- BFS meetings;
+- BFS lead evolution;
+- Brand365 D30 / D90 / D365 continuity;
+- verified commercial outcome, only when admitted external order evidence exists.
+
+### Evidence contract
+
+Every timeline item exposes:
+
+- occurredAt;
+- truth class;
+- authority;
+- source class;
+- source reference;
+- source URL / proof hash when available;
+- freshness state;
+- bounded non-PII metrics;
+- explicit state/stage where applicable.
+
+Freshness presentation:
+
+- FRESH: source age <= 7 days;
+- AGING: source age 8–30 days;
+- STALE: source age > 30 days;
+- UNKNOWN: no evidenced timestamp.
+
+Freshness describes evidence recency only. It does not downgrade historical truth automatically.
+
+### Commercial outcome boundary
+
+A shortlist, meeting, completed meeting, follow-up or qualified lead is not revenue.
+
+`verified_commercial_outcome` may become VERIFIED only when the commerce record contains both:
+
+- an external order reference; and
+- an explicit evidence reference.
+
+Without both, the terminal commercial node remains NOT EVIDENCED.
+
+### Privacy
+
+The timeline is brand-centric. It must not expose buyer emails, phones, private meeting notes, counterpart contacts or other participant PII.
+
+### Production gate
+
+The timeline can be rendered in demo/memory mode for UX validation, but productionAdmitted remains false until the Phase 0 PostgreSQL admission gate is green.
+
+### Acceptance
+
+1. events sort chronologically when they have evidenced timestamps;
+2. undated NOT EVIDENCED milestones sort after evidenced history;
+3. provenance and freshness are visible per item;
+4. Brand365 D30/D90/D365 are aggregate continuity projections only;
+5. commercial revenue is never inferred from CRM progression;
+6. no participant PII enters the endpoint;
+7. desktop/tablet/phone layouts remain readable;
+8. the timeline remains read-only and cannot mutate any underlying authority.
+
+**Strategic effect:** the platform accumulates durable, explainable institutional memory around each canonical fashion brand across events, buyer activity, professional relationships and year-round retention.

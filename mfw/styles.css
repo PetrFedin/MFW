@@ -412,3 +412,29 @@ button,.action,.icon-btn,.nav-btn,.role-btn,.chip{touch-action:manipulation}
   .brand-graph-coverage{grid-template-columns:1fr}
   .brand-graph-coverage small{grid-column:auto}
 }
+
+
+/* Brand Relationship Timeline */
+.brand-timeline-summary{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:end;padding:18px 0;margin:14px 0 20px;border-top:1px solid rgba(17,17,17,.16);border-bottom:1px solid rgba(17,17,17,.16)}
+.brand-timeline-summary b{font-size:34px;line-height:.9}
+.brand-timeline-summary span{font-size:13px}
+.brand-timeline-summary small{grid-column:1/-1;font-size:10px;letter-spacing:.08em;opacity:.65}
+.brand-timeline{display:grid;gap:0}
+.brand-timeline-item{display:grid;grid-template-columns:130px 22px minmax(0,1fr);gap:10px;min-height:112px}
+.brand-timeline-date{font-size:11px;line-height:1.35;padding-top:5px}
+.brand-timeline-line{position:relative}
+.brand-timeline-line:before{content:"";position:absolute;left:10px;top:0;bottom:0;width:1px;background:rgba(17,17,17,.22)}
+.brand-timeline-line span{position:absolute;left:6px;top:8px;width:9px;height:9px;border-radius:50%;background:#111}
+.brand-timeline-copy{padding:0 0 24px}
+.brand-timeline-copy h3{margin:3px 0 7px;font-size:21px}
+.brand-timeline-copy p{font-size:11px;line-height:1.5;margin:8px 0}
+.brand-timeline-copy details{margin-top:9px}
+.brand-timeline-copy summary{cursor:pointer;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+@media(max-width:640px){
+  .brand-timeline-item{grid-template-columns:1fr 18px;gap:8px}
+  .brand-timeline-date{grid-column:1/-1;padding:0 0 4px}
+  .brand-timeline-line{grid-column:1;width:18px;grid-row:2}
+  .brand-timeline-copy{grid-column:2/-1;grid-row:2}
+  .brand-timeline-summary{grid-template-columns:1fr}
+  .brand-timeline-summary small{grid-column:auto}
+}
