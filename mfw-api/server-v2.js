@@ -1944,6 +1944,106 @@ async function router(req,res){
     }
     return json(res,200,{data:memory.brands.map(x=>({...x,madeInMoscowVerified:false})),demo:true,source:'memory'});
   }
+  if(req.method==='GET'&&p.startsWith('/v1/brands/')&&p.endsWith('/relationship-timeline')){
+    const brandRef=p.split('/')[3];
+    const brand=await brand365Store.brandByRef(brandRef);
+    if(!brand)return json(res,404,{error:'brand_not_found'});
+    const canonicalRef=String(brand.id||brandRef),storageId=brand.storageId||null;
+    const now=new Date();
+    const items=[];
+    const add=(x)=>items.push(Object.assign({brandRef:canonicalRef,pii:false},x));
+    const freshness=(iso)=>{
+      if(!iso)return {state:'unknown',ageDays:null};
+      const age=Math.max(0,Math.floor((Date.now()-new Date(iso).getTime())/86400000));
+      return {state:age<=7?'fresh':age<=30?'aging':'stale',ageDays:age};
+    };
+
+    if(pool){
+      const base=await pool.query('SELECT created_at AS "createdAt",updated_at AS "updatedAt",metadata FROM brands WHERE id=$1 LIMIT 1',[storageId]);
+      const br=base.rows[0]||{};
+      add({id:'brand:first_seen',kind:'brand_first_seen',label:'Первое появление бренда',occurredAt:br.createdAt||null,
+        truthClass:'observed',authority:'mfw_brand_registry',sourceClass:'canonical_postgres',sourceRef:'brands.created_at',freshness:freshness(br.updatedAt||br.createdAt)});
+
+      const showRef=brand.metadata&&brand.metadata.showId;
+      if(showRef){
+        const sr=await pool.query(`SELECT COALESCE(external_key,id::text) id,title,starts_at AS "startsAt",source_url AS "sourceUrl",official_updated_at AS "officialUpdatedAt"
+          FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1`,[String(showRef)]);
+        if(sr.rowCount){const x=sr.rows[0];add({id:'mfw:show:'+x.id,kind:'mfw_participation',label:x.title,occurredAt:x.startsAt,
+          truthClass:'reported',authority:'mfw_programme_authority',sourceClass:'official_programme',sourceRef:'/v1/events/'+x.id,sourceUrl:x.sourceUrl||null,freshness:freshness(x.officialUpdatedAt||x.startsAt)});}
+      }
+
+      const made=await pool.query(`SELECT bpm.status,bpm.moderation_status AS "moderationStatus",bpm.verified_at AS "verifiedAt",bpm.reviewed_at AS "reviewedAt",
+        bpm.source_url AS "sourceUrl",bpm.source_snapshot_hash AS "sourceSnapshotHash"
+        FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+        WHERE bpm.brand_id=$1 AND pp.external_key='made_in_moscow' LIMIT 1`,[storageId]);
+      if(made.rowCount){const x=made.rows[0],verified=x.status==='verified'&&x.moderationStatus==='approved';add({
+        id:'made:membership',kind:'made_verification',label:'Сделано в Москве',occurredAt:x.verifiedAt||x.reviewedAt||null,
+        truthClass:verified?'verified':'reported',authority:'made_in_moscow_programme_roster',sourceClass:'programme_membership',
+        sourceRef:'brand_program_memberships',sourceUrl:x.sourceUrl||null,proofHash:x.sourceSnapshotHash||null,
+        state:{status:x.status,moderationStatus:x.moderationStatus},freshness:freshness(x.verifiedAt||x.reviewedAt)});
+      }
+
+      const shortlist=await pool.query(`SELECT count(*)::int count,min(created_at) AS first,max(created_at) AS latest FROM buyer_shortlist WHERE brand_id=$1`,[storageId]);
+      if(Number(shortlist.rows[0].count)>0){const x=shortlist.rows[0];add({id:'buyer:first_shortlist',kind:'buyer_interest',label:'Первый buyer shortlist',
+        occurredAt:x.first,truthClass:'observed',authority:'mfw_buyer_commerce_authority',sourceClass:'canonical_postgres',sourceRef:'buyer_shortlist',
+        metrics:{count:Number(x.count)},freshness:freshness(x.latest)});}
+
+      const meetings=await pool.query(`SELECT id::text id,status,created_at AS "createdAt",updated_at AS "updatedAt" FROM b2b_meetings
+        WHERE brand_id=$1 AND metadata->>'eventBrand'='bfs' ORDER BY created_at ASC LIMIT 100`,[storageId]);
+      meetings.rows.forEach(x=>add({id:'bfs:meeting:'+x.id,kind:'bfs_meeting',label:'BFS meeting · '+String(x.status).toUpperCase(),
+        occurredAt:x.updatedAt||x.createdAt,truthClass:'observed',authority:'bfs_meeting_authority',sourceClass:'canonical_postgres',
+        sourceRef:'/v1/meetings/'+x.id,state:{status:x.status},freshness:freshness(x.updatedAt||x.createdAt)}));
+
+      const leads=await pool.query(`SELECT l.id::text id,l.stage,l.created_at AS "createdAt",l.updated_at AS "updatedAt"
+        FROM b2b_leads l JOIN b2b_meetings m ON m.id=l.meeting_id
+        WHERE m.brand_id=$1 AND l.event_brand='bfs' ORDER BY l.updated_at ASC LIMIT 100`,[storageId]);
+      leads.rows.forEach(x=>add({id:'bfs:lead:'+x.id+':'+x.stage,kind:'lead_evolution',label:'Lead · '+String(x.stage).toUpperCase(),
+        occurredAt:x.updatedAt||x.createdAt,truthClass:'observed',authority:'bfs_lead_authority',sourceClass:'canonical_postgres',
+        sourceRef:'/v1/b2b/leads/'+x.id,state:{stage:x.stage},freshness:freshness(x.updatedAt||x.createdAt)}));
+
+      const d=await pool.query(`SELECT
+        count(*) FILTER(WHERE created_at<=now()-interval '30 days')::int d30,
+        count(*) FILTER(WHERE created_at<=now()-interval '90 days')::int d90,
+        count(*) FILTER(WHERE created_at<=now()-interval '365 days')::int d365,
+        min(created_at) AS first,max(created_at) AS latest
+        FROM brand_follows WHERE brand_id=$1`,[storageId]);
+      const dx=d.rows[0]||{};
+      [['D30',30,dx.d30],['D90',90,dx.d90],['D365',365,dx.d365]].forEach(([label,days,count])=>{
+        add({id:'brand365:'+label.toLowerCase(),kind:'brand365_continuity',label:'Brand365 '+label,occurredAt:count>0?now.toISOString():null,
+          truthClass:count>0?'observed':'not_evidenced',authority:'brand365_authority',sourceClass:'derived_from_brand_follows',
+          sourceRef:'brand_follows.created_at',metrics:{qualifiedFollowers:Number(count||0),thresholdDays:days},freshness:freshness(dx.latest)});
+      });
+
+      const outcome=await pool.query(`SELECT count(*)::int count,COALESCE(sum(amount),0)::numeric total,max(purchased_at) latest
+        FROM brand_purchases WHERE brand_id=$1 AND COALESCE(external_order_ref,'')<>'' AND COALESCE(metadata->>'evidenceRef','')<>''`,[storageId]);
+      const ox=outcome.rows[0]||{};
+      add({id:'commercial:verified_outcome',kind:'verified_commercial_outcome',label:'Verified commercial outcome',
+        occurredAt:Number(ox.count)>0?ox.latest:null,truthClass:Number(ox.count)>0?'verified':'not_evidenced',
+        authority:'brand_commerce_evidence',sourceClass:Number(ox.count)>0?'external_order_plus_evidence_ref':'missing_evidence',
+        sourceRef:'brand_purchases.external_order_ref + metadata.evidenceRef',
+        metrics:{verifiedOrders:Number(ox.count||0),verifiedAmount:Number(ox.total||0)},freshness:freshness(ox.latest)});
+    }else{
+      add({id:'brand:first_seen',kind:'brand_first_seen',label:'Первое появление бренда',occurredAt:null,truthClass:'synthetic',
+        authority:'mfw_brand_registry',sourceClass:'runtime_demo',sourceRef:'memory.brands',freshness:{state:'unknown',ageDays:null}});
+      const trace=[...memory.meetings.values()].filter(x=>String(x.brandId||'')===canonicalRef&&String(x.eventBrand||'')==='bfs');
+      trace.forEach(x=>add({id:'bfs:meeting:'+x.id,kind:'bfs_meeting',label:'BFS meeting · '+String(x.status||'requested').toUpperCase(),
+        occurredAt:x.updatedAt||x.createdAt||null,truthClass:'synthetic',authority:'bfs_meeting_authority',sourceClass:'runtime_demo',
+        sourceRef:'memory.meetings',state:{status:x.status||'requested'},freshness:freshness(x.updatedAt||x.createdAt)}));
+      add({id:'commercial:verified_outcome',kind:'verified_commercial_outcome',label:'Verified commercial outcome',occurredAt:null,
+        truthClass:'not_evidenced',authority:'brand_commerce_evidence',sourceClass:'missing_evidence',
+        sourceRef:'external order + evidence reference required',metrics:{verifiedOrders:0,verifiedAmount:0},freshness:{state:'unknown',ageDays:null}});
+    }
+
+    items.sort((a,b)=>{
+      if(!a.occurredAt&&!b.occurredAt)return 0;if(!a.occurredAt)return 1;if(!b.occurredAt)return -1;
+      return new Date(a.occurredAt)-new Date(b.occurredAt);
+    });
+    return json(res,200,{data:{contract:'mfw-brand-relationship-timeline-v1',brandRef:canonicalRef,brandName:brand.name,
+      generatedAt:now.toISOString(),productionAdmitted:!!(pool&&databaseSchemaReadiness.ready&&REQUIRE_POSTGRES),
+      policy:{readOnly:true,noPii:true,noRevenueInference:true,verifiedOutcomeRequiresExternalOrderAndEvidenceRef:true},
+      items,source:pool?'postgres':'memory_demo'}});
+  }
+
   if(req.method==='GET'&&p.startsWith('/v1/brands/')&&p.endsWith('/network-graph')){
     const brandRef=p.split('/')[3];
     const brand=await brand365Store.brandByRef(brandRef);
