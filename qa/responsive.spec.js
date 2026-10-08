@@ -234,7 +234,7 @@ test('Cross-event Brand Graph v2 exposes authority, source and truth class per n
   });
   await page.goto('/platform/index.html?event=mfw', { waitUntil: 'domcontentloaded' });
   const mfw = page.frameLocator('#eventFrame');
-  await mfw.evaluate(() => window.MFWRoute({ kind:'brand', id:'masterpeace' }));
+  await page.locator('#eventFrame').evaluate((el) => el.contentWindow.MFWRoute({ kind:'brand', id:'masterpeace' }));
   await expect(mfw.getByRole('heading', { name:'Masterpeace' })).toBeVisible();
   await mfw.locator('[data-action="brand-network-graph"]').click();
   await expect(mfw.getByText('CROSS-EVENT BRAND GRAPH V2 · READ ONLY')).toBeVisible();
