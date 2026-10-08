@@ -1015,6 +1015,6 @@ Verified live drift on Render:
 - social reverification is inactive with reason `postgres_required`;
 - live authority has no secure `DATABASE_URL <- mfw-postgres.connectionString` binding;
 - live service `healthCheckPath` is empty instead of `/ready`;
-- live authority is deployed from an older SHA rather than current `main@f437135f...`.
+- live authority is now deployed on exact `main@f437135fbdc8074cce4b8acfc15eb06ddc14a86b`.
 
 Required next operation remains one Render-side secure internal/Blueprint binding plus health-check reconciliation. Do not expose, reconstruct or copy the generated PostgreSQL credential into chat or source control.
