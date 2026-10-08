@@ -37,7 +37,7 @@ for(const forbidden of [
   'counterpart_phone'
 ]) assert(!block.includes(forbidden),'brand_graph_forbidden_projection:'+forbidden);
 
-assert(block.includes("truthClass:'verified'"),'brand_graph_verified_truth_missing');
+assert(block.includes("truthClass:madeVerified?'verified':'not_evidenced'"),'brand_graph_verified_truth_boundary_missing');
 assert(block.includes("truthClass:Number(shortlist.count)>0?'observed':'not_evidenced'"),'brand_graph_shortlist_truth_boundary_missing');
 assert(block.includes("truthClass:Number(meetings.count)>0?'observed':'not_evidenced'"),'brand_graph_meeting_truth_boundary_missing');
 assert(block.includes("truthClass:Number(leads.count)>0?'observed':'not_evidenced'"),'brand_graph_lead_truth_boundary_missing');
