@@ -36,6 +36,18 @@ async function mockAuthorities(page) {
       body = { data: [{ id: 'masterpeace', name: 'Masterpeace', city: 'Москва' }], source: 'qa-postgres' };
     } else if (path === '/v1/made-in-moscow/overview') {
       body = { data: { verifiedBrands: 1, productionAdmitted: false } };
+    } else if (path === '/v1/brands/masterpeace/network-graph') {
+      body = { data: { contract:'mfw-cross-event-brand-graph-v2', brandRef:'masterpeace', brandName:'Masterpeace', source:'qa-postgres', policy:{noPii:true,readOnly:true,noRevenueInference:true,noUniversalScore:true}, nodes:[
+        {id:'brand',label:'Masterpeace',status:'published',truthClass:'observed',authority:'mfw_brand_registry',sourceClass:'canonical_postgres',sourceRef:'/v1/brands/masterpeace',metrics:{brandRef:'masterpeace'}},
+        {id:'made',label:'Made in Moscow',status:'verified',truthClass:'verified',authority:'made_in_moscow_programme_roster',sourceClass:'programme_membership',sourceRef:'/v1/made-in-moscow/brands',metrics:{verified:true},route:{eventCode:'made',kind:'verified',id:'masterpeace'}},
+        {id:'shows',label:'MFW show',status:'published',truthClass:'reported',authority:'mfw_programme_authority',sourceClass:'official_programme',sourceRef:'/v1/events/mfw-2909-2100',metrics:{count:1},route:{eventCode:'mfw',kind:'event',id:'mfw-2909-2100'}},
+        {id:'collections',label:'Collections',status:'published',truthClass:'observed',authority:'mfw_collection_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/collections?brandId=masterpeace',metrics:{count:2},route:{eventCode:'mfw',kind:'brand',id:'masterpeace'}},
+        {id:'shortlists',label:'Buyer shortlists',status:'active',truthClass:'observed',authority:'mfw_buyer_commerce_authority',sourceClass:'canonical_postgres',sourceRef:'buyer_shortlist',metrics:{count:4},route:{eventCode:'mfw',kind:'brand',id:'masterpeace'}},
+        {id:'meetings',label:'BFS meetings',status:'active',truthClass:'observed',authority:'bfs_meeting_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/meetings',metrics:{count:2,confirmed:1,completed:1},route:{eventCode:'bfs',kind:'brand-buyer',brandRef:'masterpeace'}},
+        {id:'leads',label:'BFS leads',status:'active',truthClass:'observed',authority:'bfs_lead_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/b2b/leads',metrics:{count:1,qualified:1,won:0},route:{eventCode:'bfs',kind:'brand-buyer',brandRef:'masterpeace'}},
+        {id:'brand365',label:'Brand365 audience',status:'active',truthClass:'observed',authority:'brand365_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/brand-portal/masterpeace/overview',metrics:{followers:125,favorites:19,eligible:7,claims:3},route:{eventCode:'mfw',kind:'brand',id:'masterpeace'}},
+        {id:'evidence',label:'Evidence coverage',status:'preview_not_admitted',truthClass:'observed',authority:'cross_event_brand_graph_projection',sourceClass:'read_only_projection',sourceRef:'/v1/brands/masterpeace/network-graph',metrics:{evidencedStages:7,totalStages:7,dataMode:'qa-postgres',productionAdmitted:false}}
+      ], edges:[] } };
     } else if (path.includes('/profile')) {
       body = { data: { id: 'qa-user', firstName: 'QA', lastName: 'Agent', email: 'qa@example.test' } };
     } else if (path.includes('/agenda')) {
@@ -164,6 +176,7 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
   await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
   await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(1);
+  await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
 });
@@ -212,6 +225,43 @@ test('Made verified brand deep-links into exact MFW brand and preserves brand co
   expect(trace).toMatchObject({ brandRef: 'masterpeace', source: 'made_in_moscow', lastTarget: 'bfs' });
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('made-mfw-bfs-brand-path.png') });
+});
+
+test('Cross-event Brand Graph v2 exposes authority, source and truth class per node', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfwOpeningSeen', '1');
+    localStorage.setItem('mfwOnboarded', '1');
+  });
+  await page.goto('/platform/index.html?event=mfw', { waitUntil: 'domcontentloaded' });
+  const mfw = page.frameLocator('#eventFrame');
+  await mfw.evaluate(() => window.MFWRoute({ kind:'brand', id:'masterpeace' }));
+  await expect(mfw.getByRole('heading', { name:'Masterpeace' })).toBeVisible();
+  await mfw.locator('[data-action="brand-network-graph"]').click();
+  await expect(mfw.getByText('CROSS-EVENT BRAND GRAPH V2 · READ ONLY')).toBeVisible();
+  await expect(mfw.getByText('CANONICAL BRAND ID · masterpeace')).toBeVisible();
+  await expect(mfw.locator('[data-graph-node]')).toHaveCount(8);
+  await expect(mfw.locator('[data-graph-node="made"]')).toContainText('VERIFIED');
+  await expect(mfw.locator('[data-graph-node="meetings"]')).toContainText('bfs_meeting_authority');
+  await expect(mfw.locator('[data-graph-node="brand365"]')).toContainText('125');
+  await expect(mfw.getByText('PREVIEW / NOT ADMITTED')).toBeVisible();
+  const overflow = await mfw.locator('body').evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+  await page.screenshot({ path: testInfo.outputPath('cross-event-brand-graph-v2.png') });
+});
+
+test('Brand Graph BFS node deep-links with the same canonical brandRef', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfwOpeningSeen', '1');
+    localStorage.setItem('mfwOnboarded', '1');
+  });
+  await page.goto('/platform/index.html?event=mfw', { waitUntil: 'domcontentloaded' });
+  const mfw = page.frameLocator('#eventFrame');
+  await mfw.evaluate(() => window.MFWRoute({ kind:'brand', id:'masterpeace' }));
+  await mfw.locator('[data-action="brand-network-graph"]').click();
+  await mfw.locator('[data-graph-node="meetings"] [data-action="graph-route"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  const bfs = page.frameLocator('#eventFrame');
+  await expect(bfs.getByText('BRAND CONTEXT · masterpeace')).toBeVisible();
 });
 
 test('live evidence distinguishes cross-event brand transition from meeting and revenue proof', async ({ page }) => {
