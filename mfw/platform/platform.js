@@ -40,6 +40,7 @@
   var scenarioB={period:'all',ecosystem:'bfs',market:'all',category:'all',buyerType:'all',evidence:'all',retention:'D30',revenueSurface:'all'};
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
+  var pendingEventRoute=null;
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
   function ruCode(value){
@@ -603,6 +604,10 @@
     var interest=getInterestState(),reg=(accountState.registrations.mfw||accountState.registrations.bfs),brandId=(interest.mfwFavorites||[])[0]||(interest.mfwFollowed||[])[0]||null;
     var brand=(window.MFP_DATA&&window.MFP_DATA.mfw&&window.MFP_DATA.mfw.brands||[]).filter(function(x){return x.id===brandId;})[0];
     var bfsMeeting=safeJson('bfsMeetingState',null);
+    var crossBrand=safeJson('mfp.crossBrandJourney.v1',null);
+    if(!brand&&crossBrand&&crossBrand.brandRef){
+      brand=(window.MFP_DATA&&window.MFP_DATA.mfw&&window.MFP_DATA.mfw.brands||[]).filter(function(x){return String(x.id)===String(crossBrand.brandRef);})[0]||null;
+    }
     var followed=(interest.mfwFollowed||[]).length+Object.keys(interest.bfsFollowed||{}).filter(function(k){return interest.bfsFollowed[k];}).length;
     var favorite=(interest.mfwFavorites||[]).length+Object.keys(interest.bfsFavorites||{}).filter(function(k){return interest.bfsFavorites[k];}).length;
     var saved=(interest.mfwEvents||[]).length+Object.keys(interest.bfsSaved||{}).filter(function(k){return interest.bfsSaved[k];}).length;
@@ -610,7 +615,8 @@
       {stage:'ИДЕНТИЧНОСТЬ',time:'NOW',value:reg?'Shared profile + event registration':'Shared profile only',evidence:reg?'observed':'not_evidenced'},
       {stage:'INTEREST',time:'NOW',value:(favorite||followed||saved)?((favorite+' favorite · '+followed+' follow · '+saved+' saved')):'No explicit signal yet',evidence:(favorite||followed||saved)?'observed':'not_evidenced'},
       {stage:'BRAND',time:'NOW',value:brand?brand.name:'No MFW brand selected',evidence:brand?'observed':'not_evidenced'},
-      {stage:'ВСТРЕЧА',time:'NOW',value:bfsMeeting?((bfsMeeting.delegate||'BFS contact')+' · '+String(bfsMeeting.status||'requested').toUpperCase()):'No meeting evidence in current local state',evidence:bfsMeeting?'observed':'not_evidenced'},
+      {stage:'CROSS-EVENT',time:'NOW',value:crossBrand?('Made → '+String(crossBrand.lastTarget||'').toUpperCase()+' · '+String(crossBrand.brandRef||'')):'No cross-ecosystem brand transition observed',evidence:crossBrand?'observed':'not_evidenced'},
+      {stage:'ВСТРЕЧА',time:'NOW',value:bfsMeeting?((bfsMeeting.delegate||'BFS contact')+' · '+String(bfsMeeting.status||'requested').toUpperCase()+(bfsMeeting.brandId?' · brand '+bfsMeeting.brandId:'')):'No meeting evidence in current local state',evidence:bfsMeeting?'observed':'not_evidenced'},
       {stage:'INTENT',time:'NOW',value:'Requires explicit Deal Room / request evidence',evidence:'not_evidenced'},
       {stage:'ПЕРЕДАЧА',time:'NOW',value:'Requires admitted external reference',evidence:'not_evidenced'},
       {stage:'30 DAYS',time:'D30',value:'Requires verified continuity history',evidence:'not_evidenced'},
@@ -1514,7 +1520,19 @@
     root.innerHTML=cards.map(function(x){var style=x.image?' style="background-image:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.86)),url(\''+h(x.image)+'\')"':'';return '<button class="investor-ecosystem-card" data-gallery-event="'+x.event+'"'+style+'><span>'+x.label+'</span><b>'+x.title+'</b><small>'+x.copy+'</small></button>';}).join('');
     [].slice.call(root.querySelectorAll('[data-gallery-event]')).forEach(function(b){b.onclick=function(){openEvent(b.dataset.galleryEvent);};});
   }
-  function openEvent(event){
+  function openEvent(event,route){
+    pendingEventRoute=route||null;
+    if(route&&route.source==='made_in_moscow'&&(route.id||route.brandRef)){
+      try{
+        var trace=safeJson('mfp.crossBrandJourney.v1',{});
+        trace.brandRef=String(route.id||route.brandRef);
+        trace.source='made_in_moscow';
+        trace.lastTarget=event;
+        trace.lastRouteKind=String(route.kind||'');
+        trace.observedAt=new Date().toISOString();
+        localStorage.setItem('mfp.crossBrandJourney.v1',JSON.stringify(trace));
+      }catch(e){}
+    }
     var mfw=event==='mfw',bfs=event==='bfs',made=event==='made';
     document.body.classList.toggle('bfs-mode',bfs);
     document.body.classList.toggle('made-mode',made);
@@ -1668,10 +1686,16 @@
     if(!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-open-account')openAccount();
     if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
-    if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode);
+    if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode,e.data.route||null);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });
-  frame.addEventListener('load',notifyFrame);
+  frame.addEventListener('load',function(){
+    notifyFrame();
+    if(pendingEventRoute){
+      var route=pendingEventRoute;pendingEventRoute=null;
+      try{frame.contentWindow.postMessage({type:'mfp-route',route:route},'*');}catch(e){}
+    }
+  });
   updateNetworkStatus();
   registerServiceWorker();
   hydrateMadeDirectory();

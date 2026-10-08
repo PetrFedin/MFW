@@ -32,6 +32,10 @@ async function mockAuthorities(page) {
       path === '/v1/admin/native-readiness'
     ) {
       body = { data: {} };
+    } else if (path === '/v1/made-in-moscow/brands') {
+      body = { data: [{ id: 'masterpeace', name: 'Masterpeace', city: 'Москва' }], source: 'qa-postgres' };
+    } else if (path === '/v1/made-in-moscow/overview') {
+      body = { data: { verifiedBrands: 1, productionAdmitted: false } };
     } else if (path.includes('/profile')) {
       body = { data: { id: 'qa-user', firstName: 'QA', lastName: 'Agent', email: 'qa@example.test' } };
     } else if (path.includes('/agenda')) {
@@ -132,6 +136,104 @@ test('Made in Moscow switch keeps third ecosystem readable and connected', async
   await page.screenshot({ path: testInfo.outputPath('made-in-moscow.png') });
 });
 
+
+test('three ecosystems share identity while keeping scoped participation and Made verification separate', async ({ page }, testInfo) => {
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+
+  await page.locator('#accountBtn').click();
+  await page.locator('#profileForm input[name="firstName"]').fill('QA');
+  await page.locator('#profileForm input[name="lastName"]').fill('Ecosystem');
+  await page.locator('#profileForm input[name="email"]').fill('qa-ecosystem@example.test');
+  await page.locator('#profileForm input[name="phone"]').fill('+10000000000');
+  await page.locator('#profileForm button[type="submit"]').click();
+  await page.locator('#accountClose').click();
+
+  await page.locator('[data-event="bfs"]').click();
+  const bfs = page.frameLocator('#eventFrame');
+  await expect(bfs.locator('.logo')).toBeVisible();
+  await bfs.locator('[data-view="profile"]').click();
+  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible();
+  await expect(bfs.getByText('MFW')).toBeVisible();
+  await expect(bfs.getByText('СДЕЛАНО В МОСКВЕ')).toBeVisible();
+
+  await page.locator('[data-event="made"]').click();
+  const made = page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeAccountBridge')).toBeVisible();
+  await expect(made.locator('#madeAccountBridge')).toContainText('QA Ecosystem');
+  await expect(made.locator('#madeAccountBridge')).toContainText('MFW');
+  await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
+  await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(1);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
+});
+
+test('Made in Moscow bridge navigates back to MFW and BFS without losing platform shell', async ({ page }) => {
+  await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
+  const made = page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeAccountBridge')).toBeVisible();
+
+  await made.locator('[data-bridge-event="mfw"]').click();
+  await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
+  await expect(page.locator('#eventFrame')).toHaveAttribute('src', '../mfw/index.html');
+
+  await page.locator('[data-event="made"]').click();
+  await made.locator('[data-bridge-event="bfs"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  await expect(page.locator('#eventFrame')).toHaveAttribute('src', './bfs/index.html');
+});
+
+
+
+
+test('Made verified brand deep-links into exact MFW brand and preserves brand context for BFS', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfwOpeningSeen', '1');
+    localStorage.setItem('mfwOnboarded', '1');
+  });
+  await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
+  const made = page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeBrandGrid')).toContainText('Masterpeace');
+
+  await made.locator('[data-made-open-mfw="masterpeace"]').click();
+  await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
+  const mfw = page.frameLocator('#eventFrame');
+  await expect(mfw.locator('#modal h1').getByText('Masterpeace', { exact: true })).toBeVisible();
+
+  await page.locator('[data-event="made"]').click();
+  await expect(made.locator('[data-made-open-buyer="masterpeace"]')).toBeVisible();
+  await made.locator('[data-made-open-buyer="masterpeace"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  const bfs = page.frameLocator('#eventFrame');
+  await expect(bfs.getByText('BRAND CONTEXT · masterpeace')).toBeVisible();
+  await expect(bfs.getByText(/Made in Moscow → MFW canonical brand → BFS commercial flow/)).toBeVisible();
+
+  const trace = await page.evaluate(() => JSON.parse(localStorage.getItem('mfp.crossBrandJourney.v1') || 'null'));
+  expect(trace).toMatchObject({ brandRef: 'masterpeace', source: 'made_in_moscow', lastTarget: 'bfs' });
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath('made-mfw-bfs-brand-path.png') });
+});
+
+test('live evidence distinguishes cross-event brand transition from meeting and revenue proof', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfp.crossBrandJourney.v1', JSON.stringify({
+      brandRef: 'masterpeace',
+      source: 'made_in_moscow',
+      lastTarget: 'bfs',
+      lastRouteKind: 'brand-buyer',
+      observedAt: '2026-10-07T17:00:00.000Z'
+    }));
+  });
+  await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="proof"]').click();
+  await expect(page.getByText('CROSS-EVENT', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Made → BFS · masterpeace/)).toBeVisible();
+  await expect(page.getByText(/Requires explicit Deal Room \/ request evidence/)).toBeVisible();
+  await expect(page.getByText(/Requires admitted external reference/)).toBeVisible();
+});
+
+
 test('guided investor demo traverses all three ecosystems and shared layers', async ({ page }) => {
   await page.goto('/platform/index.html', { waitUntil: 'domcontentloaded' });
   await page.locator('#investorBtn').click();
@@ -203,7 +305,7 @@ test('Evidence Control Tower distinguishes live dossier from synthetic dossier a
   await page.locator('[data-hub-tab="proof"]').click();
   await expect(page.locator('.control-tower-top .drawer-kicker')).toContainText('ЦЕНТР УПРАВЛЕНИЯ ДОКАЗАТЕЛЬСТВАМИ');
   await expect(page.getByText('LIVE-ДАННЫЕ · ТЕКУЩИЙ АККАУНТ')).toBeVisible();
-  await expect(page.locator('.dossier-timeline article')).toHaveCount(9);
+  await expect(page.locator('.dossier-timeline article')).toHaveCount(10);
   await expect(page.getByText('НЕ ПОДТВЕРЖДЕНО').first()).toBeVisible();
 
   await page.locator('[data-proof-mode="synthetic"]').click();

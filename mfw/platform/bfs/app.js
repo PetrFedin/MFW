@@ -34,6 +34,7 @@ var speakers=[['Елена Ахмадуллина','Основатель бре�
 var delegates=[];
 var organisations=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations)||[];
 var madeVerifiedByBrandRef={};
+var crossBrandContext=null;
 var leadState=(function(){try{return JSON.parse(localStorage.getItem('bfsLeadState')||'{}')}catch(e){return {}}})();
 function saveLeads(){try{localStorage.setItem('bfsLeadState',JSON.stringify(leadState))}catch(e){}}
 function orgById(id){return (organisations||[]).filter(function(o){return o.id===id})[0]||null}
@@ -140,7 +141,7 @@ function openSession(id){
 }
 function defaultMeetingStart(){return '2026-09-29T16:00:00+03:00'}
 async function requestMeeting(input){
- var local={delegate:input.counterpartName||input.organisationName||'BFS contact',slot:'29 SEP · 16:00',status:'requested'};
+ var local={delegate:input.counterpartName||input.organisationName||'BFS contact',slot:'29 SEP · 16:00',status:'requested',brandId:input.brandId||null};
  state.meeting=local;
  try{localStorage.setItem('bfsMeetingRequested','1')}catch(e){}
  b2b();
@@ -151,6 +152,7 @@ async function requestMeeting(input){
    organisationRef:input.organisationRef||null,
    counterpartRef:input.counterpartRef||null,
    counterpartName:input.counterpartName||null,
+   brandId:input.brandId||null,
    startsAt:input.startsAt||defaultMeetingStart(),
    note:'BFS app meeting request'
   })});
@@ -193,12 +195,15 @@ async function refreshLeadPipeline(){
  }catch(e){root.innerHTML='<div class="meta">Lead pipeline временно недоступен.</div>';}
 }
 function b2b(){
+ var brandContext=crossBrandContext?'<div class="meeting-card cross-brand-context"><b>BRAND CONTEXT · '+String(crossBrandContext.brandRef||'')+'</b><span>Источник: Made in Moscow → MFW canonical brand → BFS commercial flow</span><div class="card-actions"><button id="brandContextMeet">ЗАПРОСИТЬ ВСТРЕЧУ</button><button id="brandContextClear">СБРОСИТЬ</button></div></div>':'';
  var meeting=state.meeting?'<div class="meeting-card"><b>'+state.meeting.delegate+'</b><span>'+(state.meeting.startsAt||state.meeting.slot||'')+' · '+String(state.meeting.status||'requested').toUpperCase()+'</span>'+
   '<div class="card-actions"><button id="meetingConfirm">CONFIRM</button><button id="meetingComplete">MEETING HELD</button><button id="cancelMeeting">CANCEL</button></div></div>':'';
  $('#content').innerHTML='<div class="section-head"><h2>B2B meetings</h2><span>SERVER WORKFLOW</span></div>'+
   '<div class="b2b"><div class="time">NETWORKING</div><h3>People → meeting → follow-up → lead</h3><p class="meta">Встреча сохраняется в authority; после завершения создаётся follow-up lead.</p>'+
-  '<div class="card-actions"><button class="lang" id="discoverDelegates">ЛЮДИ</button><button class="lang" id="orgDirectory">ОРГАНИЗАЦИИ</button></div></div>'+meeting+'<div id="leadPipeline"></div>';
+  '<div class="card-actions"><button class="lang" id="discoverDelegates">ЛЮДИ</button><button class="lang" id="orgDirectory">ОРГАНИЗАЦИИ</button></div></div>'+brandContext+meeting+'<div id="leadPipeline"></div>';
  $('#discoverDelegates').onclick=delegateDiscovery;$('#orgDirectory').onclick=organisationDirectory;refreshLeadPipeline();
+ if($('#brandContextMeet'))$('#brandContextMeet').onclick=function(){requestMeeting({organisationName:'Made in Moscow Buyer Bridge',counterpartName:'Brand '+crossBrandContext.brandRef,startsAt:defaultMeetingStart(),brandId:crossBrandContext.brandRef});};
+ if($('#brandContextClear'))$('#brandContextClear').onclick=function(){crossBrandContext=null;b2b();};
  async function setMeetingStatus(status){
   if(!state.meeting||!state.meeting.id)return;
   try{
@@ -249,7 +254,14 @@ function profile(){
 function render(){$$('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===state.view)});({today:today,programme:programme,speakers:showSpeakers,b2b:b2b,pass:pass,profile:profile}[state.view]||today)()}
 $$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
 $('.lang').onclick=function(){state.lang=state.lang==='ru'?'en':'ru';$('.lang').textContent=state.lang==='ru'?'RU / EN':'EN / RU';};
-window.addEventListener('message',function(e){if(e.data&&e.data.type==='mfp-account-state'){state.account=e.data.payload;render();}});
+window.addEventListener('message',function(e){
+ if(!e.data)return;
+ if(e.data.type==='mfp-account-state'){state.account=e.data.payload;render();}
+ if(e.data.type==='mfp-route'&&e.data.route&&e.data.route.kind==='brand-buyer'){
+   crossBrandContext={brandRef:String(e.data.route.brandRef||''),source:String(e.data.route.source||'platform')};
+   state.view='b2b';render();
+ }
+});
 try{var savedMeeting=JSON.parse(localStorage.getItem('bfsMeetingState')||'null');if(savedMeeting)state.meeting=savedMeeting;}catch(e){}
 parent.postMessage({type:'mfp-request-account-state'},'*');renderMediaDeck();render();hydrateMadeVerified();
 })();
