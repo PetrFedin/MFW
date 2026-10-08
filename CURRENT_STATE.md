@@ -128,7 +128,7 @@ Modelled metrics must not be presented as audited business valuation.
 
 ## PostgreSQL
 
-Current migrations: **001–021**.
+Current migrations: **001–025**.
 
 Latest schema layer:
 
@@ -979,3 +979,42 @@ Evidence semantics are intentionally strict:
 - commercial outcome/revenue requires admitted outcome evidence and is never inferred from a cross-event click.
 
 The platform shell owns deep-link transport only. MFW remains canonical brand/show/collection authority, BFS remains meeting/networking/lead authority, and Made in Moscow remains verified-programme projection/discovery. The same brandRef is transported between them instead of matching by display name.
+
+
+## Cross-event Brand Graph + Brand Relationship Timeline — 2026-10-08
+
+Merged on canonical `main`:
+
+- PR #14 — Cross-event Brand Graph v2;
+- PR #15 — Brand Relationship Timeline;
+- current exact main SHA after both merges: `f437135fbdc8074cce4b8acfc15eb06ddc14a86b`.
+
+Current boundary:
+- canonical brandRef is carried across Made in Moscow -> MFW -> BFS without display-name inference;
+- graph/timeline are read-only projections over existing authorities;
+- every visible stage carries truth/source/authority semantics;
+- freshness is explicit as fresh / aging / stale / unknown;
+- missing evidence remains NOT EVIDENCED rather than being inferred;
+- shortlist, meeting and qualified lead do not imply revenue;
+- verified commercial outcome requires both external order reference and explicit evidence reference;
+- no participant PII is projected;
+- productionAdmitted remains false until Phase 0 PostgreSQL admission is green.
+
+Responsive qualification:
+- PR #14 exact-head Responsive QA #349: PASS;
+- PR #15 exact-head Responsive QA #351: PASS.
+
+## Current Phase 0 admission blocker — 2026-10-08
+
+Repository code is no longer the blocker for Phase 0.
+
+Verified live drift on Render:
+- existing `mfw-postgres` is PostgreSQL 17, free, Frankfurt and available;
+- external database IP allowlist is empty and must remain closed;
+- live `mfw-authority` still runs in `dataMode=memory`;
+- social reverification is inactive with reason `postgres_required`;
+- live authority has no secure `DATABASE_URL <- mfw-postgres.connectionString` binding;
+- live service `healthCheckPath` is empty instead of `/ready`;
+- live authority is now deployed on exact `main@f437135fbdc8074cce4b8acfc15eb06ddc14a86b`.
+
+Required next operation remains one Render-side secure internal/Blueprint binding plus health-check reconciliation. Do not expose, reconstruct or copy the generated PostgreSQL credential into chat or source control.

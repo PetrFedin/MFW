@@ -243,3 +243,37 @@ Target PASS requires, on one exact SHA:
 - PostgreSQL mode + strict guard + schema ready + Golden Paths PASS.
 
 Current live state is expected to FAIL until the secure internal `DATABASE_URL` binding / Blueprint sync is actually applied.
+
+
+## 2026-10-08 — post Brand Graph/Timeline admission re-verification
+
+Canonical repository head after PR #14 and PR #15:
+`f437135fbdc8074cce4b8acfc15eb06ddc14a86b`.
+
+Repository qualification before returning to infrastructure:
+- Cross-event Brand Graph v2 exact-head Responsive QA #349: PASS;
+- Brand Relationship Timeline exact-head Responsive QA #351: PASS;
+- both PRs merged with no review/thread blockers.
+
+Live Render control-plane re-verification:
+- workspace: `ME` / `tea-dagitrp5efls73apuv50`;
+- `mfw-authority`: free Node service, Frankfurt, source `PetrFedin/MFW:main`;
+- `mfw-postgres`: free PostgreSQL 17, Frankfurt, status `available`;
+- PostgreSQL external IP allowlist remains empty;
+- latest live authority deploy: `f437135fbdc8074cce4b8acfc15eb06ddc14a86b` (`dep-db3r2o6gekts73fs79dg`) — current main is live;
+- authority logs still report `dataMode=memory`;
+- social reverification remains inactive with reason `postgres_required`;
+- live service control plane reports empty `healthCheckPath` while canonical `render.yaml` requires `/ready`.
+
+The remaining Phase 0 operation is still infrastructure-only:
+1. securely bind `DATABASE_URL` from existing `mfw-postgres.connectionString` inside Render;
+2. set/confirm `MFW_REQUIRE_POSTGRES=true`;
+3. set `healthCheckPath=/ready`;
+4. deploy exact current main;
+5. allow startup migrations 001–025;
+6. require schema reconciliation + `/ready=200` + `dataMode=postgres` + social reverification + PostgreSQL Golden Paths;
+7. run Admission Evidence Bundle and Render Runtime Admission on that exact SHA;
+8. run Capital admission/hash-chain;
+9. only then advance to pg-boss/outbox.
+
+The Render MCP connector can set literal environment variables but cannot apply a `fromDatabase` reference or Blueprint sync. The generated database credential must not be copied into chat, repository files or external tooling as a workaround.
