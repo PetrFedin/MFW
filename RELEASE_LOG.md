@@ -611,3 +611,24 @@ Added `mfw-render-runtime-admission-v1`:
 - foundation regression coverage.
 
 No live PostgreSQL admission is claimed by this change.
+
+
+## 2026-10-08 — Cross-event Brand Graph v2 and Brand Relationship Timeline
+
+Merged the two stacked read-model layers after exact-head responsive qualification:
+
+- PR #14 Cross-event Brand Graph v2 — Responsive QA #349 PASS;
+- PR #15 Brand Relationship Timeline — Responsive QA #351 PASS;
+- resulting canonical main SHA: `f437135fbdc8074cce4b8acfc15eb06ddc14a86b`.
+
+Preserved boundaries:
+- canonical brandRef, no display-name identity inference;
+- source/authority/truth class per graph/timeline stage;
+- freshness/provenance per timeline item;
+- no participant PII;
+- missing evidence stays NOT EVIDENCED;
+- shortlist/meeting/qualified lead are not revenue;
+- verified commercial outcome requires external order reference plus explicit evidence reference;
+- projections remain read-only and not production-admitted while Phase 0 is open.
+
+Returned immediately to the Phase 0 PostgreSQL gate after merge. Live Render re-verification still shows memory mode, missing secure database binding, empty healthCheckPath and stale deployed SHA. No pg-boss/outbox work has been started ahead of admission.
