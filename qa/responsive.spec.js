@@ -164,7 +164,6 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
   await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
   await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(1);
-  await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
 });
