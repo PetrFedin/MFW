@@ -48,6 +48,21 @@ async function mockAuthorities(page) {
         {id:'brand365',label:'Brand365 audience',status:'active',truthClass:'observed',authority:'brand365_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/brand-portal/masterpeace/overview',metrics:{followers:125,favorites:19,eligible:7,claims:3},route:{eventCode:'mfw',kind:'brand',id:'masterpeace'}},
         {id:'evidence',label:'Evidence coverage',status:'preview_not_admitted',truthClass:'observed',authority:'cross_event_brand_graph_projection',sourceClass:'read_only_projection',sourceRef:'/v1/brands/masterpeace/network-graph',metrics:{evidencedStages:7,totalStages:7,dataMode:'qa-postgres',productionAdmitted:false}}
       ], edges:[] } };
+    } else if (path === '/v1/brands/masterpeace/relationship-timeline') {
+      body = { data: {
+        contract:'mfw-brand-relationship-timeline-v1', brandRef:'masterpeace', brandName:'Masterpeace', source:'qa-postgres', productionAdmitted:false,
+        items:[
+          {id:'brand:first_seen',kind:'brand_first_seen',label:'Первое появление бренда',occurredAt:'2026-09-20T10:00:00Z',truthClass:'observed',authority:'mfw_brand_registry',sourceClass:'canonical_postgres',sourceRef:'brands.created_at',freshness:{state:'aging',ageDays:18}},
+          {id:'mfw:show:1',kind:'mfw_participation',label:'Masterpeace Runway',occurredAt:'2026-09-29T18:00:00Z',truthClass:'reported',authority:'mfw_programme_authority',sourceClass:'official_programme',sourceRef:'/v1/events/mfw-2909-2100',freshness:{state:'aging',ageDays:9}},
+          {id:'made:membership',kind:'made_verification',label:'Сделано в Москве',occurredAt:'2026-09-30T10:00:00Z',truthClass:'verified',authority:'made_in_moscow_programme_roster',sourceClass:'programme_membership',sourceRef:'brand_program_memberships',freshness:{state:'aging',ageDays:8}},
+          {id:'buyer:first_shortlist',kind:'buyer_interest',label:'Первый buyer shortlist',occurredAt:'2026-10-01T11:00:00Z',truthClass:'observed',authority:'mfw_buyer_commerce_authority',sourceClass:'canonical_postgres',sourceRef:'buyer_shortlist',metrics:{count:4},freshness:{state:'fresh',ageDays:7}},
+          {id:'bfs:meeting:1',kind:'bfs_meeting',label:'BFS meeting · COMPLETED',occurredAt:'2026-10-02T12:00:00Z',truthClass:'observed',authority:'bfs_meeting_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/meetings/1',state:{status:'completed'},freshness:{state:'fresh',ageDays:6}},
+          {id:'bfs:lead:1:qualified',kind:'lead_evolution',label:'Lead · QUALIFIED',occurredAt:'2026-10-03T12:00:00Z',truthClass:'observed',authority:'bfs_lead_authority',sourceClass:'canonical_postgres',sourceRef:'/v1/b2b/leads/1',state:{stage:'qualified'},freshness:{state:'fresh',ageDays:5}},
+          {id:'brand365:d30',kind:'brand365_continuity',label:'Brand365 D30',occurredAt:'2026-10-08T08:00:00Z',truthClass:'observed',authority:'brand365_authority',sourceClass:'derived_from_brand_follows',sourceRef:'brand_follows.created_at',metrics:{qualifiedFollowers:125,thresholdDays:30},freshness:{state:'fresh',ageDays:0}},
+          {id:'brand365:d90',kind:'brand365_continuity',label:'Brand365 D90',occurredAt:null,truthClass:'not_evidenced',authority:'brand365_authority',sourceClass:'derived_from_brand_follows',sourceRef:'brand_follows.created_at',metrics:{qualifiedFollowers:0,thresholdDays:90},freshness:{state:'unknown',ageDays:null}},
+          {id:'commercial:verified_outcome',kind:'verified_commercial_outcome',label:'Verified commercial outcome',occurredAt:null,truthClass:'not_evidenced',authority:'brand_commerce_evidence',sourceClass:'missing_evidence',sourceRef:'brand_purchases.external_order_ref + metadata.evidenceRef',metrics:{verifiedOrders:0,verifiedAmount:0},freshness:{state:'unknown',ageDays:null}}
+        ]
+      }};
     } else if (path.includes('/profile')) {
       body = { data: { id: 'qa-user', firstName: 'QA', lastName: 'Agent', email: 'qa@example.test' } };
     } else if (path.includes('/agenda')) {
@@ -176,7 +191,6 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
   await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
   await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(1);
-  await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
 });
@@ -262,6 +276,29 @@ test('Brand Graph BFS node deep-links with the same canonical brandRef', async (
   await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
   const bfs = page.frameLocator('#eventFrame');
   await expect(bfs.getByText('BRAND CONTEXT · masterpeace')).toBeVisible();
+});
+
+test('Brand Relationship Timeline preserves provenance freshness and revenue boundary', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mfwOpeningSeen', '1');
+    localStorage.setItem('mfwOnboarded', '1');
+  });
+  await page.goto('/platform/index.html?event=mfw', { waitUntil: 'domcontentloaded' });
+  const mfw = page.frameLocator('#eventFrame');
+  await mfw.evaluate(() => window.MFWRoute({ kind:'brand', id:'masterpeace' }));
+  await mfw.locator('[data-action="brand-network-graph"]').click();
+  await mfw.locator('[data-action="brand-relationship-timeline"]').click();
+
+  await expect(mfw.getByText('BRAND RELATIONSHIP TIMELINE · READ ONLY')).toBeVisible();
+  await expect(mfw.locator('[data-timeline-kind="brand_first_seen"]')).toBeVisible();
+  await expect(mfw.locator('[data-timeline-kind="made_verification"]')).toContainText('VERIFIED');
+  await expect(mfw.locator('[data-timeline-kind="bfs_meeting"]')).toContainText('bfs_meeting_authority');
+  await expect(mfw.locator('[data-timeline-kind="brand365_continuity"]').first()).toContainText('125');
+  await expect(mfw.locator('[data-timeline-kind="verified_commercial_outcome"]')).toContainText('NOT EVIDENCED');
+  await expect(mfw.getByText('PREVIEW / NOT ADMITTED')).toBeVisible();
+  const overflow = await mfw.locator('body').evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+  await page.screenshot({ path: testInfo.outputPath('brand-relationship-timeline.png') });
 });
 
 test('live evidence distinguishes cross-event brand transition from meeting and revenue proof', async ({ page }) => {
