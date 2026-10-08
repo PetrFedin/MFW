@@ -1944,6 +1944,158 @@ async function router(req,res){
     }
     return json(res,200,{data:memory.brands.map(x=>({...x,madeInMoscowVerified:false})),demo:true,source:'memory'});
   }
+  if(req.method==='GET'&&p.startsWith('/v1/brands/')&&p.endsWith('/network-graph')){
+    const brandRef=p.split('/')[3];
+    const brand=await brand365Store.brandByRef(brandRef);
+    if(!brand)return json(res,404,{error:'brand_not_found'});
+    const canonicalRef=String(brand.id||brandRef),storageId=brand.storageId||null;
+    const nodes=[],edges=[];
+    const push=(node)=>{nodes.push(node);return node.id;};
+    const sourceMode=pool?'postgres':'memory_demo';
+    const rootId=push({
+      id:'brand',type:'brand',label:brand.name,status:brand.status||'published',
+      truthClass:pool?'observed':(brand.demo?'synthetic':'reported'),
+      authority:'mfw_brand_registry',sourceClass:pool?'canonical_postgres':'runtime_snapshot',
+      sourceRef:'/v1/brands/'+canonicalRef,sourceUrl:null,
+      observedAt:brand.metadata&&brand.metadata.sourceSyncedAt||null,
+      metrics:{brandRef:canonicalRef,city:brand.city||null,country:brand.country||null},
+      route:{eventCode:'mfw',kind:'brand',id:canonicalRef}
+    });
+
+    let made=null,show=null,collections=[],shortlist={count:0,latest:null},meetings={count:0,requested:0,confirmed:0,completed:0,latest:null},
+      leads={count:0,qualified:0,won:0,latest:null},brand365={followers:0,favorites:0,eligible:0,claims:0,latest:null};
+
+    if(pool){
+      const [madeR,collectionR,shortlistR,meetingR,leadR,brand365R]=await Promise.all([
+        pool.query(`SELECT bpm.status,bpm.moderation_status AS "moderationStatus",bpm.source_url AS "sourceUrl",
+          bpm.source_snapshot_hash AS "sourceSnapshotHash",bpm.verified_at AS "verifiedAt",bpm.reviewed_at AS "reviewedAt",
+          pp.external_key AS "programKey",pp.name AS "programName"
+          FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+          WHERE bpm.brand_id=$1 AND pp.external_key='made_in_moscow' LIMIT 1`,[storageId]),
+        pool.query(`SELECT id::text id,season,title,status,created_at AS "createdAt" FROM collections
+          WHERE brand_id=$1 ORDER BY created_at DESC LIMIT 12`,[storageId]),
+        pool.query(`SELECT count(*)::int count,max(created_at) AS latest FROM buyer_shortlist WHERE brand_id=$1`,[storageId]),
+        pool.query(`SELECT count(*)::int count,
+          count(*) FILTER(WHERE status='requested')::int requested,
+          count(*) FILTER(WHERE status='confirmed')::int confirmed,
+          count(*) FILTER(WHERE status='completed')::int completed,
+          max(updated_at) AS latest
+          FROM b2b_meetings WHERE brand_id=$1 AND metadata->>'eventBrand'='bfs'`,[storageId]),
+        pool.query(`SELECT count(*)::int count,
+          count(*) FILTER(WHERE l.stage='qualified')::int qualified,
+          count(*) FILTER(WHERE l.stage='won')::int won,
+          max(l.updated_at) AS latest
+          FROM b2b_leads l JOIN b2b_meetings m ON m.id=l.meeting_id
+          WHERE m.brand_id=$1 AND l.event_brand='bfs'`,[storageId]),
+        pool.query(`SELECT
+          (SELECT count(*)::int FROM brand_follows WHERE brand_id=$1) followers,
+          (SELECT count(*)::int FROM brand_favorites WHERE brand_id=$1) favorites,
+          (SELECT count(*)::int FROM loyalty_eligibility le JOIN loyalty_offers o ON o.id=le.offer_id WHERE o.brand_id=$1 AND le.status='eligible') eligible,
+          (SELECT count(*)::int FROM loyalty_claims lc JOIN loyalty_offers o ON o.id=lc.offer_id WHERE o.brand_id=$1) claims,
+          GREATEST(
+            COALESCE((SELECT max(created_at) FROM brand_follows WHERE brand_id=$1),'epoch'::timestamptz),
+            COALESCE((SELECT max(created_at) FROM brand_favorites WHERE brand_id=$1),'epoch'::timestamptz),
+            COALESCE((SELECT max(lc.issued_at) FROM loyalty_claims lc JOIN loyalty_offers o ON o.id=lc.offer_id WHERE o.brand_id=$1),'epoch'::timestamptz)
+          ) AS latest`,[storageId])
+      ]);
+      made=madeR.rows[0]||null;collections=collectionR.rows;
+      shortlist=shortlistR.rows[0]||shortlist;meetings=meetingR.rows[0]||meetings;leads=leadR.rows[0]||leads;brand365=brand365R.rows[0]||brand365;
+      const showRef=brand.metadata&&brand.metadata.showId;
+      if(showRef){
+        const sr=await pool.query(`SELECT COALESCE(external_key,id::text) id,title,status,event_brand AS "eventBrand",
+          starts_at AS "startsAt",source_url AS "sourceUrl",official_updated_at AS "officialUpdatedAt"
+          FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1`,[String(showRef)]);
+        show=sr.rows[0]||null;
+      }
+    }else{
+      const showRef=brand.metadata&&brand.metadata.showId;
+      show=showRef?memory.events.find(x=>String(x.id)===String(showRef))||null:null;
+      collections=memory.collections.filter(x=>String(x.brandId)===canonicalRef).slice(0,12);
+      shortlist={count:[...memory.shortlists.values()].filter(set=>set&&set.has(canonicalRef)).length,latest:null};
+      const bfsMeetings=[...memory.meetings.values()].filter(x=>String(x.brandId||'')===canonicalRef&&String(x.eventBrand||'')==='bfs');
+      meetings={count:bfsMeetings.length,requested:bfsMeetings.filter(x=>x.status==='requested').length,confirmed:bfsMeetings.filter(x=>x.status==='confirmed').length,completed:bfsMeetings.filter(x=>x.status==='completed').length,latest:bfsMeetings.map(x=>x.updatedAt||x.createdAt).filter(Boolean).sort().slice(-1)[0]||null};
+      const meetingIds=new Set(bfsMeetings.map(x=>String(x.id)));
+      const brandLeads=[...memory.b2bLeads.values()].filter(x=>meetingIds.has(String(x.meetingId||''))&&String(x.eventBrand||'bfs')==='bfs');
+      leads={count:brandLeads.length,qualified:brandLeads.filter(x=>x.stage==='qualified').length,won:brandLeads.filter(x=>x.stage==='won').length,latest:brandLeads.map(x=>x.updatedAt).filter(Boolean).sort().slice(-1)[0]||null};
+      const follows=memory.brandFollows&&memory.brandFollows.get?memory.brandFollows: new Map();
+      const favorites=memory.brandFavorites&&memory.brandFavorites.get?memory.brandFavorites:new Map();
+      brand365={
+        followers:[...follows.values()].filter(set=>set&&set.has(canonicalRef)).length,
+        favorites:[...favorites.values()].filter(set=>set&&set.has(canonicalRef)).length,
+        eligible:0,claims:0,latest:null
+      };
+    }
+
+    const madeVerified=!!(made&&made.status==='verified'&&made.moderationStatus==='approved');
+    push({
+      id:'made',type:'programme_status',label:'Made in Moscow',status:madeVerified?'verified':(made?String(made.status||'pending'):'not_evidenced'),
+      truthClass:madeVerified?'verified':'not_evidenced',
+      authority:'made_in_moscow_programme_roster',sourceClass:made?'programme_membership':'missing_authority_evidence',
+      sourceRef:'/v1/made-in-moscow/brands',sourceUrl:made&&made.sourceUrl||null,
+      observedAt:made&&made.verifiedAt||made&&made.reviewedAt||null,
+      metrics:{verified:madeVerified,moderationStatus:made&&made.moderationStatus||null,productionAdmitted:!!(pool&&databaseSchemaReadiness.ready&&REQUIRE_POSTGRES)},
+      route:{eventCode:'made',kind:'verified',id:canonicalRef}
+    });
+    push({
+      id:'shows',type:'mfw_show',label:'MFW show',status:show?String(show.status||'published'):'not_linked',
+      truthClass:show?'reported':'not_evidenced',authority:'mfw_programme_authority',
+      sourceClass:show?'official_programme':'missing_link',sourceRef:show?('/v1/events/'+String(show.id)):'brand.metadata.showId',
+      sourceUrl:show&&show.sourceUrl||null,observedAt:show&&show.officialUpdatedAt||show&&show.startsAt||null,
+      metrics:{count:show?1:0,title:show&&show.title||null,startsAt:show&&show.startsAt||null},
+      route:show?{eventCode:'mfw',kind:'event',id:String(show.id)}:null
+    });
+    push({
+      id:'collections',type:'collections',label:'Collections',status:collections.length?'published':'not_evidenced',
+      truthClass:collections.length?(pool?'observed':'synthetic'):'not_evidenced',authority:'mfw_collection_authority',
+      sourceClass:pool?'canonical_postgres':'runtime_demo',sourceRef:'/v1/collections?brandId='+canonicalRef,sourceUrl:null,
+      observedAt:collections[0]&&(collections[0].createdAt||collections[0].created_at)||null,
+      metrics:{count:collections.length,items:collections.map(x=>({id:String(x.id),title:x.title,season:x.season,status:x.status}))},
+      route:{eventCode:'mfw',kind:'brand',id:canonicalRef}
+    });
+    push({
+      id:'shortlists',type:'buyer_shortlist',label:'Buyer shortlists',status:Number(shortlist.count)>0?'active':'none',
+      truthClass:Number(shortlist.count)>0?'observed':'not_evidenced',authority:'mfw_buyer_commerce_authority',
+      sourceClass:pool?'canonical_postgres':'runtime_demo',sourceRef:'buyer_shortlist',sourceUrl:null,observedAt:shortlist.latest||null,
+      metrics:{count:Number(shortlist.count||0)},route:{eventCode:'mfw',kind:'brand',id:canonicalRef}
+    });
+    push({
+      id:'meetings',type:'bfs_meetings',label:'BFS meetings',status:Number(meetings.count)>0?'active':'none',
+      truthClass:Number(meetings.count)>0?'observed':'not_evidenced',authority:'bfs_meeting_authority',
+      sourceClass:pool?'canonical_postgres':'runtime_demo',sourceRef:'/v1/meetings',sourceUrl:null,observedAt:meetings.latest||null,
+      metrics:{count:Number(meetings.count||0),requested:Number(meetings.requested||0),confirmed:Number(meetings.confirmed||0),completed:Number(meetings.completed||0)},
+      route:{eventCode:'bfs',kind:'brand-buyer',brandRef:canonicalRef}
+    });
+    push({
+      id:'leads',type:'bfs_leads',label:'BFS leads',status:Number(leads.count)>0?'active':'none',
+      truthClass:Number(leads.count)>0?'observed':'not_evidenced',authority:'bfs_lead_authority',
+      sourceClass:pool?'canonical_postgres':'runtime_demo',sourceRef:'/v1/b2b/leads',sourceUrl:null,observedAt:leads.latest||null,
+      metrics:{count:Number(leads.count||0),qualified:Number(leads.qualified||0),won:Number(leads.won||0)},
+      route:{eventCode:'bfs',kind:'brand-buyer',brandRef:canonicalRef}
+    });
+    push({
+      id:'brand365',type:'brand365',label:'Brand365 audience',status:Number(brand365.followers)>0?'active':'none',
+      truthClass:(Number(brand365.followers)+Number(brand365.favorites)+Number(brand365.claims))>0?'observed':'not_evidenced',
+      authority:'brand365_authority',sourceClass:pool?'canonical_postgres':'runtime_demo',sourceRef:'/v1/brand-portal/'+canonicalRef+'/overview',
+      sourceUrl:null,observedAt:brand365.latest&&String(brand365.latest).startsWith('1970-')?null:brand365.latest||null,
+      metrics:{followers:Number(brand365.followers||0),favorites:Number(brand365.favorites||0),eligible:Number(brand365.eligible||0),claims:Number(brand365.claims||0)},
+      route:{eventCode:'mfw',kind:'brand',id:canonicalRef}
+    });
+
+    const meaningful=nodes.filter(x=>x.id!=='brand'&&x.truthClass!=='not_evidenced');
+    const truthCounts=nodes.reduce((acc,x)=>{acc[x.truthClass]=(acc[x.truthClass]||0)+1;return acc;},{});
+    push({
+      id:'evidence',type:'evidence',label:'Evidence coverage',status:(pool&&databaseSchemaReadiness.ready&&REQUIRE_POSTGRES)?'admitted':'preview_not_admitted',
+      truthClass:'observed',authority:'cross_event_brand_graph_projection',sourceClass:'read_only_projection',
+      sourceRef:'/v1/brands/'+canonicalRef+'/network-graph',sourceUrl:null,observedAt:new Date().toISOString(),
+      metrics:{evidencedStages:meaningful.length,totalStages:7,truthCounts,productionAdmitted:!!(pool&&databaseSchemaReadiness.ready&&REQUIRE_POSTGRES),dataMode:sourceMode,releaseSha:RELEASE_SHA},
+      route:null
+    });
+    [['brand','made','programme_membership'],['made','shows','participates_in'],['shows','collections','presents'],['collections','shortlists','buyer_interest'],['shortlists','meetings','commercial_followup'],['meetings','leads','relationship_progress'],['leads','brand365','longitudinal_relationship'],['brand365','evidence','evidence_projection']]
+      .forEach(([from,to,relation])=>edges.push({from,to,relation,truthClass:'observed'}));
+    return json(res,200,{data:{contract:'mfw-cross-event-brand-graph-v2',brandRef:canonicalRef,brandName:brand.name,nodes,edges,
+      policy:{noPii:true,readOnly:true,noRevenueInference:true,noUniversalScore:true},source:sourceMode}});
+  }
+
   if(req.method==='GET'&&p.startsWith('/v1/brands/')&&p.endsWith('/analytics')){
     const brandId=p.split('/')[3];
     const brand=memory.brands.find(x=>x.id===brandId||x.slug===brandId);
@@ -3553,7 +3705,7 @@ async function router(req,res){
     const id='mtg_'+crypto.randomBytes(8).toString('hex');
     const meeting={id,brandId:b.brandId?String(b.brandId):null,buyerId:requester,organisation:b.organisation||null,
       organisationRef:b.organisationRef||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,
-      startsAt:b.startsAt||null,slot:String(b.slot||'14:30'),status:'requested',createdAt:new Date().toISOString(),demo:true};
+      eventBrand:String(b.eventBrand||'bfs'),startsAt:b.startsAt||null,slot:String(b.slot||'14:30'),status:'requested',createdAt:new Date().toISOString(),demo:true};
     memory.meetings.set(id,meeting);
     if(String(b.eventBrand||'bfs')==='bfs'){
       const leadId='lead_'+crypto.randomBytes(6).toString('hex');
