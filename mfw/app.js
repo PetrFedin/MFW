@@ -627,10 +627,46 @@
     var linkedShow=b.showId?demoEvents.filter(function(e){return e.id===b.showId;})[0]:null;
     openSheet('<div class="brand-editorial-hero" style="background-image:linear-gradient(180deg,transparent,rgba(0,0,0,.84)),url('+VISUALS.runway+')"><div><div class="eyebrow">'+esc(brandCity(b))+' · '+esc(b.tag)+'</div><h1>'+esc(b.name)+'</h1><p>Moscow Fashion Week · OFFICIAL</p></div></div>'+
       '<div class="brand-story"><div><div class="eyebrow">OFFICIAL PARTICIPANT</div>'+(b.madeInMoscowVerified?'<div class="made-verified-detail">СДЕЛАНО В МОСКВЕ · VERIFIED</div>':'')+'<h2>'+T('Бренд в программе<br>Moscow Fashion Week.','Brand in the<br>Moscow Fashion Week programme.')+'</h2><p class="sub">'+esc(brandDesc(b))+'</p></div><div class="designer-portrait" style="background-image:url('+VISUALS.designer+')"><span>DESIGNER</span></div></div>'+
-      '<div class="action-row"><button class="action primary" data-action="save-brand" data-id="'+b.id+'">'+(saved?'✓ '+T('Подписан в MFW','Following in MFW'):T('Подписаться в MFW','Follow in MFW'))+'</button><button class="action ghost" data-action="favorite-brand" data-id="'+b.id+'">'+(favorite?'♥ '+T('Любимый','Favorite'):'♡ '+T('В любимые','Favorite'))+'</button><button class="action ghost" data-action="brand-loyalty" data-id="'+b.id+'">✦ '+t('club')+'</button><button class="action ghost" data-action="brand-365" data-id="'+b.id+'">'+t('brand365')+'</button></div>'+
+      '<div class="action-row"><button class="action primary" data-action="save-brand" data-id="'+b.id+'">'+(saved?'✓ '+T('Подписан в MFW','Following in MFW'):T('Подписаться в MFW','Follow in MFW'))+'</button><button class="action ghost" data-action="favorite-brand" data-id="'+b.id+'">'+(favorite?'♥ '+T('Любимый','Favorite'):'♡ '+T('В любимые','Favorite'))+'</button><button class="action ghost" data-action="brand-loyalty" data-id="'+b.id+'">✦ '+t('club')+'</button><button class="action ghost" data-action="brand-365" data-id="'+b.id+'">'+t('brand365')+'</button><button class="action ghost" data-action="brand-network-graph" data-id="'+b.id+'">NETWORK GRAPH</button></div>'+
       (linkedShow?'<div class="section-head"><h2>'+T('Связанный показ','Linked show')+'</h2><span class="link">OFFICIAL</span></div><div class="card"><div class="eyebrow">'+esc(linkedShow.dateRu||'')+' · '+esc(linkedShow.time)+'</div><b>'+esc(eventField(linkedShow,'name'))+'</b><p class="sub">'+esc(eventField(linkedShow,'venue'))+' · '+esc(eventField(linkedShow,'access'))+'</p><button class="action primary" data-action="event" data-id="'+linkedShow.id+'">'+T('Открыть показ','Open show')+'</button></div>':'<div class="card"><b>'+T('Показ не привязан в текущем официальном snapshot','No linked show in the current official snapshot')+'</b></div>')+
       '<div class="brand-meta-grid"><div><span>STATUS</span><b>OFFICIAL 2026</b></div><div><span>CITY</span><b>'+esc(brandCity(b))+'</b></div><div><span>FOLLOW</span><b>'+T('Для ленты и rewards','Feed & rewards')+'</b></div></div>'+
       (pro?'<div class="buyer-commerce-card"><div><div class="eyebrow">BUYER MODE · SERVER</div><b>Из вдохновения — в коммерческий контакт.</b><p>Line sheet · shortlist · meeting · follow-up.</p></div><div class="action-row"><button class="action primary" data-action="line-sheet" data-id="'+b.id+'">Line sheet</button><button class="action light" data-action="toggle-shortlist" data-id="'+b.id+'">'+(state.buyerShortlist.some(function(x){return x.id===b.id;})?'✓ Shortlisted':'＋ Shortlist')+'</button><button class="action light" data-action="meeting">Встреча</button><button class="action ghost" data-action="buyer-followup" data-id="'+b.id+'">Follow-up</button></div></div>':''));
+  }
+
+  function graphTruthLabel(value){
+    return ({verified:'VERIFIED',observed:'OBSERVED',reported:'REPORTED',synthetic:'SYNTHETIC',modelled:'MODELLED',not_evidenced:'NOT EVIDENCED'})[String(value||'')]||String(value||'').toUpperCase();
+  }
+
+  async function openBrandNetworkGraph(brandId){
+    openSheet('<div class="eyebrow">CROSS-EVENT BRAND GRAPH V2</div><h1 style="font-size:42px">BRAND<br>NETWORK</h1><div class="card skeleton" style="height:280px"></div>');
+    try{
+      var out=await api('/v1/brands/'+encodeURIComponent(brandId)+'/network-graph');
+      var d=out.data||{},nodes=d.nodes||[];
+      var byId={};nodes.forEach(function(n){byId[n.id]=n;});
+      var order=['made','shows','collections','shortlists','meetings','leads','brand365','evidence'];
+      var cards=order.map(function(id){
+        var n=byId[id];if(!n)return '';
+        var metrics=n.metrics||{};
+        var summary=Object.keys(metrics).filter(function(k){return !['items','truthCounts','releaseSha','productionAdmitted','dataMode'].includes(k);}).slice(0,4).map(function(k){
+          var v=metrics[k];return '<span><b>'+esc(k)+'</b> '+esc(v==null?'—':String(v))+'</span>';
+        }).join('');
+        var action=n.route?'<button class="action ghost compact" data-action="graph-route" data-event="'+esc(n.route.eventCode||'')+'" data-kind="'+esc(n.route.kind||'')+'" data-ref="'+esc(n.route.id||n.route.brandRef||brandId)+'">'+T('Открыть контекст','Open context')+'</button>':'';
+        return '<article class="brand-graph-node" data-graph-node="'+esc(n.id)+'"><div class="brand-graph-index">'+esc(n.id.toUpperCase())+'</div><div><div class="eyebrow">'+esc(n.authority||'')+'</div><h3>'+esc(n.label||n.type)+'</h3><div class="graph-status">'+esc(n.status||'')+' · '+esc(graphTruthLabel(n.truthClass))+'</div><div class="graph-metrics">'+summary+'</div><details><summary>'+T('Источник и доказательство','Source & evidence')+'</summary><p><b>Authority:</b> '+esc(n.authority||'—')+'<br><b>Source class:</b> '+esc(n.sourceClass||'—')+'<br><b>Source ref:</b> '+esc(n.sourceRef||'—')+'<br><b>Observed:</b> '+esc(n.observedAt||'—')+'</p>'+(n.sourceUrl?'<p><a href="'+esc(n.sourceUrl)+'" target="_blank" rel="noopener">SOURCE ↗</a></p>':'')+'</details>'+action+'</div></article>';
+      }).join('');
+      var coverage=byId.evidence&&byId.evidence.metrics||{};
+      openSheet('<div class="eyebrow">CROSS-EVENT BRAND GRAPH V2 · READ ONLY</div><h1 style="font-size:42px">'+esc(d.brandName||brandId)+'</h1>'+
+        '<div class="brand-graph-policy"><span>CANONICAL BRAND ID · '+esc(d.brandRef||brandId)+'</span><span>NO PII</span><span>NO REVENUE INFERENCE</span><span>NO UNIVERSAL SCORE</span></div>'+
+        '<div class="brand-graph-coverage"><b>'+esc(coverage.evidencedStages||0)+' / '+esc(coverage.totalStages||7)+'</b><span>'+T('этапов имеют evidence','stages have evidence')+'</span><small>'+esc(coverage.dataMode||d.source||'')+' · '+esc(coverage.productionAdmitted?'PRODUCTION ADMITTED':'PREVIEW / NOT ADMITTED')+'</small></div>'+
+        '<div class="brand-graph-flow">'+cards+'</div>'+
+        '<div class="demo-note"><b>'+T('Граф ничего не утверждает сам.','The graph asserts nothing by itself.')+'</b> '+T('Он только объединяет read-model из существующих authority. Каждый узел показывает собственный truth class и источник.','It only projects existing authorities. Every node exposes its own truth class and source.')+'</div>');
+      document.querySelectorAll('[data-action="graph-route"]').forEach(function(btn){
+        btn.onclick=function(){
+          var route={kind:btn.getAttribute('data-kind'),source:'brand_graph_v2'};
+          if(route.kind==='brand-buyer')route.brandRef=btn.getAttribute('data-ref');else route.id=btn.getAttribute('data-ref');
+          parent.postMessage({type:'mfp-open-event',eventCode:btn.getAttribute('data-event'),route:route},'*');
+        };
+      });
+    }catch(_){toast(T('Граф бренда недоступен','Brand graph unavailable'));}
   }
 
   async function openPressKit(eventId){
@@ -1744,6 +1780,7 @@
       else if(a==='join-meetup')joinMeetup(el.getAttribute('data-id'));
       else if(a==='perks')perks();
       else if(a==='mfw-365')openMfw365Feed();
+      else if(a==='brand-network-graph')openBrandNetworkGraph(el.getAttribute('data-id')||'b1');
       else if(a==='brand-365')openBrand365(el.getAttribute('data-id')||'b1');
       else if(a==='brand-loyalty')openBrandLoyalty(el.getAttribute('data-id')||'b1');
       else if(a==='loyalty-install'){registerLoyaltyInstall(!isStandaloneApp()).then(function(){openBrandLoyalty(el.getAttribute('data-brand')||'b1');});}
