@@ -2471,3 +2471,64 @@ Rules:
 - MFW-INT-00 remains open until both Admission Evidence and Render Runtime Admission PASS on the same exact deployed SHA.
 
 This does not advance pg-boss/outbox, formal policy or trust-runtime sequencing.
+
+## 2026-10-07 — Cross-event Brand Graph v2
+
+### Purpose
+
+Create one explainable longitudinal read model around the canonical brand identity:
+
+Made in Moscow programme status -> MFW show -> collections -> buyer shortlist -> BFS meetings -> BFS leads -> Brand365 audience/relationship -> evidence coverage.
+
+This is a projection, not a new business authority.
+
+### Canonical identity
+
+- `brands.external_key` / canonical brandRef remains the cross-event brand identity.
+- Cross-ecosystem navigation carries canonical brandRef; display-name matching is prohibited.
+- Made in Moscow affiliation, MFW programme participation and BFS commercial relationships remain separate authorities.
+
+### Node evidence contract
+
+Every node exposes node type/status, truth class, authority, source class, source reference, source URL where approved, observed/verified timestamp where available, bounded aggregate metrics, and contextual deep link when permitted.
+
+Supported visible truth classes: VERIFIED, OBSERVED, REPORTED, SYNTHETIC, MODELLED, NOT EVIDENCED.
+
+### Privacy and inference boundary
+
+The graph is brand-centric and must not expose private participant PII.
+
+The graph must never infer revenue from shortlist or meeting activity, deal success from a qualified lead, Made in Moscow verification from city/name similarity, universal brand reputation/quality score, or hidden buyer intent.
+
+A missing stage is shown as `NOT EVIDENCED`, not as failure.
+
+### Authority mapping
+
+- Made status -> approved Made in Moscow programme membership/roster evidence.
+- Show/programme -> MFW programme authority.
+- Collection -> MFW collection authority.
+- Shortlist -> MFW buyer-commerce authority.
+- Meeting -> BFS meeting authority.
+- Lead -> BFS lead authority.
+- Brand365 -> Brand365 authority.
+- Evidence coverage -> read-only graph projection.
+
+### Production admission
+
+The graph may render in memory/demo mode for UX qualification, but production authority is not admitted until Phase 0 PostgreSQL admission passes.
+
+`productionAdmitted=false` must remain visible in the graph projection while the PostgreSQL gate is open.
+
+### Acceptance
+
+1. one canonical brandRef survives Made -> MFW -> BFS;
+2. every node resolves to source/authority/truth class;
+3. no PII is emitted by the brand graph endpoint;
+4. no revenue or commercial outcome is inferred;
+5. missing evidence is explicit;
+6. Made verification is never synthesized;
+7. BFS route preserves the exact brandRef;
+8. phone/tablet/desktop layouts do not overflow;
+9. the projection remains read-only.
+
+**Moat:** longitudinal first-party event, buyer, professional-network and Brand365 history becomes an explainable brand relationship graph while each underlying domain retains its own authority.
