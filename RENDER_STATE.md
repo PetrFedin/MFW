@@ -260,7 +260,7 @@ Live Render control-plane re-verification:
 - `mfw-authority`: free Node service, Frankfurt, source `PetrFedin/MFW:main`;
 - `mfw-postgres`: free PostgreSQL 17, Frankfurt, status `available`;
 - PostgreSQL external IP allowlist remains empty;
-- latest live authority deploy observed: `4bad237ee3bab227805f0cb605abaa37e987a3e4`, so current main is not live;
+- latest live authority deploy: `f437135fbdc8074cce4b8acfc15eb06ddc14a86b` (`dep-db3r2o6gekts73fs79dg`) — current main is live;
 - authority logs still report `dataMode=memory`;
 - social reverification remains inactive with reason `postgres_required`;
 - live service control plane reports empty `healthCheckPath` while canonical `render.yaml` requires `/ready`.
