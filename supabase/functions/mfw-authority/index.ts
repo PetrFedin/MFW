@@ -22,9 +22,14 @@ process.env.MFW_RELEASE_SHA =
 
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
-(globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = require("./official-snapshot.js");
 
-const authority = require("./server-v2.js");
+let authority: any = null;
+function loadAuthority() {
+  if (authority) return authority;
+  (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = require("./official-snapshot.js");
+  authority = require("./server-v2.js");
+  return authority;
+}
 
 type Listener = (value?: any) => void;
 
@@ -120,14 +125,15 @@ class NodeResponseShim {
 
 Deno.serve(async (request: Request) => {
   try {
-    await authority.initializeAuthority({ startScheduler: false });
+    const loadedAuthority = loadAuthority();
+    await loadedAuthority.initializeAuthority({ startScheduler: false });
     const body =
       request.method === "GET" || request.method === "HEAD"
         ? ""
         : await request.text();
     const req = new NodeRequestShim(request, body);
     const res = new NodeResponseShim();
-    await authority.router(req, res);
+    await loadedAuthority.router(req, res);
     return await res.response;
   } catch (error) {
     console.error(
@@ -136,8 +142,12 @@ Deno.serve(async (request: Request) => {
         error: String((error as any)?.message || error),
       }),
     );
+    const candidate = new URL(request.url).pathname.includes("-candidate");
     return Response.json(
-      { error: "authority_unavailable" },
+      {
+        error: "authority_unavailable",
+        ...(candidate ? { detail: String((error as any)?.stack || (error as any)?.message || error) } : {}),
+      },
       { status: 503, headers: { "cache-control": "no-store" } },
     );
   }
