@@ -20,6 +20,11 @@ process.env.MFW_ALLOWED_ORIGIN =
 process.env.MFW_RELEASE_SHA =
   Deno.env.get("MFW_RELEASE_SHA") || "__MFW_RELEASE_SHA__";
 
+(globalThis as any).__MFW_EDGE_RUNTIME__ = true;
+(globalThis as any).__MFW_DATABASE_URL__ = Deno.env.get("SUPABASE_DB_URL") || "";
+(globalThis as any).__MFW_ALLOWED_ORIGIN__ = process.env.MFW_ALLOWED_ORIGIN;
+(globalThis as any).__MFW_PUBLIC_BASE_URL__ = process.env.MFW_PUBLIC_BASE_URL;
+(globalThis as any).__MFW_RELEASE_SHA__ = process.env.MFW_RELEASE_SHA;
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
 
