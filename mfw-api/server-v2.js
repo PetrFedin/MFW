@@ -5,7 +5,7 @@ const crypto = requireBuiltin('crypto');
 const fs = EDGE_RUNTIME ? null : requireBuiltin('fs');
 const path = EDGE_RUNTIME ? null : requireBuiltin('path');
 const vm = EDGE_RUNTIME ? null : requireBuiltin('vm');
-const QRCode = EDGE_RUNTIME ? globalThis.__MFW_QRCODE__ : require('qrcode');
+const QRCode = EDGE_RUNTIME ? globalThis.__MFW_QRCODE__ : requireBuiltin('qrcode');
 const { Brand365Store } = require('./brand365-store');
 const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMembership } = require('./social-providers');
 const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
@@ -27,7 +27,7 @@ const {
 } = require('./capital-authority');
 let Pool = EDGE_RUNTIME ? globalThis.__MFW_PG_POOL__ : null;
 if(!Pool){
-  try { ({ Pool } = require('pg')); } catch (_) {}
+  try { ({ Pool } = requireBuiltin('pg')); } catch (_) {}
 }
 
 const PORT = Number(process.env.PORT || 10000);
