@@ -88,28 +88,54 @@ async function loadCanonicalSources() {
     if (!/^[a-f0-9]{40}$/i.test(edgeReleaseSha)) {
       throw new Error("edge_release_sha_invalid");
     }
-    const entries = await Promise.all(
-      Object.entries(SOURCE_PATHS).map(async ([id, path]) => {
-        const url =
-          "https://raw.githubusercontent.com/" +
-          SOURCE_REPOSITORY +
-          "/" +
-          edgeReleaseSha +
-          "/" +
-          path;
-        const response = await fetch(url, {
-          headers: { "user-agent": "mfw-supabase-edge-authority" },
-          signal: AbortSignal.timeout(10000),
-        });
-        if (!response.ok) {
-          throw new Error("edge_source_fetch_failed:" + id + ":" + response.status);
-        }
-        const source = await response.text();
-        if (!source.length) throw new Error("edge_source_empty:" + id);
-        return [id, source] as const;
-      }),
+
+    const result = await edgeControlPool.query(
+      `SELECT filename, sha256, source_text
+         FROM mfw_runtime.authority_sources
+        WHERE release_sha=$1
+        ORDER BY filename`,
+      [edgeReleaseSha],
     );
-    authoritySources = Object.fromEntries(entries);
+
+    const required = Object.keys(SOURCE_PATHS).sort();
+    const rows = result.rows || [];
+    if (rows.length !== required.length) {
+      throw new Error(
+        "edge_source_registry_incomplete:" + rows.length + "/" + required.length,
+      );
+    }
+
+    const loaded: Record<string, string> = {};
+    for (const row of rows) {
+      const filename = String(row.filename || "");
+      const source = String(row.source_text || "");
+      const expectedHash = String(row.sha256 || "").toLowerCase();
+
+      if (!required.includes(filename)) {
+        throw new Error("edge_source_registry_unexpected:" + filename);
+      }
+      if (!source.length) {
+        throw new Error("edge_source_empty:" + filename);
+      }
+
+      const actualHash = crypto
+        .createHash("sha256")
+        .update(source, "utf8")
+        .digest("hex");
+
+      if (!timingSafeTextEqual(actualHash, expectedHash)) {
+        throw new Error("edge_source_hash_mismatch:" + filename);
+      }
+      loaded[filename] = source;
+    }
+
+    for (const filename of required) {
+      if (!loaded[filename]) {
+        throw new Error("edge_source_missing:" + filename);
+      }
+    }
+
+    authoritySources = loaded;
     return authoritySources;
   })().catch((error) => {
     sourceLoadPromise = null;
