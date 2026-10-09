@@ -4,9 +4,22 @@ import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 import QRCode from "npm:qrcode@1.5.4";
 import pg from "npm:pg@8.16.3";
-import authoritySources from "./authority-sources.ts";
 
 const FUNCTION_NAME = "mfw-authority";
+const SOURCE_REPOSITORY = "PetrFedin/MFW";
+const SOURCE_PATHS: Record<string, string> = {
+  "server-v2.js": "mfw-api/server-v2.js",
+  "brand365-store.js": "mfw-api/brand365-store.js",
+  "social-providers.js": "mfw-api/social-providers.js",
+  "feature-flags.js": "mfw-api/feature-flags.js",
+  "reverification-catchup.js": "mfw-api/reverification-catchup.js",
+  "organisation-registry.js": "mfw-api/organisation-registry.js",
+  "organisation-credential.js": "mfw-api/organisation-credential.js",
+  "capital-authority.js": "mfw-api/capital-authority.js",
+  "event-data.js": "mfw/platform/event-data.js",
+};
+let authoritySources: Record<string, string> = {};
+let sourceLoadPromise: Promise<Record<string, string>> | null = null;
 
 const edgePublicBaseUrl =
   Deno.env.get("MFW_PUBLIC_BASE_URL") ||
@@ -23,6 +36,42 @@ const edgeReleaseSha =
 (globalThis as any).__MFW_RELEASE_SHA__ = edgeReleaseSha;
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
+
+async function loadCanonicalSources() {
+  if (sourceLoadPromise) return sourceLoadPromise;
+  sourceLoadPromise = (async () => {
+    if (!/^[a-f0-9]{40}$/i.test(edgeReleaseSha)) {
+      throw new Error("edge_release_sha_invalid");
+    }
+    const entries = await Promise.all(
+      Object.entries(SOURCE_PATHS).map(async ([id, path]) => {
+        const url =
+          "https://raw.githubusercontent.com/" +
+          SOURCE_REPOSITORY +
+          "/" +
+          edgeReleaseSha +
+          "/" +
+          path;
+        const response = await fetch(url, {
+          headers: { "user-agent": "mfw-supabase-edge-authority" },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) {
+          throw new Error("edge_source_fetch_failed:" + id + ":" + response.status);
+        }
+        const source = await response.text();
+        if (!source.length) throw new Error("edge_source_empty:" + id);
+        return [id, source] as const;
+      }),
+    );
+    authoritySources = Object.fromEntries(entries);
+    return authoritySources;
+  })().catch((error) => {
+    sourceLoadPromise = null;
+    throw error;
+  });
+  return sourceLoadPromise;
+}
 
 const cjsCache = new Map<string, any>();
 
@@ -77,8 +126,9 @@ function loadOfficialSnapshot() {
 }
 
 let authority: any = null;
-function loadAuthority() {
+async function loadAuthority() {
   if (authority) return authority;
+  await loadCanonicalSources();
   (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = loadOfficialSnapshot();
   authority = edgeRequire("./server-v2.js", "edge-entry");
   return authority;
@@ -178,7 +228,7 @@ class NodeResponseShim {
 
 Deno.serve(async (request: Request) => {
   try {
-    const loadedAuthority = loadAuthority();
+    const loadedAuthority = await loadAuthority();
     await loadedAuthority.initializeAuthority({ startScheduler: false });
     const body =
       request.method === "GET" || request.method === "HEAD"
