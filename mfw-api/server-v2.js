@@ -323,7 +323,7 @@ function deriveKeys(seed){
     try{
       const ecdh=crypto.createECDH('prime256v1');
       ecdh.setPrivateKey(material);
-      const pub=ecdh.getPublicKey(null,'uncompressed');
+      const pub=EDGE_RUNTIME?ecdh.getPublicKey(undefined,'uncompressed'):ecdh.getPublicKey(null,'uncompressed');
       const x=pub.subarray(1,33);
       const y=pub.subarray(33,65);
       const privateJwk={kty:'EC',crv:'P-256',x:b64u(x),y:b64u(y),d:b64u(material)};
