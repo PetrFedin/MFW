@@ -154,6 +154,11 @@ class NodeRequestShim {
       const afterPrefix = incoming.pathname.slice(functionPrefix.length);
       const slash = afterPrefix.indexOf("/");
       routedPath = slash >= 0 ? afterPrefix.slice(slash) : "/";
+    } else {
+      const segments = incoming.pathname.split("/").filter(Boolean);
+      if (segments.length && segments[0].startsWith(FUNCTION_NAME)) {
+        routedPath = segments.length > 1 ? "/" + segments.slice(1).join("/") : "/";
+      }
     }
     this.method = request.method.toUpperCase();
     this.url = routedPath + incoming.search;
