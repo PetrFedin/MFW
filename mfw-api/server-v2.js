@@ -40,8 +40,9 @@ function externalReverificationSchedulerActive(){
     String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true';
 }
 const RELEASE_SHA = String(globalThis.__MFW_RELEASE_SHA__ || process.env.MFW_RELEASE_SHA || process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
-const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
-const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
+const EDGE_KEY_SEED = String(globalThis.__MFW_KEY_SEED__ || '').trim();
+const KEY_SEED_CONFIGURED = !!(EDGE_KEY_SEED || String(process.env.MFW_ES256_SEED || '').trim());
+const KEY_SEED = EDGE_KEY_SEED || process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
 const ADMIN_TOKEN = globalThis.__MFW_ADMIN_TOKEN__ || process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
 const ADMIN_TOKEN_CONFIGURED = !!ADMIN_TOKEN && ADMIN_TOKEN !== 'mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
