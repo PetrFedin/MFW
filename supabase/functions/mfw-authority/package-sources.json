@@ -1,0 +1,26 @@
+{
+  "contract": "mfw-supabase-edge-bundle-v1",
+  "function": "mfw-authority",
+  "canonicalSources": [
+    "mfw-api/server-v2.js",
+    "mfw-api/brand365-store.js",
+    "mfw-api/social-providers.js",
+    "mfw-api/feature-flags.js",
+    "mfw-api/reverification-catchup.js",
+    "mfw-api/organisation-registry.js",
+    "mfw-api/organisation-credential.js",
+    "mfw-api/capital-authority.js",
+    "mfw/platform/event-data.js"
+  ],
+  "generatedFiles": [
+    "official-snapshot.js"
+  ],
+  "rules": {
+    "serverV2CopiedAtDeployTime": true,
+    "noForkedBusinessLogic": true,
+    "postgresSource": "SUPABASE_DB_URL",
+    "requirePostgres": true,
+    "migrationsAppliedOutOfBand": true,
+    "exactMigrationSet": "001-025"
+  }
+}
