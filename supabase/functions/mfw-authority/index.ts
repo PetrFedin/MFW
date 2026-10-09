@@ -1,8 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import process from "node:process";
+import crypto from "node:crypto";
+import { Buffer } from "node:buffer";
 import QRCode from "npm:qrcode@1.5.4";
 import pg from "npm:pg@8.16.3";
 
 const FUNCTION_NAME = "mfw-authority";
+const EMBEDDED_SOURCES_JSON = "__MFW_AUTHORITY_SOURCES_JSON__";
+const authoritySources: Record<string, string> =
+  EMBEDDED_SOURCES_JSON.startsWith("{")
+    ? JSON.parse(EMBEDDED_SOURCES_JSON)
+    : {};
 
 const edgePublicBaseUrl =
   Deno.env.get("MFW_PUBLIC_BASE_URL") ||
@@ -20,23 +28,64 @@ const edgeReleaseSha =
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
 
-let authorityPromise: Promise<any> | null = null;
-async function loadAuthority() {
-  if (authorityPromise) return authorityPromise;
-  authorityPromise = (async () => {
-    const previousWindow = (globalThis as any).window;
-    (globalThis as any).window = {};
-    await import("./event-data.js");
-    (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = (globalThis as any).window?.MFP_DATA || null;
-    if (previousWindow === undefined) delete (globalThis as any).window;
-    else (globalThis as any).window = previousWindow;
-    const loaded = await import("./server-v2.js");
-    return (loaded as any).default || loaded;
-  })().catch((error) => {
-    authorityPromise = null;
-    throw error;
-  });
-  return authorityPromise;
+const cjsCache = new Map<string, any>();
+
+function normalizeLocalModule(specifier: string): string {
+  let id = specifier.replace(/^\.\//, "");
+  if (!id.endsWith(".js")) id += ".js";
+  return id;
+}
+
+function edgeRequire(specifier: string, parentId = "server-v2.js"): any {
+  if (specifier === "crypto" || specifier === "node:crypto") return crypto;
+  if (specifier === "qrcode") return QRCode;
+  if (specifier === "pg") return pg;
+  if (["http", "fs", "path", "vm", "node:http", "node:fs", "node:path", "node:vm"].includes(specifier)) {
+    throw new Error("edge_forbidden_builtin:" + specifier + ":from:" + parentId);
+  }
+  if (!specifier.startsWith("./")) {
+    throw new Error("edge_unknown_module:" + specifier + ":from:" + parentId);
+  }
+
+  const id = normalizeLocalModule(specifier);
+  if (cjsCache.has(id)) return cjsCache.get(id).exports;
+  const source = authoritySources[id];
+  if (!source) throw new Error("edge_source_missing:" + id + ":from:" + parentId);
+
+  const module = { exports: {} as any };
+  cjsCache.set(id, module);
+  const localRequire = (child: string) => edgeRequire(child, id);
+  const execute = new Function(
+    "require",
+    "module",
+    "exports",
+    "__filename",
+    "__dirname",
+    "process",
+    "Buffer",
+    source + "\n//# sourceURL=mfw-edge://" + id,
+  );
+  execute(localRequire, module, module.exports, id, ".", process, Buffer);
+  return module.exports;
+}
+
+function loadOfficialSnapshot() {
+  const source = authoritySources["event-data.js"];
+  if (!source) throw new Error("edge_source_missing:event-data.js");
+  const holder: any = {};
+  const execute = new Function(
+    "window",
+    source + "\nreturn window.MFP_DATA;",
+  );
+  return execute(holder);
+}
+
+let authority: any = null;
+function loadAuthority() {
+  if (authority) return authority;
+  (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = loadOfficialSnapshot();
+  authority = edgeRequire("./server-v2.js", "edge-entry");
+  return authority;
 }
 
 type Listener = (value?: any) => void;
@@ -133,7 +182,7 @@ class NodeResponseShim {
 
 Deno.serve(async (request: Request) => {
   try {
-    const loadedAuthority = await loadAuthority();
+    const loadedAuthority = loadAuthority();
     await loadedAuthority.initializeAuthority({ startScheduler: false });
     const body =
       request.method === "GET" || request.method === "HEAD"
