@@ -35,6 +35,10 @@ const ORIGIN = globalThis.__MFW_ALLOWED_ORIGIN__ || process.env.MFW_ALLOWED_ORIG
 const VERSION = 'mfw-authority-v11-capital-operator-admission';
 const DATABASE_URL = globalThis.__MFW_DATABASE_URL__ || process.env.DATABASE_URL || '';
 const REQUIRE_POSTGRES = EDGE_RUNTIME || String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
+function externalReverificationSchedulerActive(){
+  return globalThis.__MFW_EXTERNAL_REVERIFY_SCHEDULER__===true ||
+    String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true';
+}
 const RELEASE_SHA = String(globalThis.__MFW_RELEASE_SHA__ || process.env.MFW_RELEASE_SHA || process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
@@ -1811,9 +1815,11 @@ async function router(req,res){
         apiVersion:VK_API_VERSION
       }
     },
-    reverification:{active:EDGE_RUNTIME?!!(pool&&String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true'):!!(pool&&reverifyTimer),strategy:EDGE_RUNTIME?'supabase_pg_cron_edge_invocation':'in_process_interval_with_startup_catchup',intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE,requiresPostgres:!pool,catchupOnStart:!EDGE_RUNTIME,externalCronRequired:EDGE_RUNTIME},
+    reverification:{active:EDGE_RUNTIME?!!(pool&&externalReverificationSchedulerActive()):!!(pool&&reverifyTimer),strategy:EDGE_RUNTIME?'supabase_pg_cron_edge_invocation':'in_process_interval_with_startup_catchup',intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE,requiresPostgres:!pool,catchupOnStart:!EDGE_RUNTIME,externalCronRequired:EDGE_RUNTIME},
     acceleratedGoldenPath:{available:true,phases:['fresh_follow_locked','31d_eligible','unfollow_revoked'],days:31,twoAccountFlow:true,postgresCapable:true},
-    cronReverification:{status:'not_used_on_free_contour',entrypoint:'node reverify-social.js',reason:'dedicated_render_cron_has_monthly_minimum_charge',providerCredentialsOptional:true}
+    cronReverification:EDGE_RUNTIME
+      ? {status:externalReverificationSchedulerActive()?'active':'not_configured',entrypoint:'supabase_pg_cron -> pg_net -> edge_internal_reverify',providerCredentialsOptional:true}
+      : {status:'not_used_on_free_contour',entrypoint:'node reverify-social.js',reason:'dedicated_render_cron_has_monthly_minimum_charge',providerCredentialsOptional:true}
   });
   if(req.method==='GET'&&p==='/health/deep'){
     const result=await runDeepSelfTest();
@@ -4231,7 +4237,7 @@ async function initializeAuthority({startScheduler=!EDGE_RUNTIME,runStartupSelfT
     if(runStartupSelfTest&&!selfTest.ok)throw new Error('deep_self_test_failed');
     const scheduler=startScheduler
       ? await startReverificationScheduler()
-      : {active:!!(pool&&String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true'),strategy:'external_scheduler',externalCronRequired:true};
+      : {active:!!(pool&&externalReverificationSchedulerActive()),strategy:'external_scheduler',externalCronRequired:true};
     console.log(JSON.stringify({event:'mfw_reverification_scheduler',...scheduler}));
     return {selfTest,scheduler,databaseSchema:databaseSchemaReadiness,productionAdmission:productionAdmission()};
   })().catch(err=>{authorityInitializationPromise=null;throw err;});
