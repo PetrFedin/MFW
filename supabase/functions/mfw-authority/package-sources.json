@@ -18,7 +18,7 @@
     "postgresSource": "SUPABASE_DB_URL",
     "requirePostgres": true,
     "migrationsAppliedOutOfBand": true,
-    "exactMigrationSet": "001-025",
+    "exactMigrationSet": "001-026",
     "sourceMapGeneratedFromCanonicalSources": false,
     "runtimeSourceMode": "github_raw_exact_sha",
     "canonicalSourcesFetchedByExactCommit": true
