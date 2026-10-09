@@ -4198,7 +4198,7 @@ async function router(req,res){
 }
 
 let authorityInitializationPromise=null;
-async function initializeAuthority({startScheduler=!EDGE_RUNTIME}={}){
+async function initializeAuthority({startScheduler=!EDGE_RUNTIME,runStartupSelfTest=!EDGE_RUNTIME}={}){
   if(authorityInitializationPromise)return authorityInitializationPromise;
   authorityInitializationPromise=(async()=>{
     if(REQUIRE_POSTGRES&&!pool)throw new Error('MFW_REQUIRE_POSTGRES=true but DATABASE_URL is not configured');
@@ -4209,9 +4209,11 @@ async function initializeAuthority({startScheduler=!EDGE_RUNTIME}={}){
       throw new Error('database_schema_not_ready');
     }
     await bootstrapDemoData();
-    const selfTest=await runDeepSelfTest();
+    const selfTest=runStartupSelfTest
+      ? await runDeepSelfTest()
+      : {status:'deferred',ok:true,reason:'edge_cold_start_avoids_test_transactions',dataMode:pool?'postgres':'memory'};
     console.log(JSON.stringify({event:'mfw_deep_self_test',...selfTest}));
-    if(!selfTest.ok)throw new Error('deep_self_test_failed');
+    if(runStartupSelfTest&&!selfTest.ok)throw new Error('deep_self_test_failed');
     const scheduler=startScheduler
       ? await startReverificationScheduler()
       : {active:!!(pool&&String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true'),strategy:'external_scheduler',externalCronRequired:true};
