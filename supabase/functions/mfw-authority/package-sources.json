@@ -12,7 +12,9 @@
     "mfw-api/capital-authority.js",
     "mfw/platform/event-data.js"
   ],
-  "generatedFiles": [],
+  "generatedFiles": [
+    "authority-sources.ts"
+  ],
   "rules": {
     "noForkedBusinessLogic": true,
     "postgresSource": "SUPABASE_DB_URL",
@@ -20,6 +22,7 @@
     "migrationsAppliedOutOfBand": true,
     "exactMigrationSet": "001-025",
     "canonicalEventDataCopiedAtDeployTime": true,
-    "canonicalAuthorityCopiedAtDeployTime": true
+    "canonicalAuthorityCopiedAtDeployTime": true,
+    "sourceMapGeneratedFromCanonicalSources": true
   }
 }
