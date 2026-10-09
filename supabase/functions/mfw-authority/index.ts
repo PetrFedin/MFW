@@ -4,13 +4,9 @@ import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 import QRCode from "npm:qrcode@1.5.4";
 import pg from "npm:pg@8.16.3";
+import authoritySources from "./authority-sources.ts";
 
 const FUNCTION_NAME = "mfw-authority";
-const EMBEDDED_SOURCES_JSON = "__MFW_AUTHORITY_SOURCES_JSON__";
-const authoritySources: Record<string, string> =
-  EMBEDDED_SOURCES_JSON.startsWith("{")
-    ? JSON.parse(EMBEDDED_SOURCES_JSON)
-    : {};
 
 const edgePublicBaseUrl =
   Deno.env.get("MFW_PUBLIC_BASE_URL") ||
