@@ -200,6 +200,17 @@ let authority: any = null;
 async function loadAuthority() {
   if (authority) return authority;
   await loadCanonicalSources();
+
+  const adminSecret = await edgeControlPool.query(
+    `SELECT secret_value
+       FROM mfw_ops.runtime_secrets
+      WHERE control_key='capital_admin'
+        AND enabled=true
+      LIMIT 1`,
+  );
+  (globalThis as any).__MFW_ADMIN_TOKEN__ =
+    adminSecret.rowCount ? String(adminSecret.rows[0].secret_value || "") : "";
+
   (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = loadOfficialSnapshot();
   authority = edgeRequire("./server-v2.js", "edge-entry");
   return authority;
