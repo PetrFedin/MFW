@@ -42,8 +42,8 @@ function externalReverificationSchedulerActive(){
 const RELEASE_SHA = String(globalThis.__MFW_RELEASE_SHA__ || process.env.MFW_RELEASE_SHA || process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
-const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
-const ADMIN_TOKEN_CONFIGURED = !!process.env.MFW_ADMIN_TOKEN && process.env.MFW_ADMIN_TOKEN !== 'mfw-demo-admin';
+const ADMIN_TOKEN = globalThis.__MFW_ADMIN_TOKEN__ || process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
+const ADMIN_TOKEN_CONFIGURED = !!ADMIN_TOKEN && ADMIN_TOKEN !== 'mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_WEBHOOK_SECRET = process.env.MFW_TELEGRAM_WEBHOOK_SECRET || '';
 const VK_SERVICE_TOKEN = process.env.MFW_VK_SERVICE_TOKEN || '';
