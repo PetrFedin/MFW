@@ -1,5 +1,4 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import process from "node:process";
 import { createRequire } from "node:module";
 import QRCode from "npm:qrcode@1.5.4";
 import pg from "npm:pg@8.16.3";
@@ -7,24 +6,19 @@ import pg from "npm:pg@8.16.3";
 const FUNCTION_NAME = "mfw-authority";
 const require = createRequire(import.meta.url);
 
-process.env.MFW_RUNTIME = "supabase-edge";
-process.env.DATABASE_URL = Deno.env.get("SUPABASE_DB_URL") || "";
-process.env.MFW_REQUIRE_POSTGRES = "true";
-process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER =
-  Deno.env.get("MFW_EXTERNAL_REVERIFY_SCHEDULER") || "false";
-process.env.MFW_PUBLIC_BASE_URL =
+const edgePublicBaseUrl =
   Deno.env.get("MFW_PUBLIC_BASE_URL") ||
   ((Deno.env.get("SUPABASE_URL") || "") + "/functions/v1/" + FUNCTION_NAME);
-process.env.MFW_ALLOWED_ORIGIN =
+const edgeAllowedOrigin =
   Deno.env.get("MFW_ALLOWED_ORIGIN") || "https://mfw-platform.onrender.com";
-process.env.MFW_RELEASE_SHA =
+const edgeReleaseSha =
   Deno.env.get("MFW_RELEASE_SHA") || "__MFW_RELEASE_SHA__";
 
 (globalThis as any).__MFW_EDGE_RUNTIME__ = true;
 (globalThis as any).__MFW_DATABASE_URL__ = Deno.env.get("SUPABASE_DB_URL") || "";
-(globalThis as any).__MFW_ALLOWED_ORIGIN__ = process.env.MFW_ALLOWED_ORIGIN;
-(globalThis as any).__MFW_PUBLIC_BASE_URL__ = process.env.MFW_PUBLIC_BASE_URL;
-(globalThis as any).__MFW_RELEASE_SHA__ = process.env.MFW_RELEASE_SHA;
+(globalThis as any).__MFW_ALLOWED_ORIGIN__ = edgeAllowedOrigin;
+(globalThis as any).__MFW_PUBLIC_BASE_URL__ = edgePublicBaseUrl;
+(globalThis as any).__MFW_RELEASE_SHA__ = edgeReleaseSha;
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
 
