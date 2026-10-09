@@ -1,10 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createRequire } from "node:module";
 import QRCode from "npm:qrcode@1.5.4";
 import pg from "npm:pg@8.16.3";
 
 const FUNCTION_NAME = "mfw-authority";
-const require = createRequire(import.meta.url);
 
 const edgePublicBaseUrl =
   Deno.env.get("MFW_PUBLIC_BASE_URL") ||
@@ -22,12 +20,23 @@ const edgeReleaseSha =
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
 
-let authority: any = null;
-function loadAuthority() {
-  if (authority) return authority;
-  (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = require("./official-snapshot.js");
-  authority = require("./server-v2.js");
-  return authority;
+let authorityPromise: Promise<any> | null = null;
+async function loadAuthority() {
+  if (authorityPromise) return authorityPromise;
+  authorityPromise = (async () => {
+    const previousWindow = (globalThis as any).window;
+    (globalThis as any).window = {};
+    await import("./event-data.js");
+    (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = (globalThis as any).window?.MFP_DATA || null;
+    if (previousWindow === undefined) delete (globalThis as any).window;
+    else (globalThis as any).window = previousWindow;
+    const loaded = await import("./server-v2.js");
+    return (loaded as any).default || loaded;
+  })().catch((error) => {
+    authorityPromise = null;
+    throw error;
+  });
+  return authorityPromise;
 }
 
 type Listener = (value?: any) => void;
@@ -124,7 +133,7 @@ class NodeResponseShim {
 
 Deno.serve(async (request: Request) => {
   try {
-    const loadedAuthority = loadAuthority();
+    const loadedAuthority = await loadAuthority();
     await loadedAuthority.initializeAuthority({ startScheduler: false });
     const body =
       request.method === "GET" || request.method === "HEAD"
