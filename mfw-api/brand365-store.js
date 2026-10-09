@@ -1460,18 +1460,18 @@ class Brand365Store{
       const brand=await this.brandByRef(o.brandId);if(!brand)continue;
       const r=await this.pool.query(`INSERT INTO loyalty_offers(
         brand_id,external_key,title_ru,title_en,description_ru,description_en,reward_type,reward_value,min_continuous_days,stock_limit,per_user_limit,status,terms_ru,terms_en,audience_scope)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb)
         ON CONFLICT(external_key) DO UPDATE SET
           title_ru=EXCLUDED.title_ru,title_en=EXCLUDED.title_en,description_ru=EXCLUDED.description_ru,description_en=EXCLUDED.description_en,
           reward_type=EXCLUDED.reward_type,reward_value=EXCLUDED.reward_value,min_continuous_days=EXCLUDED.min_continuous_days,
           stock_limit=EXCLUDED.stock_limit,per_user_limit=EXCLUDED.per_user_limit,status=EXCLUDED.status,terms_ru=EXCLUDED.terms_ru,terms_en=EXCLUDED.terms_en
-        RETURNING id`,[brand.storageId,o.id,o.titleRu,o.titleEn,o.descriptionRu||null,o.descriptionEn||null,o.rewardType,o.rewardValue,o.minContinuousDays,o.stockLimit,o.perUserLimit,o.status,o.termsRu||null,o.termsEn||null,o.audienceScope||{kind:'all_mfw'}]);
+        RETURNING id`,[brand.storageId,o.id,o.titleRu,o.titleEn,o.descriptionRu||null,o.descriptionEn||null,o.rewardType,o.rewardValue,o.minContinuousDays,o.stockLimit,o.perUserLimit,o.status,o.termsRu||null,o.termsEn||null,JSON.stringify(o.audienceScope||{kind:'all_mfw'})]);
       await this.pool.query('DELETE FROM loyalty_offer_requirements WHERE offer_id=$1',[r.rows[0].id]);
       let order=10;
       for(const req of o.requirements||[]){
         const ch=req.channelId?await this.channelByRef(req.channelId):null;
         await this.pool.query(`INSERT INTO loyalty_offer_requirements(offer_id,requirement_type,channel_id,min_continuous_days,required,sort_order,metadata)
-          VALUES($1,$2,$3,$4,$5,$6,$7)`,[r.rows[0].id,req.type,ch&&ch.storageId||null,req.minContinuousDays||0,req.required!==false,order,req.metadata||{}]);
+          VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)`,[r.rows[0].id,req.type,ch&&ch.storageId||null,req.minContinuousDays||0,req.required!==false,order,JSON.stringify(req.metadata||{})]);
         order+=10;
       }
     }
@@ -1480,11 +1480,11 @@ class Brand365Store{
       await this.pool.query(`INSERT INTO brand_content_posts(
         brand_id,external_key,kind,title_ru,title_en,body_ru,body_en,image_url,cta_label_ru,cta_label_en,cta_url,event_starts_at,event_ends_at,
         audience_scope,placement_scope,is_paid,sponsor_label_ru,sponsor_label_en,frequency_cap,status,moderation_note,published_at,created_at)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,COALESCE($23,now()))
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$17,$18,$19::jsonb,$20,$21,$22,COALESCE($23,now()))
         ON CONFLICT(external_key) DO UPDATE SET
           title_ru=EXCLUDED.title_ru,title_en=EXCLUDED.title_en,body_ru=EXCLUDED.body_ru,body_en=EXCLUDED.body_en,image_url=EXCLUDED.image_url,
           audience_scope=EXCLUDED.audience_scope,placement_scope=EXCLUDED.placement_scope,is_paid=EXCLUDED.is_paid,status=EXCLUDED.status,published_at=EXCLUDED.published_at
-        `,[brand.storageId,p.id,p.kind,p.titleRu,p.titleEn,p.bodyRu||null,p.bodyEn||null,p.imageUrl||null,p.ctaLabelRu||null,p.ctaLabelEn||null,p.ctaUrl||null,p.eventStartsAt||null,p.eventEndsAt||null,p.audienceScope||{kind:'brand_followers'},p.placementScope||['brand_profile','discover_feed'],!!p.isPaid,p.sponsorLabelRu||null,p.sponsorLabelEn||null,p.frequencyCap||{per_user_per_7d:2},p.status,p.moderationNote||null,p.publishedAt||null,p.createdAt||null]);
+        `,[brand.storageId,p.id,p.kind,p.titleRu,p.titleEn,p.bodyRu||null,p.bodyEn||null,p.imageUrl||null,p.ctaLabelRu||null,p.ctaLabelEn||null,p.ctaUrl||null,p.eventStartsAt||null,p.eventEndsAt||null,JSON.stringify(p.audienceScope||{kind:'brand_followers'}),JSON.stringify(p.placementScope||['brand_profile','discover_feed']),!!p.isPaid,p.sponsorLabelRu||null,p.sponsorLabelEn||null,JSON.stringify(p.frequencyCap||{per_user_per_7d:2}),p.status,p.moderationNote||null,p.publishedAt||null,p.createdAt||null]);
     }
   }
 }
