@@ -37,6 +37,51 @@ const edgeReleaseSha =
 (globalThis as any).__MFW_QRCODE__ = QRCode;
 (globalThis as any).__MFW_PG_POOL__ = (pg as any).Pool;
 
+const EdgePool = (pg as any).Pool;
+const edgeControlPool = new EdgePool({
+  connectionString: Deno.env.get("SUPABASE_DB_URL") || "",
+  max: 1,
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 10000,
+});
+let schedulerDetectionPromise: Promise<boolean> | null = null;
+
+async function detectExternalScheduler(): Promise<boolean> {
+  if (schedulerDetectionPromise) return schedulerDetectionPromise;
+  schedulerDetectionPromise = edgeControlPool.query(
+    `SELECT EXISTS(
+       SELECT 1 FROM cron.job
+       WHERE jobname='mfw-social-reverification-6h'
+         AND active
+     ) AS active`,
+  ).then((result: any) => Boolean(result.rows?.[0]?.active))
+   .catch(() => false);
+  return schedulerDetectionPromise;
+}
+
+function timingSafeTextEqual(left: string, right: string): boolean {
+  if (!left || !right || left.length !== right.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(left), Buffer.from(right));
+  } catch (_) {
+    return false;
+  }
+}
+
+async function verifyCronToken(request: Request): Promise<boolean> {
+  const supplied = request.headers.get("x-mfw-cron-token") || "";
+  if (!supplied) return false;
+  const result = await edgeControlPool.query(
+    `SELECT secret_value
+       FROM mfw_ops.runtime_secrets
+       WHERE control_key='social_reverify_cron'
+         AND enabled=true
+       LIMIT 1`,
+  );
+  if (!result.rowCount) return false;
+  return timingSafeTextEqual(supplied, String(result.rows[0].secret_value || ""));
+}
+
 async function loadCanonicalSources() {
   if (sourceLoadPromise) return sourceLoadPromise;
   sourceLoadPromise = (async () => {
@@ -234,7 +279,29 @@ class NodeResponseShim {
 Deno.serve(async (request: Request) => {
   try {
     const loadedAuthority = await loadAuthority();
+    const schedulerActive = await detectExternalScheduler();
+    (globalThis as any).__MFW_EXTERNAL_REVERIFY_SCHEDULER__ = schedulerActive;
     await loadedAuthority.initializeAuthority({ startScheduler: false });
+
+    const requestPath = new URL(request.url).pathname;
+    if (requestPath.endsWith("/__internal/reverify")) {
+      if (request.method !== "POST") {
+        return Response.json({ error: "method_not_allowed" }, { status: 405 });
+      }
+      if (!(await verifyCronToken(request))) {
+        return Response.json({ error: "forbidden" }, { status: 403 });
+      }
+      const result = await loadedAuthority.runSocialReverificationExclusive("supabase_pg_cron");
+      return Response.json({
+        status: "ok",
+        checked: Number(result?.checked || 0),
+        inactive: Number(result?.inactive || 0),
+        skipped: Number(result?.skipped || 0),
+        errorCount: Array.isArray(result?.errors) ? result.errors.length : 0,
+        completedAt: result?.completedAt || null,
+      });
+    }
+
     const body =
       request.method === "GET" || request.method === "HEAD"
         ? ""
