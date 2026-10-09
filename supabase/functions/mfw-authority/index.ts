@@ -201,15 +201,24 @@ async function loadAuthority() {
   if (authority) return authority;
   await loadCanonicalSources();
 
-  const adminSecret = await edgeControlPool.query(
-    `SELECT secret_value
+  const runtimeSecrets = await edgeControlPool.query(
+    `SELECT control_key,secret_value
        FROM mfw_ops.runtime_secrets
-      WHERE control_key='capital_admin'
-        AND enabled=true
-      LIMIT 1`,
+      WHERE control_key = ANY($1::text[])
+        AND enabled=true`,
+    [["capital_admin","authority_signing_seed"]],
   );
-  (globalThis as any).__MFW_ADMIN_TOKEN__ =
-    adminSecret.rowCount ? String(adminSecret.rows[0].secret_value || "") : "";
+  const secretMap = new Map(
+    (runtimeSecrets.rows || []).map((row: any) => [
+      String(row.control_key || ""),
+      String(row.secret_value || ""),
+    ]),
+  );
+  (globalThis as any).__MFW_ADMIN_TOKEN__ = secretMap.get("capital_admin") || "";
+  (globalThis as any).__MFW_KEY_SEED__ = secretMap.get("authority_signing_seed") || "";
+  if (!(globalThis as any).__MFW_KEY_SEED__) {
+    throw new Error("edge_authority_signing_seed_missing");
+  }
 
   (globalThis as any).__MFW_OFFICIAL_SNAPSHOT__ = loadOfficialSnapshot();
   authority = edgeRequire("./server-v2.js", "edge-entry");
