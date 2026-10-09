@@ -1,4 +1,4 @@
-const EDGE_RUNTIME = String(process.env.MFW_RUNTIME || '').toLowerCase()==='supabase-edge';
+const EDGE_RUNTIME = globalThis.__MFW_EDGE_RUNTIME__===true || String(process.env.MFW_RUNTIME || '').toLowerCase()==='supabase-edge';
 const requireBuiltin = (name) => require(name);
 const http = EDGE_RUNTIME ? null : requireBuiltin('http');
 const crypto = requireBuiltin('crypto');
@@ -31,11 +31,11 @@ if(!Pool){
 }
 
 const PORT = Number(process.env.PORT || 10000);
-const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
+const ORIGIN = globalThis.__MFW_ALLOWED_ORIGIN__ || process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
 const VERSION = 'mfw-authority-v11-capital-operator-admission';
-const DATABASE_URL = process.env.DATABASE_URL || '';
-const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
-const RELEASE_SHA = String(process.env.MFW_RELEASE_SHA || process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
+const DATABASE_URL = globalThis.__MFW_DATABASE_URL__ || process.env.DATABASE_URL || '';
+const REQUIRE_POSTGRES = EDGE_RUNTIME || String(process.env.MFW_REQUIRE_POSTGRES || 'false').toLowerCase()==='true';
+const RELEASE_SHA = String(globalThis.__MFW_RELEASE_SHA__ || process.env.MFW_RELEASE_SHA || process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
 const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
@@ -44,7 +44,7 @@ const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_WEBHOOK_SECRET = process.env.MFW_TELEGRAM_WEBHOOK_SECRET || '';
 const VK_SERVICE_TOKEN = process.env.MFW_VK_SERVICE_TOKEN || '';
 const VK_API_VERSION = process.env.MFW_VK_API_VERSION || '5.199';
-const PUBLIC_BASE_URL = process.env.MFW_PUBLIC_BASE_URL || 'https://mfw-authority.onrender.com';
+const PUBLIC_BASE_URL = globalThis.__MFW_PUBLIC_BASE_URL__ || process.env.MFW_PUBLIC_BASE_URL || 'https://mfw-authority.onrender.com';
 const TELEGRAM_LOGIN_CLIENT_ID = process.env.MFW_TELEGRAM_LOGIN_CLIENT_ID || '';
 const TELEGRAM_LOGIN_CLIENT_SECRET = process.env.MFW_TELEGRAM_LOGIN_CLIENT_SECRET || '';
 const TELEGRAM_LOGIN_REDIRECT_URI = process.env.MFW_TELEGRAM_LOGIN_REDIRECT_URI || (PUBLIC_BASE_URL+'/v1/social/auth/telegram/callback');
