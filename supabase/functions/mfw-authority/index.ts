@@ -317,7 +317,7 @@ Deno.serve(async (request: Request) => {
       if (!(await verifyCronToken(request))) {
         return Response.json({ error: "forbidden" }, { status: 403 });
       }
-      const result = await loadedAuthority.runSocialReverificationExclusive("supabase_pg_cron");
+      const result = await loadedAuthority.runSocialReverificationExclusive("cron");
       return Response.json({
         status: "ok",
         checked: Number(result?.checked || 0),
