@@ -720,7 +720,8 @@ const REQUIRED_MIGRATION_FILES=[
   '006_role_workflows.sql','007_loyalty_365.sql','008_retention_engine.sql','009_brand365_persistence.sql','010_social_auth_flows.sql',
   '011_social_auth_hardening.sql','012_schema_reconciliation.sql','013_brand_crm.sql','014_brand_crm_hardening.sql','015_brand_cdp.sql',
   '016_brand_cdp_state_machine.sql','017_mvp_persistence.sql','018_identity_interests_registration.sql','019_platform_registrations.sql','020_journey_closure.sql',
-  '021_made_in_moscow_partner_program.sql','022_persistent_organisation_registry.sql','023_capital_authority.sql','024_capital_operator_admission.sql','025_organisation_credential_revocations.sql'
+  '021_made_in_moscow_partner_program.sql','022_persistent_organisation_registry.sql','023_capital_authority.sql','024_capital_operator_admission.sql','025_organisation_credential_revocations.sql',
+  '026_postgres_conflict_constraints.sql'
 ];
 function requiredMigrationFiles(){
   if(EDGE_RUNTIME)return REQUIRED_MIGRATION_FILES.slice();
@@ -829,6 +830,20 @@ async function checkDatabaseSchema(){
     FROM pg_trigger tg JOIN pg_class t ON t.oid=tg.tgrelid
     WHERE t.relname='capital_ledger_events' AND tg.tgname='trg_capital_ledger_immutable' AND NOT tg.tgisinternal LIMIT 1`);
   if(!capitalTrigger.rowCount)contractErrors.push('capital_ledger_immutability_trigger_missing');
+
+  const requiredConflictTargets=[
+    ['loyalty_offers','external_key'],
+    ['brand_content_posts','external_key']
+  ];
+  const conflictIndexes=await pool.query(`SELECT t.relname table_name,pg_get_indexdef(i.indexrelid) def
+    FROM pg_index i JOIN pg_class t ON t.oid=i.indrelid JOIN pg_namespace n ON n.oid=t.relnamespace
+    WHERE n.nspname='public' AND i.indisunique AND t.relname=ANY($1::text[])`,
+    [[...new Set(requiredConflictTargets.map(x=>x[0]))]]);
+  for(const [table,column] of requiredConflictTargets){
+    const token='('+column+')';
+    const ok=conflictIndexes.rows.some(row=>row.table_name===table&&String(row.def||'').replace(/\s+/g,'').includes(token));
+    if(!ok)contractErrors.push('missing_conflict_unique:'+table+'.'+column);
+  }
 
   const ready=!missingMigrations.length&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
   return {
