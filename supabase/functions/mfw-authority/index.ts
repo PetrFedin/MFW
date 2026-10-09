@@ -40,10 +40,13 @@ class NodeRequestShim {
 
   constructor(request: Request, body: string) {
     const incoming = new URL(request.url);
-    const prefix = "/functions/v1/" + FUNCTION_NAME;
-    const routedPath = incoming.pathname.startsWith(prefix)
-      ? (incoming.pathname.slice(prefix.length) || "/")
-      : incoming.pathname;
+    const functionPrefix = "/functions/v1/";
+    let routedPath = incoming.pathname;
+    if (incoming.pathname.startsWith(functionPrefix)) {
+      const afterPrefix = incoming.pathname.slice(functionPrefix.length);
+      const slash = afterPrefix.indexOf("/");
+      routedPath = slash >= 0 ? afterPrefix.slice(slash) : "/";
+    }
     this.method = request.method.toUpperCase();
     this.url = routedPath + incoming.search;
     this.headers = {};
