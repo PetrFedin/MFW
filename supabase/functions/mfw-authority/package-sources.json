@@ -12,15 +12,14 @@
     "mfw-api/capital-authority.js",
     "mfw/platform/event-data.js"
   ],
-  "generatedFiles": [
-    "official-snapshot.js"
-  ],
+  "generatedFiles": [],
   "rules": {
-    "serverV2CopiedAtDeployTime": true,
     "noForkedBusinessLogic": true,
     "postgresSource": "SUPABASE_DB_URL",
     "requirePostgres": true,
     "migrationsAppliedOutOfBand": true,
-    "exactMigrationSet": "001-025"
+    "exactMigrationSet": "001-025",
+    "canonicalEventDataCopiedAtDeployTime": true,
+    "canonicalAuthorityCopiedAtDeployTime": true
   }
 }
