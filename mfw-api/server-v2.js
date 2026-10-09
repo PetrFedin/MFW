@@ -726,7 +726,7 @@ const REQUIRED_MIGRATION_FILES=[
   '011_social_auth_hardening.sql','012_schema_reconciliation.sql','013_brand_crm.sql','014_brand_crm_hardening.sql','015_brand_cdp.sql',
   '016_brand_cdp_state_machine.sql','017_mvp_persistence.sql','018_identity_interests_registration.sql','019_platform_registrations.sql','020_journey_closure.sql',
   '021_made_in_moscow_partner_program.sql','022_persistent_organisation_registry.sql','023_capital_authority.sql','024_capital_operator_admission.sql','025_organisation_credential_revocations.sql',
-  '026_postgres_conflict_constraints.sql'
+  '026_postgres_conflict_constraints.sql','027_outbox_pg_boss_bridge.sql'
 ];
 function requiredMigrationFiles(){
   if(EDGE_RUNTIME)return REQUIRED_MIGRATION_FILES.slice();
@@ -790,7 +790,7 @@ async function checkDatabaseSchema(){
     'content_impressions','notification_deliveries','social_auth_flows',
     'user_agenda','b2b_meetings','b2b_meeting_events','user_interests','platform_registrations',
     'professional_follows','b2b_leads','professional_organisations','professional_organisation_memberships','professional_organisation_participation',
-    'partner_programs','brand_program_memberships','partner_service_applications','capital_ledger_events','capital_operator_grants'
+    'partner_programs','brand_program_memberships','partner_service_applications','capital_ledger_events','capital_operator_grants','authority_outbox','authority_delivery_receipts'
   ];
   const tables=await pool.query(`SELECT table_name FROM information_schema.tables
     WHERE table_schema='public' AND table_name=ANY($1::text[])`,[requiredTables]);
@@ -1750,6 +1750,28 @@ async function appendCapitalEvent(req,body){
       envelope.actorSubject,envelope.actorRole,envelope.authMethod,envelope.occurredAt,envelope.points,
       JSON.stringify(envelope.evidenceRefs),JSON.stringify(envelope.payload),envelope.idempotencyKey,envelope.requestId,
       envelope.previousEventHash,eventHash
+    ]);
+    const capitalRow=inserted.rows[0];
+    await client.query(`INSERT INTO authority_outbox(
+      event_key,topic,aggregate_type,aggregate_id,payload
+    ) VALUES($1,'capital.event.recorded',$2,$3,$4::jsonb)
+    ON CONFLICT(event_key) DO NOTHING`,[
+      'capital:'+eventHash,
+      envelope.aggregateType,
+      envelope.aggregateId,
+      JSON.stringify({
+        eventId:String(capitalRow.id),
+        programmeKey:envelope.programmeKey,
+        aggregateType:envelope.aggregateType,
+        aggregateId:envelope.aggregateId,
+        aggregateSeq:envelope.aggregateSeq,
+        eventType:envelope.eventType,
+        occurredAt:envelope.occurredAt,
+        points:envelope.points,
+        evidenceRefs:envelope.evidenceRefs,
+        previousEventHash:envelope.previousEventHash,
+        eventHash
+      })
     ]);
     await client.query('COMMIT');
     return {row:inserted.rows[0],created:true};
