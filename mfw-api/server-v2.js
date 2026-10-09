@@ -1,9 +1,11 @@
-const http = require('http');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const QRCode = require('qrcode');
+const EDGE_RUNTIME = String(process.env.MFW_RUNTIME || '').toLowerCase()==='supabase-edge';
+const requireBuiltin = (name) => require(name);
+const http = EDGE_RUNTIME ? null : requireBuiltin('http');
+const crypto = requireBuiltin('crypto');
+const fs = EDGE_RUNTIME ? null : requireBuiltin('fs');
+const path = EDGE_RUNTIME ? null : requireBuiltin('path');
+const vm = EDGE_RUNTIME ? null : requireBuiltin('vm');
+const QRCode = EDGE_RUNTIME ? globalThis.__MFW_QRCODE__ : require('qrcode');
 const { Brand365Store } = require('./brand365-store');
 const { activeTelegramStatus, verifyProviderMembership: verifySocialProviderMembership } = require('./social-providers');
 const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
@@ -23,8 +25,10 @@ const {
   validateCapitalTransition,
   verifyCapitalChainRows
 } = require('./capital-authority');
-let Pool = null;
-try { ({ Pool } = require('pg')); } catch (_) {}
+let Pool = EDGE_RUNTIME ? globalThis.__MFW_PG_POOL__ : null;
+if(!Pool){
+  try { ({ Pool } = require('pg')); } catch (_) {}
+}
 
 const PORT = Number(process.env.PORT || 10000);
 const ORIGIN = process.env.MFW_ALLOWED_ORIGIN || 'https://mfw-platform.onrender.com';
@@ -52,6 +56,7 @@ const featureEvaluator=new FeatureEvaluator({env:process.env});
 const organisationRegistry=new OrganisationRegistry({pool:null});
 
 function loadOfficialSnapshot(){
+  if(EDGE_RUNTIME)return globalThis.__MFW_OFFICIAL_SNAPSHOT__||null;
   try{
     const source=fs.readFileSync(path.join(__dirname,'..','mfw','platform','event-data.js'),'utf8');
     const sandbox={window:{}};
@@ -204,7 +209,7 @@ function validateInvestorBuild(){
     if(migration011.indexOf(required)<0)throw new Error('missing_social_auth_hardening_contract:'+required);
   }
 }
-validateInvestorBuild();
+if(!EDGE_RUNTIME)validateInvestorBuild();
 
 
 function redirectResponse(res,location){
@@ -710,14 +715,34 @@ async function query(sql,params=[]){
   return pool.query(sql,params);
 }
 
+const REQUIRED_MIGRATION_FILES=[
+  '001_init.sql','002_commerce.sql','003_sponsors.sql','004_world_features.sql','005_streaming_pipeline.sql',
+  '006_role_workflows.sql','007_loyalty_365.sql','008_retention_engine.sql','009_brand365_persistence.sql','010_social_auth_flows.sql',
+  '011_social_auth_hardening.sql','012_schema_reconciliation.sql','013_brand_crm.sql','014_brand_crm_hardening.sql','015_brand_cdp.sql',
+  '016_brand_cdp_state_machine.sql','017_mvp_persistence.sql','018_identity_interests_registration.sql','019_platform_registrations.sql','020_journey_closure.sql',
+  '021_made_in_moscow_partner_program.sql','022_persistent_organisation_registry.sql','023_capital_authority.sql','024_capital_operator_admission.sql','025_organisation_credential_revocations.sql'
+];
+function requiredMigrationFiles(){
+  if(EDGE_RUNTIME)return REQUIRED_MIGRATION_FILES.slice();
+  const dir=path.join(__dirname,'migrations');
+  return fs.readdirSync(dir).filter(f=>f.endsWith('.sql')).sort();
+}
+
 async function migrate(){
   if(!pool) return;
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations(
     filename text PRIMARY KEY,
     applied_at timestamptz NOT NULL DEFAULT now()
   )`);
+  const files=requiredMigrationFiles();
+  if(EDGE_RUNTIME){
+    const applied=await pool.query('SELECT filename FROM schema_migrations ORDER BY filename');
+    const seen=new Set(applied.rows.map(x=>x.filename));
+    const missing=files.filter(x=>!seen.has(x));
+    if(missing.length)throw new Error('edge_schema_migrations_missing:'+missing.join(','));
+    return;
+  }
   const dir=path.join(__dirname,'migrations');
-  const files=fs.readdirSync(dir).filter(f=>f.endsWith('.sql')).sort();
   for(const file of files){
     const seen=await pool.query('SELECT 1 FROM schema_migrations WHERE filename=$1',[file]);
     if(seen.rowCount) continue;
@@ -737,8 +762,7 @@ async function migrate(){
 }
 
 async function checkDatabaseSchema(){
-  const dir=path.join(__dirname,'migrations');
-  const requiredMigrations=fs.readdirSync(dir).filter(f=>f.endsWith('.sql')).sort();
+  const requiredMigrations=requiredMigrationFiles();
   if(!pool){
     return {
       configured:false,ready:false,mode:'memory_demo',
@@ -1772,7 +1796,7 @@ async function router(req,res){
         apiVersion:VK_API_VERSION
       }
     },
-    reverification:{active:!!(pool&&reverifyTimer),strategy:'in_process_interval_with_startup_catchup',intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE,requiresPostgres:!pool,catchupOnStart:true,externalCronRequired:false},
+    reverification:{active:EDGE_RUNTIME?!!(pool&&String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true'):!!(pool&&reverifyTimer),strategy:EDGE_RUNTIME?'supabase_pg_cron_edge_invocation':'in_process_interval_with_startup_catchup',intervalMinutes:REVERIFY_INTERVAL_MINUTES,batchSize:REVERIFY_BATCH_SIZE,requiresPostgres:!pool,catchupOnStart:!EDGE_RUNTIME,externalCronRequired:EDGE_RUNTIME},
     acceleratedGoldenPath:{available:true,phases:['fresh_follow_locked','31d_eligible','unfollow_revoked'],days:31,twoAccountFlow:true,postgresCapable:true},
     cronReverification:{status:'not_used_on_free_contour',entrypoint:'node reverify-social.js',reason:'dedicated_render_cron_has_monthly_minimum_charge',providerCredentialsOptional:true}
   });
@@ -4173,20 +4197,32 @@ async function router(req,res){
   return json(res,404,{error:'not_found'});
 }
 
+let authorityInitializationPromise=null;
+async function initializeAuthority({startScheduler=!EDGE_RUNTIME}={}){
+  if(authorityInitializationPromise)return authorityInitializationPromise;
+  authorityInitializationPromise=(async()=>{
+    if(REQUIRE_POSTGRES&&!pool)throw new Error('MFW_REQUIRE_POSTGRES=true but DATABASE_URL is not configured');
+    await migrate();
+    databaseSchemaReadiness=await checkDatabaseSchema();
+    if(pool&&!databaseSchemaReadiness.ready){
+      console.error(JSON.stringify({event:'mfw_database_schema_not_ready',...databaseSchemaReadiness}));
+      throw new Error('database_schema_not_ready');
+    }
+    await bootstrapDemoData();
+    const selfTest=await runDeepSelfTest();
+    console.log(JSON.stringify({event:'mfw_deep_self_test',...selfTest}));
+    if(!selfTest.ok)throw new Error('deep_self_test_failed');
+    const scheduler=startScheduler
+      ? await startReverificationScheduler()
+      : {active:!!(pool&&String(process.env.MFW_EXTERNAL_REVERIFY_SCHEDULER||'').toLowerCase()==='true'),strategy:'external_scheduler',externalCronRequired:true};
+    console.log(JSON.stringify({event:'mfw_reverification_scheduler',...scheduler}));
+    return {selfTest,scheduler,databaseSchema:databaseSchemaReadiness,productionAdmission:productionAdmission()};
+  })().catch(err=>{authorityInitializationPromise=null;throw err;});
+  return authorityInitializationPromise;
+}
+
 async function main(){
-  if(REQUIRE_POSTGRES&&!pool)throw new Error('MFW_REQUIRE_POSTGRES=true but DATABASE_URL is not configured');
-  await migrate();
-  databaseSchemaReadiness=await checkDatabaseSchema();
-  if(pool&&!databaseSchemaReadiness.ready){
-    console.error(JSON.stringify({event:'mfw_database_schema_not_ready',...databaseSchemaReadiness}));
-    throw new Error('database_schema_not_ready');
-  }
-  await bootstrapDemoData();
-  const selfTest=await runDeepSelfTest();
-  console.log(JSON.stringify({event:'mfw_deep_self_test',...selfTest}));
-  if(!selfTest.ok)throw new Error('deep_self_test_failed');
-  const scheduler=await startReverificationScheduler();
-  console.log(JSON.stringify({event:'mfw_reverification_scheduler',...scheduler}));
+  await initializeAuthority({startScheduler:true});
   const server=http.createServer((req,res)=>router(req,res).catch(err=>{
     console.error(err);
     json(res,500,{error:'internal_error'});
@@ -4195,4 +4231,14 @@ async function main(){
     console.log(JSON.stringify({event:'mfw_api_started',version:VERSION,port:PORT,dataMode:pool?'postgres':'memory'}));
   });
 }
-main().catch(err=>{console.error(err);process.exit(1);});
+if(!EDGE_RUNTIME)main().catch(err=>{console.error(err);process.exit(1);});
+
+module.exports={
+  router,
+  initializeAuthority,
+  runDeepSelfTest,
+  productionAdmission,
+  checkDatabaseSchema,
+  runSocialReverificationExclusive,
+  launchReverification
+};
