@@ -19,7 +19,7 @@ jobs:
           node-version: '20'
       - name: Install QA dependencies
         working-directory: qa
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - name: Install Chromium
         working-directory: qa
         run: npx playwright install --with-deps chromium
