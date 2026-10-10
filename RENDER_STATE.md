@@ -277,3 +277,35 @@ The remaining Phase 0 operation is still infrastructure-only:
 9. only then advance to pg-boss/outbox.
 
 The Render MCP connector can set literal environment variables but cannot apply a `fromDatabase` reference or Blueprint sync. The generated database credential must not be copied into chat, repository files or external tooling as a workaround.
+
+
+## 2026-10-10 — pre-binding runtime re-verification
+
+Exact canonical repository head:
+`b540bf5498460cdf68767e636744567b0d13c1ea`.
+
+A safe literal-environment synchronization was applied to the existing `mfw-authority` service without setting `DATABASE_URL` or enabling `MFW_REQUIRE_POSTGRES=true` ahead of the database binding.
+
+Synchronized non-secret values:
+- `NODE_ENV=production`;
+- `MFW_ALLOWED_ORIGIN=https://mfw-platform.onrender.com`;
+- `MFW_PUBLIC_BASE_URL=https://mfw-authority.onrender.com`;
+- `MFW_REVERIFY_INTERVAL_MINUTES=360`;
+- `MFW_REVERIFY_BATCH_SIZE=250`.
+
+Render created explicit deploy `dep-db4o1oad0e5s73cscg80` for exact `b540bf5498460cdf68767e636744567b0d13c1ea`; it completed with status LIVE. Runtime startup remained healthy, deep self-test PASS, and still reported `dataMode=memory` with social reverification inactive because PostgreSQL is not yet bound.
+
+Current control-plane drift observed after that deploy:
+- `healthCheckPath` is still empty instead of canonical `/ready`;
+- `autoDeploy=no` / `autoDeployTrigger=off` is now reported for `mfw-authority`;
+- the canonical `render.yaml` still declares commit auto-deploy and `healthCheckPath: /ready`;
+- no secure `DATABASE_URL <- mfw-postgres.connectionString` binding is present;
+- external PostgreSQL IP allowlist remains empty.
+
+Operational consequence:
+- until auto-deploy drift is reconciled, every admission/release deploy must be treated as explicit and verified by exact SHA;
+- do not enable the strict PostgreSQL guard before the secure database binding exists;
+- do not expose the database externally as a workaround.
+
+Phase 0 remains open on the same infrastructure boundary:
+secure internal database binding -> strict guard -> `/ready` health check -> exact-main deploy -> migrations 001–025 -> PostgreSQL Golden Paths -> Admission Evidence -> Runtime Admission -> Capital admission/hash-chain.

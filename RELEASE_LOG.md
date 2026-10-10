@@ -632,3 +632,22 @@ Preserved boundaries:
 - projections remain read-only and not production-admitted while Phase 0 is open.
 
 Returned immediately to the Phase 0 PostgreSQL gate after merge. Live Render now serves exact `main@f437135fbdc8074cce4b8acfc15eb06ddc14a86b`, but still shows memory mode, missing secure database binding and empty `healthCheckPath`. No pg-boss/outbox work has been started ahead of admission.
+
+
+## 2026-10-10 — Phase 0 pre-binding runtime synchronization
+
+Exact SHA: `b540bf5498460cdf68767e636744567b0d13c1ea`.
+
+- synchronized safe non-secret `mfw-authority` environment values with canonical Blueprint intent;
+- Render explicit deploy `dep-db4o1oad0e5s73cscg80`: LIVE;
+- build successful, zero npm audit vulnerabilities reported by Render build log;
+- authority deep self-test: PASS;
+- persistence remains `dataMode=memory`;
+- social reverification remains blocked on PostgreSQL binding;
+- `healthCheckPath` runtime drift remains open;
+- newly observed control-plane drift: authority now reports `autoDeploy=no`;
+- Phase 0 Readiness Contract #125: PASS;
+- Responsive QA #358: PASS;
+- no `DATABASE_URL` secret copied or reconstructed;
+- PostgreSQL external allowlist remains closed;
+- Phase 0 remains BLOCKED on secure Render internal database binding and health-check reconciliation.

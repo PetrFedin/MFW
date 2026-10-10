@@ -1018,3 +1018,21 @@ Verified live drift on Render:
 - live authority is now deployed on exact `main@f437135fbdc8074cce4b8acfc15eb06ddc14a86b`.
 
 Required next operation remains one Render-side secure internal/Blueprint binding plus health-check reconciliation. Do not expose, reconstruct or copy the generated PostgreSQL credential into chat or source control.
+
+
+## 2026-10-10 — Phase 0 runtime pre-binding status
+
+Repository-side qualification remains green on exact `b540bf5498460cdf68767e636744567b0d13c1ea`:
+- Phase 0 Readiness Contract #125: PASS;
+- Responsive QA #358: PASS.
+
+The existing Render authority was explicitly redeployed after synchronizing only safe non-secret runtime configuration. Deploy `dep-db4o1oad0e5s73cscg80` reached LIVE on the exact main SHA and the authority deep self-test passed.
+
+Production persistence is still not admitted:
+- `dataMode=memory`;
+- social reverification remains inactive with `postgres_required`;
+- secure internal `DATABASE_URL` binding is still absent;
+- live `healthCheckPath` remains empty instead of `/ready`;
+- Render currently reports authority auto-deploy disabled, so exact-SHA explicit deploy verification is mandatory until reconciled.
+
+No paid resource was created, PostgreSQL was not exposed externally, and the strict PostgreSQL guard was not enabled before the binding.
