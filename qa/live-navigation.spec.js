@@ -10,12 +10,12 @@ test('live shell: all three event routes, account and discovery', async ({ page 
   await expect(page.locator('#eventFrame')).toBeVisible();
   await expect(page.locator('[data-event="mfw"]')).toBeVisible();
   for (const [code,path] of [
-    ['mfw','/mfw/index.html'],
-    ['bfs','/platform/bfs/index.html'],
-    ['made','/platform/made-in-moscow/index.html']
+    ['mfw','../mfw/index.html'],
+    ['bfs','./bfs/index.html'],
+    ['made','./made-in-moscow/index.html']
   ]) {
     await page.locator('[data-event="'+code+'"]').click();
-    await expect(page.locator('#eventFrame')).toHaveAttribute('src',new RegExp(path.split('/').pop().replace('.','\\.')+'$'));
+    await expect(page.locator('#eventFrame')).toHaveAttribute('src',path);
     const frame = page.frameLocator('#eventFrame');
     await expect(frame.locator('body')).toBeVisible();
     const state=await frame.locator('body').evaluate(el=>({
