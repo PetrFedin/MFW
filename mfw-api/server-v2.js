@@ -1,3 +1,4 @@
+const {reconcileMigrations}=require('./migration-parity');
 const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -749,7 +750,8 @@ async function checkDatabaseSchema(){
 
   const applied=await pool.query('SELECT filename FROM schema_migrations ORDER BY filename');
   const appliedSet=new Set(applied.rows.map(x=>x.filename));
-  const missingMigrations=requiredMigrations.filter(x=>!appliedSet.has(x));
+  const migrationParity=reconcileMigrations(requiredMigrations,applied.rows.map(x=>x.filename));
+  const {missingMigrations,unexpectedMigrations,duplicateMigrations}=migrationParity;
 
   const requiredTables=[
     'users','profiles','events','event_registrations','passes','brands','collections','looks',
@@ -806,10 +808,12 @@ async function checkDatabaseSchema(){
     WHERE t.relname='capital_ledger_events' AND tg.tgname='trg_capital_ledger_immutable' AND NOT tg.tgisinternal LIMIT 1`);
   if(!capitalTrigger.rowCount)contractErrors.push('capital_ledger_immutability_trigger_missing');
 
-  const ready=!missingMigrations.length&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
+  if(unexpectedMigrations.length)contractErrors.push('unexpected_migrations');
+  if(duplicateMigrations.length)contractErrors.push('duplicate_migrations');
+  const ready=migrationParity.ready&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
   return {
     configured:true,ready,mode:'postgres',
-    migrations:[...appliedSet],requiredMigrations,missingMigrations,missingTables,missingColumns,contractErrors,
+    migrations:[...appliedSet],requiredMigrations,missingMigrations,unexpectedMigrations,duplicateMigrations,missingTables,missingColumns,contractErrors,
     checkedAt:new Date().toISOString()
   };
 }
