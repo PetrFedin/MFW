@@ -1,5 +1,10 @@
 name: Live Navigation Admission
 on:
+  pull_request:
+    paths:
+      - 'qa/live-navigation.spec.js'
+      - 'qa/live-navigation.config.js'
+      - '.github/workflows/live-navigation-admission.yml'
   workflow_dispatch:
   schedule:
     - cron: '20 6 * * *'
