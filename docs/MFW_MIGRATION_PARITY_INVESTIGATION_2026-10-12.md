@@ -20,3 +20,11 @@ Original SQL source for historical application `027_outbox_pg_boss_bridge.sql` w
 5. No production DB binding or switch until exact-SHA admission, valid credentials, `/ready=200`, PostgreSQL Golden Paths and proven restore.
 
 References: https://github.com/PetrFedin/MFW/pull/20 and https://supabase.com/docs/guides/deployment/database-migrations.
+
+## Authority / Render admission check (12 Oct 2026)
+
+- Render `mfw-postgres` exists in Frankfurt, free plan, status available; its control-plane expiration remains **2026-10-30 12:53:29 UTC**. The service is **not** admitted as authoritative, and no verified recovery/restore proof exists.
+- Render `mfw-authority`: `autoDeploy=no`, `healthCheckPath` empty; last known service SHA `b540bf5498460cdf68767e636744567b0d13c1ea`. Do not deploy `main` expecting it to auto-fix the SQL drift.
+- Render `mfw-platform` has already published functional SHA `9fd9356cbfddb0df7dd2e52d16695bbf437da32d`. PR #21 QA-only main merge `7a2e7b98f9192862cbafe638cc3732c2db4f0f01` does not establish Authority or DB admission.
+- Separate staging migration test is mandatory: replay 001–027 in a newly isolated scratch PostgreSQL; inspect 026/027 against Supabase catalog, negative role tests, apply twice where idempotent, take a snapshot, test restore. Record SQL integrity and schema diffs. **No automatic writes to MFW production database.**
+- Build 027 as an independently reviewed migration with provenance label *reconstructed-equivalent* until original source is recovered, instead of falsely reporting the recovered original. Only then should exact-set migration parity pass in code and production.
