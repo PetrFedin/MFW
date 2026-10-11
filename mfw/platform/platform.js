@@ -41,6 +41,14 @@
   var madeVerifiedBrands=[];
   var deferredInstallPrompt=null;
   var pendingEventRoute=null;
+  var frameReady=false;
+  var frameRouteNonce=0;
+  var selectedEvent='mfw';
+  function deliverPendingRoute(){
+    if(!frameReady||!pendingEventRoute||!frame.contentWindow)return;
+    var route=pendingEventRoute;pendingEventRoute=null;
+    frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+  }
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
   function ruCode(value){
@@ -1521,6 +1529,9 @@
     [].slice.call(root.querySelectorAll('[data-gallery-event]')).forEach(function(b){b.onclick=function(){openEvent(b.dataset.galleryEvent);};});
   }
   function openEvent(event,route){
+    selectedEvent=event;
+    frameReady=false;
+    frameRouteNonce++;
     pendingEventRoute=route||null;
     if(route&&route.source==='made_in_moscow'&&(route.id||route.brandRef)){
       try{
@@ -1594,6 +1605,7 @@
       registrationForm.elements.company.value=accountState.profile.company||'';
       registrationForm.elements.title.value=accountState.profile.title||'';
     }
+    var registrationNotice=document.getElementById('registrationSubmitStatus');if(registrationNotice)registrationNotice.textContent='';
     registrationModal.classList.remove('hidden');registrationModal.setAttribute('aria-hidden','false');
   }
   function closeRegistration(){registrationModal.classList.add('hidden');registrationModal.setAttribute('aria-hidden','true');currentRegistrationEvent=null;}
@@ -1626,9 +1638,29 @@
       eventCode:code,registrationType:fd.get('registrationType'),company:fd.get('company'),
       title:fd.get('title'),purpose:fd.get('purpose'),status:'submitted',confirmedAt:new Date().toISOString()
     };
-    accountState.registrations[code]=reg;saveState();renderRegistrations();
-    try{await syncPlatformRegistration(code,reg);}catch(err){console.warn('registration authority sync failed',err);}
-    closeRegistration();renderRegistrations();
+    var submit=registrationForm.querySelector('[type="submit"]');
+    var notice=document.getElementById('registrationSubmitStatus');
+    if(!notice){
+      notice=document.createElement('p');notice.id='registrationSubmitStatus';
+      notice.setAttribute('role','alert');notice.setAttribute('aria-live','assertive');
+      registrationForm.appendChild(notice);
+    }
+    notice.textContent='Проверяем регистрацию на сервере…';
+    if(submit)submit.disabled=true;
+    try{
+      await syncPlatformRegistration(code,reg);
+      if(!accountState.registrations[code]||accountState.registrations[code].status==='submitted'){
+        // The server response is the only authority for confirmation.
+        if(!accountState.registrations[code]||!accountState.registrations[code].id)throw new Error('registration_confirmation_missing');
+      }
+      notice.textContent='';
+      closeRegistration();renderRegistrations();
+    }catch(err){
+      console.warn('registration authority sync failed',err);
+      notice.textContent='Регистрация не подтверждена сервером. Заявка не отправлена. Проверьте соединение и попробуйте снова.';
+    }finally{
+      if(submit)submit.disabled=false;
+    }
   };
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
@@ -1683,18 +1715,16 @@
     }
   });
   window.addEventListener('message',function(e){
-    if(!e.data||typeof e.data!=='object')return;
+    if(e.origin!==location.origin||e.source!==frame.contentWindow||!e.data||typeof e.data!=='object')return;
+    if(e.data.type==='mfp-frame-ready'&&e.data.eventCode===selectedEvent){frameReady=true;notifyFrame();deliverPendingRoute();return;}
     if(e.data.type==='mfp-open-account')openAccount();
     if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
     if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode,e.data.route||null);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });
   frame.addEventListener('load',function(){
-    notifyFrame();
-    if(pendingEventRoute){
-      var route=pendingEventRoute;pendingEventRoute=null;
-      try{frame.contentWindow.postMessage({type:'mfp-route',route:route},'*');}catch(e){}
-    }
+    // Load only signals document navigation, not readiness of deferred application scripts.
+    // The child sends mfp-frame-ready after all handlers have been installed.
   });
   updateNetworkStatus();
   registerServiceWorker();
