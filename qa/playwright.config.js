@@ -12,7 +12,7 @@ const matrix = [
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: 'responsive.spec.js',
+  testMatch: ['responsive.spec.js','navigation-readiness.spec.js'],
   fullyParallel: true,
   retries: 1,
   timeout: 30000,

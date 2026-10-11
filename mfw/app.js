@@ -1134,7 +1134,8 @@
   }
 
   window.addEventListener('message',function(e){
-    if(e.data&&e.data.type==='mfp-route'&&e.data.route){
+    if(e.source!==parent||e.origin!==location.origin||!e.data||typeof e.data!=='object')return;
+    if(e.data.type==='mfp-route'&&e.data.route){
       window.MFWRoute(e.data.route);
     }
   });
@@ -1149,7 +1150,12 @@
   function toggleLanguage(){
     state.lang=state.lang==='ru'?'en':'ru';
     persist();
-  
+    document.documentElement.lang=state.lang;
+    render();
+    toast(state.lang==='ru'?'Русский язык':'English');
+    track('language_changed',{locale:state.lang});
+  }
+
   function handleSocialAuthReturn(){
     try{
       var params=new URLSearchParams(window.location.search);
@@ -1163,11 +1169,6 @@
     }catch(_){}
   }
 
-  document.documentElement.lang=state.lang;
-    render();
-    toast(state.lang==='ru'?'Русский язык':'English');
-    track('language_changed',{locale:state.lang});
-  }
 
   async function contactQr(){
     openSheet('<div class="eyebrow">MFW NETWORKING</div><h1 style="font-size:42px">'+t('connectTitle')+'</h1><div class="card skeleton" style="height:210px"></div>');
@@ -1847,4 +1848,5 @@
   hydrateMadeInMoscowBadges();
   checkBackend();
   setTimeout(handleSocialAuthReturn,50);
+try{if(parent!==window)parent.postMessage({type:'mfp-frame-ready',eventCode:'mfw'},location.origin);}catch(_){}
 })();
