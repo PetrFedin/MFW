@@ -132,7 +132,13 @@
       registrationType:role,mode:eventRoleMode(code,role),company:reg.company||'',title:reg.title||'',
       purpose:reg.purpose||'',confirmedAt:reg.confirmedAt,confirm:true
     })});
-    if(out&&out.data)accountState.registrations[code]=Object.assign({},reg,out.data);
+    // A successful HTTP response is not sufficient: memory/demo is not a registration authority.
+    var row=out&&out.data;
+    if(!row||out.source!=='postgres'||row.demo===true||row.eventCode!==code||
+       !['submitted','pending_review','approved'].includes(row.status)){
+      throw new Error('registration_not_confirmed_by_postgres');
+    }
+    accountState.registrations[code]=Object.assign({},reg,row);
     saveState();return out;
   }
   async function hydrateAccountFromAuthority(){
@@ -1649,10 +1655,8 @@
     if(submit)submit.disabled=true;
     try{
       await syncPlatformRegistration(code,reg);
-      if(!accountState.registrations[code]||accountState.registrations[code].status==='submitted'){
-        // The server response is the only authority for confirmation.
-        if(!accountState.registrations[code]||!accountState.registrations[code].id)throw new Error('registration_confirmation_missing');
-      }
+      // The canonical registration response has eventCode/status but no row id.
+      // syncPlatformRegistration already validates PostgreSQL provenance.
       notice.textContent='';
       closeRegistration();renderRegistrations();
     }catch(err){
