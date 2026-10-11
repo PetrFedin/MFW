@@ -1847,4 +1847,5 @@
   hydrateMadeInMoscowBadges();
   checkBackend();
   setTimeout(handleSocialAuthReturn,50);
+try{if(parent!==window)parent.postMessage({type:'mfp-frame-ready',eventCode:'mfw'},location.origin);}catch(_){}
 })();
