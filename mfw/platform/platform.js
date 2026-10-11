@@ -1605,6 +1605,7 @@
       registrationForm.elements.company.value=accountState.profile.company||'';
       registrationForm.elements.title.value=accountState.profile.title||'';
     }
+    var registrationNotice=document.getElementById('registrationSubmitStatus');if(registrationNotice)registrationNotice.textContent='';
     registrationModal.classList.remove('hidden');registrationModal.setAttribute('aria-hidden','false');
   }
   function closeRegistration(){registrationModal.classList.add('hidden');registrationModal.setAttribute('aria-hidden','true');currentRegistrationEvent=null;}
@@ -1637,9 +1638,29 @@
       eventCode:code,registrationType:fd.get('registrationType'),company:fd.get('company'),
       title:fd.get('title'),purpose:fd.get('purpose'),status:'submitted',confirmedAt:new Date().toISOString()
     };
-    accountState.registrations[code]=reg;saveState();renderRegistrations();
-    try{await syncPlatformRegistration(code,reg);}catch(err){console.warn('registration authority sync failed',err);}
-    closeRegistration();renderRegistrations();
+    var submit=registrationForm.querySelector('[type="submit"]');
+    var notice=document.getElementById('registrationSubmitStatus');
+    if(!notice){
+      notice=document.createElement('p');notice.id='registrationSubmitStatus';
+      notice.setAttribute('role','alert');notice.setAttribute('aria-live','assertive');
+      registrationForm.appendChild(notice);
+    }
+    notice.textContent='Проверяем регистрацию на сервере…';
+    if(submit)submit.disabled=true;
+    try{
+      await syncPlatformRegistration(code,reg);
+      if(!accountState.registrations[code]||accountState.registrations[code].status==='submitted'){
+        // The server response is the only authority for confirmation.
+        if(!accountState.registrations[code]||!accountState.registrations[code].id)throw new Error('registration_confirmation_missing');
+      }
+      notice.textContent='';
+      closeRegistration();renderRegistrations();
+    }catch(err){
+      console.warn('registration authority sync failed',err);
+      notice.textContent='Регистрация не подтверждена сервером. Заявка не отправлена. Проверьте соединение и попробуйте снова.';
+    }finally{
+      if(submit)submit.disabled=false;
+    }
   };
   document.getElementById('saveInterests').onclick=saveInterestsToAuthority;
   document.getElementById('accountBtn').onclick=openAccount;
