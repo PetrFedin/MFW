@@ -190,3 +190,7 @@ The canonical plan for the next external-capability integration waves is:
 - [docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md](./docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md)
 
 This document is a **planned implementation source**, not evidence that the listed capabilities are already live. It defines sequencing, authority boundaries, external references, dependencies and acceptance criteria. Future requests to integrate the full planned wave should cite this filename explicitly.
+
+## Обязательные работы (0 ₽ новых расходов)
+
+Перед следующим проходом разработки прочитать [план обязательного внедрения и критерии приёмки](docs/REQUIRED_ZERO_COST_IMPLEMENTATION_2026-10-12.md). Он задаёт приоритеты и запрет новых затрат, **не заменяет** архитектурную спецификацию, инструкции AGENTS.md, обязательные CI/review или доказательства production readiness. Пункты плана считаются незавершёнными, пока нет проверки кода и точного релиза.
