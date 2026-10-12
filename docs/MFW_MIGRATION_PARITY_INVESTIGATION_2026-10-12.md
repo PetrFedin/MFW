@@ -28,3 +28,11 @@ References: https://github.com/PetrFedin/MFW/pull/20 and https://supabase.com/do
 - Render `mfw-platform` has already published functional SHA `9fd9356cbfddb0df7dd2e52d16695bbf437da32d`. PR #21 QA-only main merge `7a2e7b98f9192862cbafe638cc3732c2db4f0f01` does not establish Authority or DB admission.
 - Separate staging migration test is mandatory: replay 001–027 in a newly isolated scratch PostgreSQL; inspect 026/027 against Supabase catalog, negative role tests, apply twice where idempotent, take a snapshot, test restore. Record SQL integrity and schema diffs. **No automatic writes to MFW production database.**
 - Build 027 as an independently reviewed migration with provenance label *reconstructed-equivalent* until original source is recovered, instead of falsely reporting the recovered original. Only then should exact-set migration parity pass in code and production.
+
+## Additional fail-closed preflight (Draft PR #20 continuation, 2026-10-13)
+
+- Both the HTTP startup and CLI migrator now share `migration-runner.js`; preflight verifies a contiguous `001–025` local SQL set against `migration-lock.json` Git blob hashes **before connecting**.
+- On connection, a PostgreSQL advisory lock serializes migration startup, then the runner rejects unknown, duplicate, non-prefix or missing-history-on-populated-schema states **before any migration SQL**. Each allowed migration remains transactional with rollback on failure.
+- Lock hashes protect repository SQL byte integrity against unreviewed edits; they **do not authenticate the SQL originally executed on Supabase**. Source recovery/equivalence of historical app migrations `026` and `027`, isolated restore, role security and live Authority admission remain BLOCKED.
+- Read-only 2026-10-13 Render observation: `mfw-postgres` status `suspended` (user suspenders), live `mfw-authority` has empty `healthCheckPath`, `autoDeploy=off`, and last live deploy SHA `b540bf54...`, older than main. No DB/Render settings were changed.
+- Coverage: `node mfw-api/migration-preflight.test.js` uses fake DB and disposable local SQL; it is **not** a real PostgreSQL restore or runtime proof.
