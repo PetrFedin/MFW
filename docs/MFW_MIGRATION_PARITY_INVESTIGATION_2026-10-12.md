@@ -32,7 +32,13 @@ References: https://github.com/PetrFedin/MFW/pull/20 and https://supabase.com/do
 ## Additional fail-closed preflight (Draft PR #20 continuation, 2026-10-13)
 
 - Both the HTTP startup and CLI migrator now share `migration-runner.js`; preflight verifies a contiguous `001–025` local SQL set against `migration-lock.json` Git blob hashes **before connecting**.
-- On connection, a PostgreSQL advisory lock serializes migration startup, then the runner rejects unknown, duplicate, non-prefix or missing-history-on-populated-schema states **before any migration SQL**. Each allowed migration remains transactional with rollback on failure.
+- On connection, the runner opens one PostgreSQL transaction, acquires a **transaction-scoped** advisory lock (pooler-safe), and rejects unknown, duplicate, non-prefix or missing-history-on-populated-schema states **before any migration SQL**. All pending migrations commit atomically as one transaction or roll back together.
 - Lock hashes protect repository SQL byte integrity against unreviewed edits; they **do not authenticate the SQL originally executed on Supabase**. Source recovery/equivalence of historical app migrations `026` and `027`, isolated restore, role security and live Authority admission remain BLOCKED.
 - Read-only 2026-10-13 Render observation: `mfw-postgres` status `suspended` (user suspenders), live `mfw-authority` has empty `healthCheckPath`, `autoDeploy=off`, and last live deploy SHA `b540bf54...`, older than main. No DB/Render settings were changed.
-- Coverage: `node mfw-api/migration-preflight.test.js` uses fake DB and disposable local SQL; it is **not** a real PostgreSQL restore or runtime proof.
+- Coverage: `node mfw-api/migration-preflight.test.js` now verifies **all 25 actual repository SQL Git hashes** plus negative cases using a fake DB and disposable local SQL. Fake DB tests are **not** a real PostgreSQL restore or runtime proof.
+
+## Security catalog follow-up (read-only, 2026-10-13)
+
+- `authority_outbox` and `authority_delivery_receipts` expose no table DML grants to `anon` or `authenticated`; RLS enabled with no public policies. `mfw_authority_app` is `LOGIN`, `BYPASSRLS` and has DML grants: only trusted server-side use is allowed, and negative role tests remain required.
+- Existing empty outbox and delivery receipts are **not** evidence of functioning jobs, replay, consumer idempotency, or completed B2B monetisation.
+- Follow-up acceptance is tracked in [Issue #25](https://github.com/PetrFedin/MFW/issues/25). Original 027 SQL, isolated PostgreSQL restore and secure Render service binding are still blocking production admission.

@@ -7,6 +7,10 @@ const path = require('path');
 const { planMigrations, gitBlobSha, loadLockedMigrations } = require('./migration-preflight');
 const { runMigrations } = require('./migration-runner');
 
+// Verify actual checked-in migration bytes, not only synthetic fixtures.
+const repoLock = loadLockedMigrations(path.join(__dirname, 'migrations'), path.join(__dirname, 'migration-lock.json'));
+assert.strictEqual(repoLock.files.length, 25);
+
 const files = ['001_init.sql','002_commerce.sql','003_security.sql'];
 assert.deepStrictEqual(planMigrations(files,[]).pendingFiles,files);
 assert.deepStrictEqual(planMigrations(files,['002_commerce.sql','001_init.sql']).pendingFiles,['003_security.sql']);
@@ -55,7 +59,8 @@ function fakeDatabase(history=null,tables=[],failSql=null){
     assert.deepStrictEqual(loadLockedMigrations(dir,lockPath).files,['001_init.sql','002_commerce.sql']);
     const fresh=fakeDatabase();
     assert.deepStrictEqual((await runMigrations(fresh.pool,{dir,lockPath})).applied,['001_init.sql','002_commerce.sql']);
-    assert.strictEqual(fresh.queries.filter(x=>x[0]==='COMMIT').length,2);
+    assert.strictEqual(fresh.queries.filter(x=>x[0]==='COMMIT').length,1);
+    assert(fresh.queries.some(x=>String(x[0]).includes('pg_advisory_xact_lock')));
     assert(fresh.client.released);
 
     for(const [history,code] of [
@@ -64,12 +69,14 @@ function fakeDatabase(history=null,tables=[],failSql=null){
     ]){
       const db=fakeDatabase(history);
       await assert.rejects(runMigrations(db.pool,{dir,lockPath}),err=>err.code===code);
-      assert(!db.queries.some(x=>x[0]==='BEGIN'||String(x[0]).startsWith('CREATE TABLE')));
+      assert(!db.queries.some(x=>String(x[0]).startsWith('CREATE TABLE') || String(x[0]).startsWith('INSERT INTO')));
+      assert.strictEqual(db.queries.filter(x=>x[0]==='ROLLBACK').length,1);
       assert(db.client.released);
     }
     const noHistory=fakeDatabase(null,['users']);
     await assert.rejects(runMigrations(noHistory.pool,{dir,lockPath}),/migration_history_missing_nonempty_schema/);
-    assert(!noHistory.queries.some(x=>x[0]==='BEGIN'||String(x[0]).startsWith('CREATE TABLE')));
+    assert(!noHistory.queries.some(x=>String(x[0]).startsWith('CREATE TABLE')));
+    assert.strictEqual(noHistory.queries.filter(x=>x[0]==='ROLLBACK').length,1);
 
     const failing=fakeDatabase(null,[],'SELECT 2;');
     await assert.rejects(runMigrations(failing.pool,{dir,lockPath}),/mock_sql_failure/);
@@ -81,6 +88,6 @@ function fakeDatabase(history=null,tables=[],failSql=null){
     let connected=false;
     await assert.rejects(runMigrations({async connect(){connected=true;throw Error('unexpected');}},{dir,lockPath}),/migration_lock_hash_mismatch/);
     assert.strictEqual(connected,false);
-    console.log(JSON.stringify({event:'mfw_migration_preflight',status:'pass'}));
+    console.log(JSON.stringify({event:'mfw_migration_preflight',status:'pass',assertions:'prefix,unknown,missing-history,atomic-rollback,integrity,transaction-advisory-lock'}));
   } finally {fs.rmSync(root,{recursive:true,force:true});}
 })().catch(err=>{console.error(err);process.exitCode=1;});

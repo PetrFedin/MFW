@@ -3,16 +3,18 @@
 const path = require('path');
 const { loadLockedMigrations, planMigrations } = require('./migration-preflight');
 
-// This pins local SQL bytes, NOT historical statements already executed in another DB.
+// One transaction-scoped advisory lock: safe with direct and transaction-pooled PostgreSQL.
+// If any statement fails, neither schema changes nor new migration history entries commit.
 async function runMigrations(pool, options = {}) {
   const dir = options.dir || path.join(__dirname, 'migrations');
   const lockPath = options.lockPath || path.join(__dirname, 'migration-lock.json');
   const { files, sql } = loadLockedMigrations(dir, lockPath);
   const client = await pool.connect();
-  let locked = false;
+  let inTransaction = false;
   try {
-    await client.query("SELECT pg_advisory_lock(hashtext('mfw-authority-migrations-v1'))");
-    locked = true;
+    await client.query('BEGIN');
+    inTransaction = true;
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('mfw-authority-migrations-v1'))");
     const existing = await client.query("SELECT to_regclass('public.schema_migrations') AS history_table");
     const hasHistory = !!(existing.rows[0] && existing.rows[0].history_table);
     const previous = hasHistory
@@ -29,23 +31,21 @@ async function runMigrations(pool, options = {}) {
       await client.query('CREATE TABLE public.schema_migrations (filename text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
     }
     for (const file of plan.pendingFiles) {
-      await client.query('BEGIN');
-      try {
-        await client.query(sql.get(file));
-        await client.query('INSERT INTO public.schema_migrations(filename) VALUES($1)', [file]);
-        await client.query('COMMIT');
-      } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-      }
-      if (options.onApplied) options.onApplied(file);
+      await client.query(sql.get(file));
+      await client.query('INSERT INTO public.schema_migrations(filename) VALUES($1)', [file]);
     }
+    await client.query('COMMIT');
+    inTransaction = false;
+    // Progress signals only emitted after the entire transaction commits.
+    if (options.onApplied) for (const file of plan.pendingFiles) options.onApplied(file);
     return { applied: plan.pendingFiles, total: plan.requiredFiles.length };
-  } finally {
-    try {
-      if (locked) await client.query("SELECT pg_advisory_unlock(hashtext('mfw-authority-migrations-v1'))");
-    } finally { client.release(); }
-  }
+  } catch (error) {
+    if (inTransaction) {
+      try { await client.query('ROLLBACK'); }
+      catch (rollbackError) { error.rollbackError = String(rollbackError.message || rollbackError); }
+    }
+    throw error;
+  } finally { client.release(); }
 }
 
 module.exports = { runMigrations };
