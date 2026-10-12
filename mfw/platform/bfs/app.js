@@ -264,4 +264,5 @@ window.addEventListener('message',function(e){
 });
 try{var savedMeeting=JSON.parse(localStorage.getItem('bfsMeetingState')||'null');if(savedMeeting)state.meeting=savedMeeting;}catch(e){}
 parent.postMessage({type:'mfp-request-account-state'},'*');renderMediaDeck();render();hydrateMadeVerified();
+try{if(parent!==window)parent.postMessage({type:'mfp-frame-ready',eventCode:'bfs'},location.origin);}catch(_){}
 })();

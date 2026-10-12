@@ -69,3 +69,4 @@ renderEditorialMedia();
 renderAccountBridge();
 hydrateVerifiedRoster();
 })();
+try{if(parent!==window)parent.postMessage({type:'mfp-frame-ready',eventCode:'made'},location.origin);}catch(_){}

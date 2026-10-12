@@ -78,6 +78,18 @@ const nestedShape=verify({
 assert.strictEqual(nestedShape.ok,true);
 assert.deepStrictEqual(nestedShape.errors,[]);
 
+// Actual Render deploy snapshots can omit commit.branch; verify it against the service branch instead.
+const renderDeployNoBranch={id:'dep-render',status:'live',commit:{id:expectedSha}};
+const noBranch=verify({service:renderMcpService,postgres,deploy:renderDeployNoBranch,admission,expectedSha});
+assert.strictEqual(noBranch.ok,true);
+assert.deepStrictEqual(noBranch.errors,[]);
+const wrongServiceBranch=verify({service:{...renderMcpService,branch:'feature'},postgres,deploy:renderDeployNoBranch,admission,expectedSha});
+assert.strictEqual(wrongServiceBranch.ok,false);
+assert(wrongServiceBranch.errors.includes('service_branch_mismatch'));
+const wrongExplicitDeployBranch=verify({service:renderMcpService,postgres,deploy:{...renderDeployNoBranch,branch:'feature'},admission,expectedSha});
+assert.strictEqual(wrongExplicitDeployBranch.ok,false);
+assert(wrongExplicitDeployBranch.errors.includes('deploy_branch_mismatch'));
+
 const drift=verify({
   service:{...service,healthCheckPath:''},
   postgres,

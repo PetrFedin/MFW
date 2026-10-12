@@ -124,7 +124,8 @@ function verify({service,postgres,deploy,admission,expectedSha}){
   if(!expectedSha)errors.push('expected_sha_missing');
   eq(d.status,'live','deploy_not_live');
   if(expectedSha)eq(d.commitId,expectedSha,'deploy_sha_mismatch');
-  eq(d.branch,'main','deploy_branch_mismatch');
+  // Render deploy API may omit commit.branch; the separately verified service branch remains authoritative.
+  if(d.branch!==null)eq(d.branch,'main','deploy_branch_mismatch');
 
   eq(a.schemaVersion,'mfw-admission-evidence-v1','admission_schema_mismatch');
   if(a.ok!==true)errors.push('admission_not_ok');
