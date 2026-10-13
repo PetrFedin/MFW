@@ -1036,3 +1036,22 @@ Production persistence is still not admitted:
 - Render currently reports authority auto-deploy disabled, so exact-SHA explicit deploy verification is mandatory until reconciled.
 
 No paid resource was created, PostgreSQL was not exposed externally, and the strict PostgreSQL guard was not enabled before the binding.
+
+
+## Commercial Proof Ladder · 2026-10-13 (DRAFT, NOT production-admitted)
+
+A read-only investor commercial-evidence ladder and interactive, zero-default economics calculator now exist in the feature branch. This is **not** evidence of realised revenue, signed contracts, bank receipts or durable PostgreSQL admission.
+
+- Eight evidence stages: pilot, signed contract, delivery, acceptance, invoice, accounting/finance, payment, renewal. Invoice, payment and recognition are distinct.
+- All stages render NOT EVIDENCED until authoritative, scoped server evidence exists. A browser flag cannot recognize revenue.
+- Editable modelled assumptions: paid Brand365 organisations, fees and variable cost, partner packages, package price/cost, fixed costs and 1–36 month horizon. Monetary fields start at zero.
+- The scenario computes commercial potential, contribution, simplified operating result, break-even brands and horizon potential. It does not assert actual sales or audited ARR.
+- Recognised revenue, billed amount, collected cash, audited ARR and MRR are separate unknown actuals, not filled from simulations.
+- Numeric validation fails closed; reset and navigation to existing Brand, Partner and Evidence Control views are present.
+- Dedicated Node contract tests and seven-device Playwright browser coverage must PASS before merge.
+- No backend contract registration, billing, payment, production data write or paid infrastructure change.
+- Spec: docs/MFW_INVESTOR_COMMERCIAL_PROOF_2026-10-13.md
+
+Authority PostgreSQL admission remains gated by historical app SQL 026–027, isolated backup/restore and negative role checks.
+
+The static investor evidence manifest has a corresponding MODELLED / blocked commercial-proof claim with code/test references; this is a preview traceability link, not a production business event.

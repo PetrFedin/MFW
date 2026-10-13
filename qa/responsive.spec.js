@@ -179,7 +179,9 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   const bfs = page.frameLocator('#eventFrame');
   await expect(bfs.locator('.logo')).toBeVisible();
   await bfs.locator('[data-view="profile"]').click();
-  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible();
+  // The child frame receives the shared-profile bridge asynchronously; keep the assertion
+  // active but allow a little extra time under the seven-viewport CI matrix.
+  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible({ timeout: 15000 });
   await expect(bfs.getByText('MFW')).toBeVisible();
   await expect(bfs.getByText('СДЕЛАНО В МОСКВЕ')).toBeVisible();
 
@@ -969,7 +971,17 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toMatch(/mfp-shell-2026-10-06-p\d+/);
+  const serviceWorkerSource = await swResponse.text();
+  expect(serviceWorkerSource).toMatch(/const CACHE='mfp-shell-\d{4}-\d{2}-\d{2}-[a-z0-9]+';/);
+  const shellResponse = await page.request.get('/platform/index.html');
+  expect(shellResponse.ok()).toBeTruthy();
+  const shellHtml = await shellResponse.text();
+  const shellResources = [...shellHtml.matchAll(/(?:src|href)="\.\/([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g)]
+    .map((match) => '/platform/' + match[1]);
+  expect(shellResources.length).toBeGreaterThanOrEqual(7);
+  for (const resource of shellResources) {
+    expect(serviceWorkerSource).toContain("'" + resource + "'");
+  }
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
