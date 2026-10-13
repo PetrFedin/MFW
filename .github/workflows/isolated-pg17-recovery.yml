@@ -1,0 +1,69 @@
+name: Isolated PG17 Recovery Qualification
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "mfw-api/recovery-candidates/**"
+      - "mfw-api/migrations/**"
+      - "mfw-api/migration-runner.js"
+      - "mfw-api/migration-preflight.js"
+      - ".github/workflows/isolated-pg17-recovery.yml"
+permissions:
+  contents: read
+concurrency:
+  group: isolated-pg17-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pg17-recovery:
+    name: Fresh 001-027 / negative constraints / backup-restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: mfw_ci
+          POSTGRES_USER: mfw_ci
+          POSTGRES_PASSWORD: mfw_ci_disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mfw_ci -d mfw_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      MFW_DISPOSABLE_PG17_TEST: "yes"
+      DATABASE_URL: postgres://mfw_ci:mfw_ci_disposable_only@127.0.0.1:5432/mfw_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install API dependencies
+        working-directory: mfw-api
+        run: npm install --no-audit --no-fund
+      - name: Check candidates remain outside executable migrations
+        working-directory: mfw-api
+        run: node recovery-candidate-contract.test.js
+      - name: Replay 001-027 twice and verify constraints on disposable PG17
+        working-directory: mfw-api
+        run: node recovery-candidates/isolated-postgres-contract.test.js replay
+      - name: Backup and restore to separate scratch DB
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -eu
+          test -n "$PG_CONTAINER"
+          docker exec -e PGPASSWORD=mfw_ci_disposable_only "$PG_CONTAINER" \
+            pg_dump -U mfw_ci -d mfw_ci -Fc -f /tmp/mfw_ci_recovery.dump
+          docker exec -e PGPASSWORD=mfw_ci_disposable_only "$PG_CONTAINER" \
+            createdb -U mfw_ci -O mfw_ci mfw_ci_restore
+          docker exec -e PGPASSWORD=mfw_ci_disposable_only "$PG_CONTAINER" \
+            pg_restore -U mfw_ci -d mfw_ci_restore --no-owner --no-acl /tmp/mfw_ci_recovery.dump
+      - name: Assert backup restored history and synthetic event
+        working-directory: mfw-api
+        env:
+          DATABASE_URL: postgres://mfw_ci:mfw_ci_disposable_only@127.0.0.1:5432/mfw_ci_restore
+        run: node recovery-candidates/isolated-postgres-contract.test.js verify-restore
