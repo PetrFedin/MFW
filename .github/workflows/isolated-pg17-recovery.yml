@@ -50,6 +50,9 @@ jobs:
       - name: Replay 001-027 twice and verify constraints on disposable PG17
         working-directory: mfw-api
         run: node recovery-candidates/isolated-postgres-contract.test.js replay
+      - name: Verify scratch-only anonymous and authenticated-style role access is denied
+        working-directory: mfw-api
+        run: node recovery-candidates/scratch-role-boundary.test.js
       - name: Backup and restore to separate scratch DB
         env:
           PG_CONTAINER: ${{ job.services.postgres.id }}

@@ -19,3 +19,7 @@ Production runner and SQL lock remain unchanged (only 001-025 executable).
 The repo is public; this workflow uses GitHub-hosted CI and a disposable container.
 Review billing/minutes policy before scaling test frequency. No other cloud
 resources are provisioned by the test.
+
+## Scratch-only role denial check
+
+CI creates two disposable PostgreSQL non-login probe roles, grants schema USAGE but no table permissions, confirms RLS enabled, absence of broad policies and SELECT/INSERT/UPDATE/DELETE privilege denial for the two outbox/receipt tables, then proves an attempted direct SELECT is rejected (SQLSTATE 42501) under SET ROLE. This is a PG17 synthetic direct-SQL negative boundary only, **not** an actual Supabase anon/authenticated JWT test, a live Authority ACL test, a production role or tenant isolation proof. The entire test remains in a scratch container with hard-coded localhost/database credentials and zero real user data.
