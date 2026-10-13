@@ -62,7 +62,7 @@ jobs:
           test -s /tmp/mfw_isolated_pg17.dump
           docker run --rm --network host -e "PGPASSWORD=$CI_ONLY_POSTGRES_PASSWORD" postgres:17 \
             psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE mfw_admission_restore;'
-          docker run --rm --network host -e "PGPASSWORD=$CI_ONLY_POSTGRES_PASSWORD" postgres:17 \
+          docker run --rm -i --network host -e "PGPASSWORD=$CI_ONLY_POSTGRES_PASSWORD" postgres:17 \
             pg_restore --exit-on-error --no-owner --no-acl \
               -h 127.0.0.1 -U postgres -d mfw_admission_restore < /tmp/mfw_isolated_pg17.dump
           PG_ISOLATED_ADMISSION_URL="postgresql://postgres:$CI_ONLY_POSTGRES_PASSWORD@127.0.0.1:5432/mfw_admission_restore" \
