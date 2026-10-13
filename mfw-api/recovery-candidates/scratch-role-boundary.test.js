@@ -3,16 +3,18 @@ const assert=require('node:assert/strict');
 const {Pool}=require('pg');
 // Disposable PG17 only, never accept a Render/Supabase URL.
 if(process.env.GITHUB_ACTIONS!=='true'||
-   process.env.MFW_DISPOSABLE_PG17_TEST!=='yes'||
+   process.env.MFW_ISOLATED_PG_CI!=='true'||
    !process.env.DATABASE_URL)throw Error('isolated_ci_flag_required');
 const u=new URL(process.env.DATABASE_URL);
 if(u.hostname!=='127.0.0.1'||u.port!=='5432'||
-   u.username!=='mfw_ci'||u.password!=='mfw_ci_disposable_only'||
-   u.pathname!=='/mfw_ci')throw Error('non_scratch_database_forbidden');
+   u.username!=='mfw_ci'||u.password!=='mfw_ci_local_only'||
+   u.pathname!=='/mfw_scratch_ci')throw Error('non_scratch_database_forbidden');
 const tables=['authority_outbox','authority_delivery_receipts'];
 const roles=['mfw_ci_anon_probe','mfw_ci_authenticated_probe'];
 async function main(){
-  const pool=new Pool({connectionString:u.toString(),max:1});
+  const scratch=new URL(u.toString());
+  scratch.pathname='/mfw_candidate_ci';
+  const pool=new Pool({connectionString:scratch.toString(),max:1});
   const client=await pool.connect();
   try {
     const version=await client.query("SELECT current_setting('server_version_num') AS v");

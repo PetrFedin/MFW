@@ -49,6 +49,8 @@ jobs:
         run: node mfw-api/recovery-candidate-contract.test.js
       - name: Replay scratch 001-025 then scratch 001-027 candidates
         run: node mfw-api/recovery-candidates/isolated-replay.test.js
+      - name: Verify scratch-only anonymous and authenticated-style SQL access denial
+        run: node mfw-api/recovery-candidates/scratch-role-boundary.test.js
       - name: Backup, restore and verify synthetic candidate records
         shell: bash
         run: |
