@@ -60,14 +60,15 @@ const admissible={authorityAdmitted:true,truthClass:'VERIFIED',sourceClass:'cano
   evidenceRef:'auth://contract/id-001',issuerRef:'org://authority',occurredAt:'2026-10-13T00:00:00Z'};
 const clientOnly={...admissible,sourceClass:'self_reported'};
 assert.equal(commercial.hasAdmittedEvidence(clientOnly),false);
+assert.equal(commercial.hasAdmittedEvidence(admissible),false,'self-declared server provenance is not authentication');
 assert.equal(commercial.hasAdmittedEvidence({...admissible,authorityAdmitted:false}),false);
 assert.equal(commercial.hasAdmittedEvidence({...admissible,occurredAt:'yesterday'}),false);
 const half=commercial.auditEvidence({contract:admissible,delivery:clientOnly,invoice:admissible,payment:admissible});
 assert.equal(half.readyForFinanceReview,false);
 assert.equal(half.missing.includes('delivery'),true);
 const complete=commercial.auditEvidence(Object.fromEntries(commercial.evidenceStages.map(x=>[x.id,admissible])));
-assert.equal(complete.readyForFinanceReview,true);
-assert.equal(complete.missing.length,0);
+assert.equal(complete.readyForFinanceReview,false);
+assert.equal(complete.missing.length,8);
 assert.equal(complete.productionRecognised,false);
 assert.equal(complete.recognisedRevenue,null);
 assert.equal(complete.cashCollected,null);

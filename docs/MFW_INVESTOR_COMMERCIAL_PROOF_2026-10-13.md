@@ -23,7 +23,7 @@ This feature is NOT a payment processor, finance authority, billing API, audited
 | Payment | Bank settlement confirmation | Cash is separate from revenue |
 | Renewal | Repeat signed agreement | Not inferred from mere retention |
 
-Until future governed server linkage, all stages remain NOT EVIDENCED. Pure auditEvidence may report REVIEW READY from specially shaped input records but always reports productionRecognised=false, recognisedRevenue=null and cashCollected=null. Client-side strings cannot post ledger entries or override finance decisions.
+Until future governed server linkage, all stages remain NOT EVIDENCED. Pure auditEvidence never admits any client-provided record: untrusted strings and authorityAdmitted booleans are forgeable. All stages remain NOT EVIDENCED, readyForFinanceReview=false, productionRecognised=false, recognisedRevenue=null and cashCollected=null. Admission requires a separately authenticated server projection with verified issuer, scope, signature, revocation and audit.
 
 ## Interactive model: inputs and equations
 

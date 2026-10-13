@@ -107,31 +107,25 @@
     };
   }
 
-  function hasAdmittedEvidence(entry){
-    if(!entry||typeof entry!=='object')return false;
-    if(entry.authorityAdmitted!==true||entry.truthClass!=='VERIFIED'||entry.sourceClass!=='canonical_authority')return false;
-    if(!entry.evidenceRef||!entry.issuerRef||!entry.occurredAt)return false;
-    var t=Date.parse(entry.occurredAt);
-    return Number.isFinite(t)&&/^\d{4}-\d{2}-\d{2}T/.test(String(entry.occurredAt));
-  }
-  function auditEvidence(records){
-    var supplied=records&&typeof records==='object'&&!Array.isArray(records)?records:{};
-    var stages=evidenceStages.map(function(stage){
-      var valid=hasAdmittedEvidence(supplied[stage.id]);
+  // A browser is not a finance authority. User-supplied reference strings and
+  // authorityAdmitted=true booleans do NOT provide cryptographic source proof.
+  // Future server admission must validate issuer, scope, revocation and signatures
+  // server-side, then publish a separately authenticated read-only projection.
+  function hasAdmittedEvidence(_entry){return false;}
+  function auditEvidence(_untrustedRecords){
+    const stages=evidenceStages.map(function(stage){
       return {id:stage.id,label:stage.label,proof:stage.proof,meaning:stage.meaning,
-        evidenceState:valid?'ADMITTED_SOURCE':'NOT_EVIDENCED'};
+        evidenceState:'NOT_EVIDENCED'};
     });
-    var ids=stages.filter(function(stage){return stage.evidenceState==='ADMITTED_SOURCE';}).map(function(stage){return stage.id;});
-    var readyForFinanceReview=ids.indexOf('contract')>=0&&ids.indexOf('delivery')>=0;
     return {
       schemaVersion:version,
       stages:stages,
-      readyForFinanceReview:readyForFinanceReview,
+      readyForFinanceReview:false,
       productionRecognised:false,
       recognisedRevenue:null,
       cashCollected:null,
-      missing:stages.filter(function(stage){return stage.evidenceState!=='ADMITTED_SOURCE';}).map(function(stage){return stage.id;}),
-      note:'Read-only frontend evidence classification. Accounting/recognition decisions require independent server and finance authority.'
+      missing:stages.map(function(stage){return stage.id;}),
+      note:'Client-side entries cannot admit finance evidence. The server must independently authenticate source provenance, roles and revocation.'
     };
   }
 
