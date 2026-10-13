@@ -36,3 +36,7 @@ migration directory. It is **not** a PostgreSQL execution test.
 
 Related: https://github.com/PetrFedin/MFW/issues/25
 PR #20: https://github.com/PetrFedin/MFW/pull/20
+
+## Physical catalog comparison (isolated, not historical recovery)
+
+An additional read-only reference file `027-catalog-reference.json` records 23 columns, eight indexes, eight constraints, RLS enabled/not forced and zero policies across the two outbox tables. The scratch PG17 CI compares complete column order/types/nulls/defaults, index and constraint DDL, RLS state and policy count against this current catalog. Candidate-only RLS hardening is included; it is not presented as original 027 SQL. Role grants and default privileges, triggers, publication settings, and behavior of any worker are separate gates.

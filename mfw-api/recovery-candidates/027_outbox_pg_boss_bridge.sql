@@ -52,6 +52,10 @@ CREATE TABLE public.authority_delivery_receipts (
 CREATE INDEX authority_delivery_receipts_topic_idx ON public.authority_delivery_receipts
   (topic, processed_at DESC);
 
--- RLS/catalog snapshot is taken from a Supabase instance that also applies
--- separate security/role migrations. RLS and privileges therefore MUST be
--- compared separately and are not asserted to originate in historical 027.
+-- Defensive RLS: current live catalog has RLS enabled but no public policies.
+-- This is catalog-derived hardening of the candidate, NOT recovered original 027.
+ALTER TABLE public.authority_outbox ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.authority_delivery_receipts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.authority_outbox FROM PUBLIC;
+REVOKE ALL ON public.authority_delivery_receipts FROM PUBLIC;
+-- App-role GRANTs and default privileges still require independent review.

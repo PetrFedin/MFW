@@ -24,6 +24,15 @@ assert.match(s027,/RECONSTRUCTED CATALOG CANDIDATE, NOT THE ORIGINAL 027/);
 assert.match(s027,/CONSTRAINT authority_delivery_receipts_event_key_key UNIQUE \(event_key\)/);
 assert.match(s027,/CONSTRAINT authority_delivery_receipts_outbox_id_consumer_key UNIQUE \(outbox_id, consumer\)/);
 assert.match(s027,/ON DELETE RESTRICT/);
+assert.match(s027,/ENABLE ROW LEVEL SECURITY/);
+const liveCatalog=JSON.parse(fs.readFileSync(path.join(recovery,'027-catalog-reference.json'),'utf8'));
+assert.equal(liveCatalog.historical027Recovered,false);
+assert.equal(liveCatalog.fullSemanticEquivalence,false);
+assert.equal(liveCatalog.catalog.columns.length,23);
+assert.equal(liveCatalog.catalog.indexes.length,8);
+assert.equal(liveCatalog.catalog.constraints.length,8);
+assert.equal(liveCatalog.catalog.policyCount,0);
+
 assert.match(s027,/CHECK \(attempts >= 0\)/);
 assert.match(s027,/pending','dispatching','dispatched','failed/);
 for(const [table,data] of Object.entries(observation.tables)){

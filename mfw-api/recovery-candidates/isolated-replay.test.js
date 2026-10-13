@@ -54,6 +54,11 @@ async function main(){
       const indexes=new Set(idx.rows.map(row=>row.indexname));
       expected.indexes.forEach(name=>assert(indexes.has(name),'missing index '+name));
     }
+    const reference=JSON.parse(fs.readFileSync(path.join(__dirname,'027-catalog-reference.json'),'utf8'));
+    assert.equal(reference.historical027Recovered,false);
+    const observedCatalog=await candidate.query(require('./catalog-query'));
+    assert.deepStrictEqual(observedCatalog.rows[0].catalog,reference.catalog,'PG17 physical outbox catalog drift');
+    console.log(JSON.stringify({gate:'isolated_outbox_catalog_parity',status:'pass',scope:'columns,constraints,indexes,RLS,policies',historicalEquivalent:false}));
     const event=await candidate.query('INSERT INTO public.authority_outbox(event_key,topic,payload) VALUES($1,$2,$3::jsonb) RETURNING id',
       ['ci:restore-test','mfw.ci',JSON.stringify({synthetic:true})]);
     const id=event.rows[0].id;
