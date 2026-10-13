@@ -24,11 +24,11 @@ assert.throws(()=>admit(input('PILOT_ACCEPTED'),{...context,verifySource:()=>({v
 assert.throws(()=>admit(input('PILOT_ACCEPTED'),{...context,organisationId:'org-B'},history),/untrusted_actor_or_scope/);
 add('PILOT_ACCEPTED');
 add('CONTRACT_SIGNED');
-assert.throws(()=>admit(input('FINANCE_REVIEWED'),context,history),/missing_prerequisite_DELIVERY_VERIFIED/);
+assert.throws(()=>admit(input('FINANCE_REVIEWED'),{...context,role:'finance_reviewer',financeAuthorityApproved:true},history),/missing_prerequisite_DELIVERY_VERIFIED/);
 add('DELIVERY_VERIFIED');
 add('ACCEPTANCE_RECORDED',{}, {...context,counterpartyAcceptanceVerified:true});
 add('INVOICE_ISSUED',{}, {...context,role:'finance_operator',invoiceAuthorityApproved:true});
-assert.throws(()=>admit(input('FINANCE_REVIEWED'),context,history),/finance_authority_required/);
+assert.throws(()=>admit(input('FINANCE_REVIEWED'),{...context,role:'finance_reviewer'},history),/finance_authority_required/);
 const finance=add('FINANCE_REVIEWED',{financialPolicyRef:'policy-v1',accountingPeriod:'2026-10'},
  {...context,role:'finance_reviewer',financeAuthorityApproved:true});
 assert.equal(finance.state,'SERVER_VALIDATED_CANDIDATE');
