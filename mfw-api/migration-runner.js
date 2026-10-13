@@ -21,14 +21,18 @@ async function runMigrations(pool, options = {}) {
       ? (await client.query('SELECT filename FROM public.schema_migrations ORDER BY filename')).rows.map(x => x.filename)
       : [];
     const plan = planMigrations(files, previous);
-    if (!hasHistory) {
+    if (!hasHistory || previous.length === 0) {
       const tables = await client.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname='public'");
-      if (tables.rows.length) {
-        const error = new Error('migration_history_missing_nonempty_schema');
-        error.code = 'migration_history_missing_nonempty_schema';
+      const populated = tables.rows.some(row => row.tablename !== 'schema_migrations');
+      if (populated) {
+        const code = hasHistory ? 'migration_history_empty_nonempty_schema' : 'migration_history_missing_nonempty_schema';
+        const error = new Error(code);
+        error.code = code;
         throw error;
       }
-      await client.query('CREATE TABLE public.schema_migrations (filename text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
+      if (!hasHistory) {
+        await client.query('CREATE TABLE public.schema_migrations (filename text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
+      }
     }
     for (const file of plan.pendingFiles) {
       await client.query(sql.get(file));
@@ -37,7 +41,10 @@ async function runMigrations(pool, options = {}) {
     await client.query('COMMIT');
     inTransaction = false;
     // Progress signals only emitted after the entire transaction commits.
-    if (options.onApplied) for (const file of plan.pendingFiles) options.onApplied(file);
+    if (options.onApplied) for (const file of plan.pendingFiles) {
+      try { options.onApplied(file); }
+      catch (error) { console.warn(JSON.stringify({ event:'migration_reporting_failed', file })); }
+    }
     return { applied: plan.pendingFiles, total: plan.requiredFiles.length };
   } catch (error) {
     if (inTransaction) {

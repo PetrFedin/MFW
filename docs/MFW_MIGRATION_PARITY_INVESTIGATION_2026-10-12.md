@@ -42,3 +42,9 @@ References: https://github.com/PetrFedin/MFW/pull/20 and https://supabase.com/do
 - `authority_outbox` and `authority_delivery_receipts` expose no table DML grants to `anon` or `authenticated`; RLS enabled with no public policies. `mfw_authority_app` is `LOGIN`, `BYPASSRLS` and has DML grants: only trusted server-side use is allowed, and negative role tests remain required.
 - Existing empty outbox and delivery receipts are **not** evidence of functioning jobs, replay, consumer idempotency, or completed B2B monetisation.
 - Follow-up acceptance is tracked in [Issue #25](https://github.com/PetrFedin/MFW/issues/25). Original 027 SQL, isolated PostgreSQL restore and secure Render service binding are still blocking production admission.
+
+## Empty history and reporting safety (2026-10-13)
+
+- A blank `public.schema_migrations` table on an otherwise populated schema is now rejected; recreating history as if the DB were empty is unsafe.
+- Logging callbacks execute only after COMMIT. A logging failure cannot turn a completed migration transaction into a spurious migration failure.
+- The all-or-nothing transaction and preflight remain pending **real isolated PostgreSQL** qualification; fake DB unit tests cannot prove PostgreSQL DDL/restore behavior.

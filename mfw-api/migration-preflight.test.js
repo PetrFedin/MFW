@@ -73,6 +73,11 @@ function fakeDatabase(history=null,tables=[],failSql=null){
       assert.strictEqual(db.queries.filter(x=>x[0]==='ROLLBACK').length,1);
       assert(db.client.released);
     }
+    const emptyHistory=fakeDatabase([],['schema_migrations','users']);
+    await assert.rejects(runMigrations(emptyHistory.pool,{dir,lockPath}),/migration_history_empty_nonempty_schema/);
+    assert(!emptyHistory.queries.some(x=>String(x[0]).startsWith('INSERT INTO')||String(x[0]).startsWith('CREATE TABLE')));
+    assert.strictEqual(emptyHistory.queries.filter(x=>x[0]==='ROLLBACK').length,1);
+
     const noHistory=fakeDatabase(null,['users']);
     await assert.rejects(runMigrations(noHistory.pool,{dir,lockPath}),/migration_history_missing_nonempty_schema/);
     assert(!noHistory.queries.some(x=>String(x[0]).startsWith('CREATE TABLE')));
