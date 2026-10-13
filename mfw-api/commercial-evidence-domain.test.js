@@ -54,6 +54,27 @@ assert.equal(projection(history).settledCashMinor,null);
 assert.equal(projection(history).authoritativeLedger,false);
 const duplicate=admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey,sourceRef:history[0].sourceRef},context,history);
 assert.equal(duplicate.status,'ALREADY_RECORDED');
+assert.equal(duplicate.event.digest,history[0].digest);
+// A delayed retry after other events must succeed, even when its original timestamp
+// precedes the latest committed event. A settlement replay must NOT be counted twice.
+const earlier=history[0];
+const samePilot=admit({...input('PILOT_ACCEPTED'),idempotencyKey:earlier.idempotencyKey,
+  occurredAt:earlier.occurredAt,sourceRef:earlier.sourceRef},context,history);
+assert.equal(samePilot.status,'ALREADY_RECORDED');
+assert.equal(samePilot.event.digest,earlier.digest);
+const settledRecord=history.find(row=>row.eventType==='PAYMENT_SETTLED');
+const sameSettlement=admit({...input('PAYMENT_SETTLED'),
+   idempotencyKey:settledRecord.idempotencyKey,occurredAt:settledRecord.occurredAt,
+   sourceRef:settledRecord.sourceRef},
+   {...context,role:'settlement_verifier',settlementAuthorityApproved:true},history);
+assert.equal(sameSettlement.status,'ALREADY_RECORDED');
+assert.equal(sameSettlement.event.digest,settledRecord.digest);
+assert.equal(projection(history).counts.PAYMENT_SETTLED,1);
+assert.throws(()=>admit({...input('PAYMENT_SETTLED'),
+  idempotencyKey:settledRecord.idempotencyKey,occurredAt:settledRecord.occurredAt,
+  sourceRef:settledRecord.sourceRef,amountMinor:settledRecord.amountMinor-1},
+  {...context,role:'settlement_verifier',settlementAuthorityApproved:true},history),
+  /idempotency_key_conflict/);
 assert.throws(()=>admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey,sourceRef:'evidence://different'},context,history),/idempotency_key_conflict/);
 assert.throws(()=>admit({...input('INVOICE_ISSUED'),idempotencyKey:history[4].idempotencyKey,amountMinor:1},
  {...context,role:'finance_operator',invoiceAuthorityApproved:true},history),/idempotency_key_conflict/);

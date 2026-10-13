@@ -87,7 +87,6 @@ function admit(input,context,history=[]){
     !/^[A-Z]{3}$/.test(String(input.currency||''))))failure('invalid_money');
  if((input.eventType==='INVOICE_ISSUED'||input.eventType==='PAYMENT_SETTLED')&&input.amountMinor===0)
    failure('zero_invoice_or_settlement');
- if(history.length&&Date.parse(input.occurredAt)<Date.parse(history[history.length-1].occurredAt))failure('event_timestamp_regression');
  const actor=authoritySubject(context,{organisationId:input.organisationId});
  if(!EVENT_ROLES[input.eventType].includes(actor.role))failure('event_role_forbidden');
  if(input.eventType==='ACCEPTANCE_RECORDED'&&context.counterpartyAcceptanceVerified!==true)
@@ -122,14 +121,6 @@ function admit(input,context,history=[]){
  const signed=matching.find(r=>r.eventType==='CONTRACT_SIGNED');
  if(signed&&MONETARY_TYPES.has(input.eventType)&&signed.currency!==input.currency)
    failure('agreement_currency_mismatch');
- if(input.eventType==='PAYMENT_SETTLED'){
-   const invoiced=matching.filter(r=>r.eventType==='INVOICE_ISSUED')
-     .reduce((sum,r)=>sum+r.amountMinor,0);
-   const settled=matching.filter(r=>r.eventType==='PAYMENT_SETTLED')
-     .reduce((sum,r)=>sum+r.amountMinor,0);
-   if(!Number.isSafeInteger(invoiced)||!Number.isSafeInteger(settled)||
-      settled+input.amountMinor>invoiced)failure('settlement_exceeds_invoiced');
- }
  if(history.some(r=>r.idempotencyKey===input.idempotencyKey)){
    const old=history.find(r=>r.idempotencyKey===input.idempotencyKey);
    if(old.organisationId!==input.organisationId||old.agreementId!==input.agreementId||
@@ -142,6 +133,15 @@ function admit(input,context,history=[]){
       (old.amountMinor!==null&&old.amountMinor!==input.amountMinor)||
       (old.currency!==null&&old.currency!==input.currency))failure('idempotency_key_conflict');
    return Object.freeze({status:'ALREADY_RECORDED',event:old,mutated:false});
+ }
+ if(history.length&&Date.parse(input.occurredAt)<Date.parse(history[history.length-1].occurredAt))failure('event_timestamp_regression');
+ if(input.eventType==='PAYMENT_SETTLED'){
+   const invoiced=matching.filter(r=>r.eventType==='INVOICE_ISSUED')
+     .reduce((sum,r)=>sum+r.amountMinor,0);
+   const settled=matching.filter(r=>r.eventType==='PAYMENT_SETTLED')
+     .reduce((sum,r)=>sum+r.amountMinor,0);
+   if(!Number.isSafeInteger(invoiced)||!Number.isSafeInteger(settled)||
+      settled+input.amountMinor>invoiced)failure('settlement_exceeds_invoiced');
  }
  const existing=new Set(matching.map(r=>r.eventType));
  for(const prerequisite of REQUIRED[input.eventType])if(!existing.has(prerequisite))failure('missing_prerequisite_'+prerequisite);
