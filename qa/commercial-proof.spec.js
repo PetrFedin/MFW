@@ -14,7 +14,7 @@ async function noOverflow(page){
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width+2);
 }
 
-test('Investor proof ladder is eight-stage read-only and cannot claim real revenue',async({page})=>{
+test('Investor proof ladder is eight-stage read-only and cannot claim real revenue',async({page},testInfo)=>{
   await openEconomics(page);
   await expect(page.locator('[data-commercial-stage]')).toHaveCount(8);
   await expect(page.locator('.commercial-evidence-state')).toHaveCount(8);
@@ -23,6 +23,9 @@ test('Investor proof ladder is eight-stage read-only and cannot claim real reven
   await expect(page.locator('[data-commercial-kpi="monthlyPotential"]')).toContainText('0');
   await expect(page.getByText(/не ARR, MRR и не признанная выручка/)).toBeVisible();
   await noOverflow(page);
+  const internal=await page.locator('.commercial-proof').evaluate(el=>({client:el.clientWidth,scroll:el.scrollWidth}));
+  expect(internal.scroll).toBeLessThanOrEqual(internal.client+2);
+  await page.locator('.commercial-proof').screenshot({path:testInfo.outputPath('commercial-proof-ladder.png')});
 });
 
 test('Investor can explore modelled economics; invalid values fail closed and reset works',async({page})=>{

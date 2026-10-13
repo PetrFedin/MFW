@@ -77,3 +77,7 @@ The feature remains DEMO-ONLY until these gates pass on admitted PostgreSQL. Not
 ## Accounting interpretation reference
 
 IFRS Foundation summary of IFRS 15: https://www.ifrs.org/issued-standards/list-of-standards/ifrs-15-revenue-from-contracts-with-customers/ . It explains that revenue recognition follows satisfaction of performance obligations (at a point in time or over time), rather than a mechanical invoice or cash event. This is a **reference framework only**; it does not establish which accounting standard MFW must apply. Finance owners must approve the applicable policy, services, obligations, accounting periods, evidence and any special tax treatment before an actual revenue recognition endpoint is admitted. The investor preview never performs accounting recognition.
+
+## Visual QA artifact
+
+Successful Chromium 7-profile screenshots are captured from the commercial-proof panel in the dedicated browser test, not inferred from unit tests. Evidence remains local to the PR CI artifact; real Safari/iPhone device qualification and a deployed Render source SHA are separate gates, not claimed here.

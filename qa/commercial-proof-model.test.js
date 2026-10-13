@@ -71,7 +71,6 @@ assert.equal(complete.missing.length,0);
 assert.equal(complete.productionRecognised,false);
 assert.equal(complete.recognisedRevenue,null);
 assert.equal(complete.cashCollected,null);
-console.log(JSON.stringify({event:'mfw_commercial_proof_contract',status:'pass',assertions:'no-fake-kpi,money-precision,break-even,input-validation,evidence-provenance,no-client-recognition'}));
 
 // Finance recognition must not depend mechanically on invoice issuance or cash payment.
 const fs=require('node:fs');
@@ -80,3 +79,5 @@ const investorSource=fs.readFileSync(path.join(__dirname,'../mfw/platform/invest
 assert.equal(investorSource.includes("revenueGate:'Recognised revenue'"),false);
 assert.equal(investorSource.includes('billing/payment evidence'),false);
 assert.equal(investorSource.includes('счёт и оплата отдельно'),true);
+
+console.log(JSON.stringify({event:'mfw_commercial_proof_contract',status:'pass',assertions:'no-fake-kpi,money-precision,break-even,input-validation,evidence-provenance,no-client-recognition'}));
