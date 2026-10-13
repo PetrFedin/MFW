@@ -25,12 +25,43 @@ function authoritySubject(actor,scope){
  return actor;
 }
 function canonical(record){
- const fields=['schemaVersion','eventType','organisationId','payerId','agreementId','idempotencyKey','occurredAt','sourceRef','issuerRef','actorSubject','actorRole','parentDigest','amountMinor','currency','accountingPeriod','financialPolicyRef'];
+ const fields=['schemaVersion','eventType','organisationId','payerId','agreementId','idempotencyKey','occurredAt','sourceRef','issuerRef','actorSubject','actorRole','evidenceDigest','state','parentDigest','amountMinor','currency','accountingPeriod','financialPolicyRef'];
  const result={};
  for(const name of fields)result[name]=record[name]??null;
  return result;
 }
 function digest(record){return crypto.createHash('sha256').update(JSON.stringify(canonical(record))).digest('hex');}
+function verifyHistory(history,scope){
+ if(!Array.isArray(history)||!scope)failure('invalid_history');
+ let previous=null;
+ let lastTime=-Infinity;
+ const seenKeys=new Set();
+ const seenStages=new Set();
+ for(const row of history){
+   if(!row||row.schemaVersion!==SCHEMA||!TYPES.includes(row.eventType)||
+      row.state!=='SERVER_VALIDATED_CANDIDATE')failure('history_event_invalid');
+   if(row.organisationId!==scope.organisationId||row.payerId!==scope.payerId||
+      row.agreementId!==scope.agreementId)failure('history_scope_mismatch');
+   if(!nonempty(row.idempotencyKey,240)||seenKeys.has(row.idempotencyKey))failure('history_duplicate_idempotency');
+   seenKeys.add(row.idempotencyKey);
+   if(!timestamp(row.occurredAt))failure('history_timestamp_invalid');
+   const at=Date.parse(row.occurredAt);
+   if(at<lastTime)failure('history_out_of_order');
+   lastTime=at;
+   if(row.parentDigest!==previous)failure('history_chain_broken');
+   if(typeof row.digest!=='string'||!/^[0-9a-f]{64}$/.test(row.digest)||row.digest!==digest(row)){
+     failure('history_digest_mismatch');
+   }
+   for(const prerequisite of REQUIRED[row.eventType]){
+     if(!seenStages.has(prerequisite))failure('history_prerequisite_missing_'+prerequisite);
+   }
+   seenStages.add(row.eventType);
+   previous=row.digest;
+ }
+ return Object.freeze({valid:true,events:history.length,headDigest:previous,
+   authenticated:false,note:'SHA256 link integrity is not source authentication'});
+}
+
 function admit(input,context,history=[]){
  if(!input||!context||!Array.isArray(history))failure('invalid_arguments');
  if(input.schemaVersion!==SCHEMA||!TYPES.includes(input.eventType))failure('invalid_event_type');
@@ -38,6 +69,7 @@ function admit(input,context,history=[]){
    if(!nonempty(input[x],240))failure('missing_required_field_'+x);
  }
  if(!timestamp(input.occurredAt))failure('invalid_timestamp');
+ if(history.length&&Date.parse(input.occurredAt)<Date.parse(history[history.length-1].occurredAt))failure('event_timestamp_regression');
  const actor=authoritySubject(context,{organisationId:input.organisationId});
  // A caller-provided sourceRef is never enough: it must be independently resolved
  // by a server-owned verification callback with issuer, tenant and revocation checks.
@@ -46,12 +78,16 @@ function admit(input,context,history=[]){
  if(!proof||proof.valid!==true||proof.revoked!==false||proof.issuerVerified!==true||
   proof.organisationId!==input.organisationId||proof.agreementId!==input.agreementId||
   !nonempty(proof.evidenceDigest,128))failure('source_not_admitted');
- const matching=history.filter(r=>r.organisationId===input.organisationId&&r.agreementId===input.agreementId);
+ verifyHistory(history,{organisationId:input.organisationId,payerId:input.payerId,agreementId:input.agreementId});
+ const matching=history;
  if(history.some(r=>r.idempotencyKey===input.idempotencyKey)){
    const old=history.find(r=>r.idempotencyKey===input.idempotencyKey);
    if(old.organisationId!==input.organisationId||old.agreementId!==input.agreementId||
       old.eventType!==input.eventType||old.sourceRef!==input.sourceRef||
       old.payerId!==input.payerId||old.issuerRef!==input.issuerRef||
+      old.occurredAt!==input.occurredAt||old.actorSubject!==actor.subject||old.actorRole!==actor.role||
+      (old.accountingPeriod!==null&&old.accountingPeriod!==input.accountingPeriod)||
+      (old.financialPolicyRef!==null&&old.financialPolicyRef!==input.financialPolicyRef)||
       (old.amountMinor!==null&&old.amountMinor!==input.amountMinor)||
       (old.currency!==null&&old.currency!==input.currency))failure('idempotency_key_conflict');
    return Object.freeze({status:'ALREADY_RECORDED',event:old,mutated:false});
@@ -94,4 +130,4 @@ function projection(history){
  return Object.freeze({schemaVersion:SCHEMA,counts,recognisedRevenueMinor:null,settledCashMinor:null,
   authoritativeLedger:false,source:'DOMAIN_TEST_ONLY'});
 }
-module.exports={SCHEMA,TYPES,REQUIRED,admit,projection,digest};
+module.exports={SCHEMA,TYPES,REQUIRED,admit,projection,digest,verifyHistory};
