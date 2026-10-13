@@ -1,5 +1,5 @@
 {
-  "packageVersion": "2026-10-06-proof-v1",
+  "packageVersion": "2026-10-13-commercial-proof-v1",
   "project": "Moscow Fashion Platform",
   "scope": "Investor MVP evidence index",
   "generatedFor": "demo",
@@ -57,6 +57,22 @@
       "evidenceClass": "modelled",
       "evidence": [
         "mfw/platform/index.html"
+      ]
+    },
+    {
+      "id": "commercial_proof_ladder_v1",
+      "claim": "Commercial pilot-to-revenue proof ladder and editable zero-default economics model are DEMO-ONLY; no admitted revenue, cash, ARR or MRR.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "productionAdmission": "blocked",
+      "dataOrigin": "browser_assumptions_only",
+      "evidence": [
+        "mfw/platform/commercial-proof-model.js",
+        "mfw/platform/commercial-proof.css",
+        "mfw/platform/platform.js",
+        "qa/commercial-proof-model.test.js",
+        "qa/commercial-proof.spec.js",
+        "docs/MFW_INVESTOR_COMMERCIAL_PROOF_2026-10-13.md"
       ]
     },
     {

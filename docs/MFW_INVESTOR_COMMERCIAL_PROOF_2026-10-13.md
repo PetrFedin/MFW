@@ -81,3 +81,7 @@ IFRS Foundation summary of IFRS 15: https://www.ifrs.org/issued-standards/list-o
 ## Visual QA artifact
 
 Successful Chromium 7-profile screenshots are captured from the commercial-proof panel in the dedicated browser test, not inferred from unit tests. Evidence remains local to the PR CI artifact; real Safari/iPhone device qualification and a deployed Render source SHA are separate gates, not claimed here.
+
+## Investor evidence package index
+
+The investor evidence package now includes commercial_proof_ladder_v1 with status implemented_preview, evidenceClass modelled, productionAdmission blocked, and pointers to pure model, responsive browser tests and this specification. This is code provenance, not evidence of accepted customer contracts or actual recognised revenue.

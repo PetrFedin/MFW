@@ -80,4 +80,11 @@ assert.equal(investorSource.includes("revenueGate:'Recognised revenue'"),false);
 assert.equal(investorSource.includes('billing/payment evidence'),false);
 assert.equal(investorSource.includes('счёт и оплата отдельно'),true);
 
+const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../mfw/platform/evidence-package.json'),'utf8'));
+const claim=manifest.claims.find(row=>row.id==='commercial_proof_ladder_v1');
+assert.ok(claim,'commercial_proof_claim_missing');
+assert.equal(claim.status,'implemented_preview');
+assert.equal(claim.evidenceClass,'modelled');
+assert.equal(claim.productionAdmission,'blocked');
+assert.equal(claim.dataOrigin,'browser_assumptions_only');
 console.log(JSON.stringify({event:'mfw_commercial_proof_contract',status:'pass',assertions:'no-fake-kpi,money-precision,break-even,input-validation,evidence-provenance,no-client-recognition'}));

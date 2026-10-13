@@ -1053,3 +1053,5 @@ A read-only investor commercial-evidence ladder and interactive, zero-default ec
 - Spec: docs/MFW_INVESTOR_COMMERCIAL_PROOF_2026-10-13.md
 
 Authority PostgreSQL admission remains gated by historical app SQL 026–027, isolated backup/restore and negative role checks.
+
+The static investor evidence manifest has a corresponding MODELLED / blocked commercial-proof claim with code/test references; this is a preview traceability link, not a production business event.
