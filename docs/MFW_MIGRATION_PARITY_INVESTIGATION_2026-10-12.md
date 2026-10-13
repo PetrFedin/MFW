@@ -56,3 +56,7 @@ Created isolated *non-executable* candidate SQL and catalog snapshot under `mfw-
 ## PostgreSQL 17 scratch-cluster qualification (added 2026-10-13)
 
 A separate `.github/workflows/isolated-postgres-17-qualification.yml` now runs the application migration runner on temporary copies of original `001–025` with **unapproved** recovery-candidate 026/027 on a local ephemeral PostgreSQL 17 service. It checks 27 history entries, repeated runs, catalog indexes and constraints, duplicate input and FK SQLSTATE codes, plus failure of multi-consumer fan-out by global receipt unique key. It then dumps and restores to a second disposable database. No production DSN is accepted: driver requires GitHub Actions and a loopback PostgreSQL URL with an exact scratch database name. Passing this workflow **would not** certify historical origin of 027, live API security or actual worker recovery. Candidates remain outside the executable production migrations folder.
+
+## PostgreSQL 17 CI consolidation (2026-10-13)
+
+Once PG17 scratch replay, complete observed-catalog parity, and dump/restore were proven on earlier exact SHAs, overlapping jobs were consolidated into `.github/workflows/isolated-postgres-17.yml`. It alone now covers original 001–025, quarantined 026/027 recovery candidates, idempotence, negative SQLSTATE cases, fan-out limitation and restore evidence. No historical SQL authenticity or live Authority admission is inferred from the isolated job, and previous unmerged CI evidence remains available in GitHub Actions.

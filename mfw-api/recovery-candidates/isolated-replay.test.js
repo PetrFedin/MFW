@@ -70,6 +70,17 @@ async function main(){
     assert(conflict,'second consumer must be rejected by currently observed constraints');
     assert.equal(conflict.code,'23505');
     assert.equal(conflict.constraint,'authority_delivery_receipts_event_key_key');
+    async function expectedSqlState(sql,params,state){
+      let failure=null;
+      try{await candidate.query(sql,params||[]);}catch(error){failure=error;}
+      assert.ok(failure,'expected_rejected_SQL_'+state);
+      assert.equal(failure.code,state);
+    }
+    await expectedSqlState("INSERT INTO public.authority_outbox(event_key,topic,status) VALUES ('ci:bad-status','mfw.ci','DONE')",[],'23514');
+    await expectedSqlState("INSERT INTO public.authority_outbox(event_key,topic,attempts) VALUES ('ci:bad-attempts','mfw.ci',-1)",[],'23514');
+    await expectedSqlState("INSERT INTO public.authority_delivery_receipts(outbox_id,event_key,topic,consumer,payload_digest) VALUES (gen_random_uuid(),'ci:orphan','mfw.ci','consumer_orphan','digest')",[],'23503');
+    await expectedSqlState('DELETE FROM public.authority_outbox WHERE id=$1',[id],'23503');
+
     console.log(JSON.stringify({gate:'scratch_pg17_replay',result:'pass',base:25,candidate:27,
       idempotent:true,multiConsumer:'blocked',source:'reconstructed_not_original',
       productionAdmitted:false,backupRestore:'not_yet_tested'}));
