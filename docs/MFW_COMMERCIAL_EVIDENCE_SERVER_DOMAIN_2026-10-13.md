@@ -45,3 +45,9 @@ New pure candidate evaluator: mfw-api/commercial-reconciliation-candidate.js. Th
 Important: CREDIT_NOTE_ISSUED and REFUND_SETTLED are NOT admitted event types in the current server commercial domain. This is a separate synthetic model for validation only. It authenticates no invoice, bank statement, counterparty or credit note. Production requires a finance-approved policy, isolated PG admission, trusted source verification, tenant JWT denial tests and transactional concurrency. No SQL/HTTP/production writes.
 
 CI: node mfw-api/commercial-reconciliation-candidate.test.js; before Chromium.
+
+## Scratch PostgreSQL atomicity experiment
+
+An isolated commercial event/outbox schema, transaction lock + uniqueness test, rollback injection, cold reconnect and dump/restore workflow are staged under mfw-api/research and its dedicated GitHub Action. No SQL in this experiment is loaded by Authority migrations or production startup. Full results must be verified at the exact commit SHA before any pass claim.
+
+These synthetic SQL tests do not authenticate a bank, customer, contract, tenant JWT or evidence issuer and do not qualify a real worker or financial posting. They are separate from the pure candidate settlement reconciliation and its null actuals. See mfw-api/research/README.md.
