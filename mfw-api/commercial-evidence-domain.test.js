@@ -3,7 +3,14 @@ const assert=require('node:assert/strict');
 const {SCHEMA,admit,projection,verifyHistory}=require('./commercial-evidence-domain');
 let n=0;
 const actor={trustedServerContext:true,verifiedByServer:true,subject:'person-server-1',role:'partner_admin',organisationId:'org-A'};
-const verifier=()=>({valid:true,revoked:false,issuerVerified:true,organisationId:'org-A',agreementId:'agreement-A',evidenceDigest:'sha256:serververified'});
+const crypto=require('node:crypto');
+const verifier=(claim)=>({valid:true,revoked:false,issuerVerified:true,
+  organisationId:claim.organisationId,payerId:claim.payerId,
+  agreementId:claim.agreementId,reference:claim.reference,issuer:claim.issuer,
+  eventType:claim.eventType,occurredAt:claim.occurredAt,
+  amountMinor:claim.amountMinor,currency:claim.currency,
+  evidenceDigest:crypto.createHash('sha256')
+    .update(JSON.stringify(claim)).digest('hex')});
 const input=(eventType)=>({schemaVersion:SCHEMA,eventType,organisationId:'org-A',payerId:'payer-A',
  agreementId:'agreement-A',idempotencyKey:eventType+'-'+(++n),occurredAt:'2026-10-13T11:00:00Z',
  sourceRef:'evidence://'+eventType,issuerRef:'org://org-A',amountMinor:120000,currency:'RUB'});
@@ -19,13 +26,13 @@ add('PILOT_ACCEPTED');
 add('CONTRACT_SIGNED');
 assert.throws(()=>admit(input('FINANCE_REVIEWED'),context,history),/missing_prerequisite_DELIVERY_VERIFIED/);
 add('DELIVERY_VERIFIED');
-add('ACCEPTANCE_RECORDED');
-add('INVOICE_ISSUED');
+add('ACCEPTANCE_RECORDED',{}, {...context,counterpartyAcceptanceVerified:true});
+add('INVOICE_ISSUED',{}, {...context,role:'finance_operator',invoiceAuthorityApproved:true});
 assert.throws(()=>admit(input('FINANCE_REVIEWED'),context,history),/finance_authority_required/);
 const finance=add('FINANCE_REVIEWED',{financialPolicyRef:'policy-v1',accountingPeriod:'2026-10'},
  {...context,role:'finance_reviewer',financeAuthorityApproved:true});
 assert.equal(finance.state,'SERVER_VALIDATED_CANDIDATE');
-add('PAYMENT_SETTLED');
+add('PAYMENT_SETTLED',{}, {...context,role:'settlement_verifier',settlementAuthorityApproved:true});
 add('RENEWAL_SIGNED');
 const chain=verifyHistory(history,{organisationId:'org-A',payerId:'payer-A',agreementId:'agreement-A'});
 assert.equal(chain.valid,true);
@@ -48,8 +55,49 @@ assert.equal(projection(history).authoritativeLedger,false);
 const duplicate=admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey,sourceRef:history[0].sourceRef},context,history);
 assert.equal(duplicate.status,'ALREADY_RECORDED');
 assert.throws(()=>admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey,sourceRef:'evidence://different'},context,history),/idempotency_key_conflict/);
-assert.throws(()=>admit({...input('INVOICE_ISSUED'),idempotencyKey:history[4].idempotencyKey,amountMinor:1},context,history),/idempotency_key_conflict/);
-assert.throws(()=>admit({...input('INVOICE_ISSUED'),amountMinor:-1},context,history),/invalid_money/);
+assert.throws(()=>admit({...input('INVOICE_ISSUED'),idempotencyKey:history[4].idempotencyKey,amountMinor:1},
+ {...context,role:'finance_operator',invoiceAuthorityApproved:true},history),/idempotency_key_conflict/);
+assert.throws(()=>admit({...input('INVOICE_ISSUED'),amountMinor:-1},
+  {...context,role:'finance_operator',invoiceAuthorityApproved:true},history),/invalid_money/);
 assert.throws(()=>admit({...input('PAYMENT_SETTLED'),organisationId:'org-B'},context,history),/untrusted_actor_or_scope/);
+// Finance / counterparty segregation, source binding and payment overstatement.
+assert.throws(()=>admit(input('INVOICE_ISSUED'),context,history),/event_role_forbidden/);
+assert.throws(()=>admit(input('PAYMENT_SETTLED'),context,history),/event_role_forbidden/);
+assert.throws(()=>admit(input('FINANCE_REVIEWED'), {...context,role:'finance_reviewer'},history),
+ /finance_authority_required/);
+assert.throws(()=>admit(input('INVOICE_ISSUED'),{...context,role:'finance_operator'},history),
+ /invoice_authority_required/);
+assert.throws(()=>admit(input('PAYMENT_SETTLED'),{...context,role:'settlement_verifier'},history),
+ /settlement_authority_required/);
+assert.throws(()=>admit(input('ACCEPTANCE_RECORDED'),context,history),
+ /counterparty_acceptance_required/);
+const badPayerVerifier=(claim)=>({...verifier(claim),payerId:'payer-foreign'});
+assert.throws(()=>admit(input('RENEWAL_SIGNED'),{...context,verifySource:badPayerVerifier},history),
+ /source_not_admitted/);
+const badAmountVerifier=(claim)=>({...verifier(claim),amountMinor:1});
+assert.throws(()=>admit(input('RENEWAL_SIGNED'),{...context,verifySource:badAmountVerifier},history),
+ /source_not_admitted/);
+const badIssuerVerifier=(claim)=>({...verifier(claim),issuer:'untrusted-issuer'});
+assert.throws(()=>admit(input('RENEWAL_SIGNED'),{...context,verifySource:badIssuerVerifier},history),
+ /source_not_admitted/);
+const shortDigestVerifier=(claim)=>({...verifier(claim),evidenceDigest:'looks-signed'});
+assert.throws(()=>admit(input('RENEWAL_SIGNED'),{...context,verifySource:shortDigestVerifier},history),
+ /source_not_admitted/);
+assert.throws(()=>admit({...input('PAYMENT_SETTLED'),amountMinor:1},
+ {...context,role:'settlement_verifier',settlementAuthorityApproved:true},history),
+ /settlement_exceeds_invoiced/);
+assert.throws(()=>admit({...input('RENEWAL_SIGNED'),currency:'USD'},context,history),
+ /agreement_currency_mismatch/);
+assert.throws(()=>admit({...input('INVOICE_ISSUED'),amountMinor:0},
+ {...context,role:'finance_operator',invoiceAuthorityApproved:true},history),
+ /zero_invoice_or_settlement/);
+assert.throws(()=>admit({...input('PAYMENT_SETTLED'),amountMinor:0},
+ {...context,role:'settlement_verifier',settlementAuthorityApproved:true},history),
+ /zero_invoice_or_settlement/);
+const mutatingVerifier=(claim)=>({...verifier(claim),evidenceDigest:'f'.repeat(64)});
+const duplicated={...input('RENEWAL_SIGNED'),idempotencyKey:history.at(-1).idempotencyKey,
+ sourceRef:history.at(-1).sourceRef};
+assert.throws(()=>admit(duplicated,{...context,verifySource:mutatingVerifier},history),
+ /idempotency_key_conflict/);
 console.log(JSON.stringify({event:'commercial_evidence_domain_contract',status:'pass',entries:history.length,
  persistence:'none',recognition:'none',cash:'none'}));

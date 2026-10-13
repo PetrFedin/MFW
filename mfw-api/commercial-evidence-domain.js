@@ -14,6 +14,19 @@ const REQUIRED=Object.freeze({
  PAYMENT_SETTLED:['INVOICE_ISSUED'],
  RENEWAL_SIGNED:['CONTRACT_SIGNED']
 });
+// Candidate governance policy only. Real grants, counterparty identity, bank
+// verification and reviewer independence must be approved server-side.
+const EVENT_ROLES=Object.freeze({
+ PILOT_ACCEPTED:Object.freeze(['organiser','brand_admin','partner_admin']),
+ CONTRACT_SIGNED:Object.freeze(['organiser','brand_admin','partner_admin']),
+ DELIVERY_VERIFIED:Object.freeze(['organiser','brand_admin','partner_admin']),
+ ACCEPTANCE_RECORDED:Object.freeze(['organiser','brand_admin','partner_admin']),
+ INVOICE_ISSUED:Object.freeze(['finance_operator']),
+ FINANCE_REVIEWED:Object.freeze(['finance_reviewer']),
+ PAYMENT_SETTLED:Object.freeze(['settlement_verifier']),
+ RENEWAL_SIGNED:Object.freeze(['organiser','brand_admin','partner_admin'])
+});
+const MONETARY_TYPES=new Set(['CONTRACT_SIGNED','INVOICE_ISSUED','FINANCE_REVIEWED','PAYMENT_SETTLED','RENEWAL_SIGNED']);
 function failure(code){const e=new Error(code);e.code=code;throw e;}
 function nonempty(x,max=200){return typeof x==='string'&&x.length>0&&x.length<=max&&x===x.trim();}
 function timestamp(x){return typeof x==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,3})?Z$/.test(x)&&!Number.isNaN(Date.parse(x));}
@@ -21,7 +34,7 @@ function authoritySubject(actor,scope){
  if(!actor||actor.trustedServerContext!==true||actor.verifiedByServer!==true||
    !nonempty(actor.subject)||!nonempty(actor.organisationId)||!nonempty(actor.role)||
    actor.organisationId!==scope.organisationId)failure('untrusted_actor_or_scope');
- if(!['organiser','brand_admin','partner_admin','finance_reviewer'].includes(actor.role))failure('unauthorised_role');
+ if(![...new Set(Object.values(EVENT_ROLES).flat())].includes(actor.role))failure('unauthorised_role');
  return actor;
 }
 function canonical(record){
@@ -69,22 +82,60 @@ function admit(input,context,history=[]){
    if(!nonempty(input[x],240))failure('missing_required_field_'+x);
  }
  if(!timestamp(input.occurredAt))failure('invalid_timestamp');
+ if(MONETARY_TYPES.has(input.eventType)&&
+   (!Number.isSafeInteger(input.amountMinor)||input.amountMinor<0||input.amountMinor>1e12||
+    !/^[A-Z]{3}$/.test(String(input.currency||''))))failure('invalid_money');
+ if((input.eventType==='INVOICE_ISSUED'||input.eventType==='PAYMENT_SETTLED')&&input.amountMinor===0)
+   failure('zero_invoice_or_settlement');
  if(history.length&&Date.parse(input.occurredAt)<Date.parse(history[history.length-1].occurredAt))failure('event_timestamp_regression');
  const actor=authoritySubject(context,{organisationId:input.organisationId});
+ if(!EVENT_ROLES[input.eventType].includes(actor.role))failure('event_role_forbidden');
+ if(input.eventType==='ACCEPTANCE_RECORDED'&&context.counterpartyAcceptanceVerified!==true)
+   failure('counterparty_acceptance_required');
+ if(input.eventType==='INVOICE_ISSUED'&&context.invoiceAuthorityApproved!==true)
+   failure('invoice_authority_required');
+ if(input.eventType==='FINANCE_REVIEWED'&&
+   (context.financeAuthorityApproved!==true||!nonempty(input.financialPolicyRef)||
+    !/^20\d{2}-(0[1-9]|1[0-2])$/.test(input.accountingPeriod||'')))
+   failure('finance_authority_required');
+ if(input.eventType==='PAYMENT_SETTLED'&&context.settlementAuthorityApproved!==true)
+   failure('settlement_authority_required');
  // A caller-provided sourceRef is never enough: it must be independently resolved
  // by a server-owned verification callback with issuer, tenant and revocation checks.
  if(typeof context.verifySource!=='function')failure('source_verifier_required');
- const proof=context.verifySource({reference:input.sourceRef,issuer:input.issuerRef,organisationId:input.organisationId,agreementId:input.agreementId,eventType:input.eventType});
+ const proof=context.verifySource({reference:input.sourceRef,issuer:input.issuerRef,
+   organisationId:input.organisationId,payerId:input.payerId,
+   agreementId:input.agreementId,eventType:input.eventType,occurredAt:input.occurredAt,
+   amountMinor:MONETARY_TYPES.has(input.eventType)?input.amountMinor:null,
+   currency:MONETARY_TYPES.has(input.eventType)?input.currency:null});
  if(!proof||proof.valid!==true||proof.revoked!==false||proof.issuerVerified!==true||
   proof.organisationId!==input.organisationId||proof.agreementId!==input.agreementId||
-  !nonempty(proof.evidenceDigest,128))failure('source_not_admitted');
+  proof.payerId!==input.payerId||proof.reference!==input.sourceRef||
+  proof.issuer!==input.issuerRef||proof.eventType!==input.eventType||
+  proof.occurredAt!==input.occurredAt||
+  (MONETARY_TYPES.has(input.eventType)&&
+    (proof.amountMinor!==input.amountMinor||proof.currency!==input.currency))||
+  typeof proof.evidenceDigest!=='string'||!/^[a-f0-9]{64}$/.test(proof.evidenceDigest))
+   failure('source_not_admitted');
  verifyHistory(history,{organisationId:input.organisationId,payerId:input.payerId,agreementId:input.agreementId});
  const matching=history;
+ const signed=matching.find(r=>r.eventType==='CONTRACT_SIGNED');
+ if(signed&&MONETARY_TYPES.has(input.eventType)&&signed.currency!==input.currency)
+   failure('agreement_currency_mismatch');
+ if(input.eventType==='PAYMENT_SETTLED'){
+   const invoiced=matching.filter(r=>r.eventType==='INVOICE_ISSUED')
+     .reduce((sum,r)=>sum+r.amountMinor,0);
+   const settled=matching.filter(r=>r.eventType==='PAYMENT_SETTLED')
+     .reduce((sum,r)=>sum+r.amountMinor,0);
+   if(!Number.isSafeInteger(invoiced)||!Number.isSafeInteger(settled)||
+      settled+input.amountMinor>invoiced)failure('settlement_exceeds_invoiced');
+ }
  if(history.some(r=>r.idempotencyKey===input.idempotencyKey)){
    const old=history.find(r=>r.idempotencyKey===input.idempotencyKey);
    if(old.organisationId!==input.organisationId||old.agreementId!==input.agreementId||
       old.eventType!==input.eventType||old.sourceRef!==input.sourceRef||
       old.payerId!==input.payerId||old.issuerRef!==input.issuerRef||
+      old.evidenceDigest!==proof.evidenceDigest||
       old.occurredAt!==input.occurredAt||old.actorSubject!==actor.subject||old.actorRole!==actor.role||
       (old.accountingPeriod!==null&&old.accountingPeriod!==input.accountingPeriod)||
       (old.financialPolicyRef!==null&&old.financialPolicyRef!==input.financialPolicyRef)||
@@ -95,27 +146,14 @@ function admit(input,context,history=[]){
  const existing=new Set(matching.map(r=>r.eventType));
  for(const prerequisite of REQUIRED[input.eventType])if(!existing.has(prerequisite))failure('missing_prerequisite_'+prerequisite);
  const finance=input.eventType==='FINANCE_REVIEWED';
- const financialTypes=['INVOICE_ISSUED','FINANCE_REVIEWED','PAYMENT_SETTLED'];
- if(financialTypes.includes(input.eventType)){
-   if(!Number.isSafeInteger(input.amountMinor)||input.amountMinor<0||input.amountMinor>1e12||
-     !/^[A-Z]{3}$/.test(String(input.currency||'')))failure('invalid_money');
- }
- if(finance){
-   if(actor.role!=='finance_reviewer'||context.financeAuthorityApproved!==true||
-      !nonempty(input.financialPolicyRef)||!/^20\d{2}-(0[1-9]|1[0-2])$/.test(input.accountingPeriod||'')){
-     failure('finance_authority_required');
-   }
- } else if(actor.role==='finance_reviewer'&&input.eventType==='CONTRACT_SIGNED'){
-   failure('invalid_role_transition');
- }
  const entry={
   schemaVersion:SCHEMA,eventType:input.eventType,organisationId:input.organisationId,
   payerId:input.payerId,agreementId:input.agreementId,idempotencyKey:input.idempotencyKey,
   occurredAt:input.occurredAt,sourceRef:input.sourceRef,issuerRef:input.issuerRef,
   evidenceDigest:proof.evidenceDigest,actorSubject:actor.subject,actorRole:actor.role,
   parentDigest:matching.length?matching[matching.length-1].digest:null,
-  amountMinor:financialTypes.includes(input.eventType)?input.amountMinor:null,
-  currency:financialTypes.includes(input.eventType)?input.currency:null,
+  amountMinor:MONETARY_TYPES.has(input.eventType)?input.amountMinor:null,
+  currency:MONETARY_TYPES.has(input.eventType)?input.currency:null,
   accountingPeriod:finance?input.accountingPeriod:null,
   financialPolicyRef:finance?input.financialPolicyRef:null,
   state:'SERVER_VALIDATED_CANDIDATE'
@@ -130,4 +168,4 @@ function projection(history){
  return Object.freeze({schemaVersion:SCHEMA,counts,recognisedRevenueMinor:null,settledCashMinor:null,
   authoritativeLedger:false,source:'DOMAIN_TEST_ONLY'});
 }
-module.exports={SCHEMA,TYPES,REQUIRED,admit,projection,digest,verifyHistory};
+module.exports={SCHEMA,TYPES,REQUIRED,EVENT_ROLES,admit,projection,digest,verifyHistory};
