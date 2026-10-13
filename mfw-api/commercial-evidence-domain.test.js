@@ -32,7 +32,8 @@ assert.equal(projection(history).settledCashMinor,null);
 assert.equal(projection(history).authoritativeLedger,false);
 const duplicate=admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey,sourceRef:history[0].sourceRef},context,history);
 assert.equal(duplicate.status,'ALREADY_RECORDED');
-assert.throws(()=>admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey},context,history),/idempotency_key_conflict/);
+assert.throws(()=>admit({...input('PILOT_ACCEPTED'),idempotencyKey:history[0].idempotencyKey,sourceRef:'evidence://different'},context,history),/idempotency_key_conflict/);
+assert.throws(()=>admit({...input('INVOICE_ISSUED'),idempotencyKey:history[4].idempotencyKey,amountMinor:1},context,history),/idempotency_key_conflict/);
 assert.throws(()=>admit({...input('INVOICE_ISSUED'),amountMinor:-1},context,history),/invalid_money/);
 assert.throws(()=>admit({...input('PAYMENT_SETTLED'),organisationId:'org-B'},context,history),/untrusted_actor_or_scope/);
 console.log(JSON.stringify({event:'commercial_evidence_domain_contract',status:'pass',entries:history.length,

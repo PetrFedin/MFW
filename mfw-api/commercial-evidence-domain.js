@@ -50,7 +50,10 @@ function admit(input,context,history=[]){
  if(history.some(r=>r.idempotencyKey===input.idempotencyKey)){
    const old=history.find(r=>r.idempotencyKey===input.idempotencyKey);
    if(old.organisationId!==input.organisationId||old.agreementId!==input.agreementId||
-      old.eventType!==input.eventType||old.sourceRef!==input.sourceRef)failure('idempotency_key_conflict');
+      old.eventType!==input.eventType||old.sourceRef!==input.sourceRef||
+      old.payerId!==input.payerId||old.issuerRef!==input.issuerRef||
+      (old.amountMinor!==null&&old.amountMinor!==input.amountMinor)||
+      (old.currency!==null&&old.currency!==input.currency))failure('idempotency_key_conflict');
    return Object.freeze({status:'ALREADY_RECORDED',event:old,mutated:false});
  }
  const existing=new Set(matching.map(r=>r.eventType));
