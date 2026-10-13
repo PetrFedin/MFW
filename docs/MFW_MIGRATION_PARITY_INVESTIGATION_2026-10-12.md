@@ -48,3 +48,7 @@ References: https://github.com/PetrFedin/MFW/pull/20 and https://supabase.com/do
 - A blank `public.schema_migrations` table on an otherwise populated schema is now rejected; recreating history as if the DB were empty is unsafe.
 - Logging callbacks execute only after COMMIT. A logging failure cannot turn a completed migration transaction into a spurious migration failure.
 - The all-or-nothing transaction and preflight remain pending **real isolated PostgreSQL** qualification; fake DB unit tests cannot prove PostgreSQL DDL/restore behavior.
+
+## Recovery candidate files (2026-10-13)
+
+Created isolated *non-executable* candidate SQL and catalog snapshot under `mfw-api/recovery-candidates/`: 026 based on the logged Supabase canonical index migration and 027 reconstructed from read-only `pg_catalog`. They are deliberately **outside `mfw-api/migrations/`**, so the fail-closed runner still rejects live history 001–027 against repo 001–025. Neither is attested original SQL. The current receipts `UNIQUE(event_key)` blocks multiple consumers of one outbox event; see Issue #25. Node recovery-contract checks syntax/provenance markers and isolation only; real PG17 DDL parity and restore remain unverified.
