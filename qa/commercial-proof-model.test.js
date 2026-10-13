@@ -8,6 +8,7 @@ assert.equal(zero.truthClass,'MODELLED');
 assert.equal(zero.admitted,false);
 assert.equal(zero.monthly.potentialCommercialValue,0);
 assert.equal(zero.actual.recognisedRevenue,null);
+assert.equal(zero.breakEvenBrands,null);
 assert.equal(zero.actual.collectedCash,null);
 assert.equal(zero.actual.auditedArr,null);
 assert.equal(zero.horizon.months,12);
@@ -71,3 +72,11 @@ assert.equal(complete.productionRecognised,false);
 assert.equal(complete.recognisedRevenue,null);
 assert.equal(complete.cashCollected,null);
 console.log(JSON.stringify({event:'mfw_commercial_proof_contract',status:'pass',assertions:'no-fake-kpi,money-precision,break-even,input-validation,evidence-provenance,no-client-recognition'}));
+
+// Finance recognition must not depend mechanically on invoice issuance or cash payment.
+const fs=require('node:fs');
+const path=require('node:path');
+const investorSource=fs.readFileSync(path.join(__dirname,'../mfw/platform/investor-proof-model.js'),'utf8');
+assert.equal(investorSource.includes("revenueGate:'Recognised revenue'"),false);
+assert.equal(investorSource.includes('billing/payment evidence'),false);
+assert.equal(investorSource.includes('счёт и оплата отдельно'),true);

@@ -75,7 +75,7 @@
     var partnerContribution=partnerIncome-partnerCost;
     var breakEvenBrands=null;
     if(brandUnit>0)breakEvenBrands=Math.ceil(Math.max(0,fixed-partnerContribution)/brandUnit);
-    else if(partnerContribution>=fixed)breakEvenBrands=0;
+    else if(partnerContribution>0&&partnerContribution>=fixed)breakEvenBrands=0;
     // The period projection holds the assumed client counts constant; no churn or CAC is inferred.
     return {
       schemaVersion:version,
