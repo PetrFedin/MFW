@@ -28,3 +28,20 @@ Node test: `node mfw-api/commercial-evidence-domain.test.js`. No production writ
 ## Late retries and idempotency gate order (2026-10-13)
 
 Previously, a duplicate pilot event timestamp could be rejected as a regression after newer events. Also, replay of a fully settled payment was at risk of failing the cumulative payment cap. The synchronous domain now checks an exact, independently re-verified idempotency replay **before** enforcing new-event chronology and settlement upper bound. Conflicting amounts and sources still fail closed; historical chain integrity, tenant scope, actor role and source verification are not bypassed. Real race safety remains blocked pending transactional PostgreSQL writes and concurrent-session testing.
+
+## Candidate-only invoice reconciliation (2026-10-13)
+
+New pure candidate evaluator: mfw-api/commercial-reconciliation-candidate.js. This does not import, execute or grant server financial admission.
+
+- One organisation/payer/agreement/currency. Positive integer minor amounts and unique event keys.
+- Adjusted invoice = gross invoice - credit notes linked to that invoice.
+- Candidate net settlement = payment candidates - refunds linked to original payment events.
+- Outstanding = max(0, adjusted invoice - net settlement).
+- Overpayment = max(0, net settlement - adjusted invoice), flagged OVERPAID_REVIEW.
+- Credit notes above invoice and refunds above original payment are rejected.
+- Late credit notes can create overpayment after an earlier full settlement; later partial refunds can resolve it.
+- Accounting recognised revenue, bank-verified cash, booked receivable and audited ARR remain null.
+
+Important: CREDIT_NOTE_ISSUED and REFUND_SETTLED are NOT admitted event types in the current server commercial domain. This is a separate synthetic model for validation only. It authenticates no invoice, bank statement, counterparty or credit note. Production requires a finance-approved policy, isolated PG admission, trusted source verification, tenant JWT denial tests and transactional concurrency. No SQL/HTTP/production writes.
+
+CI: node mfw-api/commercial-reconciliation-candidate.test.js; before Chromium.

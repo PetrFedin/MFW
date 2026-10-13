@@ -29,7 +29,8 @@
     "test:admission-evidence": "node admission-evidence.test.js",
     "test:render-runtime-admission": "node render-runtime-admission.test.js",
     "check:render-runtime-admission": "node render-runtime-admission.js",
-    "test:commercial-evidence-domain": "node commercial-evidence-domain.test.js"
+    "test:commercial-evidence-domain": "node commercial-evidence-domain.test.js",
+    "test:commercial-reconciliation-candidate": "node commercial-reconciliation-candidate.test.js"
   },
   "dependencies": {
     "pg": "^8.16.3",
