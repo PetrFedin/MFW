@@ -67,3 +67,5 @@ jobs:
           RECEIPTS="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_restored_ci -tAc "SELECT COUNT(*) FROM public.authority_delivery_receipts WHERE consumer='consumer_A' AND event_key='ci:restore-test'")"
           test "$RECEIPTS" = "1"
           echo "scratch_pg17_backup_restore=PASS; production_admission=BLOCKED"
+      - name: Validate forward-only multi-consumer receipt integrity on restored scratch clone
+        run: node mfw-api/recovery-candidates/consumer-scoped-receipts-scratch.test.js

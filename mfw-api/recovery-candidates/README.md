@@ -54,3 +54,11 @@ Read-only verification of the connected MFW Supabase default ACL confirmed broad
 `default-privileges-review.sql` is a QUARANTINED REVIEW CANDIDATE, not an executable application migration. It must not be applied to real MFW until independent reviewer approval, live creator/grant inventory and server service_role compatibility sign-off. PostgreSQL `ALTER DEFAULT PRIVILEGES ... IN SCHEMA` cannot negate global function PUBLIC permissions; the global clause is intentional.
 
 Docs: https://www.postgresql.org/docs/17/sql-alterdefaultprivileges.html ; https://supabase.com/docs/guides/api/securing-your-api . Issue https://github.com/PetrFedin/MFW/issues/28 .
+
+## Forward-only multi-consumer receipt research (15 October 2026)
+
+Historical 027 is preserved unchanged in `027_outbox_pg_boss_bridge.sql` for forensic fidelity. A separate quarantined `028_consumer_scoped_receipts_research.sql` removes global receipts `UNIQUE(event_key)`, retains `(outbox_id,consumer)` uniqueness and FK RESTRICT, and adds an enforced `(outbox_id,event_key)` composite foreign key. It is *not* an approved production migration.
+
+The CI **first** completes 001–027 candidate replay and synthetic backup/restore unmodified. Only **after that**, on the separately restored disposable `mfw_restored_ci` clone, `consumer-scoped-receipts-scratch.test.js` applies and reapplies the candidate, confirms independent consumer A/B receipts for the same event, rejects a duplicated consumer (23505), and rejects an event-key/outbox mismatch (23503). The recorded application migration history remains 27 (no falsified migration row).
+
+Independent schema review, application outbox handler API idempotency, role grants, data migration impact, and real worker crash/retry tests are not met by this SQL experiment. Related [Issue #25](https://github.com/PetrFedin/MFW/issues/25) remains production HOLD.
