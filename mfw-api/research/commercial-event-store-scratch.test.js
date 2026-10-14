@@ -128,7 +128,8 @@ async function main(){
           [scope.foreignEventId]);
         assert.equal(guessed.rows[0].n,0,'foreign event leaked by exact ID');
         // A user-editable GUC has no bearing on role-scoped RLS.
-        await connection.query("SELECT set_config('mfw.tenant_hint','org-a',false)");
+        await connection.query("SELECT set_config('mfw.tenant_hint',$1,false)",
+          [scope.org==='org-a'?'org-b':'org-a']);
         const afterSpoof=await connection.query(
           'SELECT organisation_id FROM public.ci_commercial_events');
         assert.equal(afterSpoof.rowCount,scope.ownCount);

@@ -55,3 +55,14 @@ These synthetic SQL tests do not authenticate a bank, customer, contract, tenant
 ## Research RLS tenant separation
 
 Added a disposable PostgreSQL 17 two-organisation security drill: two fixed NOLOGIN/NOBYPASSRLS roles, role-scoped SELECT policies and negative tests for foreign event IDs, mutable tenant hints, cross-organisation visibility, forbidden writes and private outbox. Exact CI still required. This **does not** validate actual Supabase JWT or the server BYPASSRLS role and cannot be promoted as production admission.
+
+## Trusted-claims identity policy (2026-10-15)
+
+The new `commercial-identity-boundary.js` module is a **pure, unused-in-production server adapter policy**. It does not decode, sign, verify or fetch a JWT itself. It **requires** a server-owned injected `getClaims` verifier and fresh server-owned `verifySession` plus `lookupMembership` functions before it creates a candidate actor object.
+
+- Validates issuer, authenticated audience and role, subject and session UUIDs, anonymous status, token validity window, and authentication assurance level.
+- Validates session activeness and independently reads role/organisation membership from a current server store; it ignores mutable JWT `user_metadata` and does not treat JWT `app_metadata` as a current membership authority.
+- Uses the domain's closed event-type role matrix. Provisional finance operators/reviewers/settlement verifiers require MFA `aal2`.
+- Verifier, membership or session lookup failures fail closed. Role names are not accepted from HTTP request body.
+
+IMPORTANT: CI mocks verified claims and the current membership/session store. Tests do **not** verify cryptographic JWT signatures or a real Supabase project's login, MFA, session revocation or JWKS rotation. Live integration, authoritative account/membership and reviewed step-up policy remain blocked by Phase 0 and independent security review. References: https://supabase.com/docs/reference/javascript/auth-getclaims and https://supabase.com/docs/guides/auth/jwts

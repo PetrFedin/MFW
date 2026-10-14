@@ -32,7 +32,7 @@ jobs:
           node --check mfw/platform/made-in-moscow/app.js
           node --check mfw/sw.js
       - name: Run Russian-first UI contract
-        run: node qa/russian-first-contract.test.js && node mfw-api/commercial-evidence-domain.test.js && node mfw-api/commercial-reconciliation-candidate.test.js
+        run: node qa/russian-first-contract.test.js && node mfw-api/commercial-evidence-domain.test.js && node mfw-api/commercial-reconciliation-candidate.test.js && node mfw-api/commercial-identity-boundary.test.js
       - name: Install authority dependencies
         working-directory: mfw-api
         run: npm install --no-audit --no-fund
