@@ -18,6 +18,7 @@ for(const row of manifest.items){
  assert(!entries.has(row.id),'duplicate workstream '+row.id);
  entries.set(row.id,row);
  assert(priorities.has(row.priority),'invalid priority '+row.id);
+ assert(row.id.startsWith(row.priority+'-'),'ID/priority mismatch '+row.id);
  assert(statuses.has(row.status),'invalid status '+row.id);
  assert(row.name.length>8&&row.acceptance.length>45,'missing actual acceptance '+row.id);
  assert(Array.isArray(row.dependsOn)&&Array.isArray(row.evidence)&&row.evidence.length>0);

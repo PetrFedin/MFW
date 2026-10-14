@@ -23,7 +23,10 @@
       7,
       25,
       27,
-      28
+      28,
+      32,
+      33,
+      34
     ],
     "pullRequests": [
       {
@@ -147,7 +150,7 @@
         "mfw-api/readiness-contract.test.js"
       ],
       "acceptance": "Real authenticated role flows on PostgreSQL: registration/accreditation/pass issuance/duplicate QR/restart/revocation; independent receipts.",
-      "tracking": "https://github.com/PetrFedin/MFW/issues/3"
+      "tracking": "https://github.com/PetrFedin/MFW/issues/32"
     },
     {
       "id": "P1-01",
@@ -162,7 +165,7 @@
         "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
       ],
       "acceptance": "Atomic domain/outbox; worker retry/poison queue/crash-after-commit; independent multi-consumer receipts and recoverable jobs.",
-      "tracking": "https://github.com/PetrFedin/MFW/issues/25"
+      "tracking": "https://github.com/PetrFedin/MFW/issues/33"
     },
     {
       "id": "P1-02",
@@ -568,8 +571,8 @@
       "tracking": null
     },
     {
-      "id": "P2-10",
-      "priority": "P2",
+      "id": "P1-19",
+      "priority": "P1",
       "name": "Accessibility and visual E2E across three experiences",
       "status": "code_in_main_runtime_unverified",
       "dependsOn": [
@@ -580,7 +583,7 @@
         "CURRENT_STATE.md"
       ],
       "acceptance": "Real iOS Safari/Android, keyboard/VoiceOver, focus states, contrast/touch targets and high-fidelity screenshot QA.",
-      "tracking": null
+      "tracking": "https://github.com/PetrFedin/MFW/issues/34"
     },
     {
       "id": "P2-11",

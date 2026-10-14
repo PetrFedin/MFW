@@ -37,8 +37,8 @@ Canonical machine-checkable register: [mfw-execution-roadmap.json](./mfw-executi
 | Priority | Workstreams | Completion condition |
 |---|---:|---|
 | P0 | 6 | Exact live authority, security, reviewer and participant Golden Path evidence |
-| P1 | 18 | Durable user/partner execution and attributable, separately accepted finance |
-| P2 | 11 | Grounded new capabilities, accessible UX, privacy and portable institutional integration |
+| P1 | 19 | Durable user/partner execution and attributable, separately accepted finance |
+| P2 | 10 | Grounded new capabilities, accessible UX, privacy and portable institutional integration |
 
 The JSON register contains an acceptance criterion and source file evidence for **each** workstream, plus blocked prerequisites. Graph checks guarantee missing source files, orphan dependencies and cycles fail CI.
 
@@ -68,3 +68,11 @@ The static `mfw/platform/evidence-package.json` now contains a mandatory fail-cl
 ## Canonical status files updated
 
 The audit PR also appends a time-stamped, read-only result to `CURRENT_STATE.md` and `RENDER_STATE.md` rather than overwriting earlier deployment history or claiming that draft PR code was released. No Render service was changed.
+
+## Implementation issues created after the audit
+
+- [#32](https://github.com/PetrFedin/MFW/issues/32) — P0 real authenticated registration/QR/BFS/Made Golden Paths and multi-role isolation; dependent on Phase 0.
+- [#33](https://github.com/PetrFedin/MFW/issues/33) — P1 durable pg-boss/outbox worker, multi-consumer and crash/backup replay qualifications; dependent on Phase 0 and Issue #25.
+- [#34](https://github.com/PetrFedin/MFW/issues/34) — P1 real-device UX, accessibility and participant execution flow QA; visual work can proceed safely without bypassing the persistence gate.
+
+Quality/accessibility was promoted from P2 to P1 as **P1-19**, because a feature that is technically present but unusable or inaccessible does not pass participant acceptance. All three issue numbers are traced in the JSON matrix.
