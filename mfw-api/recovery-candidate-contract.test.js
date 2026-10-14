@@ -12,11 +12,16 @@ assert.deepEqual(observation.candidateEquivalenceVerified,false);
 assert.equal(observation.isolatedPostgresReplayPassed,false);
 assert.equal(observation.fanout.supported,false);
 assert.equal(observation.fanout.blocker,'receipt_event_key_globally_unique');
-for(const n of ['026_postgres_conflict_constraints.sql','027_outbox_pg_boss_bridge.sql']){
+for(const n of ['026_postgres_conflict_constraints.sql','027_outbox_pg_boss_bridge.sql','028_consumer_scoped_receipts_research.sql']){
   assert.equal(migrations.includes(n),false,'unreviewed SQL must not become executable migration: '+n);
 }
 const s026=fs.readFileSync(path.join(recovery,'026_postgres_conflict_constraints.sql'),'utf8');
 const s027=fs.readFileSync(path.join(recovery,'027_outbox_pg_boss_bridge.sql'),'utf8');
+const s028=fs.readFileSync(path.join(recovery,'028_consumer_scoped_receipts_research.sql'),'utf8');
+assert.match(s028,/RESEARCH \/ FORWARD-ONLY CANDIDATE/);
+assert.match(s028,/DROP CONSTRAINT IF EXISTS authority_delivery_receipts_event_key_key/);
+assert.match(s028,/authority_delivery_receipts_outbox_event_key_fkey/);
+assert.match(s028,/UNIQUE\(id, event_key\)/);
 assert.match(s026,/NOT the recovered original/);
 assert.match(s026,/ux_loyalty_offers_external_key/);
 assert.match(s026,/ux_brand_content_posts_external_key/);
