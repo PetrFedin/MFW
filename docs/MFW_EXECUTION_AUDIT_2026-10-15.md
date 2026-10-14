@@ -60,3 +60,7 @@ The JSON register contains an acceptance criterion and source file evidence for 
 - No new paid resources or unreviewed production writes in this audit wave.
 
 **Run:** `node qa/roadmap-integrity.test.js`. The dedicated lightweight GitHub Actions job checks this register on subsequent edits.
+
+## Investor proof integrity improvement
+
+The static `mfw/platform/evidence-package.json` now contains a mandatory fail-closed `verificationBoundary`: production admission BLOCKED, actual accounting/cash/ARR metrics null, code-level meaning of `observed`, and required server evidence before upgrading any commercial claim. A separate CI contract checks all claim status/evidence classifications, file references and prevents a synthetic finance metric from silently becoming a literal actual. This prevents confusion between verified **UI source presence** and verified **real-world financial outcomes**. It does not validate any live invoice or tenant permissions.

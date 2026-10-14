@@ -95,7 +95,7 @@ mfw-api/                # Node API / authority layer
   server-v2.js
   brand365-store.js
   social-providers.js
-  migrations/           # PostgreSQL migrations 001-016
+  migrations/           # PostgreSQL migrations 001-025 (production reconciliation pending)
 mfw-native/             # native bridge / Capacitor support
 PROJECT_BOUNDARY.md     # canonical project boundary
 CURRENT_STATE.md        # current functional/technical state
@@ -108,6 +108,7 @@ render.yaml             # canonical Render Blueprint
 
 See:
 
+- [Execution audit + full dependency roadmap](./docs/MFW_EXECUTION_AUDIT_2026-10-15.md) — separates main code, previews, open PRs and live admission
 - [CURRENT_STATE.md](./CURRENT_STATE.md)
 - [RELEASE_LOG.md](./RELEASE_LOG.md)
 - [RENDER_STATE.md](./RENDER_STATE.md)
@@ -190,3 +191,5 @@ The canonical plan for the next external-capability integration waves is:
 - [docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md](./docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md)
 
 This document is a **planned implementation source**, not evidence that the listed capabilities are already live. It defines sequencing, authority boundaries, external references, dependencies and acceptance criteria. Future requests to integrate the full planned wave should cite this filename explicitly.
+
+> **2026-10-15 audit boundary:** code/visual demo is not an acceptance report. The current Render database admission and 026/027 provenance remain unresolved; see the execution audit and the read-only investor evidence manifest. Do not interpret implemented UI as live financial or durable business state.

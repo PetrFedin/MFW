@@ -21,3 +21,5 @@ jobs:
           node-version: "22"
       - name: Audit roadmap references, dependencies and no live claims
         run: node qa/roadmap-integrity.test.js
+      - name: Verify investor claims cannot assert live financial actuals
+        run: node qa/investor-evidence-truth.test.js
