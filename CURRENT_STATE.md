@@ -1036,3 +1036,18 @@ Production persistence is still not admitted:
 - Render currently reports authority auto-deploy disabled, so exact-SHA explicit deploy verification is mandatory until reconciled.
 
 No paid resource was created, PostgreSQL was not exposed externally, and the strict PostgreSQL guard was not enabled before the binding.
+
+
+## 2026-10-15 — Reconciled execution audit (code vs live truth)
+
+Authoritative reference: [MFW execution audit](docs/MFW_EXECUTION_AUDIT_2026-10-15.md) with 35 individually traced workstreams and their acceptance evidence. The master integration plan was re-read from current \`main\` before this wave.
+
+**Current source boundary:** \`main\` at \`7a2e7b98f9192862cbafe638cc3732c2db4f0f01\` still contains application SQL 001–025. Separate PR #20 carries isolated (unapproved) 026/027 recovery candidates. PR #26 has a modelled investor scenario, and PR #30 an independent (not live-integrated) server financial evidence contract. Do not attribute these changes to deployed production or \`main\` until reviewed and merged.
+
+**Infrastructure read-only check:** existing Render \`mfw-authority\` on branch \`main\` reports \`autoDeploy=no\` and empty \`healthCheckPath\`. The existing free Render PostgreSQL \`mfw-postgres\` is suspended, while the separate connected MFW Supabase PostgreSQL 17 project reports \`ACTIVE_HEALTHY\`. This does not prove or imply that Authority uses Supabase. Secure provider selection/binding and original migration provenance remain P0 HOLD.
+
+**Live security catalog:** the connected Supabase project has broad default privileges for future public objects created by \`postgres\` and \`supabase_admin\`. P0 Issue #28 tracks independent review; synthetic future-object ACL hardening tests in PR #20 passed on disposable PostgreSQL 17. **No production database grants were modified.** RLS/no-policy and existing object privileges are separate security checks.
+
+**Quality evidence:** source-level MFW/BFS/Made product modules and responsive Chromium tests are not a substitute for signed-user registration/QR check-in, donor/sponsor acceptance, actual bank settlement, multiple-role tenant isolation or real phone browser evidence. Commercial and investor actuals remain unadmitted. Cross-project visual identities remain distinct, with Russian-first default.
+
+The next allowed implementation order is: historical migration and privilege review → protected PostgreSQL Authority admission → real JWT/organisation negative proofs and authenticated Golden Paths → transactional outbox/jobs → actual participant/B2B/Brand365/sponsor workflows → independently evidenced commercial finance → investor consumption. See workstream identifiers in \`docs/mfw-execution-roadmap.json\`.

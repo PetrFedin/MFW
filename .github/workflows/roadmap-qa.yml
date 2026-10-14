@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - "docs/MFW_EXECUTION_AUDIT_2026-10-15.md"
+      - "CURRENT_STATE.md"
+      - "RENDER_STATE.md"
+      - "README.md"
+      - "mfw/platform/evidence-package.json"
       - "docs/mfw-execution-roadmap.json"
       - "qa/roadmap-integrity.test.js"
       - ".github/workflows/roadmap-qa.yml"

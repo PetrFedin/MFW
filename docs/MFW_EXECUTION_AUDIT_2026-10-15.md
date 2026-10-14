@@ -64,3 +64,7 @@ The JSON register contains an acceptance criterion and source file evidence for 
 ## Investor proof integrity improvement
 
 The static `mfw/platform/evidence-package.json` now contains a mandatory fail-closed `verificationBoundary`: production admission BLOCKED, actual accounting/cash/ARR metrics null, code-level meaning of `observed`, and required server evidence before upgrading any commercial claim. A separate CI contract checks all claim status/evidence classifications, file references and prevents a synthetic finance metric from silently becoming a literal actual. This prevents confusion between verified **UI source presence** and verified **real-world financial outcomes**. It does not validate any live invoice or tenant permissions.
+
+## Canonical status files updated
+
+The audit PR also appends a time-stamped, read-only result to `CURRENT_STATE.md` and `RENDER_STATE.md` rather than overwriting earlier deployment history or claiming that draft PR code was released. No Render service was changed.
