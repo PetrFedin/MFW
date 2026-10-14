@@ -44,3 +44,13 @@ An additional read-only reference file `027-catalog-reference.json` records 23 c
 ## Single canonical PostgreSQL 17 CI workflow
 
 To avoid redundant GitHub Actions runner minutes, `.github/workflows/isolated-postgres-17.yml` is the only standard PG17 scratch replay and restore workflow. Two overlapping workflows were retired. All negative SQLSTATE tests and full observed-catalog parity remain in the canonical job. The original historical 027 still has not been recovered and production admission remains HOLD.
+
+## Default privilege regression test (15 October 2026)
+
+Read-only verification of the connected MFW Supabase default ACL confirmed broad creator-specific future-object grants for `postgres` and `supabase_admin` (public schema; `anon`, `authenticated` and `service_role`). No live DDL was executed.
+
+`default-privileges-scratch.test.js` reproduces these defaults using two dedicated synthetic creator roles and three client/service fixture roles in the disposable PG17 CI database. It proves new-table SELECT, new-sequence USAGE and new-function EXECUTE are initially granted, applies candidate default-privilege revocations for both creators, creates new canary objects, and confirms all are now inaccessible. It also checks that **existing** canaries retain their previous grants and that revoking global `PUBLIC` function EXECUTE is essential.
+
+`default-privileges-review.sql` is a QUARANTINED REVIEW CANDIDATE, not an executable application migration. It must not be applied to real MFW until independent reviewer approval, live creator/grant inventory and server service_role compatibility sign-off. PostgreSQL `ALTER DEFAULT PRIVILEGES ... IN SCHEMA` cannot negate global function PUBLIC permissions; the global clause is intentional.
+
+Docs: https://www.postgresql.org/docs/17/sql-alterdefaultprivileges.html ; https://supabase.com/docs/guides/api/securing-your-api . Issue https://github.com/PetrFedin/MFW/issues/28 .

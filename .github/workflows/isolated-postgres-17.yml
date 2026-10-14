@@ -51,6 +51,8 @@ jobs:
         run: node mfw-api/recovery-candidates/isolated-replay.test.js
       - name: Verify scratch-only anonymous and authenticated-style SQL access denial
         run: node mfw-api/recovery-candidates/scratch-role-boundary.test.js
+      - name: Qualify default-ACL hardening with disposable future-object canaries
+        run: node mfw-api/recovery-candidates/default-privileges-scratch.test.js
       - name: Backup, restore and verify synthetic candidate records
         shell: bash
         run: |
