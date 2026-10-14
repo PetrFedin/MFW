@@ -1,0 +1,23 @@
+name: MFW execution roadmap contract
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/MFW_EXECUTION_AUDIT_2026-10-15.md"
+      - "docs/mfw-execution-roadmap.json"
+      - "qa/roadmap-integrity.test.js"
+      - ".github/workflows/roadmap-qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  roadmap-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Audit roadmap references, dependencies and no live claims
+        run: node qa/roadmap-integrity.test.js
