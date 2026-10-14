@@ -16,3 +16,9 @@ Assumptions: the server holding the DB connection has first authenticated the us
 **Budget:** normal public GitHub-hosted runner with temporary PostgreSQL 17 service; no Render/Supabase service changes or new paid infrastructure.
 
 Source workflow: .github/workflows/commercial-evidence-scratch-pg17.yml
+
+## Two-organisation SQL isolation qualification (scratch only)
+
+The exact-head job now tests **two distinct PostgreSQL NOLOGIN, NOBYPASSRLS roles** with role-scoped SELECT policies, in a disposable schema after inserting one synthetic event for the second organisation. It checks row counts and guessed foreign event ID lookups, tries to spoof a client-editable tenant hint, denies writes and access to internal outbox, and verifies both tenants survive the same-cluster backup/restore.
+
+This demonstrates PostgreSQL role-scoped row filtering in the disposable fixture, **not** Supabase Auth JWT, role membership verification, user session revocation, production app connections or real contractual access. Roles are intentionally fixed strings, not extracted from user-controlled JWT metadata. The SQL is not in the application's executable migration path.

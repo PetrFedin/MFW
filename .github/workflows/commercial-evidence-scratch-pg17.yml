@@ -53,6 +53,8 @@ jobs:
           docker exec "$PG_CONTAINER" pg_restore -U mfw_ci -d mfw_commercial_restored --no-owner --exit-on-error /tmp/mfw-commercial-ci.dump
           EVENTS="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_commercial_restored -tAc 'SELECT count(*) FROM public.ci_commercial_events')"
           OUTBOX="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_commercial_restored -tAc 'SELECT count(*) FROM public.ci_commercial_outbox')"
-          test "$EVENTS" = "2"
-          test "$OUTBOX" = "3"
+          test "$EVENTS" = "3"
+          test "$OUTBOX" = "4"
+          ORGS="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_commercial_restored -tAc 'SELECT count(DISTINCT organisation_id) FROM public.ci_commercial_events')"
+          test "$ORGS" = "2"
           echo "scratch_commercial_pg17_backup_restore=PASS;production_admitted=FALSE"

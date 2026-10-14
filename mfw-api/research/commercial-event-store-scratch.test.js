@@ -97,6 +97,61 @@ async function main(){
       const view=await guest.query('SELECT count(*)::integer AS n FROM public.ci_commercial_events');
       assert.equal(view.rows[0].n,0);
     }finally{await guest.query('RESET ROLE');guest.release();}
+    // Explicit cross-organisation negative tests with distinct non-owner roles.
+    // Fixed role identity is not a JWT or user-supplied mutable session variable.
+    const other=await append(pool,{org:'org-b',agreement:'b-001',expected:0,key:'event-b-org'});
+    assert.equal(other.status,'INSERTED');
+    assert.equal(await count(pool,'ci_commercial_events'),3);
+    assert.equal(await count(pool,'ci_commercial_outbox'),4);
+    await pool.query(fs.readFileSync(
+      path.join(__dirname,'commercial-tenant-isolation-scratch.sql'),'utf8'));
+    const roles=await pool.query(
+      "SELECT rolname,rolcanlogin,rolbypassrls FROM pg_roles WHERE rolname=ANY($1::text[]) ORDER BY rolname",
+      [['ci_mfw_org_a','ci_mfw_org_b']]);
+    assert.equal(roles.rowCount,2);
+    assert(roles.rows.every(row=>row.rolcanlogin===false&&row.rolbypassrls===false));
+    const tenantTests=[
+      {role:'ci_mfw_org_a',org:'org-a',ownCount:2,foreignEventId:other.eventId},
+      {role:'ci_mfw_org_b',org:'org-b',ownCount:1,foreignEventId:first.eventId}
+    ];
+    for(const scope of tenantTests){
+      const connection=await pool.connect();
+      try{
+        // Roles are predefined literals, not supplied by a caller.
+        await connection.query('SET ROLE '+scope.role);
+        const visible=await connection.query(
+          'SELECT organisation_id FROM public.ci_commercial_events ORDER BY id');
+        assert.equal(visible.rowCount,scope.ownCount);
+        assert(visible.rows.every(row=>row.organisation_id===scope.org));
+        const guessed=await connection.query(
+          'SELECT count(*)::integer AS n FROM public.ci_commercial_events WHERE id=$1',
+          [scope.foreignEventId]);
+        assert.equal(guessed.rows[0].n,0,'foreign event leaked by exact ID');
+        // A user-editable GUC has no bearing on role-scoped RLS.
+        await connection.query("SELECT set_config('mfw.tenant_hint','org-a',false)");
+        const afterSpoof=await connection.query(
+          'SELECT organisation_id FROM public.ci_commercial_events');
+        assert.equal(afterSpoof.rowCount,scope.ownCount);
+        assert(afterSpoof.rows.every(row=>row.organisation_id===scope.org));
+        for(const sql of [
+          'SELECT count(*) FROM public.ci_commercial_outbox',
+          "INSERT INTO public.ci_commercial_events(organisation_id,agreement_id,event_key,sequence_no,event_digest,source_digest,event_type) VALUES('org-a','x','forged',10,'x','x','UNVERIFIED')",
+          "UPDATE public.ci_commercial_events SET event_type='UNVERIFIED'",
+          'DELETE FROM public.ci_commercial_events'
+        ]){
+          await assert.rejects(connection.query(sql),error=>error.code==='42501');
+        }
+      }finally{
+        await connection.query('RESET ROLE');
+        connection.release();
+      }
+    }
+    assert.equal(await count(pool,'ci_commercial_events'),3);
+    assert.equal(await count(pool,'ci_commercial_outbox'),4);
+    console.log(JSON.stringify({event:'scratch_two_tenant_sql_roles',status:'pass',
+      roles:'nonlogin_nonbypass',read:'own_org_only',
+      foreignIdLookup:'no_leak',outbox:'no_access',
+      writeOperations:'denied',jwtVerified:false,productionAdmitted:false}));
     const rls=await pool.query("SELECT relrowsecurity FROM pg_class WHERE oid='public.ci_commercial_events'::regclass");
     assert.equal(rls.rows[0].relrowsecurity,true);
     console.log(JSON.stringify({event:'scratch_commercial_event_store',status:'pass',
@@ -106,8 +161,8 @@ async function main(){
   }finally{await pool.end();}
   const fresh=new Pool({connectionString,max:1});
   try{
-    assert.equal(await count(fresh,'ci_commercial_events'),2);
-    assert.equal(await count(fresh,'ci_commercial_outbox'),3);
+    assert.equal(await count(fresh,'ci_commercial_events'),3);
+    assert.equal(await count(fresh,'ci_commercial_outbox'),4);
     console.log(JSON.stringify({event:'scratch_commercial_reconnect',status:'pass'}));
   }finally{await fresh.end();}
 }

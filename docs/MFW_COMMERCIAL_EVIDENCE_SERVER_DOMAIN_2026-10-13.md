@@ -51,3 +51,7 @@ CI: node mfw-api/commercial-reconciliation-candidate.test.js; before Chromium.
 An isolated commercial event/outbox schema, transaction lock + uniqueness test, rollback injection, cold reconnect and dump/restore workflow are staged under mfw-api/research and its dedicated GitHub Action. No SQL in this experiment is loaded by Authority migrations or production startup. Full results must be verified at the exact commit SHA before any pass claim.
 
 These synthetic SQL tests do not authenticate a bank, customer, contract, tenant JWT or evidence issuer and do not qualify a real worker or financial posting. They are separate from the pure candidate settlement reconciliation and its null actuals. See mfw-api/research/README.md.
+
+## Research RLS tenant separation
+
+Added a disposable PostgreSQL 17 two-organisation security drill: two fixed NOLOGIN/NOBYPASSRLS roles, role-scoped SELECT policies and negative tests for foreign event IDs, mutable tenant hints, cross-organisation visibility, forbidden writes and private outbox. Exact CI still required. This **does not** validate actual Supabase JWT or the server BYPASSRLS role and cannot be promoted as production admission.
