@@ -72,7 +72,7 @@ async function main(){
    ["UPDATE ci_commercial_auth.role_grants SET expires_at=now()-interval '1 minute' WHERE organisation_id=$1",[org],
     "UPDATE ci_commercial_auth.role_grants SET expires_at=NULL WHERE organisation_id=$1",[org],'active_membership_required'],
    ["UPDATE public.users SET status='blocked' WHERE id=$1",[reviewer],
-    "UPDATE public.users SET status='active' WHERE id=$1",[reviewer],'active_membership_required']
+    "UPDATE public.users SET status='active' WHERE id=$1",[reviewer],'active_session_required']
   ];
   for(const [sql,params,revert,code] of mutations){
    await pool.query(sql,params);
