@@ -628,5 +628,24 @@
     "default": "ru",
     "secondary": "en",
     "scope": "shared investor/control-tower shell"
+  },
+  "verificationBoundary": {
+    "runtimeAdmission": "blocked",
+    "stateClaimScope": "source-artifact-and-preview-presence-only",
+    "interpretationOfObserved": "Observed means a source or visual implementation exists in the repository; it does not establish verified attendee activity, customer transactions, production durability, revenue or an audit opinion.",
+    "actualCommercialMetrics": {
+      "recognisedRevenue": null,
+      "bankVerifiedCash": null,
+      "auditedARR": null,
+      "verifiedSponsorSettlement": null
+    },
+    "trustedCommercialSource": null,
+    "environmentProvenance": "demo; no live PostgreSQL Authority admission in this package",
+    "requiredEvidenceBeforeProduction": [
+      "verified latest exact-head Render Authority /ready=200 and dataMode=postgres",
+      "independent finance/payer source acceptance and full contract-to-cash trace",
+      "JWT membership and multi-tenant negative tests",
+      "reviewed production migration/schema/role and backup-restore acceptance"
+    ]
   }
 }
