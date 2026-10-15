@@ -1,0 +1,58 @@
+name: Commercial Auth SDK and HTTP qualification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mfw-api/commercial-identity*.js'
+      - 'mfw-api/commercial-http*.js'
+      - 'mfw-api/commercial-evidence-domain.js'
+      - 'mfw-api/integration/auth-sdk/**'
+      - '.github/workflows/commercial-sdk-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: commercial-sdk-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  sdk-http:
+    name: Actual Auth SDK / Node ${{ matrix.node }} / loopback HTTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Resolve exact isolated SDK dependency lock (bootstrap only)
+        working-directory: mfw-api/integration/auth-sdk
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          cat package-lock.json
+      - name: Install locked packages without lifecycle scripts
+        working-directory: mfw-api/integration/auth-sdk
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check isolated dependency security advisories
+        working-directory: mfw-api/integration/auth-sdk
+        run: npm audit --omit=dev --audit-level=high
+      - name: Qualify real SDK and HTTP denials
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa/sdk-results
+          node --version > qa/sdk-results/runtime.txt
+          node --test mfw-api/commercial-http-boundary.test.js | tee qa/sdk-results/transport.tap
+          node --test mfw-api/integration/auth-sdk/sdk-http.test.js | tee qa/sdk-results/sdk-http.tap
+      - name: Upload redacted qualification and dependency lock
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commercial-sdk-node-${{ matrix.node }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            qa/sdk-results
+            mfw-api/integration/auth-sdk/package-lock.json
+          retention-days: 14
