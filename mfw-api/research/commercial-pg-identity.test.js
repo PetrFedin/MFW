@@ -76,7 +76,11 @@ async function main(){
   ];
   for(const [sql,params,revert,code] of mutations){
    await pool.query(sql,params);
-   try{await deny(gate(request()),code);}
+   try {
+     await assert.rejects(gate(request()),error =>
+       ['active_session_required','active_membership_required'].includes(error.code),
+       'mutated authorisation input must fail closed: '+sql);
+    }
    finally{await pool.query(revert,params);}
   }
   await assert.rejects(pool.query('UPDATE ci_commercial_auth.role_grants SET approved_by=$1 WHERE organisation_id=$2',[app,org]),e=>e.code==='23514');
