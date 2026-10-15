@@ -42,6 +42,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Verify atomicity, concurrency, replay and scratch RLS
         run: node mfw-api/research/commercial-event-store-scratch.test.js
+      - name: Verify native-shaped Auth session, reviewed membership and grant revocation
+        run: node mfw-api/research/commercial-pg-identity.test.js
       - name: Backup and restore scratch event and outbox records
         shell: bash
         run: |

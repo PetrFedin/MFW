@@ -86,7 +86,7 @@ function createIdentityBoundary(options = {}) {
       deny('verified_jwt_required');
     const jwt = snapshotClaims(result.data.claims, issuer, nowSeconds);
     let session;
-    try { session = await verifySession({ subject: jwt.sub, sessionId: jwt.session_id, organisationId }); }
+    try { session = await verifySession({ subject: jwt.sub, sessionId: jwt.session_id, organisationId, aal: jwt.aal }); }
     catch (_) { deny('active_session_required'); }
     if (!record(session) || session.active !== true || session.subject !== jwt.sub ||
         session.sessionId !== jwt.session_id) deny('active_session_required');
