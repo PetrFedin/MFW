@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - "mfw-api/research/**"
+      - "mfw-api/integration/auth-sdk/pg-http-e2e.test.js"
+      - "mfw-api/commercial-http-boundary.js"
+      - "mfw-api/commercial-identity-boundary.js"
       - ".github/workflows/commercial-evidence-scratch-pg17.yml"
   workflow_dispatch:
 permissions:
@@ -44,6 +47,11 @@ jobs:
         run: node mfw-api/research/commercial-event-store-scratch.test.js
       - name: Verify native-shaped Auth session, reviewed membership and grant revocation
         run: node mfw-api/research/commercial-pg-identity.test.js
+      - name: Install pinned published Auth SDK without lifecycle scripts
+        working-directory: mfw-api/integration/auth-sdk
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify real Auth SDK, HTTP transport, and SQL revocation end-to-end
+        run: node --test mfw-api/integration/auth-sdk/pg-http-e2e.test.js
       - name: Backup and restore scratch event and outbox records
         shell: bash
         run: |
