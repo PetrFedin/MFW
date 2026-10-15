@@ -1,0 +1,45 @@
+name: Commercial identity boundary qualification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mfw-api/commercial-identity*.js'
+      - 'mfw-api/commercial-evidence-domain.js'
+      - 'mfw-api/research/commercial-identity-signatures.test.js'
+      - '.github/workflows/commercial-auth-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: commercial-auth-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  auth-contract:
+    name: Identity / Node ${{ matrix.node }} / offline signatures
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Run unchanged contract and signed-token regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa/auth-results
+          node --version > qa/auth-results/runtime.txt
+          node --check mfw-api/commercial-identity-boundary.js
+          node mfw-api/commercial-identity-boundary.test.js | tee qa/auth-results/existing.jsonl
+          node --test mfw-api/commercial-identity-regression.test.js mfw-api/research/commercial-identity-signatures.test.js | tee qa/auth-results/qualification.tap
+      - name: Upload redacted test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commercial-auth-node-${{ matrix.node }}-${{ github.sha }}
+          path: qa/auth-results
+          retention-days: 14

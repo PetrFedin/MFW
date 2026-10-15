@@ -1,0 +1,653 @@
+{
+  "schemaVersion": "mfw-execution-audit-v1",
+  "auditDate": "2026-10-15",
+  "snapshotMainSha": "7a2e7b98f9192862cbafe638cc3732c2db4f0f01",
+  "productionAdmitted": false,
+  "truthBoundary": "Code/UI/replay tests do not establish live operational or financial truth.",
+  "sourceDocs": [
+    "CURRENT_STATE.md",
+    "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+    "RENDER_STATE.md",
+    "RELEASE_LOG.md"
+  ],
+  "verified": {
+    "repoMainMigrations": "001-025",
+    "connectedSupabaseApplicationHistory": "001-027",
+    "original027Recovered": true,
+    "renderAuthorityAutoDeploy": "no",
+    "renderAuthorityHealthCheckPath": "",
+    "renderFreePostgresStatus": "suspended",
+    "connectedSupabaseStatus": "ACTIVE_HEALTHY",
+    "openIssues": [
+      3,
+      7,
+      25,
+      27,
+      28,
+      32,
+      33,
+      34
+    ],
+    "pullRequests": [
+      {
+        "number": 20,
+        "state": "draft",
+        "status": "original-git-sql-scratch-ci-pass-live-executed-bytes-unverified"
+      },
+      {
+        "number": 26,
+        "state": "ready-for-review",
+        "status": "ci-pass-no-independent-review"
+      },
+      {
+        "number": 30,
+        "state": "draft",
+        "status": "scratch-and-responsive-ci-pass-not-admitted"
+      }
+    ],
+    "original027GitCommit": "105cbc1cd859e67efd027b882372968d71fad42d",
+    "original026GitCommit": "626a1b86424680c69fc295972ce8f9b4632da46b",
+    "historicalSqlExecutedBytesVerified": false,
+    "originalGitSqlScratchCiHead": "050bc73384d6960827ee78b7d916bbd3b2d1ab95",
+    "originalGitSqlScratchCiConclusion": "success",
+    "renderAuthorityReadyHttp": 503,
+    "renderAuthorityDataMode": "memory",
+    "renderAuthorityDeployedSha": "b540bf5498460cdf68767e636744567b0d13c1ea",
+    "renderPlatformDeployedSha": "9fd9356cbfddb0df7dd2e52d16695bbf437da32d",
+    "supabaseAuthUsers": 0,
+    "supabaseAuthSessions": 0,
+    "supabaseOutboxEvents": 0,
+    "supabaseDeliveryReceipts": 0,
+    "supabasePgBossSchemaPresent": false,
+    "supabasePublicTablesWithRls": 88,
+    "supabasePublicBaseTablesDirectClientRead": 0,
+    "supabaseFutureDefaultClientAclRisk": true,
+    "productionMultiRoleGoldenPathsVerified": false,
+    "prMergeOverlapGroups": [
+      {
+        "prs": [
+          26,
+          31
+        ],
+        "files": [
+          "CURRENT_STATE.md",
+          "mfw/platform/evidence-package.json"
+        ]
+      },
+      {
+        "prs": [
+          20,
+          30
+        ],
+        "files": [
+          "mfw-api/package.json"
+        ]
+      },
+      {
+        "prs": [
+          26,
+          30
+        ],
+        "files": [
+          ".github/workflows/responsive-qa.yml"
+        ]
+      }
+    ]
+  },
+  "priorities": {
+    "P0": "required for secure live admission",
+    "P1": "revenue/visitor/organiser value after dependencies",
+    "P2": "product differentiation and scale after underlying authorities"
+  },
+  "states": [
+    "blocked_infrastructure",
+    "draft_pr_not_admitted",
+    "review_required",
+    "code_in_main_runtime_unverified",
+    "proposal_only",
+    "preview_in_main",
+    "stateless_preview_or_proposal"
+  ],
+  "items": [
+    {
+      "id": "P0-01",
+      "priority": "P0",
+      "name": "Durable Authority / Render database admission",
+      "status": "blocked_infrastructure",
+      "dependsOn": [
+        "P0-02",
+        "P0-03"
+      ],
+      "evidence": [
+        "render.yaml",
+        "RENDER_STATE.md",
+        "docs/MFW_PHASE0_POSTGRES_ADMISSION_2026-10-02.md"
+      ],
+      "acceptance": "Bind a verified existing PostgreSQL resource internally; exact deployed SHA /ready=200, dataMode=postgres, Golden Paths and capital verifier PASS; restore/rollback evidence.",
+      "tracking": "https://github.com/PetrFedin/MFW/issues/7"
+    },
+    {
+      "id": "P0-02",
+      "priority": "P0",
+      "name": "Historical SQL 026/027 and schema parity",
+      "status": "draft_pr_not_admitted",
+      "dependsOn": [],
+      "evidence": [
+        "RENDER_STATE.md",
+        "mfw-api/migrations/025_organisation_credential_revocations.sql"
+      ],
+      "acceptance": "Independently attest historical sources or independently prove equivalent full catalog/roles/provenance; no false hash/history entry; PG17 replay and restore.",
+      "tracking": "https://github.com/PetrFedin/MFW/pull/20"
+    },
+    {
+      "id": "P0-03",
+      "priority": "P0",
+      "name": "Future-object ACL and privileged service boundary",
+      "status": "draft_pr_not_admitted",
+      "dependsOn": [],
+      "evidence": [
+        "docs/MFW_PHASE0_POSTGRES_ADMISSION_2026-10-02.md"
+      ],
+      "acceptance": "Independently review creator default ACLs (tables, sequences, functions, PUBLIC), service-role access, forward-only hardening, two-creator canaries and live after-check.",
+      "tracking": "https://github.com/PetrFedin/MFW/issues/28"
+    },
+    {
+      "id": "P0-04",
+      "priority": "P0",
+      "name": "Verified Auth/JWT/session/organisation authorisation",
+      "status": "draft_pr_not_admitted",
+      "dependsOn": [
+        "P0-03"
+      ],
+      "evidence": [
+        "mfw-api/organisation-registry.js",
+        "mfw-api/organisation-credential.js"
+      ],
+      "acceptance": "Actual signed-token verification, freshness/session revocation, 2+ organisations negative HTTP tests, finance-actor step-up, deny role leakage.",
+      "tracking": "https://github.com/PetrFedin/MFW/pull/30"
+    },
+    {
+      "id": "P0-05",
+      "priority": "P0",
+      "name": "Independent reviews and integration release controls",
+      "status": "review_required",
+      "dependsOn": [
+        "P0-02",
+        "P0-03",
+        "P0-04"
+      ],
+      "evidence": [
+        "RELEASE_LOG.md",
+        "qa/responsive.spec.js"
+      ],
+      "acceptance": "Reviewer approval, integrated exact-head suite, phone/tablet/desktop visual QA, safe deployment/rollback and zero cross-role metadata leakage.",
+      "tracking": null
+    },
+    {
+      "id": "P0-06",
+      "priority": "P0",
+      "name": "Golden Paths: attendee → QR → check-in → persistence",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-01",
+        "P0-04"
+      ],
+      "evidence": [
+        "CURRENT_STATE.md",
+        "mfw-api/server-v2.js",
+        "mfw-api/readiness-contract.test.js"
+      ],
+      "acceptance": "Real authenticated role flows on PostgreSQL: registration/accreditation/pass issuance/duplicate QR/restart/revocation; independent receipts.",
+      "tracking": "https://github.com/PetrFedin/MFW/issues/32"
+    },
+    {
+      "id": "P1-01",
+      "priority": "P1",
+      "name": "Durable outbox, job retries and pg-boss",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-01",
+        "P0-04"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Atomic domain/outbox; worker retry/poison queue/crash-after-commit; independent multi-consumer receipts and recoverable jobs.",
+      "tracking": "https://github.com/PetrFedin/MFW/issues/33"
+    },
+    {
+      "id": "P1-02",
+      "priority": "P1",
+      "name": "Consent and Brand CRM/CDP real delivery",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "mfw-api/brand365-store.js",
+        "CURRENT_STATE.md"
+      ],
+      "acceptance": "Authenticated brand/customer scopes, consent and opt-out, frequency caps, delivery and revenue attribution negative tests.",
+      "tracking": null
+    },
+    {
+      "id": "P1-03",
+      "priority": "P1",
+      "name": "MFW agenda/show/collection/registration UX",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-06"
+      ],
+      "evidence": [
+        "mfw/mfw/index.html",
+        "CURRENT_STATE.md"
+      ],
+      "acceptance": "Full user path from verified programme to agenda and show access, conflicts/reminders, offline/online transparency, real-device UX.",
+      "tracking": null
+    },
+    {
+      "id": "P1-04",
+      "priority": "P1",
+      "name": "BFS delegates, session and bilateral meetings",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "CURRENT_STATE.md",
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Speaker/organisation/session correctness, availability, bilateral acceptance, cancellation/waitlist, cross-tenant negative tests.",
+      "tracking": null
+    },
+    {
+      "id": "P1-05",
+      "priority": "P1",
+      "name": "LIVE ingest, HLS playback and Replay availability",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Signed stream-provider adapter, player error/fallback/captions, rights, real replay artefacts and end-to-end incident tests.",
+      "tracking": null
+    },
+    {
+      "id": "P1-06",
+      "priority": "P1",
+      "name": "Signed Wallet passes and rotating QR separation",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Certificate-backed Wallet projection, per-device revocation, copied/stale payload denied at venue; no persistent reusable gate secret.",
+      "tracking": null
+    },
+    {
+      "id": "P1-07",
+      "priority": "P1",
+      "name": "Programme Production and CFP desk",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Proposal → review → speaker clearance → approved immutable programme snapshot with revision/rollback and publication evidence.",
+      "tracking": null
+    },
+    {
+      "id": "P1-08",
+      "priority": "P1",
+      "name": "Sponsor inventory, acceptance and renewal",
+      "status": "preview_in_main",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+        "mfw/platform/investor-proof-model.js"
+      ],
+      "acceptance": "Signed inventory/placement/version; verified delivery SLA → sponsor approval and evidence; attribution not relabelled incremental.",
+      "tracking": null
+    },
+    {
+      "id": "P1-09",
+      "priority": "P1",
+      "name": "Made in Moscow Verified roster and Buyer Bridge",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "mfw-api/made-in-moscow-contract.test.js",
+        "CURRENT_STATE.md"
+      ],
+      "acceptance": "Independent residence verification, canonical IDs, expired badge revocation, partner Hub and buyer flow with proof/permissions.",
+      "tracking": null
+    },
+    {
+      "id": "P1-10",
+      "priority": "P1",
+      "name": "Brand365 Loyalty wallet and post-event retention",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "mfw-api/brand365-store.js",
+        "CURRENT_STATE.md"
+      ],
+      "acceptance": "30/60/90-day real persistence, opt-in, redemption once, multi-device restart, CRM retention and fraud negative tests.",
+      "tracking": null
+    },
+    {
+      "id": "P1-11",
+      "priority": "P1",
+      "name": "Buyer/Brand Deal Room and commercial handoff",
+      "status": "preview_in_main",
+      "dependsOn": [
+        "P0-04",
+        "P1-01"
+      ],
+      "evidence": [
+        "mfw/platform/platform.js",
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Bilateral buyer/brand grants, proposal/version/document confidentiality, structured handoff, external proof distinct from lead/revenue.",
+      "tracking": null
+    },
+    {
+      "id": "P1-12",
+      "priority": "P1",
+      "name": "Pilot-to-Revenue server evidence and reconciliation",
+      "status": "draft_pr_not_admitted",
+      "dependsOn": [
+        "P0-01",
+        "P0-04",
+        "P1-01"
+      ],
+      "evidence": [
+        "mfw-api/capital-authority.js"
+      ],
+      "acceptance": "Actual trusted invoice/finance/bank sources, accepted evidence, partial receipts, credits/refunds, tenant-secure immutable store, double-charge recovery.",
+      "tracking": "https://github.com/PetrFedin/MFW/issues/27"
+    },
+    {
+      "id": "P1-13",
+      "priority": "P1",
+      "name": "Investor Economics Studio and Evidence Control Tower",
+      "status": "draft_pr_not_admitted",
+      "dependsOn": [
+        "P0-05",
+        "P1-12"
+      ],
+      "evidence": [
+        "mfw/platform/investor-proof-model.js",
+        "mfw/platform/evidence-package.json"
+      ],
+      "acceptance": "Scenario inputs remain modelled; validated investor dossiers compare accepted vs missing evidence, actual money only from authoritative finance.",
+      "tracking": "https://github.com/PetrFedin/MFW/pull/26"
+    },
+    {
+      "id": "P1-14",
+      "priority": "P1",
+      "name": "Editorial publishing and media rights/embargo",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+        "docs/MFW_INVESTOR_MEDIA_SOURCES_2026-10-06.md"
+      ],
+      "acceptance": "Media licensing provenance, approval/retraction/embargo and valid usage across MFW, BFS and partners.",
+      "tracking": null
+    },
+    {
+      "id": "P1-15",
+      "priority": "P1",
+      "name": "Operational observability, incidents and support",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+        "mfw-api/render-runtime-admission.js"
+      ],
+      "acceptance": "Trace IDs, masked failure logs, SLO/latency, alert ownership, incident replay and documented disaster recovery.",
+      "tracking": null
+    },
+    {
+      "id": "P1-16",
+      "priority": "P1",
+      "name": "Notifications and calendar availability adapter",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-01",
+        "P0-04"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Scheduled reminders/schedule changes with idempotency, consent, timezone-safe meetings, opt-out, tested provider outage.",
+      "tracking": null
+    },
+    {
+      "id": "P1-17",
+      "priority": "P1",
+      "name": "Privileged step-up authentication and key lifecycle",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-04",
+        "P0-05"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+        "mfw-api/organisation-credential.js"
+      ],
+      "acceptance": "Passkeys or reviewed MFA for organisers/finance, issuer rotation, status/revocation distribution and adversarial proof.",
+      "tracking": null
+    },
+    {
+      "id": "P1-18",
+      "priority": "P1",
+      "name": "Physical venue operations capacity/check-in safety",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P0-06",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Capacity/queue/floor state and incident authority, manual override audit, stale QR, staff offline sync and recovery.",
+      "tracking": null
+    },
+    {
+      "id": "P2-01",
+      "priority": "P2",
+      "name": "Unified discovery search and agenda ICS",
+      "status": "stateless_preview_or_proposal",
+      "dependsOn": [
+        "P1-01",
+        "P0-06"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+        "mfw-api/feature-flags.js"
+      ],
+      "acceptance": "Rebuildable tenant-safe index, ranking/freshness QA, revocation, event conflicts and verified calendar export.",
+      "tracking": null
+    },
+    {
+      "id": "P2-02",
+      "priority": "P2",
+      "name": "Accessible venue map and temporary closures",
+      "status": "stateless_preview_or_proposal",
+      "dependsOn": [
+        "P1-18"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md",
+        "mfw-api/feature-flags.js"
+      ],
+      "acceptance": "Mapped entrances/zones, step-free paths and live closure authority with route rerouting; phone QA.",
+      "tracking": null
+    },
+    {
+      "id": "P2-03",
+      "priority": "P2",
+      "name": "Personalised recommendations/matchmaking fairness",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-04",
+        "P1-02"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Explainable reason codes, bilateral acceptance, no private inference, diversity and offline baseline.",
+      "tracking": null
+    },
+    {
+      "id": "P2-04",
+      "priority": "P2",
+      "name": "Moderated LIVE Q&A, polls and replay bridge",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-05",
+        "P1-01"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Moderated queue, spam/rate and privacy policy, approved replay anchoring and accessibility.",
+      "tracking": null
+    },
+    {
+      "id": "P2-05",
+      "priority": "P2",
+      "name": "Searchable multilingual replay and captions",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-05",
+        "P1-14"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Permissioned caption assets, translations/source accuracy and rights, moderation, provenance and retention.",
+      "tracking": null
+    },
+    {
+      "id": "P2-06",
+      "priority": "P2",
+      "name": "Partner API, metering and developer portal",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-12",
+        "P0-04"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Scoped API contracts, usage entitlements, signed webhooks, idempotent metering and developer key rotation.",
+      "tracking": null
+    },
+    {
+      "id": "P2-07",
+      "priority": "P2",
+      "name": "Portable Fashion Network Trust Passport",
+      "status": "preview_in_main",
+      "dependsOn": [
+        "P0-04",
+        "P1-17"
+      ],
+      "evidence": [
+        "mfw/platform/platform.js",
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Issuer credential and revocation, scoped verification receipts, no universal reputation ranking, privacy-safe sharing.",
+      "tracking": null
+    },
+    {
+      "id": "P2-08",
+      "priority": "P2",
+      "name": "Privacy-safe industry intelligence benchmarks",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-02",
+        "P1-12"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Consented minimum cohort size, suppression, anti-reidentification, analytical provenance, monetisation gated by evidence.",
+      "tracking": null
+    },
+    {
+      "id": "P2-09",
+      "priority": "P2",
+      "name": "Persistent fashion network & institutional interoperability",
+      "status": "proposal_only",
+      "dependsOn": [
+        "P1-04",
+        "P1-09",
+        "P1-17"
+      ],
+      "evidence": [
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Interchange profile, verified organisation roles, scoped institutional publishing and repeat-provenance graph.",
+      "tracking": null
+    },
+    {
+      "id": "P1-19",
+      "priority": "P1",
+      "name": "Accessibility and visual E2E across three experiences",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P0-05"
+      ],
+      "evidence": [
+        "qa/responsive.spec.js",
+        "CURRENT_STATE.md"
+      ],
+      "acceptance": "Real iOS Safari/Android, keyboard/VoiceOver, focus states, contrast/touch targets and high-fidelity screenshot QA.",
+      "tracking": "https://github.com/PetrFedin/MFW/issues/34"
+    },
+    {
+      "id": "P2-11",
+      "priority": "P2",
+      "name": "Controlled experimentation and growth attribution",
+      "status": "code_in_main_runtime_unverified",
+      "dependsOn": [
+        "P1-02",
+        "P1-12"
+      ],
+      "evidence": [
+        "CURRENT_STATE.md",
+        "docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md"
+      ],
+      "acceptance": "Deterministic holdouts, source linking, no sample contamination, stat limits, unbiased lift and ROI truth classes.",
+      "tracking": null
+    }
+  ]
+}

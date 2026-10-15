@@ -95,7 +95,7 @@ mfw-api/                # Node API / authority layer
   server-v2.js
   brand365-store.js
   social-providers.js
-  migrations/           # PostgreSQL migrations 001-016
+  migrations/           # PostgreSQL migrations 001-025 (production reconciliation pending)
 mfw-native/             # native bridge / Capacitor support
 PROJECT_BOUNDARY.md     # canonical project boundary
 CURRENT_STATE.md        # current functional/technical state
@@ -108,6 +108,7 @@ render.yaml             # canonical Render Blueprint
 
 See:
 
+- [Execution audit + full dependency roadmap](./docs/MFW_EXECUTION_AUDIT_2026-10-15.md) — separates main code, previews, open PRs and live admission
 - [CURRENT_STATE.md](./CURRENT_STATE.md)
 - [RELEASE_LOG.md](./RELEASE_LOG.md)
 - [RENDER_STATE.md](./RENDER_STATE.md)
@@ -148,11 +149,13 @@ The canonical deployment target is:
 
 All future MFW Render services must source this repository.
 
-### One-time GitHub / Render connection
+### Render connection and remaining live admission
 
-Render currently has access to the historical `PetrFedin/Moscow` repository, but the Render GitHub App still needs access to the private `PetrFedin/MFW` repository.
+The existing `mfw-authority` Render web service already points to `https://github.com/PetrFedin/MFW` on `main`. A fresh GitHub repository connection is **not** the current Phase 0 blocker.
 
-After that single connection is granted, the Blueprint in `render.yaml` becomes the canonical deploy source and auto-deploy can run directly from `MFW/main`.
+**15 October 2026 read-only control-plane check:** Authority reports `autoDeploy=no` and an empty `healthCheckPath` despite the intended `render.yaml` Blueprint; the former free Render `mfw-postgres` database is `suspended`. The separate MFW Supabase PostgreSQL is active but **not admitted** as the Authority's connected source, and its 026/027 application migration history differs from `main` 001–025.
+
+Only a reviewed, approved provider/binding plus migration and privilege reconciliation, `/ready=200`, `dataMode=postgres` and exact-SHA Golden Paths can close [Phase 0](https://github.com/PetrFedin/MFW/issues/7). Do not expose database secrets, recreate billable resources or treat Blueprint intent as effective live configuration. See [execution audit](./docs/MFW_EXECUTION_AUDIT_2026-10-15.md).
 
 ## Release discipline
 
@@ -190,3 +193,10 @@ The canonical plan for the next external-capability integration waves is:
 - [docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md](./docs/MFW_INTEGRATION_MASTER_PLAN_2026-10-01.md)
 
 This document is a **planned implementation source**, not evidence that the listed capabilities are already live. It defines sequencing, authority boundaries, external references, dependencies and acceptance criteria. Future requests to integrate the full planned wave should cite this filename explicitly.
+
+> **2026-10-15 audit boundary:** code/visual demo is not an acceptance report. The current Render database admission and 026/027 provenance remain unresolved; see the execution audit and the read-only investor evidence manifest. Do not interpret implemented UI as live financial or durable business state.
+
+
+## Обязательная реализация без дополнительного бюджета
+
+План: [приоритеты и критерии приёмки](docs/REQUIRED_ZERO_COST_IMPLEMENTATION_2026-10-12.md). Дополнительные расходы — **0 ₽**; этот документ не заменяет ревью, CI и подтверждение реального релиза.

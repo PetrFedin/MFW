@@ -1,0 +1,303 @@
+{
+  "profile": "mfw-outbox-physical-catalog-v1",
+  "provenance": "READ_ONLY_OBSERVATION_NOT_ORIGINAL_SQL",
+  "capturedOn": "2026-10-13",
+  "source": "existing connected MFW Supabase, read-only pg_catalog",
+  "scope": "two public tables: columns, indexes, constraints, RLS and policyCount; privileges/trigger runtime excluded",
+  "historical027Recovered": false,
+  "fullSemanticEquivalence": false,
+  "rolesAndDefaultPrivilegesVerified": false,
+  "catalog": {
+    "rls": [
+      {
+        "table": "authority_delivery_receipts",
+        "forced": false,
+        "enabled": true
+      },
+      {
+        "table": "authority_outbox",
+        "forced": false,
+        "enabled": true
+      }
+    ],
+    "columns": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "table": "authority_delivery_receipts",
+        "default": "gen_random_uuid()",
+        "ordinal": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "outbox_id",
+        "type": "uuid",
+        "table": "authority_delivery_receipts",
+        "default": null,
+        "ordinal": 2,
+        "nullable": "NO"
+      },
+      {
+        "name": "event_key",
+        "type": "text",
+        "table": "authority_delivery_receipts",
+        "default": null,
+        "ordinal": 3,
+        "nullable": "NO"
+      },
+      {
+        "name": "topic",
+        "type": "text",
+        "table": "authority_delivery_receipts",
+        "default": null,
+        "ordinal": 4,
+        "nullable": "NO"
+      },
+      {
+        "name": "consumer",
+        "type": "text",
+        "table": "authority_delivery_receipts",
+        "default": null,
+        "ordinal": 5,
+        "nullable": "NO"
+      },
+      {
+        "name": "pg_boss_job_id",
+        "type": "uuid",
+        "table": "authority_delivery_receipts",
+        "default": null,
+        "ordinal": 6,
+        "nullable": "YES"
+      },
+      {
+        "name": "payload_digest",
+        "type": "text",
+        "table": "authority_delivery_receipts",
+        "default": null,
+        "ordinal": 7,
+        "nullable": "NO"
+      },
+      {
+        "name": "processed_at",
+        "type": "timestamptz",
+        "table": "authority_delivery_receipts",
+        "default": "now()",
+        "ordinal": 8,
+        "nullable": "NO"
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "table": "authority_delivery_receipts",
+        "default": "'{}'::jsonb",
+        "ordinal": 9,
+        "nullable": "NO"
+      },
+      {
+        "name": "id",
+        "type": "uuid",
+        "table": "authority_outbox",
+        "default": "gen_random_uuid()",
+        "ordinal": 1,
+        "nullable": "NO"
+      },
+      {
+        "name": "event_key",
+        "type": "text",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 2,
+        "nullable": "NO"
+      },
+      {
+        "name": "topic",
+        "type": "text",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 3,
+        "nullable": "NO"
+      },
+      {
+        "name": "aggregate_type",
+        "type": "text",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 4,
+        "nullable": "YES"
+      },
+      {
+        "name": "aggregate_id",
+        "type": "text",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 5,
+        "nullable": "YES"
+      },
+      {
+        "name": "payload",
+        "type": "jsonb",
+        "table": "authority_outbox",
+        "default": "'{}'::jsonb",
+        "ordinal": 6,
+        "nullable": "NO"
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "table": "authority_outbox",
+        "default": "'pending'::text",
+        "ordinal": 7,
+        "nullable": "NO"
+      },
+      {
+        "name": "available_at",
+        "type": "timestamptz",
+        "table": "authority_outbox",
+        "default": "now()",
+        "ordinal": 8,
+        "nullable": "NO"
+      },
+      {
+        "name": "attempts",
+        "type": "int4",
+        "table": "authority_outbox",
+        "default": "0",
+        "ordinal": 9,
+        "nullable": "NO"
+      },
+      {
+        "name": "last_error",
+        "type": "text",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 10,
+        "nullable": "YES"
+      },
+      {
+        "name": "pg_boss_job_id",
+        "type": "uuid",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 11,
+        "nullable": "YES"
+      },
+      {
+        "name": "created_at",
+        "type": "timestamptz",
+        "table": "authority_outbox",
+        "default": "now()",
+        "ordinal": 12,
+        "nullable": "NO"
+      },
+      {
+        "name": "dispatched_at",
+        "type": "timestamptz",
+        "table": "authority_outbox",
+        "default": null,
+        "ordinal": 13,
+        "nullable": "YES"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamptz",
+        "table": "authority_outbox",
+        "default": "now()",
+        "ordinal": 14,
+        "nullable": "NO"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "authority_delivery_receipts_event_key_key",
+        "table": "authority_delivery_receipts",
+        "definition": "CREATE UNIQUE INDEX authority_delivery_receipts_event_key_key ON public.authority_delivery_receipts USING btree (event_key)"
+      },
+      {
+        "name": "authority_delivery_receipts_outbox_id_consumer_key",
+        "table": "authority_delivery_receipts",
+        "definition": "CREATE UNIQUE INDEX authority_delivery_receipts_outbox_id_consumer_key ON public.authority_delivery_receipts USING btree (outbox_id, consumer)"
+      },
+      {
+        "name": "authority_delivery_receipts_pkey",
+        "table": "authority_delivery_receipts",
+        "definition": "CREATE UNIQUE INDEX authority_delivery_receipts_pkey ON public.authority_delivery_receipts USING btree (id)"
+      },
+      {
+        "name": "authority_delivery_receipts_topic_idx",
+        "table": "authority_delivery_receipts",
+        "definition": "CREATE INDEX authority_delivery_receipts_topic_idx ON public.authority_delivery_receipts USING btree (topic, processed_at DESC)"
+      },
+      {
+        "name": "authority_outbox_event_key_key",
+        "table": "authority_outbox",
+        "definition": "CREATE UNIQUE INDEX authority_outbox_event_key_key ON public.authority_outbox USING btree (event_key)"
+      },
+      {
+        "name": "authority_outbox_pending_idx",
+        "table": "authority_outbox",
+        "definition": "CREATE INDEX authority_outbox_pending_idx ON public.authority_outbox USING btree (status, available_at, created_at) WHERE (status = ANY (ARRAY['pending'::text, 'failed'::text]))"
+      },
+      {
+        "name": "authority_outbox_pkey",
+        "table": "authority_outbox",
+        "definition": "CREATE UNIQUE INDEX authority_outbox_pkey ON public.authority_outbox USING btree (id)"
+      },
+      {
+        "name": "authority_outbox_topic_idx",
+        "table": "authority_outbox",
+        "definition": "CREATE INDEX authority_outbox_topic_idx ON public.authority_outbox USING btree (topic, created_at DESC)"
+      }
+    ],
+    "constraints": [
+      {
+        "kind": "u",
+        "name": "authority_delivery_receipts_event_key_key",
+        "table": "authority_delivery_receipts",
+        "definition": "UNIQUE (event_key)"
+      },
+      {
+        "kind": "u",
+        "name": "authority_delivery_receipts_outbox_id_consumer_key",
+        "table": "authority_delivery_receipts",
+        "definition": "UNIQUE (outbox_id, consumer)"
+      },
+      {
+        "kind": "f",
+        "name": "authority_delivery_receipts_outbox_id_fkey",
+        "table": "authority_delivery_receipts",
+        "definition": "FOREIGN KEY (outbox_id) REFERENCES authority_outbox(id) ON DELETE RESTRICT"
+      },
+      {
+        "kind": "p",
+        "name": "authority_delivery_receipts_pkey",
+        "table": "authority_delivery_receipts",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "c",
+        "name": "authority_outbox_attempts_check",
+        "table": "authority_outbox",
+        "definition": "CHECK (attempts >= 0)"
+      },
+      {
+        "kind": "u",
+        "name": "authority_outbox_event_key_key",
+        "table": "authority_outbox",
+        "definition": "UNIQUE (event_key)"
+      },
+      {
+        "kind": "p",
+        "name": "authority_outbox_pkey",
+        "table": "authority_outbox",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "kind": "c",
+        "name": "authority_outbox_status_check",
+        "table": "authority_outbox",
+        "definition": "CHECK (status = ANY (ARRAY['pending'::text, 'dispatching'::text, 'dispatched'::text, 'failed'::text]))"
+      }
+    ],
+    "policyCount": 0
+  }
+}

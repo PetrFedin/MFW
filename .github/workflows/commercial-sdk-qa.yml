@@ -1,0 +1,60 @@
+name: Commercial Auth SDK and HTTP qualification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mfw-api/commercial-identity*.js'
+      - 'mfw-api/commercial-http*.js'
+      - 'mfw-api/commercial-evidence-domain.js'
+      - 'mfw-api/integration/auth-sdk/**'
+      - '.github/workflows/commercial-sdk-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: commercial-sdk-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  sdk-http:
+    name: Actual Auth SDK / Node ${{ matrix.node }} / loopback HTTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install committed dependency lock without lifecycle scripts
+        working-directory: mfw-api/integration/auth-sdk
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          git diff --exit-code -- package.json package-lock.json
+          node -e "const a=require('node:assert/strict'); a.equal(require('@supabase/auth-js/package.json').version,'2.117.3'); a.equal(require('tslib/package.json').version,'2.8.1');"
+      - name: Check isolated dependency security advisories
+        working-directory: mfw-api/integration/auth-sdk
+        run: npm audit --omit=dev --audit-level=high
+      - name: Qualify real SDK and HTTP denials
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa/sdk-results
+          node --version > qa/sdk-results/runtime.txt
+          git rev-parse HEAD > qa/sdk-results/checkout-sha.txt
+          node --test mfw-api/commercial-http-boundary.test.js | tee qa/sdk-results/transport.tap
+          node --test mfw-api/integration/auth-sdk/sdk-http.test.js | tee qa/sdk-results/sdk-http.tap
+      - name: Upload redacted qualification and dependency lock
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: commercial-sdk-node-${{ matrix.node }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            qa/sdk-results
+            mfw-api/integration/auth-sdk/package-lock.json
+          if-no-files-found: error
+          retention-days: 14

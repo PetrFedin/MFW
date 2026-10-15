@@ -1,3 +1,5 @@
+const {reconcileMigrations}=require('./migration-parity');
+const { runMigrations } = require('./migration-runner');
 const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -712,28 +714,9 @@ async function query(sql,params=[]){
 
 async function migrate(){
   if(!pool) return;
-  await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations(
-    filename text PRIMARY KEY,
-    applied_at timestamptz NOT NULL DEFAULT now()
-  )`);
-  const dir=path.join(__dirname,'migrations');
-  const files=fs.readdirSync(dir).filter(f=>f.endsWith('.sql')).sort();
-  for(const file of files){
-    const seen=await pool.query('SELECT 1 FROM schema_migrations WHERE filename=$1',[file]);
-    if(seen.rowCount) continue;
-    const sql=fs.readFileSync(path.join(dir,file),'utf8');
-    const client=await pool.connect();
-    try{
-      await client.query('BEGIN');
-      await client.query(sql);
-      await client.query('INSERT INTO schema_migrations(filename) VALUES($1)',[file]);
-      await client.query('COMMIT');
-      console.log(JSON.stringify({event:'migration_applied',file}));
-    }catch(err){
-      await client.query('ROLLBACK');
-      throw err;
-    }finally{ client.release(); }
-  }
+  await runMigrations(pool,{
+    onApplied:file=>console.log(JSON.stringify({event:'migration_applied',file}))
+  });
 }
 
 async function checkDatabaseSchema(){
@@ -749,7 +732,8 @@ async function checkDatabaseSchema(){
 
   const applied=await pool.query('SELECT filename FROM schema_migrations ORDER BY filename');
   const appliedSet=new Set(applied.rows.map(x=>x.filename));
-  const missingMigrations=requiredMigrations.filter(x=>!appliedSet.has(x));
+  const migrationParity=reconcileMigrations(requiredMigrations,applied.rows.map(x=>x.filename));
+  const {missingMigrations,unexpectedMigrations,duplicateMigrations}=migrationParity;
 
   const requiredTables=[
     'users','profiles','events','event_registrations','passes','brands','collections','looks',
@@ -806,10 +790,12 @@ async function checkDatabaseSchema(){
     WHERE t.relname='capital_ledger_events' AND tg.tgname='trg_capital_ledger_immutable' AND NOT tg.tgisinternal LIMIT 1`);
   if(!capitalTrigger.rowCount)contractErrors.push('capital_ledger_immutability_trigger_missing');
 
-  const ready=!missingMigrations.length&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
+  if(unexpectedMigrations.length)contractErrors.push('unexpected_migrations');
+  if(duplicateMigrations.length)contractErrors.push('duplicate_migrations');
+  const ready=migrationParity.ready&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
   return {
     configured:true,ready,mode:'postgres',
-    migrations:[...appliedSet],requiredMigrations,missingMigrations,missingTables,missingColumns,contractErrors,
+    migrations:[...appliedSet],requiredMigrations,missingMigrations,unexpectedMigrations,duplicateMigrations,missingTables,missingColumns,contractErrors,
     checkedAt:new Date().toISOString()
   };
 }
