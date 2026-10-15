@@ -1,0 +1,24 @@
+{
+  "format": "mfw-historical-git-sql-evidence-v1",
+  "findingDate": "2026-10-15",
+  "sourceRepo": "PetrFedin/MFW",
+  "meaning": "Files are exact, blob-pinned committed Git sources. This does not attest which SQL bytes were actually executed against any live PostgreSQL database.",
+  "migrations": [
+    {
+      "filename": "026_postgres_conflict_constraints.sql",
+      "originCommit": "626a1b86424680c69fc295972ce8f9b4632da46b",
+      "gitBlobSha": "0c7d969806de31a62eb34f03ee206f6d58e69f33",
+      "originUrl": "https://github.com/PetrFedin/MFW/blob/626a1b86424680c69fc295972ce8f9b4632da46b/mfw-api/migrations/026_postgres_conflict_constraints.sql"
+    },
+    {
+      "filename": "027_outbox_pg_boss_bridge.sql",
+      "originCommit": "105cbc1cd859e67efd027b882372968d71fad42d",
+      "gitBlobSha": "84aa81a78462a60a244199895dba263516060d03",
+      "originUrl": "https://github.com/PetrFedin/MFW/blob/105cbc1cd859e67efd027b882372968d71fad42d/mfw-api/migrations/027_outbox_pg_boss_bridge.sql"
+    }
+  ],
+  "historicGitFilesRecovered": true,
+  "liveDatabaseSqlApplicationProven": false,
+  "livePrivilegeAndFunctionEquivalenceProven": false,
+  "productionAdmitted": false
+}

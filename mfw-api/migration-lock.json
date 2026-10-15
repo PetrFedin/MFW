@@ -1,0 +1,31 @@
+{
+  "format": "mfw-git-blob-lock-v1",
+  "description": "Pins SQL bytes in this repository only. Does NOT prove equivalence with already-applied SQL in any database.",
+  "files": {
+    "001_init.sql": "04dab8f27dfd4cf6b5cf7be7014eb76c6362dac0",
+    "002_commerce.sql": "2dbc033240d659932284acbbfa1ad5998dbccddd",
+    "003_sponsors.sql": "52682f1a52b9ea2311c404f2d33d20872bd7e94a",
+    "004_world_features.sql": "06b700f75414f41df2a16e2a7ff1771bd2af463a",
+    "005_streaming_pipeline.sql": "dd945e463577343b974438fb73dc9f7310a44117",
+    "006_role_workflows.sql": "2285f19a71f7c1fd6646807877265d023682765a",
+    "007_loyalty_365.sql": "2be3d3937abd4dda3a4670f9255d956c72990429",
+    "008_retention_engine.sql": "d069f38643e88acee5c6467cdb49545cef4689eb",
+    "009_brand365_persistence.sql": "bb8a6a63ac61adc1e524ad9f28001c2bb2509718",
+    "010_social_auth_flows.sql": "b3e6b0edde423ff9c8da98b685f1fc0d29236e07",
+    "011_social_auth_hardening.sql": "8a269adc87fc7cc8f8b5abc81cdb4af78a9cd0e3",
+    "012_schema_reconciliation.sql": "21861d4960ba44fb8000c2dceb158f487f33005e",
+    "013_brand_crm.sql": "305bd01231d318e7c55db111d73927d3367c60da",
+    "014_brand_crm_hardening.sql": "516d5d110b010063e511f88825906aebbf88bd07",
+    "015_brand_cdp.sql": "4ed209bf5991b9d1ee9bc94ddf6b3c5addf74706",
+    "016_brand_cdp_state_machine.sql": "a8f7971790b99845fdd4085829762a4e44086ede",
+    "017_mvp_persistence.sql": "e660c25b82ac0789f6d3dd1b865b7c37ac1d7e40",
+    "018_identity_interests_registration.sql": "31bdfa3a6636a41b0277600f322decc0241541ea",
+    "019_platform_registrations.sql": "26e31828b214645ff5ffb7aa51c69abc4c8692b5",
+    "020_journey_closure.sql": "ecc436d14d7dcb0b1ad38ade287f417d1a485977",
+    "021_made_in_moscow_partner_program.sql": "6c715c2a50ca9994ce2acd74d42ac27c7bd37b96",
+    "022_persistent_organisation_registry.sql": "1a3c79c3df31b9f6b76247c0d8e745c99a71dec8",
+    "023_capital_authority.sql": "7dd5a6160787f8c2ccacd4fb48a8c3bf4a560c98",
+    "024_capital_operator_admission.sql": "58edd1eff641a883aa665cbac904e5542e0ac437",
+    "025_organisation_credential_revocations.sql": "2db654cd5fcc85fe5fdda03eee5121368018846d"
+  }
+}

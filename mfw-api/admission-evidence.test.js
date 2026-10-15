@@ -17,6 +17,8 @@ for(const required of [
   "schemaVersion:'mfw-admission-evidence-v1'",
   "expected_sha_missing",
   "migration_set_incomplete",
+  "schema_unexpected_migrations",
+  "schema_duplicate_migrations",
   "025_organisation_credential_revocations.sql",
   "deep_golden_path_failed",
   "operator_session_missing",
