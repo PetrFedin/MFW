@@ -49,6 +49,21 @@ jobs:
         run: node mfw-api/recovery-candidate-contract.test.js
       - name: Replay scratch 001-025 then scratch 001-027 candidates
         run: node mfw-api/recovery-candidates/isolated-replay.test.js
+      - name: Replay origin-commit-pinned 026-027 SQL and compare real catalog shape
+        run: node mfw-api/recovery-candidates/original-git-replay.test.js
+      - name: Backup and restore origin-commit SQL in disposable PG17
+        shell: bash
+        run: |
+          set -euo pipefail
+          PG_CONTAINER="$(docker ps --filter 'ancestor=postgres:17' --format '{{.ID}}' | head -n 1)"
+          test -n "$PG_CONTAINER"
+          docker exec "$PG_CONTAINER" pg_dump -U mfw_ci -d mfw_original_ci -Fc -f /tmp/mfw_original_ci.dump
+          docker exec "$PG_CONTAINER" psql -U mfw_ci -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE mfw_original_restored_ci'
+          docker exec "$PG_CONTAINER" pg_restore -U mfw_ci -d mfw_original_restored_ci --no-owner --exit-on-error /tmp/mfw_original_ci.dump
+          test "$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_original_restored_ci -tAc 'SELECT COUNT(*) FROM public.schema_migrations')" = "27"
+          test "$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_original_restored_ci -tAc "SELECT COUNT(*) FROM public.authority_outbox WHERE event_key='ci:git-origin'")" = "1"
+          test "$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_original_restored_ci -tAc "SELECT COUNT(*) FROM public.authority_delivery_receipts WHERE consumer='consumer_A' AND event_key='ci:git-origin'")" = "1"
+          echo "origin_git_sql_backup_restore=PASS; applied_sql_provenance=UNVERIFIED; production_admission=BLOCKED"
       - name: Verify scratch-only anonymous and authenticated-style SQL access denial
         run: node mfw-api/recovery-candidates/scratch-role-boundary.test.js
       - name: Qualify default-ACL hardening with disposable future-object canaries

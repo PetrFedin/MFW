@@ -4,13 +4,14 @@ These files are deliberately **outside** mfw-api/migrations/. They are not loade
 by the Authority migration runner. They must not be treated as authentic copies
 of the original historical SQL, nor as evidence that production PostgreSQL is ready.
 
-- 026: extracted equivalent from the recorded Supabase migration
-  mfw_028_canonical_026_postgres_conflict_constraints (two unique indexes).
-  The literal historical mfw-api file is not proven.
-- 027: reconstructed physical catalog snapshot of authority_outbox and
-  authority_delivery_receipts, based on read-only column/index/constraint queries
-  performed 2026-10-13. This is **not** original SQL and **not** a verified semantic
-  equivalent. Separate Supabase security/grant migration effects are not included.
+- The root candidate files here remain reconstructed, not source-identical.
+  Separate exact committed application originals were located in historical Git:
+  `original-git/026_postgres_conflict_constraints.sql` (commit `626a1b86`),
+  `original-git/027_outbox_pg_boss_bridge.sql` (commit `105cbc1c`).
+  Their exact Git blob SHA values are locked in `original-git-provenance.json`.
+- The reference catalog remains a *read-only 2026-10-13 snapshot*. Matching it in
+  isolated PostgreSQL does **not** prove which SQL bytes ran in the live DB;
+  original committed sources do not establish live role, trigger or worker behavior.
 - 027's observed global UNIQUE(event_key) on delivery receipts **prevents**
   two consumer receipts for the same event_key. Do not enable fan-out without a
   separately reviewed forward migration, proof of application contracts and role
@@ -43,7 +44,7 @@ An additional read-only reference file `027-catalog-reference.json` records 23 c
 
 ## Single canonical PostgreSQL 17 CI workflow
 
-To avoid redundant GitHub Actions runner minutes, `.github/workflows/isolated-postgres-17.yml` is the only standard PG17 scratch replay and restore workflow. Two overlapping workflows were retired. All negative SQLSTATE tests and full observed-catalog parity remain in the canonical job. The original historical 027 still has not been recovered and production admission remains HOLD.
+To avoid redundant GitHub Actions runner minutes, `.github/workflows/isolated-postgres-17.yml` is the only standard PG17 scratch replay and restore workflow. Two overlapping workflows were retired. All negative SQLSTATE tests and full observed-catalog parity remain in the canonical job. Historical **Git-committed** SQL 027 has been located and blob-pinned; direct evidence of its application to live PostgreSQL is still missing and production admission remains HOLD.
 
 ## Default privilege regression test (15 October 2026)
 
@@ -62,3 +63,20 @@ Historical 027 is preserved unchanged in `027_outbox_pg_boss_bridge.sql` for for
 The CI **first** completes 001–027 candidate replay and synthetic backup/restore unmodified. Only **after that**, on the separately restored disposable `mfw_restored_ci` clone, `consumer-scoped-receipts-scratch.test.js` applies and reapplies the candidate, confirms independent consumer A/B receipts for the same event, rejects a duplicated consumer (23505), and rejects an event-key/outbox mismatch (23503). The recorded application migration history remains 27 (no falsified migration row).
 
 Independent schema review, application outbox handler API idempotency, role grants, data migration impact, and real worker crash/retry tests are not met by this SQL experiment. Related [Issue #25](https://github.com/PetrFedin/MFW/issues/25) remains production HOLD.
+
+
+## Original Git-source recovery — 15 October 2026
+
+The original **committed repository files**, not inferred-from-catalog substitutes, are now
+archived unchanged in \`original-git/\`. Source commits are:
+- 026: https://github.com/PetrFedin/MFW/commit/626a1b86424680c69fc295972ce8f9b4632da46b
+- 027: https://github.com/PetrFedin/MFW/commit/105cbc1cd859e67efd027b882372968d71fad42d
+
+\`original-git-replay.test.js\` independently replays native 001–025 plus these Git sources
+on a separate **disposable** PG17 database, checks exact blob hashes, compares the full
+observed two-table physical catalog, repeats migrations, checks scratch role grants,
+and proves the historical global receipt event-key uniqueness blocks multi-consumer delivery.
+The workflow also exercises pg_dump/pg_restore with synthetic data on that separate DB.
+Both source files stay outside \`mfw-api/migrations/\` until independent review, live role
+inventory, and data application evidence are complete. GREEN CI proves scratch behavior
+only: not successful deployment, validated production migration history or JWT isolation.
