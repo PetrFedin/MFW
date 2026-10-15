@@ -323,3 +323,24 @@ Observed through connected Render management API:
 **Admission remains blocked.** Required: choose and confirm one data authority, approve resource economics, review historical schema/privileges, bind only via secret/internal service configuration, verify `/ready=200`, `dataMode=postgres`, exact SHA and real Golden Paths, document restore and independent reviewer sign-off.
 
 Canonical issue tracking: #3, #7, #25, #28, #32, #33, #34. Complete feature dependencies: [15 October execution audit](docs/MFW_EXECUTION_AUDIT_2026-10-15.md).
+
+
+## 2026-10-15 — Late HTTP check and Git 027 source recovery
+
+Independent read-only HTTP returned Authority \`/health\` with release SHA
+\`b540bf5498460cdf68767e636744567b0d13c1ea\` and \`dataMode=memory\`;
+Authority \`/ready\` HTTP **503**; a direct GET of the separate API
+\`/health\` also returned HTTP **503** (endpoint-specific observation only).
+Public MFW, BFS and Made in Moscow pages returned visible content; this is
+not authenticated UI E2E or persistence proof.
+
+Render platform deploy remains \`9fd9356cbfddb0df7dd2e52d16695bbf437da32d\`.
+Existing free Render PostgreSQL remains suspended, whereas the separately
+connected MFW Supabase project reports ACTIVE_HEALTHY and 27 application
+migration-history entries. Live Authority remains unbound to it.
+
+Original source SQL 026 and 027 have since been recovered from historical Git
+commits (PR #20 head \`050bc733\`, both workflows PASS). Earlier
+"historical 027 source not recovered" wording in this file is superseded:
+**original repository SQL is available, its live execution fingerprint is not**.
+No production DB, Render service, secret or deployment was changed.

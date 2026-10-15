@@ -13,7 +13,7 @@
   "verified": {
     "repoMainMigrations": "001-025",
     "connectedSupabaseApplicationHistory": "001-027",
-    "original027Recovered": false,
+    "original027Recovered": true,
     "renderAuthorityAutoDeploy": "no",
     "renderAuthorityHealthCheckPath": "",
     "renderFreePostgresStatus": "suspended",
@@ -32,7 +32,7 @@
       {
         "number": 20,
         "state": "draft",
-        "status": "scratch-ci-pass-not-admitted"
+        "status": "original-git-sql-scratch-ci-pass-live-executed-bytes-unverified"
       },
       {
         "number": 26,
@@ -43,6 +43,54 @@
         "number": 30,
         "state": "draft",
         "status": "scratch-and-responsive-ci-pass-not-admitted"
+      }
+    ],
+    "original027GitCommit": "105cbc1cd859e67efd027b882372968d71fad42d",
+    "original026GitCommit": "626a1b86424680c69fc295972ce8f9b4632da46b",
+    "historicalSqlExecutedBytesVerified": false,
+    "originalGitSqlScratchCiHead": "050bc73384d6960827ee78b7d916bbd3b2d1ab95",
+    "originalGitSqlScratchCiConclusion": "success",
+    "renderAuthorityReadyHttp": 503,
+    "renderAuthorityDataMode": "memory",
+    "renderAuthorityDeployedSha": "b540bf5498460cdf68767e636744567b0d13c1ea",
+    "renderPlatformDeployedSha": "9fd9356cbfddb0df7dd2e52d16695bbf437da32d",
+    "supabaseAuthUsers": 0,
+    "supabaseAuthSessions": 0,
+    "supabaseOutboxEvents": 0,
+    "supabaseDeliveryReceipts": 0,
+    "supabasePgBossSchemaPresent": false,
+    "supabasePublicTablesWithRls": 88,
+    "supabasePublicBaseTablesDirectClientRead": 0,
+    "supabaseFutureDefaultClientAclRisk": true,
+    "productionMultiRoleGoldenPathsVerified": false,
+    "prMergeOverlapGroups": [
+      {
+        "prs": [
+          26,
+          31
+        ],
+        "files": [
+          "CURRENT_STATE.md",
+          "mfw/platform/evidence-package.json"
+        ]
+      },
+      {
+        "prs": [
+          20,
+          30
+        ],
+        "files": [
+          "mfw-api/package.json"
+        ]
+      },
+      {
+        "prs": [
+          26,
+          30
+        ],
+        "files": [
+          ".github/workflows/responsive-qa.yml"
+        ]
       }
     ]
   },

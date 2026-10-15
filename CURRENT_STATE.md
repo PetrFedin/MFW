@@ -1051,3 +1051,24 @@ Authoritative reference: [MFW execution audit](docs/MFW_EXECUTION_AUDIT_2026-10-
 **Quality evidence:** source-level MFW/BFS/Made product modules and responsive Chromium tests are not a substitute for signed-user registration/QR check-in, partner/sponsor acceptance, actual bank settlement, multiple-role tenant isolation or real phone browser evidence. Commercial and investor actuals remain unadmitted. Cross-project visual identities remain distinct, with Russian-first default.
 
 The next allowed implementation order is: historical migration and privilege review → protected PostgreSQL Authority admission → real JWT/organisation negative proofs and authenticated Golden Paths → transactional outbox/jobs → actual participant/B2B/Brand365/sponsor workflows → independently evidenced commercial finance → investor consumption. See workstream identifiers in `docs/mfw-execution-roadmap.json`.
+
+
+## 2026-10-15 — Independent late production delta (supersedes earlier SQL-origin claim)
+
+The historical Git-committed *application files* \`026\` and \`027\` were recovered from
+commits \`626a1b86\` and \`105cbc1c\`, respectively; PR #20 head
+\`050bc73384d6960827ee78b7d916bbd3b2d1ab95\` passed exact-head Responsive QA
+and Isolated PostgreSQL 17 Replay. This supersedes the earlier 2026-10-15 statement
+that 027's original repository source was not recovered. **Whether the identical
+bytes were applied to live PostgreSQL has not been attested.**
+
+Live Authority \`/health\`: release \`b540bf54\`, \`dataMode=memory\`.
+Live Authority \`/ready\`: HTTP 503. The published platform remains on \`9fd9356c\`.
+Connected MFW Supabase remains healthy with 27 application-history rows,
+88 public tables protected by RLS, but \`auth.users=0\`, \`auth.sessions=0\`,
+\`authority_outbox=0\` and \`authority_delivery_receipts=0\`.
+Future-object creator default ACL is still broad. PR #26/#31 and PR #20/#30
+edit shared files; integrated merge QA is mandatory.
+
+Source/evidence details: \`docs/MFW_EXECUTION_AUDIT_2026-10-15.md\`.
+No production update, live SQL grant changes, paid resources or credential handling.

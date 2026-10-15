@@ -14,7 +14,7 @@ This audit is **an evidence map, not a binary feature checklist**. `code_in_main
 
 The critical sequence is:
 
-1. **P0** — reconcile application migrations 026–027 without fabricated provenance; independently review creator privileges and future-object default ACL; recover an existing safe database path; bind Authority securely; prove `/ready=200`, `dataMode=postgres` and exact deployed SHA.
+1. **P0** — reconcile Git-recovered 026–027 against live schema/application provenance, without fabricated executed-SQL attestation; independently review creator privileges and future-object default ACL; recover an existing safe database path; bind Authority securely; prove `/ready=200`, `dataMode=postgres` and exact deployed SHA.
 2. **P0** — verify real signed JWT/session/current membership and cross-brand/event denials, successful golden paths, adversarial QR/pass retries, capital hash-chain, independent reviewer and rollback proof.
 3. **P1** — transactional domain outbox + durable jobs/policy; then participant and partner workflows, verified Brand365, Made in Moscow roster, actual delivery/acceptance, safe financial reconciliation.
 4. **P1** — admit investor financial read projections **only** from scoped accepted contracts and independently verified accounting and cash; no scenario -> actual substitution.
@@ -22,7 +22,7 @@ The critical sequence is:
 
 ## Verified red lines
 
-- MFW canonical main SQL currently `001–025`; connected Supabase application schema history reports `001–027`. Draft PR #20's quarantine does **not** reconstruct authoritative historical source 027.
+- MFW canonical main SQL currently `001–025`; connected Supabase application schema history reports `001–027`. PR #20 now contains the *Git-committed original application source files* 026 and 027, pinned to historical commits and blob hashes. This resolves **repository-source recovery**, not proof of which SQL bytes were applied in the connected database. The restored files remain quarantined outside executable migrations.
 - Existing Render `mfw-authority`: `autoDeploy=no`, `healthCheckPath` empty; free Render PostgreSQL `mfw-postgres` **suspended** as observed on this audit date. The connected **Supabase** MFW PostgreSQL 17 project is active but not admitted as the Render Authority's live source of truth.
 - Connected Supabase future-object `pg_default_acl` for creators `postgres` and `supabase_admin` grants privileges to `anon` / `authenticated`; Issue #28 candidate reviewed only as isolated PG17 test, **not applied**.
 - Draft PR #20 PG17 migration replay, canary ACL and synthetic backup/restore passed on exact head `8feea7db458add3db76bdf50f90ccc61061071db`; no independent human review or production DB evidence.
@@ -76,3 +76,31 @@ The audit PR also appends a time-stamped, read-only result to `CURRENT_STATE.md`
 - [#34](https://github.com/PetrFedin/MFW/issues/34) — P1 real-device UX, accessibility and participant execution flow QA; visual work can proceed safely without bypassing the persistence gate.
 
 Quality/accessibility was promoted from P2 to P1 as **P1-19**, because a feature that is technically present but unusable or inaccessible does not pass participant acceptance. All three issue numbers are traced in the JSON matrix.
+
+
+## Late verification addendum — 2026-10-15 (supersedes earlier source-recovery status)
+
+**Checked independently, read-only:** connected GitHub, Render and MFW Supabase; the actual public site and HTTP health endpoints. This addendum supersedes statements above saying original committed SQL 027 is still missing. No schema, production code, grants, secrets, account data, paid services, or deployment were changed.
+
+| Source | Observed evidence | Production implication |
+| --- | --- | --- |
+| GitHub | main \`7a2e7b98\`; production platform deploy \`9fd9356c\`; Authority \`b540bf54\`; separate API \`161926f9\` | Recent PR #20/#26/#29/#30/#31 additions are not in live deploys |
+| Render | \`mfw-postgres\` free PostgreSQL 17 is **suspended**; Authority live deploy has autoDeploy=no and empty healthCheckPath | Local Render database cannot be assumed active; approved secure DB binding required |
+| Public HTTP | Platform MFW, BFS and Made pages return content; Authority \`/health\` reports \`dataMode=memory\` at \`b540bf54\`; \`/health/deep\` returns synthetic self-test PASS; Authority \`/ready\` returns HTTP **503** | UI routing is reachable, durable operations NOT admitted |
+| Secondary API | \`https://mfw-api.onrender.com/health\` returned HTTP **503** in this check | This individual URL failed; do not assert the whole service's uptime from one probe |
+| Supabase | Connected MFW PostgreSQL 17 reports \`ACTIVE_HEALTHY\`; application \`schema_migrations\` has 27 rows through \`027_outbox_pg_boss_bridge.sql\` | Real existing schema is ahead of canonical main (25), but is not bound to Authority |
+| Supabase Auth | \`auth.users=0\`, \`auth.sessions=0\` | No production signed-user registration/role Golden Path can be claimed on this database |
+| Supabase jobs | \`authority_outbox=0\`, \`authority_delivery_receipts=0\`; no \`pgboss\` schema | Actual durable job delivery/retry remains unqualified |
+| Supabase ACL | 88 public base tables with RLS enabled, 0 base tables directly readable via SELECT by anon/authenticated; **future-object default privileges remain broadly granted** for creators postgres/supabase_admin | Existing grants appear protected; newly created objects remain P0 security risk until reviewed hardening |
+| Auth and finance PRs | #30 has four passing scratch/SDK/responsive workflows but remains Draft; #26 modelled investor UI responsive CI passed but remains separate | No real Auth, accepted invoices, bank settlement, revenue or live investor financial claims |
+| Recovery PR | Original Git application files: 026 commit \`626a1b86424680c69fc295972ce8f9b4632da46b\` and 027 commit \`105cbc1cd859e67efd027b882372968d71fad42d\`; PR #20 head \`050bc73384d6960827ee78b7d916bbd3b2d1ab95\`, Responsive QA and Isolated PostgreSQL 17 Replay **GREEN** | Source of committed SQL is recovered; exact applied-live SQL provenance, human review and production admission remain HOLD |
+
+**Integration collisions to resolve before merge:**
+- PR #26 and #31 both modify \`CURRENT_STATE.md\` and \`mfw/platform/evidence-package.json\`. Merge must preserve investor-model code **and** finance-truth verification boundary.
+- PR #20 and #30 both modify \`mfw-api/package.json\`. Reconcile scripts/dependencies and run all tests against the combined tree.
+- PR #26 and #30 both modify \`.github/workflows/responsive-qa.yml\`. Preserve BOTH commercial-proof and Auth qualification suites, not one or the other.
+- A GitHub mergeable flag or individual GREEN suites do not prove the combined branch is green or the live platform updated.
+
+**End-to-end acceptance not performed by this check:** real signed user login, real payment, genuine event registration/QR check-in, multi-device persistence, cross-tenant denials on production, verified MFW/BFS/brand partner meetings, recovery after restart, and physical-device accessibility. Static/page GET success and synthetic memory-mode deep tests do not satisfy these gates.
+
+**Authoritative next gate:** independently review P0 migration + future-object ACL → securely bind a single already-existing PostgreSQL provider with zero incremental paid resources → exact-main admission \`/ready=200\`, \`dataMode=postgres\` → verified JWT and multi-role real Golden Paths → scratch-to-live jobs/outbox qualification → rebase overlapping feature PRs, full integrated regression/browser/phone QA, and then staged release with rollback.

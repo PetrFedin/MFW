@@ -6,7 +6,19 @@ const root=path.resolve(__dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'docs/mfw-execution-roadmap.json'),'utf8'));
 assert.equal(manifest.schemaVersion,'mfw-execution-audit-v1');
 assert.equal(manifest.productionAdmitted,false,'audit must not claim live PostgreSQL admission');
-assert.equal(manifest.verified.original027Recovered,false);
+assert.equal(manifest.verified.original027Recovered,true,'original Git source 027 now recovered');
+assert.equal(manifest.verified.historicalSqlExecutedBytesVerified,false,'never claim applied SQL bytes without evidence');
+assert.match(manifest.verified.original027GitCommit,/^[0-9a-f]{40}$/);
+assert.match(manifest.verified.original026GitCommit,/^[0-9a-f]{40}$/);
+assert.equal(manifest.verified.renderAuthorityReadyHttp,503);
+assert.equal(manifest.verified.renderAuthorityDataMode,'memory');
+assert.equal(manifest.verified.supabaseAuthUsers,0);
+assert.equal(manifest.verified.supabaseAuthSessions,0);
+assert.equal(manifest.verified.supabaseFutureDefaultClientAclRisk,true);
+assert.equal(manifest.verified.productionMultiRoleGoldenPathsVerified,false);
+for(const group of manifest.verified.prMergeOverlapGroups){
+ assert(group.prs.length>1&&group.files.length>0);
+}
 assert.equal(manifest.verified.renderFreePostgresStatus,'suspended');
 assert.equal(manifest.verified.renderAuthorityHealthCheckPath,'');
 assert(manifest.items.length>=30,'missing master-plan workstreams');
