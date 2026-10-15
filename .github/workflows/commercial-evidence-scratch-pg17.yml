@@ -1,0 +1,62 @@
+name: Commercial Evidence Scratch PostgreSQL 17
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "mfw-api/research/**"
+      - ".github/workflows/commercial-evidence-scratch-pg17.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mfw-commercial-scratch-ci
+  cancel-in-progress: true
+jobs:
+  scratch-pg17:
+    name: Disposable PG17 / atomic event + outbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: mfw_ci
+          POSTGRES_PASSWORD: scratch_ci_only
+          POSTGRES_DB: mfw_commercial_ci
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U mfw_ci -d mfw_commercial_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      MFW_COMMERCIAL_SCRATCH: "true"
+      DATABASE_URL: postgresql://mfw_ci:scratch_ci_only@127.0.0.1:5432/mfw_commercial_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        working-directory: mfw-api
+        run: npm install --no-audit --no-fund
+      - name: Verify atomicity, concurrency, replay and scratch RLS
+        run: node mfw-api/research/commercial-event-store-scratch.test.js
+      - name: Verify native-shaped Auth session, reviewed membership and grant revocation
+        run: node mfw-api/research/commercial-pg-identity.test.js
+      - name: Backup and restore scratch event and outbox records
+        shell: bash
+        run: |
+          set -euo pipefail
+          PG_CONTAINER="$(docker ps --filter 'ancestor=postgres:17' --format '{{.ID}}' | head -n 1)"
+          test -n "$PG_CONTAINER"
+          docker exec "$PG_CONTAINER" pg_dump -U mfw_ci -d mfw_commercial_ci -Fc -f /tmp/mfw-commercial-ci.dump
+          docker exec "$PG_CONTAINER" psql -U mfw_ci -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE mfw_commercial_restored'
+          docker exec "$PG_CONTAINER" pg_restore -U mfw_ci -d mfw_commercial_restored --no-owner --exit-on-error /tmp/mfw-commercial-ci.dump
+          EVENTS="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_commercial_restored -tAc 'SELECT count(*) FROM public.ci_commercial_events')"
+          OUTBOX="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_commercial_restored -tAc 'SELECT count(*) FROM public.ci_commercial_outbox')"
+          test "$EVENTS" = "3"
+          test "$OUTBOX" = "4"
+          ORGS="$(docker exec "$PG_CONTAINER" psql -U mfw_ci -d mfw_commercial_restored -tAc 'SELECT count(DISTINCT organisation_id) FROM public.ci_commercial_events')"
+          test "$ORGS" = "2"
+          echo "scratch_commercial_pg17_backup_restore=PASS;production_admitted=FALSE"

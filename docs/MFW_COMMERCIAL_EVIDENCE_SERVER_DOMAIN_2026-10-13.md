@@ -1,0 +1,68 @@
+# MFW server commercial evidence domain — Draft, 2026-10-13
+
+Standalone **pure** Node contract for Pilot → Contract → Delivery → Acceptance → Invoice → Finance → Payment → Renewal. This is *not* connected to HTTP, PostgreSQL, payment providers or an accounting ledger.
+
+- Context must be independently authenticated by trusted server middleware; caller-provided context does **not** qualify as proof.
+- A server-provided source verification function is required; signed issuer, revocation and tenant validation must be implemented behind it before any real integration.
+- Idempotency, stage prerequisites, scoped organisation and amount validation fail closed.
+- FINANCE_REVIEWED requires a server-validated finance role and accounting policy. Still returns only SERVER_VALIDATED_CANDIDATE, not recognised revenue.
+- Projection preserves recognised revenue and cash as null, regardless of client-provided events.
+- Future integration requires PostgreSQL admission, tenant/JWT negative tests, immutable persistence, transactional outbox, accounting sign-off and independent reviewer approval. Never expose this module as a public trust authority on its own.
+
+Node test: `node mfw-api/commercial-evidence-domain.test.js`. No production writes or paid resources.
+
+## Candidate history integrity and scope (2026-10-13)
+
+- Candidate hashes now include evidence digest and state; an altered evidence source, out-of-order record, broken parent link, repeated idempotency key or mixed payer/organisation/agreement scope is rejected before accepting a new event.
+- Event times must be nondecreasing. A retry with the same idempotency key but a changed actor, event time, finance period, price or evidence reference is rejected as a conflict.
+- SHA-256 hash links establish **internal consistency only**. They are not signatures, cannot verify issuer claims, and do not independently prove durability or immutability. Server-side authenticated evidence resolution, scoped PostgreSQL and immutable audit remain production gates.
+
+## Financial segregation / source binding (2026-10-13)
+
+- A provisional **server-role matrix** now separates partner/brand/organiser actions from `finance_operator` (invoice), `finance_reviewer` (accounting review) and `settlement_verifier` (bank settlement). These are contract-test role names, **not provisioned Supabase JWT claims**.
+- Invoice, settlement and customer acceptance candidates require specific server-owned approval flags *and* an independently validated source proof; a partner or brand cannot submit their own settled-cash candidate. Counterparty acceptance requires server-confirmed acceptance authority, not an applicant's checkbox.
+- Source resolution must bind exact organisation, payer, agreement, source reference, issuer, event type and timestamp, and exact amount/currency for monetary events. A SHA-256-shaped digest is required but is **not** a source signature.
+- Contract/renewal amounts are recorded as candidate commercial value only. Settlement entries require a positive amount in the agreement currency and cannot cumulatively exceed candidate invoiced totals; neither invoice nor settlement creates recognised revenue. FX, credit notes, advance payments and overpayments are **not supported by this candidate model** and must be explicitly designed before production.
+- This is a **pure synchronous contract** with a stubbed proof resolver. A real JWT verified identity source, bank settlement verifier, counterparty consent, source revocation, authoritative Postgres store, independent finance review and concurrency/idempotency enforcement remain open. Never integrate this directly as a public endpoint.
+
+## Late retries and idempotency gate order (2026-10-13)
+
+Previously, a duplicate pilot event timestamp could be rejected as a regression after newer events. Also, replay of a fully settled payment was at risk of failing the cumulative payment cap. The synchronous domain now checks an exact, independently re-verified idempotency replay **before** enforcing new-event chronology and settlement upper bound. Conflicting amounts and sources still fail closed; historical chain integrity, tenant scope, actor role and source verification are not bypassed. Real race safety remains blocked pending transactional PostgreSQL writes and concurrent-session testing.
+
+## Candidate-only invoice reconciliation (2026-10-13)
+
+New pure candidate evaluator: mfw-api/commercial-reconciliation-candidate.js. This does not import, execute or grant server financial admission.
+
+- One organisation/payer/agreement/currency. Positive integer minor amounts and unique event keys.
+- Adjusted invoice = gross invoice - credit notes linked to that invoice.
+- Candidate net settlement = payment candidates - refunds linked to original payment events.
+- Outstanding = max(0, adjusted invoice - net settlement).
+- Overpayment = max(0, net settlement - adjusted invoice), flagged OVERPAID_REVIEW.
+- Credit notes above invoice and refunds above original payment are rejected.
+- Late credit notes can create overpayment after an earlier full settlement; later partial refunds can resolve it.
+- Accounting recognised revenue, bank-verified cash, booked receivable and audited ARR remain null.
+
+Important: CREDIT_NOTE_ISSUED and REFUND_SETTLED are NOT admitted event types in the current server commercial domain. This is a separate synthetic model for validation only. It authenticates no invoice, bank statement, counterparty or credit note. Production requires a finance-approved policy, isolated PG admission, trusted source verification, tenant JWT denial tests and transactional concurrency. No SQL/HTTP/production writes.
+
+CI: node mfw-api/commercial-reconciliation-candidate.test.js; before Chromium.
+
+## Scratch PostgreSQL atomicity experiment
+
+An isolated commercial event/outbox schema, transaction lock + uniqueness test, rollback injection, cold reconnect and dump/restore workflow are staged under mfw-api/research and its dedicated GitHub Action. No SQL in this experiment is loaded by Authority migrations or production startup. Full results must be verified at the exact commit SHA before any pass claim.
+
+These synthetic SQL tests do not authenticate a bank, customer, contract, tenant JWT or evidence issuer and do not qualify a real worker or financial posting. They are separate from the pure candidate settlement reconciliation and its null actuals. See mfw-api/research/README.md.
+
+## Research RLS tenant separation
+
+Added a disposable PostgreSQL 17 two-organisation security drill: two fixed NOLOGIN/NOBYPASSRLS roles, role-scoped SELECT policies and negative tests for foreign event IDs, mutable tenant hints, cross-organisation visibility, forbidden writes and private outbox. Exact CI still required. This **does not** validate actual Supabase JWT or the server BYPASSRLS role and cannot be promoted as production admission.
+
+## Trusted-claims identity policy (2026-10-15)
+
+The new `commercial-identity-boundary.js` module is a **pure, unused-in-production server adapter policy**. It does not decode, sign, verify or fetch a JWT itself. It **requires** a server-owned injected `getClaims` verifier and fresh server-owned `verifySession` plus `lookupMembership` functions before it creates a candidate actor object.
+
+- Validates issuer, authenticated audience and role, subject and session UUIDs, anonymous status, token validity window, and authentication assurance level.
+- Validates session activeness and independently reads role/organisation membership from a current server store; it ignores mutable JWT `user_metadata` and does not treat JWT `app_metadata` as a current membership authority.
+- Uses the domain's closed event-type role matrix. Provisional finance operators/reviewers/settlement verifiers require MFA `aal2`.
+- Verifier, membership or session lookup failures fail closed. Role names are not accepted from HTTP request body.
+
+IMPORTANT: CI mocks verified claims and the current membership/session store. Tests do **not** verify cryptographic JWT signatures or a real Supabase project's login, MFA, session revocation or JWKS rotation. Live integration, authoritative account/membership and reviewed step-up policy remain blocked by Phase 0 and independent security review. References: https://supabase.com/docs/reference/javascript/auth-getclaims and https://supabase.com/docs/guides/auth/jwts
