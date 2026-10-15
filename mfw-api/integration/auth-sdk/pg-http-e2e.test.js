@@ -159,9 +159,18 @@ test('real SDK -> HTTP -> SQL session + reviewed tenant role (disposable PG17)',
       assert.deepEqual(JSON.parse(r.body),{error:'unauthorised'});
     });
     await scenario('forged user metadata is not a finance grant',async()=>{
-      const forged=signed(claims({aal:'aal2',user_metadata:{role:'finance_reviewer'},
+      // Keep the signed AAL consistent with the persisted session so the
+      // negative test actually reaches the reviewed SQL role-grant boundary.
+      const forged=signed(claims({user_metadata:{role:'finance_reviewer'},
         app_metadata:{role:'settlement_verifier'}}));
-      assert.equal((await request(forged,endpoint(ORG,'FINANCE_REVIEWED'))).status,403);
+      assert.equal((await request(forged,endpoint(ORG,'FINANCE_REVIEWED'))).status,403,
+        'untrusted metadata cannot turn an active partner admin into a finance reviewer');
+      // An independently forged step-up in the signed claims must instead fail
+      // the earlier native session check. This is 401, not a role-grant 403.
+      const fakeStepUp=signed(claims({aal:'aal2',user_metadata:{role:'finance_reviewer'},
+        app_metadata:{role:'settlement_verifier'}}));
+      assert.equal((await request(fakeStepUp,endpoint(ORG,'FINANCE_REVIEWED'))).status,401,
+        'signed AAL2 without an AAL2 persisted session must be unauthorised');
     });
     await scenario('revoked or expired SQL session invalidates intact signed token',async()=>{
       await pool.query("UPDATE auth.sessions SET not_after=clock_timestamp()-interval '1 minute' WHERE id=$1::uuid",[SESSION]);
