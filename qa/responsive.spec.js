@@ -1109,3 +1109,40 @@ test('BFS shared profile escapes HTML instead of rendering injected markup',asyn
   await expect(bfs.locator('#content')).toContainText('<img src=x onerror=alert(1)>');
   await expect(bfs.locator('#content img')).toHaveCount(0);
 });
+
+
+test('BFS rejects demo meeting receipt and never shows a phantom meeting',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    const method=route.request().method();
+    await route.fulfill({status:method==='POST'?201:200,contentType:'application/json',
+      body:JSON.stringify(method==='POST'?
+       {source:'memory',data:{id:'demo_meeting',status:'requested',demo:true}}:
+       {source:'postgres',data:[]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').click();
+  await bfs.locator('#discoverDelegates').click();
+  await bfs.locator('[data-meet]').first().click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('не создан');
+  await expect(bfs.locator('#meetingConfirm')).toHaveCount(0);
+});
+
+test('BFS ignores locally forged CRM lead status and rejects demo lead confirmation',async({page})=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('bfsLeadState',JSON.stringify({'qa-org':{stage:'qualified',serverId:'fake'}}));
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:route.request().method()==='POST'?201:200,
+      contentType:'application/json',body:JSON.stringify(route.request().method()==='POST'?
+      {source:'memory',data:{id:'fake_lead',stage:'qualified',demo:true}}:
+      {source:'postgres',data:[]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').click();
+  await bfs.locator('#orgDirectory').click();
+  await expect(bfs.locator('#content')).not.toContainText('CRM · QUALIFIED');
+  await bfs.locator('[data-org-lead]').first().click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('не обновлена');
+});
