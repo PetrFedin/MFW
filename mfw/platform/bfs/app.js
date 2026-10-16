@@ -39,6 +39,7 @@ var crossBrandContext=null;
 // CRM state is hydrated from Authority, never from a stale localStorage claim.
 var leadState={};
 var meetingRequestPending=false;
+var meetingKeys={};
 function confirmed(out,requireId){
  if(!out||out.source!=='postgres'||out.demo===true||
    (requireId&&(!out.data||!out.data.id||out.data.demo===true)))
@@ -188,7 +189,9 @@ async function requestMeeting(input){
  if(meetingRequestPending)return;
  meetingRequestPending=true;
  try{
-  var out=await authority('/v1/meetings',{method:'POST',body:JSON.stringify({
+  var scope=[input.brandId||'',input.organisationRef||'',input.counterpartRef||'',input.counterpartName||''].join('|');
+  if(!meetingKeys[scope])meetingKeys[scope]='bfs_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15);
+  var out=await authority('/v1/meetings',{method:'POST',headers:{'Idempotency-Key':meetingKeys[scope]},body:JSON.stringify({
     eventBrand:'bfs',organisation:input.organisationName||'',
     organisationRef:input.organisationRef||null,counterpartRef:input.counterpartRef||null,
     counterpartName:input.counterpartName||null,brandId:input.brandId||null,
@@ -197,6 +200,7 @@ async function requestMeeting(input){
   })});
   var row=confirmed(out,true);
   if(row.status!=='requested')throw Error('unconfirmed_meeting_status');
+  delete meetingKeys[scope];
   state.meeting={id:String(row.id),delegate:input.counterpartName||input.organisationName||'BFS contact',
     slot:'Время согласовывается',startsAt:row.startsAt||null,
     status:row.status,origin:'postgres',organisationRef:input.organisationRef||null};
