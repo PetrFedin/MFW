@@ -6,6 +6,7 @@ favoriteProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFavo
 rewardStarted:(function(){try{return JSON.parse(localStorage.getItem('bfsRewardStarted')||'{}')}catch(e){return {}}})()};
 var AUTHORITY='https://mfw-authority.onrender.com';
 var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems&&window.MFP_MEDIA.ecosystems.bfs||{};
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]});}
 function token(){try{return localStorage.getItem('mfwAccessToken')||''}catch(e){return ''}}
 async function ensureAuthorityToken(){
  var t=token();if(t)return t;
@@ -189,14 +190,14 @@ async function refreshLeadPipeline(){
  try{
   var out=await authority('/v1/b2b/leads',{method:'GET'}),rows=out.data||[];
   root.innerHTML=rows.length?'<div class="section-head"><h2>Follow-up pipeline</h2><span>SERVER LEADS</span></div>'+
-   rows.slice(0,8).map(function(x){return '<article class="meeting-card"><b>'+(x.organisationName||x.counterpartName||'BFS lead')+'</b><span>'+String(x.stage||'interest').toUpperCase()+(x.nextAction?' · '+x.nextAction:'')+'</span>'+(x.stage==='met'?'<button data-followup-lead="'+x.id+'">FOLLOW-UP</button>':'')+'</article>';}).join('')
+   rows.slice(0,8).map(function(x){return '<article class="meeting-card"><b>'+esc(x.organisationName||x.counterpartName||'BFS lead')+'</b><span>'+String(x.stage||'interest').toUpperCase()+(x.nextAction?' · '+x.nextAction:'')+'</span>'+(x.stage==='met'?'<button data-followup-lead="'+x.id+'">FOLLOW-UP</button>':'')+'</article>';}).join('')
    :'<div class="meta">После запроса и проведения встречи здесь появится follow-up pipeline.</div>';
   $$('[data-followup-lead]').forEach(function(b){b.onclick=async function(){try{await authority('/v1/b2b/leads/'+encodeURIComponent(b.dataset.followupLead),{method:'PATCH',body:JSON.stringify({stage:'follow_up',nextAction:'Отправить материалы и согласовать следующий контакт'})});refreshLeadPipeline();}catch(e){}};});
  }catch(e){root.innerHTML='<div class="meta">Lead pipeline временно недоступен.</div>';}
 }
 function b2b(){
- var brandContext=crossBrandContext?'<div class="meeting-card cross-brand-context"><b>BRAND CONTEXT · '+String(crossBrandContext.brandRef||'')+'</b><span>Источник: Made in Moscow → MFW canonical brand → BFS commercial flow</span><div class="card-actions"><button id="brandContextMeet">ЗАПРОСИТЬ ВСТРЕЧУ</button><button id="brandContextClear">СБРОСИТЬ</button></div></div>':'';
- var meeting=state.meeting?'<div class="meeting-card"><b>'+state.meeting.delegate+'</b><span>'+(state.meeting.startsAt||state.meeting.slot||'')+' · '+String(state.meeting.status||'requested').toUpperCase()+'</span>'+
+ var brandContext=crossBrandContext?'<div class="meeting-card cross-brand-context"><b>BRAND CONTEXT · '+esc(crossBrandContext.brandRef||'')+'</b><span>Источник: Made in Moscow → MFW canonical brand → BFS commercial flow</span><div class="card-actions"><button id="brandContextMeet">ЗАПРОСИТЬ ВСТРЕЧУ</button><button id="brandContextClear">СБРОСИТЬ</button></div></div>':'';
+ var meeting=state.meeting?'<div class="meeting-card"><b>'+esc(state.meeting.delegate)+'</b><span>'+(state.meeting.startsAt||state.meeting.slot||'')+' · '+String(state.meeting.status||'requested').toUpperCase()+'</span>'+
   '<div class="card-actions"><button id="meetingConfirm">CONFIRM</button><button id="meetingComplete">MEETING HELD</button><button id="cancelMeeting">CANCEL</button></div></div>':'';
  $('#content').innerHTML='<div class="section-head"><h2>B2B meetings</h2><span>SERVER WORKFLOW</span></div>'+
   '<div class="b2b"><div class="time">NETWORKING</div><h3>People → meeting → follow-up → lead</h3><p class="meta">Встреча сохраняется в authority; после завершения создаётся follow-up lead.</p>'+
@@ -229,7 +230,7 @@ async function loadBfsPass(){
   var r=await fetch(AUTHORITY+'/v1/passes/qr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:out.token})});
   var svg=await r.text();if(!r.ok)throw new Error('qr_unavailable');
   root.innerHTML='<div class="section-head"><h2>My QR</h2><span>ES256 · ROTATING</span></div><div class="pass"><div class="eyebrow">BRICS+ FASHION SUMMIT</div>'+
-   '<h2>'+String(reg.registrationType||'visitor').toUpperCase()+'<br>PASS</h2><div class="meta">'+((state.account.profile.firstName||'')+' '+(state.account.profile.lastName||''))+
+   '<h2>'+esc(String(reg.registrationType||'visitor').toUpperCase())+'<br>PASS</h2><div class="meta">'+esc(((state.account.profile.firstName||'')+' '+(state.account.profile.lastName||'')))+
    ' · Business programme + Exhibition</div><div class="qr server-qr">'+svg+'</div><div class="meta">Server-signed credential · BFS only · refresh on reopen.</div></div>';
  }catch(e){
   var msg=e.data&&e.data.error==='registration_not_credential_eligible'
@@ -248,14 +249,14 @@ function pass(){
 }
 function profile(){
  var p=state.account&&state.account.profile||{};var r=registration();
- $('#content').innerHTML='<div class="section-head"><h2>Personal account</h2><span>ONE PLATFORM ID</span></div><div class="profile-row"><b>'+((p.firstName||'Guest')+' '+(p.lastName||''))+'</b><span>GLOBAL PROFILE</span></div><div class="profile-row"><b>BFS</b><span>'+(r?r.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>MFW</b><span>'+(state.account&&state.account.registrations&&state.account.registrations.mfw?state.account.registrations.mfw.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>СДЕЛАНО В МОСКВЕ</b><span>SHARED ID · BRAND STATUS SEPARATE</span></div><button class="small-action" id="manageAccount">MANAGE ACCOUNT & REGISTRATIONS</button>';
+ $('#content').innerHTML='<div class="section-head"><h2>Personal account</h2><span>ONE PLATFORM ID</span></div><div class="profile-row"><b>'+esc(((p.firstName||'Guest')+' '+(p.lastName||'')))+'</b><span>GLOBAL PROFILE</span></div><div class="profile-row"><b>BFS</b><span>'+(r?r.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>MFW</b><span>'+(state.account&&state.account.registrations&&state.account.registrations.mfw?state.account.registrations.mfw.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>СДЕЛАНО В МОСКВЕ</b><span>SHARED ID · BRAND STATUS SEPARATE</span></div><button class="small-action" id="manageAccount">MANAGE ACCOUNT & REGISTRATIONS</button>';
  $('#manageAccount').onclick=function(){parent.postMessage({type:'mfp-open-account'},'*')};
 }
 function render(){$$('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===state.view)});({today:today,programme:programme,speakers:showSpeakers,b2b:b2b,pass:pass,profile:profile}[state.view]||today)()}
 $$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
 $('.lang').onclick=function(){state.lang=state.lang==='ru'?'en':'ru';$('.lang').textContent=state.lang==='ru'?'RU / EN':'EN / RU';};
 window.addEventListener('message',function(e){
- if(!e.data)return;
+ if(e.origin!==location.origin||e.source!==parent||!e.data||typeof e.data!=='object')return;
  if(e.data.type==='mfp-account-state'){state.account=e.data.payload;render();}
  if(e.data.type==='mfp-route'&&e.data.route&&e.data.route.kind==='brand-buyer'){
    crossBrandContext={brandRef:String(e.data.route.brandRef||''),source:String(e.data.route.source||'platform')};
