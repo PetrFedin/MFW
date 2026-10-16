@@ -47,6 +47,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validate quarantined candidates
         run: node mfw-api/recovery-candidate-contract.test.js
+      - name: Verify two independent migration histories without admission
+        run: node mfw-api/recovery-candidates/dual-migration-ledger.test.js
       - name: Replay scratch 001-025 then scratch 001-027 candidates
         run: node mfw-api/recovery-candidates/isolated-replay.test.js
       - name: Replay origin-commit-pinned 026-027 SQL and compare real catalog shape

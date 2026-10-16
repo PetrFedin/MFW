@@ -87,3 +87,35 @@ only: not successful deployment, validated production migration history or JWT i
 The canonical disposable PG17 pipeline now runs `manual-redrive-scratch.test.js` **after** the retry/crash test on `mfw_restored_ci`. It creates CI-only actor fixtures, an append-only redrive audit with an immutable UPDATE/DELETE trigger, verifies reviewer independence and synthetic AAL2, and requeues a poison job only with an explicit reason code. Concurrent duplicate request keys must yield one audit record and one pending job; different actors, reasons or consumers cannot reuse a request key. A redrive records a *pending* retry, not a successful delivery or payment.
 
 This is **not** production manual replay or real Auth: fixture actor IDs and assurance markers are seeded by CI, not issued by Supabase or verified against a live staff account. Production requires validated issuer/session and current operator/reviewer grants, separate tenant and consent checks, a reviewed schema/ACL, secure API audit provenance, a running durable worker and operational alerts. No changes to historical 026/027, executable migrations, `main`, Render or production data.
+
+
+## Two distinct migration histories: source-truth audit — 16 October 2026
+
+Read-only Supabase PG17 metadata shows 27 application filenames in
+public.schema_migrations (including 026_postgres_conflict_constraints.sql and
+027_outbox_pg_boss_bridge.sql), versus 25 SQL files in the executable Git lock.
+Their original Git sources were recovered and pinned but not admitted.
+
+Separately, supabase_migrations.schema_migrations contains 28 platform-tool
+migrations, including:
+- mfw_026_server_only_security_and_app_history
+- mfw_027_enable_pg_net_probe_transport
+- mfw_028_canonical_026_postgres_conflict_constraints
+
+These are TWO DIFFERENT migration frameworks. Equal 026/027 ordinals do not
+establish identical SQL. The new pure audit module and regression tests
+assert this boundary and fail closed for unknown app SQL, duplicate history
+records or conflicting recovered files. CI uses a static four-row tail
+fixture: it does NOT connect to live Supabase or prove the executed bytes.
+
+Other read-only findings: auth users/sessions zero; outbox and receipts zero;
+pgboss absent; no anon/authenticated direct outbox access; the privileged
+mfw_authority_app role bypasses RLS; broad default grants for future public
+objects remain a security review blocker. The historical global unique
+receipt(event_key) restriction still prevents actual multi-consumer fanout.
+No live SQL writes, no database role or Render configuration changes.
+
+Required before production: independent migration and default-ACL approval,
+live executed-SQL provenance or formally accepted equivalent catalog with
+roles/triggers/functions, secure Authority database binding, a verified
+backup/restore and real signed multi-role Golden Paths.
