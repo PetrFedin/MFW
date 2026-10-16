@@ -56,6 +56,73 @@ async function consumeScratch(pool,{eventKey,consumer,failAt=null,afterLock=null
    throw error;
  }finally{client.release();}
 }
+// Test-only persisted retry policy. No pg-boss process or external I/O.
+// The status/attempt counters are owned by a disposable CI table, NOT 027.
+async function attemptRetryScratch(pool,{outboxId,consumer,now,simulateFailure=false}){
+ assert(/^ci_[a-z_]+$/.test(consumer),'only fixed synthetic consumer IDs');
+ assert(Number.isFinite(Date.parse(now)),'synthetic now required');
+ const client=await pool.connect();
+ let active=false;
+ try {
+   await client.query('BEGIN');active=true;
+   const result=await client.query(
+     'SELECT j.status,j.attempt_count,j.available_at,o.event_key,o.topic,o.payload '+
+     'FROM public.ci_delivery_retry_jobs j '+
+     'JOIN public.authority_outbox o ON o.id=j.outbox_id '+
+     'WHERE j.outbox_id=$1 AND j.consumer=$2 FOR UPDATE OF j SKIP LOCKED',
+     [outboxId,consumer]);
+   if(result.rowCount!==1){
+     await client.query('COMMIT');active=false;
+     return 'NOT_CLAIMED';
+   }
+   const job=result.rows[0];
+   if(job.status==='delivered'||job.status==='dead_letter'){
+     await client.query('COMMIT');active=false;
+     return job.status==='delivered'?'ALREADY_PROCESSED':'DEAD_LETTER';
+   }
+   if(Date.parse(job.available_at)>Date.parse(now)){
+     await client.query('COMMIT');active=false;
+     return 'DEFERRED';
+   }
+   const attempt=Number(job.attempt_count)+1;
+   assert(attempt>=1&&attempt<=3,'scratch retry bound violated');
+   if(simulateFailure){
+     const terminal=attempt===3;
+     const next=new Date(Date.parse(now)+60_000*Math.pow(2,attempt-1)).toISOString();
+     await client.query(
+       'UPDATE public.ci_delivery_retry_jobs SET status=$3,attempt_count=$4,'+
+       'available_at=$5::timestamptz,error_code=$6 WHERE outbox_id=$1 AND consumer=$2',
+       [outboxId,consumer,terminal?'dead_letter':'retry',attempt,next,'SYNTHETIC_RETRY_FAILURE']);
+     await client.query('COMMIT');active=false;
+     return terminal?'DEAD_LETTER':'RETRY_SCHEDULED';
+   }
+   // The only effect is an INSERT in this same scratch PostgreSQL transaction.
+   const existing=await client.query(
+     'SELECT 1 FROM public.authority_delivery_receipts WHERE outbox_id=$1 AND consumer=$2',
+     [outboxId,consumer]);
+   if(existing.rowCount===0){
+     const digest=crypto.createHash('sha256')
+       .update(JSON.stringify([job.event_key,consumer,job.topic,job.payload]))
+       .digest('hex');
+     await client.query(
+       'INSERT INTO public.ci_delivery_effects(outbox_id,consumer,effect_digest) VALUES($1,$2,$3)',
+       [outboxId,consumer,digest]);
+     await client.query(
+       'INSERT INTO public.authority_delivery_receipts(outbox_id,event_key,topic,consumer,payload_digest) '+
+       'VALUES($1,$2,$3,$4,$5)',
+       [outboxId,job.event_key,job.topic,consumer,digest]);
+   }
+   await client.query(
+     "UPDATE public.ci_delivery_retry_jobs SET status='delivered',attempt_count=$3,error_code=NULL "+
+     'WHERE outbox_id=$1 AND consumer=$2',
+     [outboxId,consumer,attempt]);
+   await client.query('COMMIT');active=false;
+   return existing.rowCount?'ALREADY_PROCESSED':'PROCESSED';
+ }catch(error){
+   if(active)await client.query('ROLLBACK');
+   throw error;
+ }finally{client.release();}
+}
 async function main(){
  const pool=new Pool({connectionString:url.toString(),max:4});
  try{
@@ -157,18 +224,66 @@ async function main(){
    assert.equal(await consumeScratch(pool,{eventKey:p.event_key,consumer:'ci_parallel'}),'ALREADY_PROCESSED');
    assert.deepEqual(await counts('ci_parallel'),{effects:1,receipts:1});
 
+   // Durable retry/backoff/poison-message research, strictly on restored CI PG17.
+   // This fixture is not a production migration or a real external worker.
+   await pool.query(
+     'CREATE TABLE public.ci_delivery_retry_jobs ('+
+     'outbox_id uuid NOT NULL REFERENCES public.authority_outbox(id) ON DELETE RESTRICT,'+
+     'consumer text NOT NULL, attempt_count integer NOT NULL DEFAULT 0 '+
+     'CHECK(attempt_count BETWEEN 0 AND 3),'+
+     "status text NOT NULL DEFAULT 'pending' "+
+     "CHECK(status IN ('pending','retry','delivered','dead_letter')),"+
+     'available_at timestamptz NOT NULL,error_code text,'+
+     'PRIMARY KEY(outbox_id,consumer))');
+   const firstWindow='2026-10-16T10:00:00.000Z';
+   for(const consumer of ['ci_retry','ci_poison']){
+     await pool.query(
+       'INSERT INTO public.ci_delivery_retry_jobs(outbox_id,consumer,available_at) VALUES($1,$2,$3::timestamptz)',
+       [p.id,consumer,firstWindow]);
+   }
+   const retry=(consumer,iso,simulateFailure=false)=>attemptRetryScratch(pool,{
+     outboxId:p.id,consumer,now:iso,simulateFailure
+   });
+   assert.equal(await retry('ci_retry',firstWindow,true),'RETRY_SCHEDULED');
+   assert.equal(await retry('ci_retry','2026-10-16T10:00:59.000Z'),'DEFERRED');
+   assert.deepEqual(await counts('ci_retry'),{effects:0,receipts:0});
+   assert.equal(await retry('ci_retry','2026-10-16T10:01:00.000Z'),'PROCESSED');
+   assert.equal(await retry('ci_retry','2026-10-16T10:01:01.000Z'),'ALREADY_PROCESSED');
+   assert.deepEqual(await counts('ci_retry'),{effects:1,receipts:1});
+   assert.equal(await retry('ci_poison',firstWindow,true),'RETRY_SCHEDULED');
+   assert.equal(await retry('ci_poison','2026-10-16T10:00:59.000Z',true),'DEFERRED');
+   assert.equal(await retry('ci_poison','2026-10-16T10:01:00.000Z',true),'RETRY_SCHEDULED');
+   assert.equal(await retry('ci_poison','2026-10-16T10:02:59.000Z',true),'DEFERRED');
+   assert.equal(await retry('ci_poison','2026-10-16T10:03:00.000Z',true),'DEAD_LETTER');
+   assert.equal(await retry('ci_poison','2026-10-23T10:00:00.000Z'),'DEAD_LETTER');
+   assert.deepEqual(await counts('ci_poison'),{effects:0,receipts:0});
+   const retryStates=await pool.query(
+     'SELECT consumer,status,attempt_count,error_code FROM public.ci_delivery_retry_jobs ORDER BY consumer');
+   assert.deepEqual(retryStates.rows.map(x=>[x.consumer,x.status,x.attempt_count,x.error_code]),[
+     ['ci_poison','dead_letter',3,'SYNTHETIC_RETRY_FAILURE'],
+     ['ci_retry','delivered',2,null]
+   ]);
+   console.log(JSON.stringify({
+     event:'mfw_scratch_outbox_retry_policy',status:'pass',
+     maxAttempts:3,backoffSeconds:[60,120],deferredUntilDue:true,
+     poisonDeadLetterTerminal:true,attemptCountersPersisted:true,
+     syntheticErrorCodesOnly:true,
+     manualReplay:false,pgBossWorker:false,externalSend:false,
+     productionAdmitted:false
+   }));
+
    const fanout=await pool.query(
      'SELECT consumer,count(*)::integer AS n FROM public.authority_delivery_receipts WHERE outbox_id=$1 GROUP BY consumer',
      [p.id]);
-   assert.equal(fanout.rowCount,6,'historical A/B plus four independent scratch consumers');
+   assert.equal(fanout.rowCount,7,'historical A/B, four recovery consumers and one successful retry');
    assert(fanout.rows.every(row=>row.n===1),'per-consumer unique delivery receipt');
    const effects=await pool.query('SELECT count(*)::integer AS n FROM public.ci_delivery_effects WHERE outbox_id=$1',[p.id]);
-   assert.equal(effects.rows[0].n,4);
+   assert.equal(effects.rows[0].n,5);
    const restart=new Pool({connectionString:url.toString(),max:1});
    try {
      const persisted=await restart.query(
        'SELECT count(*)::integer AS n FROM public.authority_delivery_receipts WHERE outbox_id=$1',[p.id]);
-     assert.equal(persisted.rows[0].n,6,'receipts persist across new database connection');
+     assert.equal(persisted.rows[0].n,7,'receipts persist across new database connection');
    }finally{await restart.end();}
    console.log(JSON.stringify({
      event:'mfw_scratch_delivery_crash_recovery',status:'pass',
