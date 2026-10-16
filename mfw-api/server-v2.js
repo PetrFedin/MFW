@@ -3726,7 +3726,7 @@ async function router(req,res){
         WHERE id::text=$1 AND requester_user_id::text=$2
         RETURNING id,organisation,starts_at AS "startsAt",status,note,metadata,updated_at AS "updatedAt"`,
         [id,userId,status,b.startsAt||null,b.note||null]);
-      if(!r.rowCount)return json(res,404,{error:'meeting_not_found'});
+      if(!r.rowCount){await client.query('ROLLBACK');txActive=false;return json(res,404,{error:'meeting_not_found'});}
       await client.query('INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,$3,$4::jsonb)',[id,userId,status,JSON.stringify({startsAt:b.startsAt||null,note:b.note||null})]);
       const stageMap={requested:'meeting_requested',confirmed:'meeting_confirmed',completed:'met'};
       if(stageMap[status]){
