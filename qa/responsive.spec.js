@@ -1146,3 +1146,36 @@ test('BFS ignores locally forged CRM lead status and rejects demo lead confirmat
   await bfs.locator('[data-org-lead]').first().click();
   await expect(bfs.locator('#bfsActionNotice')).toContainText('не обновлена');
 });
+
+
+test('BFS agenda refuses a demo write and leaves session unsaved',async({page})=>{
+ await page.route('https://mfw-authority.onrender.com/v1/agenda/**',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'memory',data:{eventId:'s1',demo:true}})});
+ });
+ await page.route('https://mfw-authority.onrender.com/v1/agenda',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:[]})});
+ });
+ await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+ const bfs=page.frameLocator('#eventFrame');
+ await bfs.locator('[data-view="programme"]').click();
+ await bfs.locator('[data-save="s1"]').first().click();
+ await expect(bfs.locator('#bfsActionNotice')).toContainText('не изменено');
+ await expect(bfs.locator('[data-save="s1"]').first()).toContainText('ДОБАВИТЬ');
+});
+
+test('BFS subscription rejects demo confirmation and leaves follow button unchanged',async({page})=>{
+ await page.route('https://mfw-authority.onrender.com/v1/professional/follows**',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify(route.request().method()==='GET'
+    ?{source:'postgres',data:[]}
+    :{source:'memory',following:true,data:{favorite:false,demo:true}})});
+ });
+ await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+ const bfs=page.frameLocator('#eventFrame');
+ await bfs.locator('[data-view="speakers"]').click();
+ await bfs.locator('[data-follow-project]').first().click();
+ await expect(bfs.locator('#bfsActionNotice')).toContainText('не сохранена');
+ await expect(bfs.locator('[data-follow-project]').first()).toContainText('Подписаться');
+});
