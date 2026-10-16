@@ -68,7 +68,15 @@ test('real SDK -> HTTP -> SQL session + reviewed tenant role (disposable PG17)',
     }).toString('base64url');
     return data+'.'+sig;
   }
-  async function scenario(name,fn){await t.test(name,fn);}
+  let failedScenarios = 0;
+  async function scenario(name,fn){
+    // node:test records failed child assertions without necessarily rejecting
+    // t.test(); never emit a success evidence receipt after a failed child.
+    await t.test(name,async()=>{
+      try { await fn(); }
+      catch(error){ failedScenarios++; throw error; }
+    });
+  }
   try{
     const version=await pool.query("SELECT current_setting('server_version_num') AS n");
     assert.equal(Math.floor(Number(version.rows[0].n)/10000),17);
@@ -127,10 +135,13 @@ test('real SDK -> HTTP -> SQL session + reviewed tenant role (disposable PG17)',
       }
     });
     const appOrigin=await listen(appServer);
-    async function request(token,path=endpoint(),{method='POST',headers={}}={}){
+    async function request(token,path=endpoint(),{method='POST',headers={},body}={}){
       const h={...headers};
       if(token!==undefined)h.Authorization='Bearer '+token;
-      const response=await fetch(appOrigin+path,{method,headers:h,redirect:'error',signal:AbortSignal.timeout(2500)});
+      const response=await fetch(appOrigin+path,{
+        method,headers:h,...(body===undefined?{}:{body}),
+        redirect:'error',signal:AbortSignal.timeout(2500)
+      });
       return {status:response.status,body:await response.text(),cache:response.headers.get('cache-control')};
     }
     const bearer=signed();
@@ -171,6 +182,37 @@ test('real SDK -> HTTP -> SQL session + reviewed tenant role (disposable PG17)',
         app_metadata:{role:'settlement_verifier'}}));
       assert.equal((await request(fakeStepUp,endpoint(ORG,'FINANCE_REVIEWED'))).status,401,
         'signed AAL2 without an AAL2 persisted session must be unauthorised');
+    });
+    await scenario('transport rejects alternate tenant scopes, actor headers and request bodies',async()=>{
+      const rejected=[
+        await request(bearer,endpoint(ORG),{headers:{'x-organisation-id':FOREIGN_ORG}}),
+        await request(bearer,endpoint(ORG),{headers:{'x-user-role':'finance_reviewer'}}),
+        await request(bearer,endpoint(ORG)+'?organisationId='+FOREIGN_ORG),
+        await request(bearer,endpoint(ORG),{method:'GET'}),
+        await request(bearer,endpoint(ORG),{
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({organisationId:FOREIGN_ORG,role:'finance_reviewer'})
+        })
+      ];
+      for(const result of rejected){
+        assert.equal(result.status,400,'invalid transport cannot create a valid actor');
+        assert.deepEqual(JSON.parse(result.body),{error:'invalid_request'});
+        assert.equal(result.cache,'no-store');
+      }
+      assert.equal((await request(bearer,endpoint(ORG),{
+        headers:{'x-forwarded-host':'forged.example','x-tenant-hint':FOREIGN_ORG}
+      })).status,204,'untrusted proxy headers cannot alter server-owned scope');
+    });
+    await scenario('revoked and expired SQL grants immediately deny an otherwise valid JWT',async()=>{
+      const grantWhere=' WHERE organisation_id=$1::uuid AND app_user_id=$2::uuid';
+      const args=[ORG,APP_USER];
+      await pool.query("UPDATE ci_commercial_auth.role_grants SET status='revoked'"+grantWhere,args);
+      try{assert.equal((await request(bearer)).status,403,'revoked grant must fail closed');}
+      finally{await pool.query("UPDATE ci_commercial_auth.role_grants SET status='active'"+grantWhere,args);}
+      await pool.query("UPDATE ci_commercial_auth.role_grants SET expires_at=clock_timestamp()-interval '1 minute'"+grantWhere,args);
+      try{assert.equal((await request(bearer)).status,403,'expired grant must fail closed');}
+      finally{await pool.query("UPDATE ci_commercial_auth.role_grants SET expires_at=NULL"+grantWhere,args);}
+      assert.equal((await request(bearer)).status,204,'restored reviewed grant is admitted');
     });
     await scenario('revoked or expired SQL session invalidates intact signed token',async()=>{
       await pool.query("UPDATE auth.sessions SET not_after=clock_timestamp()-interval '1 minute' WHERE id=$1::uuid",[SESSION]);
@@ -217,6 +259,7 @@ test('real SDK -> HTTP -> SQL session + reviewed tenant role (disposable PG17)',
     });
     assert.equal(counters.foreignNetwork,0,'no external Supabase/production calls');
     assert(counters.requests>=12);
+    assert.equal(failedScenarios,0,'subtest failures prohibit PASS identity evidence');
     t.diagnostic(JSON.stringify({
       gate:'mfw_sdk_http_native_pg17_identity_integration',status:'pass',
       server:'disposable Postgres 17',issuer:'loopback-only synthetic keys',
