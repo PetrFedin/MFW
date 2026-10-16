@@ -1033,3 +1033,79 @@ test('Admin Console navigation remains reachable on phone and tablet', async ({ 
   await expectTarget(page.locator('.sidebar .nav button').first(), 40);
   await page.screenshot({ path: testInfo.outputPath('admin-console.png') });
 });
+
+
+test('shared profile consent is explicit and persists across ecosystems',async({page})=>{
+  const profileUpdates=[];
+  await page.route('https://mfw-authority.onrender.com/v1/me/profile',async route=>{
+    profileUpdates.push(route.request().postDataJSON());
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,source:'postgres'})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#profileForm input[name="marketingConsent"]')).not.toBeChecked();
+  await expect(page.locator('#profileForm input[name="networkingVisible"]')).not.toBeChecked();
+  for(const [name,value] of Object.entries({firstName:'QA',lastName:'Privacy',email:'privacy@example.test',phone:'+10000000000'})){
+    await page.locator('#profileForm [name="'+name+'"]').fill(value);
+  }
+  await page.locator('#profileForm button[type="submit"]').click();
+  await expect(page.locator('#profileSyncStatus')).toContainText('PostgreSQL');
+  await expect.poll(()=>profileUpdates.length).toBeGreaterThan(0);
+  expect(profileUpdates.at(-1)).toMatchObject({marketingConsent:false,networkingVisible:false});
+  await page.locator('#profileForm input[name="marketingConsent"]').check();
+  await page.locator('#profileForm input[name="networkingVisible"]').check();
+  await page.locator('#profileForm button[type="submit"]').click();
+  await expect.poll(()=>profileUpdates.length).toBe(2);
+  expect(profileUpdates.at(-1)).toMatchObject({marketingConsent:true,networkingVisible:true});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#profileForm input[name="marketingConsent"]')).toBeChecked();
+  await expect(page.locator('#profileForm input[name="networkingVisible"]')).toBeChecked();
+});
+
+test('embedded application rejects forged parent-window account and route messages',async({page})=>{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const frame=page.frameLocator('#eventFrame');
+  await frame.locator('[data-view="profile"]').click();
+  await expect(frame.locator('#content')).not.toContainText('INJECTED ACCOUNT');
+  await frame.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-account-state',payload:{profile:{firstName:'INJECTED',lastName:'ACCOUNT'},registrations:{}}},
+      origin:location.origin,
+      source:window
+    }));
+  });
+  await expect(frame.locator('#content')).not.toContainText('INJECTED ACCOUNT');
+  await frame.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-route',route:{kind:'brand-buyer',brandRef:'forged'}},
+      origin:'https://untrusted.example',
+      source:window.parent
+    }));
+  });
+  await expect(frame.locator('#content')).not.toContainText('BRAND CONTEXT · forged');
+  await page.locator('[data-event="made"]').click();
+  const made=page.frameLocator('#eventFrame');
+  await made.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-account-state',payload:{profile:{firstName:'INJECTED'},registrations:{}}},
+      origin:location.origin,source:window
+    }));
+  });
+  await expect(made.locator('#madeAccountBridge')).not.toContainText('INJECTED');
+});
+
+test('BFS shared profile escapes HTML instead of rendering injected markup',async({page})=>{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await page.locator('#profileForm input[name="firstName"]').fill('<img src=x onerror=alert(1)>');
+  await page.locator('#profileForm input[name="lastName"]').fill('QA');
+  await page.locator('#profileForm input[name="email"]').fill('safe@example.test');
+  await page.locator('#profileForm input[name="phone"]').fill('+10000000000');
+  await page.locator('#profileForm button[type="submit"]').click();
+  await page.locator('#accountClose').click();
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="profile"]').click();
+  await expect(bfs.locator('#content')).toContainText('<img src=x onerror=alert(1)>');
+  await expect(bfs.locator('#content img')).toHaveCount(0);
+});
