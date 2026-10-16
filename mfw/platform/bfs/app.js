@@ -36,8 +36,46 @@ var delegates=[];
 var organisations=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations)||[];
 var madeVerifiedByBrandRef={};
 var crossBrandContext=null;
-var leadState=(function(){try{return JSON.parse(localStorage.getItem('bfsLeadState')||'{}')}catch(e){return {}}})();
-function saveLeads(){try{localStorage.setItem('bfsLeadState',JSON.stringify(leadState))}catch(e){}}
+// CRM state is hydrated from Authority, never from a stale localStorage claim.
+var leadState={};
+var meetingRequestPending=false;
+function confirmed(out,requireId){
+ if(!out||out.source!=='postgres'||out.demo===true||
+   (requireId&&(!out.data||!out.data.id||out.data.demo===true)))
+   throw new Error('postgres_confirmation_required');
+ return out.data||null;
+}
+function actionNotice(message){
+ var root=document.getElementById('content');if(!root)return;
+ var node=root.querySelector('#bfsActionNotice');
+ if(!node){node=document.createElement('p');node.id='bfsActionNotice';
+   node.className='bfs-action-notice';node.setAttribute('role','alert');
+   node.setAttribute('aria-live','assertive');root.prepend(node);}
+ node.textContent=message;
+}
+async function restoreLeads(){
+ try{
+  var out=await authority('/v1/b2b/leads',{method:'GET'});confirmed(out);
+  var next={};
+  (Array.isArray(out.data)?out.data:[]).forEach(function(row){
+   if(row&&row.eventBrand==='bfs'&&row.organisationRef&&row.id)
+    next[String(row.organisationRef)]={serverId:String(row.id),stage:String(row.stage||'interest')};
+  });
+  leadState=next;
+ }catch(e){leadState={};}
+}
+async function restoreMeeting(){
+ try{
+  var out=await authority('/v1/meetings',{method:'GET'});confirmed(out);
+  var rows=(Array.isArray(out.data)?out.data:[]).filter(function(x){return x&&x.id;});
+  var latest=rows[0]||null;
+  state.meeting=latest?{id:String(latest.id),
+    delegate:latest.organisation||(latest.metadata&&latest.metadata.counterpartName)||'BFS contact',
+    slot:'Время согласовывается',startsAt:latest.startsAt||null,status:latest.status,
+    origin:'postgres'}:null;
+ }catch(e){state.meeting=null;}
+ if(state.view==='b2b')render();
+}
 function orgById(id){return (organisations||[]).filter(function(o){return o.id===id})[0]||null}
 function orgByName(name){return (organisations||[]).filter(function(o){return o.name===name})[0]||null}
 function madeBadgeForOrganisation(o){return o&&o.brandRef&&madeVerifiedByBrandRef[String(o.brandRef)]?'<span class="made-verified-bfs">СДЕЛАНО В МОСКВЕ · VERIFIED</span>':''}
@@ -50,15 +88,20 @@ async function hydrateMadeVerified(){
  }catch(e){}
 }
 async function leadStage(id,stage){
- var old=leadState[id]||{},org=orgById(id),normalized=stage==='qualified_lead'?'qualified':stage;
- leadState[id]=Object.assign({},old,{stage:normalized,updatedAt:new Date().toISOString()});saveLeads();render();
+ var org=orgById(id),old=leadState[id]||{},normalized=stage==='qualified_lead'?'qualified':stage;
+ if(!org){actionNotice('Организация отсутствует в официальном справочнике.');return;}
  try{
-   var body={eventBrand:'bfs',organisationRef:id,organisationName:org&&org.name||id,stage:normalized,nextAction:normalized==='met'?'Отправить follow-up':''};
-   var out=old.serverId
-     ?await authority('/v1/b2b/leads/'+encodeURIComponent(old.serverId),{method:'PATCH',body:JSON.stringify(body)})
-     :await authority('/v1/b2b/leads',{method:'POST',body:JSON.stringify(body)});
-   if(out.data&&out.data.id){leadState[id].serverId=out.data.id;leadState[id].stage=out.data.stage;saveLeads();}
- }catch(e){}
+  var body={eventBrand:'bfs',organisationRef:id,organisationName:org.name,stage:normalized,
+    nextAction:normalized==='met'?'Отправить follow-up':''};
+  var out=old.serverId
+    ?await authority('/v1/b2b/leads/'+encodeURIComponent(old.serverId),{method:'PATCH',body:JSON.stringify(body)})
+    :await authority('/v1/b2b/leads',{method:'POST',body:JSON.stringify(body)});
+  var row=confirmed(out,true);
+  if(row.stage!==normalized)throw Error('unconfirmed_lead_state');
+  leadState[id]={serverId:String(row.id),stage:row.stage};
+  organisationDirectory(false);
+  actionNotice('CRM · '+normalized.toUpperCase()+' подтверждён PostgreSQL.');
+ }catch(e){actionNotice('CRM не обновлена: сервер не подтвердил изменение.');}
 }
 
 if(window.MFP_DATA&&window.MFP_DATA.bfs){
@@ -140,38 +183,36 @@ function openSession(id){
  $('#content').innerHTML='<button class="small-action" id="backProgramme">← ПРОГРАММА</button><article class="card session-detail"><span class="tag">'+s.tag+'</span><h2>'+s.title+'</h2><div class="meta">'+s.date+' · '+s.time+' · '+s.hall+' · МКЗ «Зарядье»</div><h3>Участники</h3>'+(people.length?people.map(function(p){return '<div class="speaker"><div class="avatar"></div><div><b>'+p.name+'</b><span>'+p.role+' · '+p.org+'</span></div></div>'}).join(''):'<p class="meta">Состав участников ещё не связан в текущем официальном snapshot.</p>')+'<div class="media-status"><b>LIVE / REPLAY</b><span>На официальном источнике доступность трансляции или записи для этой сессии в текущем snapshot не подтверждена.</span></div><div class="card-actions"><button class="small-action" data-remind-session="'+s.id+'">🔔 НАПОМНИТЬ ЗА 20 МИН</button></div><button class="small-action" data-save="'+s.id+'">'+(state.saved[s.id]?'✓ В МОЕЙ ПРОГРАММЕ':'+ ДОБАВИТЬ')+'</button></article>';
  $('#backProgramme').onclick=programme;bindSessionActions();var rb=$('[data-remind-session]');if(rb)rb.onclick=async function(){try{await authority('/v1/agenda/'+encodeURIComponent(rb.dataset.remindSession)+'/save',{method:'POST',body:JSON.stringify({reminderEnabled:true,reminderMinutes:20})});state.saved[rb.dataset.remindSession]=true;persistBfs();}catch(e){}if(window.MFP_SYNC){window.MFP_SYNC.setReminder('bfs',rb.dataset.remindSession,20);window.MFP_SYNC.requestBrowserPermission();}rb.textContent='✓ НАПОМИНАНИЕ УСТАНОВЛЕНО';};
 }
-function defaultMeetingStart(){return '2026-09-29T16:00:00+03:00'}
 async function requestMeeting(input){
- var local={delegate:input.counterpartName||input.organisationName||'BFS contact',slot:'29 SEP · 16:00',status:'requested',brandId:input.brandId||null};
- state.meeting=local;
- try{localStorage.setItem('bfsMeetingRequested','1')}catch(e){}
- b2b();
+ if(meetingRequestPending)return;
+ meetingRequestPending=true;
  try{
   var out=await authority('/v1/meetings',{method:'POST',body:JSON.stringify({
-   eventBrand:'bfs',
-   organisation:input.organisationName||'',
-   organisationRef:input.organisationRef||null,
-   counterpartRef:input.counterpartRef||null,
-   counterpartName:input.counterpartName||null,
-   brandId:input.brandId||null,
-   startsAt:input.startsAt||defaultMeetingStart(),
-   note:'BFS app meeting request'
+    eventBrand:'bfs',organisation:input.organisationName||'',
+    organisationRef:input.organisationRef||null,counterpartRef:input.counterpartRef||null,
+    counterpartName:input.counterpartName||null,brandId:input.brandId||null,
+    // The old September 2026 hard-coded appointment is already in the past.
+    startsAt:input.startsAt||null,note:'BFS app meeting request · time to be agreed'
   })});
-  if(out.data){
-   state.meeting=Object.assign({},local,{id:out.data.id,status:out.data.status,startsAt:out.data.startsAt,organisationRef:input.organisationRef||null});
-   if(input.organisationRef){leadState[input.organisationRef]=Object.assign({},leadState[input.organisationRef]||{},{stage:'meeting_requested',updatedAt:new Date().toISOString()});saveLeads();}
-   try{localStorage.setItem('bfsMeetingState',JSON.stringify(state.meeting))}catch(e){}
-   b2b();
-  }
- }catch(e){}
+  var row=confirmed(out,true);
+  if(row.status!=='requested')throw Error('unconfirmed_meeting_status');
+  state.meeting={id:String(row.id),delegate:input.counterpartName||input.organisationName||'BFS contact',
+    slot:'Время согласовывается',startsAt:row.startsAt||null,
+    status:row.status,origin:'postgres',organisationRef:input.organisationRef||null};
+  state.view='b2b';render();
+  actionNotice('Запрос встречи подтверждён PostgreSQL. Время ещё не согласовано.');
+ }catch(e){actionNotice('Запрос встречи не создан: PostgreSQL не подтвердил операцию.');}
+ finally{meetingRequestPending=false;}
 }
+
 function delegateDiscovery(){
  $('#content').innerHTML='<div class="section-head"><h2>Делегаты и спикеры</h2><span>OFFICIAL PEOPLE DIRECTORY</span></div>'+
   delegates.map(function(d,i){var org=orgByName(d[4]);return '<article class="delegate"><div><span class="tag">'+d[0]+'</span><h3>'+d[1]+'</h3>'+madeBadgeForOrganisation(org)+'<p>'+d[2]+'</p>'+projectActions(d[1])+'</div><button data-meet="'+i+'">ЗАПРОСИТЬ ВСТРЕЧУ</button></article>'}).join('');
  bindProjectActions();
  $$('[data-meet]').forEach(function(b){b.onclick=function(){var d=delegates[Number(b.dataset.meet)];requestMeeting({counterpartRef:d[3],counterpartName:d[1],organisationName:d[4]});};});
 }
-function organisationDirectory(){
+async function organisationDirectory(reload){
+ if(reload!==false)await restoreLeads();
  $('#content').innerHTML='<div class="section-head"><h2>Организации</h2><span>FOLLOW → MEETING → FOLLOW-UP → LEAD</span></div>'+
   organisations.map(function(o){
    var people=(window.MFP_DATA.bfs.speakers||[]).filter(function(p){return (o.people||[]).indexOf(p.id)>=0});
@@ -203,7 +244,7 @@ function b2b(){
   '<div class="b2b"><div class="time">NETWORKING</div><h3>People → meeting → follow-up → lead</h3><p class="meta">Встреча сохраняется в authority; после завершения создаётся follow-up lead.</p>'+
   '<div class="card-actions"><button class="lang" id="discoverDelegates">ЛЮДИ</button><button class="lang" id="orgDirectory">ОРГАНИЗАЦИИ</button></div></div>'+brandContext+meeting+'<div id="leadPipeline"></div>';
  $('#discoverDelegates').onclick=delegateDiscovery;$('#orgDirectory').onclick=organisationDirectory;refreshLeadPipeline();
- if($('#brandContextMeet'))$('#brandContextMeet').onclick=function(){requestMeeting({organisationName:'Made in Moscow Buyer Bridge',counterpartName:'Brand '+crossBrandContext.brandRef,startsAt:defaultMeetingStart(),brandId:crossBrandContext.brandRef});};
+ if($('#brandContextMeet'))$('#brandContextMeet').onclick=function(){requestMeeting({organisationName:'Made in Moscow Buyer Bridge',counterpartName:'Brand '+crossBrandContext.brandRef,brandId:crossBrandContext.brandRef});};
  if($('#brandContextClear'))$('#brandContextClear').onclick=function(){crossBrandContext=null;b2b();};
  async function setMeetingStatus(status){
   if(!state.meeting||!state.meeting.id)return;
@@ -263,7 +304,7 @@ window.addEventListener('message',function(e){
    state.view='b2b';render();
  }
 });
-try{var savedMeeting=JSON.parse(localStorage.getItem('bfsMeetingState')||'null');if(savedMeeting)state.meeting=savedMeeting;}catch(e){}
-parent.postMessage({type:'mfp-request-account-state'},'*');renderMediaDeck();render();hydrateMadeVerified();
+// An old local meeting cache is not evidence of a PostgreSQL transaction.
+parent.postMessage({type:'mfp-request-account-state'},location.origin);renderMediaDeck();render();hydrateMadeVerified();restoreMeeting();
 try{if(parent!==window)parent.postMessage({type:'mfp-frame-ready',eventCode:'bfs'},location.origin);}catch(_){}
 })();
