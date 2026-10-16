@@ -58,7 +58,11 @@ async function main(){
   assert.equal(await transaction(pool,{requestKey:'request_one',actor:'ci_buyer'}),id);
   assert.deepEqual(await counts(),{meetings:1,events:1,leads:1,keys:1});
   await assert.rejects(transaction(pool,{requestKey:'request_two',actor:'ci_buyer',failAt:'commit'}),/injected_after_commit/);
-  assert.equal(await transaction(pool,{requestKey:'request_two',actor:'ci_buyer'}),2);
+  const recoveredId=await transaction(pool,{requestKey:'request_two',actor:'ci_buyer'});
+  const recorded=await pool.query('SELECT meeting_id FROM public.ci_bfs_request_keys WHERE request_key=$1',['request_two']);
+  assert.equal(recorded.rowCount,1);
+  assert.equal(recoveredId,recorded.rows[0].meeting_id,
+    'retry must return committed identity; sequence gaps after rollback are expected');
   assert.deepEqual(await counts(),{meetings:2,events:2,leads:2,keys:2});
   const history=await pool.query('SELECT count(*)::int n FROM public.schema_migrations');
   assert.equal(history.rows[0].n,27,'no new application migration admitted');
