@@ -119,3 +119,29 @@ Required before production: independent migration and default-ACL approval,
 live executed-SQL provenance or formally accepted equivalent catalog with
 roles/triggers/functions, secure Authority database binding, a verified
 backup/restore and real signed multi-role Golden Paths.
+
+
+## Executable transactional outbox worker — disposable PG17 only (16 October 2026)
+
+The CI now executes outbox-worker-scratch.js, an actual PostgreSQL row-locking
+claim/commit routine on the restored scratch database. It uses SKIP LOCKED,
+rechecks current organisation scope, membership and consent after claiming,
+suppresses unauthorized delivery without any network side effects, rejects
+non-synthetic payloads, and writes a local synthetic effect + receipt atomically.
+The candidate also verifies failure before/after receipt, failure after COMMIT,
+two concurrent workers, not-due jobs, exhausted retry limits, durable reconnect,
+and delivery following separately dual-controlled manual redrive.
+
+It runs after consumer-scoped receipts and manual-redrive tests; ci_* tables
+are created only in the disposable restored clone. The fixture now permits the
+terminal state 'suppressed' separately from retry/dead_letter, so consent
+revocation is not misclassified as a retriable transport failure. Consent and
+membership are **synthetic** values in the scratch scope table, not real
+Supabase/Auth actor verification. A live worker, real notifications, invoices,
+bank transfer confirmation, external exactly-once delivery and production
+tenant isolation are explicitly NOT qualified.
+
+The candidate rejects imports unless CI, GITHUB_ACTIONS, MFW_ISOLATED_PG_CI and
+the exact localhost scratch connection match. It is outside the production
+module import graph and does not change historical 026/027, approved migration
+folder, server runtime, live database grants or Render deployment.

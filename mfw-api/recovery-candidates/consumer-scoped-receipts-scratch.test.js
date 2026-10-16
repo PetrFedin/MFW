@@ -232,7 +232,7 @@ async function main(){
      'consumer text NOT NULL, attempt_count integer NOT NULL DEFAULT 0 '+
      'CHECK(attempt_count BETWEEN 0 AND 3),'+
      "status text NOT NULL DEFAULT 'pending' "+
-     "CHECK(status IN ('pending','retry','delivered','dead_letter')),"+
+     "CHECK(status IN ('pending','retry','delivered','dead_letter','suppressed')),"+
      'available_at timestamptz NOT NULL,error_code text,'+
      'PRIMARY KEY(outbox_id,consumer))');
    const firstWindow='2026-10-16T10:00:00.000Z';

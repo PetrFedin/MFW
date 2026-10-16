@@ -88,3 +88,5 @@ jobs:
         run: node mfw-api/recovery-candidates/consumer-scoped-receipts-scratch.test.js
       - name: Qualify audited manual redrive of dead-letter in restored scratch PG17
         run: node mfw-api/recovery-candidates/manual-redrive-scratch.test.js
+      - name: Run real transactional scratch worker with per-delivery consent and tenant gate
+        run: node mfw-api/recovery-candidates/outbox-worker-scratch.test.js
