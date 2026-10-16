@@ -90,3 +90,5 @@ jobs:
         run: node mfw-api/recovery-candidates/manual-redrive-scratch.test.js
       - name: Run real transactional scratch worker with per-delivery consent and tenant gate
         run: node mfw-api/recovery-candidates/outbox-worker-scratch.test.js
+      - name: Verify atomic BFS meeting history and CRM lead in scratch PG17
+        run: node mfw-api/recovery-candidates/bfs-atomic-lifecycle-scratch.test.js
