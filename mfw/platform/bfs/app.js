@@ -229,7 +229,7 @@ async function organisationDirectory(reload){
 async function refreshLeadPipeline(){
  var root=$('#leadPipeline');if(!root)return;
  try{
-  var out=await authority('/v1/b2b/leads',{method:'GET'}),rows=out.data||[];
+  var out=await authority('/v1/b2b/leads',{method:'GET'});confirmed(out);var rows=out.data||[];
   root.innerHTML=rows.length?'<div class="section-head"><h2>Follow-up pipeline</h2><span>SERVER LEADS</span></div>'+
    rows.slice(0,8).map(function(x){return '<article class="meeting-card"><b>'+esc(x.organisationName||x.counterpartName||'BFS lead')+'</b><span>'+String(x.stage||'interest').toUpperCase()+(x.nextAction?' · '+x.nextAction:'')+'</span>'+(x.stage==='met'?'<button data-followup-lead="'+x.id+'">FOLLOW-UP</button>':'')+'</article>';}).join('')
    :'<div class="meta">После запроса и проведения встречи здесь появится follow-up pipeline.</div>';
@@ -238,7 +238,7 @@ async function refreshLeadPipeline(){
 }
 function b2b(){
  var brandContext=crossBrandContext?'<div class="meeting-card cross-brand-context"><b>BRAND CONTEXT · '+esc(crossBrandContext.brandRef||'')+'</b><span>Источник: Made in Moscow → MFW canonical brand → BFS commercial flow</span><div class="card-actions"><button id="brandContextMeet">ЗАПРОСИТЬ ВСТРЕЧУ</button><button id="brandContextClear">СБРОСИТЬ</button></div></div>':'';
- var meeting=state.meeting?'<div class="meeting-card"><b>'+esc(state.meeting.delegate)+'</b><span>'+(state.meeting.startsAt||state.meeting.slot||'')+' · '+String(state.meeting.status||'requested').toUpperCase()+'</span>'+
+ var meeting=state.meeting?'<div class="meeting-card"><b>'+esc(state.meeting.delegate)+'</b><span>'+esc(state.meeting.startsAt||state.meeting.slot||'Время согласовывается')+' · '+esc(String(state.meeting.status||'requested').toUpperCase())+'</span>'+
   '<div class="card-actions"><button id="meetingConfirm">CONFIRM</button><button id="meetingComplete">MEETING HELD</button><button id="cancelMeeting">CANCEL</button></div></div>':'';
  $('#content').innerHTML='<div class="section-head"><h2>B2B meetings</h2><span>SERVER WORKFLOW</span></div>'+
   '<div class="b2b"><div class="time">NETWORKING</div><h3>People → meeting → follow-up → lead</h3><p class="meta">Встреча сохраняется в authority; после завершения создаётся follow-up lead.</p>'+
@@ -250,10 +250,12 @@ function b2b(){
   if(!state.meeting||!state.meeting.id)return;
   try{
    var out=await authority('/v1/meetings/'+encodeURIComponent(state.meeting.id),{method:'PATCH',body:JSON.stringify({status:status})});
-   state.meeting=Object.assign({},state.meeting,out.data||{},{delegate:state.meeting.delegate});
+   var updated=confirmed(out,true);
+   if(updated.status!==status||String(updated.id)!==String(state.meeting.id))throw Error('unconfirmed_transition');
+   state.meeting=Object.assign({},state.meeting,updated,{delegate:state.meeting.delegate,origin:'postgres'});
    try{localStorage.setItem('bfsMeetingState',JSON.stringify(state.meeting))}catch(e){}
    b2b();
-  }catch(e){}
+  }catch(e){actionNotice('Статус встречи не изменён: сервер не подтвердил операцию.');}
  }
  if($('#meetingConfirm'))$('#meetingConfirm').onclick=function(){setMeetingStatus('confirmed')};
  if($('#meetingComplete'))$('#meetingComplete').onclick=function(){setMeetingStatus('completed')};
