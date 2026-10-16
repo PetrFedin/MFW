@@ -84,3 +84,5 @@ jobs:
           echo "scratch_pg17_backup_restore=PASS; production_admission=BLOCKED"
       - name: Validate forward-only multi-consumer receipt integrity on restored scratch clone
         run: node mfw-api/recovery-candidates/consumer-scoped-receipts-scratch.test.js
+      - name: Qualify audited manual redrive of dead-letter in restored scratch PG17
+        run: node mfw-api/recovery-candidates/manual-redrive-scratch.test.js

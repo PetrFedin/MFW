@@ -80,3 +80,10 @@ The workflow also exercises pg_dump/pg_restore with synthetic data on that separ
 Both source files stay outside \`mfw-api/migrations/\` until independent review, live role
 inventory, and data application evidence are complete. GREEN CI proves scratch behavior
 only: not successful deployment, validated production migration history or JWT isolation.
+
+
+## Synthetic dual-control dead-letter redrive (16 October 2026)
+
+The canonical disposable PG17 pipeline now runs `manual-redrive-scratch.test.js` **after** the retry/crash test on `mfw_restored_ci`. It creates CI-only actor fixtures, an append-only redrive audit with an immutable UPDATE/DELETE trigger, verifies reviewer independence and synthetic AAL2, and requeues a poison job only with an explicit reason code. Concurrent duplicate request keys must yield one audit record and one pending job; different actors, reasons or consumers cannot reuse a request key. A redrive records a *pending* retry, not a successful delivery or payment.
+
+This is **not** production manual replay or real Auth: fixture actor IDs and assurance markers are seeded by CI, not issued by Supabase or verified against a live staff account. Production requires validated issuer/session and current operator/reviewer grants, separate tenant and consent checks, a reviewed schema/ACL, secure API audit provenance, a running durable worker and operational alerts. No changes to historical 026/027, executable migrations, `main`, Render or production data.
