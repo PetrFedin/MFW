@@ -46,13 +46,14 @@ function confirmed(out,requireId){
  return out.data||null;
 }
 function actionNotice(message){
- var root=document.getElementById('content');if(!root)return;
- var node=root.querySelector('#bfsActionNotice');
- if(!node){node=document.createElement('p');node.id='bfsActionNotice';
-   node.className='bfs-action-notice';node.setAttribute('role','alert');
-   node.setAttribute('aria-live','assertive');root.prepend(node);}
- node.textContent=message;
+  // Keep server confirmation/errors OUTSIDE #content. Event/CRM views are
+  // re-rendered by hydration and must never erase user-facing failure truth.
+  var node=document.getElementById('bfsActionNotice');
+  if(!node)return;
+  node.textContent=String(message||'');
+  node.hidden=!message;
 }
+
 async function restoreLeads(){
  try{
   var out=await authority('/v1/b2b/leads',{method:'GET'});confirmed(out);
