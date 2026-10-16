@@ -1,9 +1,6 @@
 (function(){
 var state={view:'today',lang:'ru',account:null,meeting:null,
-saved:(function(){try{return JSON.parse(localStorage.getItem('bfsSavedSessions')||'{}')}catch(e){return {}}})(),
-followedProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFollowedProjects')||'{}')}catch(e){return {}}})(),
-favoriteProjects:(function(){try{return JSON.parse(localStorage.getItem('bfsFavoriteProjects')||'{}')}catch(e){return {}}})(),
-rewardStarted:(function(){try{return JSON.parse(localStorage.getItem('bfsRewardStarted')||'{}')}catch(e){return {}}})()};
+saved:{},followedProjects:{},favoriteProjects:{},rewardStarted:{}};
 var AUTHORITY='https://mfw-authority.onrender.com';
 var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems&&window.MFP_MEDIA.ecosystems.bfs||{};
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]});}
@@ -39,6 +36,7 @@ var crossBrandContext=null;
 // CRM state is hydrated from Authority, never from a stale localStorage claim.
 var leadState={};
 var meetingRequestPending=false;
+var agendaInFlight=Object.create(null),professionalInFlight=Object.create(null);
 var meetingKeys={};
 function confirmed(out,requireId){
  if(!out||out.source!=='postgres'||out.demo===true||
@@ -55,6 +53,31 @@ function actionNotice(message){
   node.hidden=!message;
 }
 
+// Server state alone qualifies an agenda/follow relation as persisted.
+async function hydrateAgenda(){
+ try{
+  var out=await authority('/v1/agenda',{method:'GET'});confirmed(out);
+  var rows=Array.isArray(out.data)?out.data:[],next={};
+  rows.forEach(function(x){if(x&&x.eventId)next[String(x.eventId)]=true;});
+  state.saved=next;
+ }catch(e){state.saved={};}
+ if(state.view==='today'||state.view==='programme')render();
+}
+async function hydrateProfessional(){
+ try{
+  var out=await authority('/v1/professional/follows?eventBrand=bfs',{method:'GET'});confirmed(out);
+  var rows=Array.isArray(out.data)?out.data:[],follows={},favorites={},times={};
+  rows.forEach(function(x){
+    if(!x||!x.displayName||!x.entityRef)return;
+    var key=projectKey(x.displayName);
+    follows[key]=true;favorites[key]=x.favorite===true;
+    var at=Date.parse(x.followedAt||'');
+    if(Number.isFinite(at))times[key]=at;
+  });
+  state.followedProjects=follows;state.favoriteProjects=favorites;state.rewardStarted=times;
+ }catch(e){state.followedProjects={};state.favoriteProjects={};state.rewardStarted={};}
+ if(state.view==='speakers')render();
+}
 async function restoreLeads(){
  try{
   var out=await authority('/v1/b2b/leads',{method:'GET'});confirmed(out);
@@ -137,12 +160,36 @@ function professionalEntity(name){
  if(org)return {type:'organisation',ref:org.id,name:org.name};
  return {type:'project',ref:projectKey(name),name:name};
 }
-async function syncProfessional(name){
- var k=projectKey(name),e=professionalEntity(name),following=!!state.followedProjects[k],favorite=!!state.favoriteProjects[k];
- try{await authority('/v1/professional/follows',{method:'POST',body:JSON.stringify({eventBrand:'bfs',entityType:e.type,entityRef:e.ref,displayName:e.name,favorite:favorite,action:following?'save':'remove'})});}catch(err){}
+async function syncProfessional(name,action){
+ var key=projectKey(name),entity=professionalEntity(name);
+ if(professionalInFlight[key])return;
+ professionalInFlight[key]=true;
+ var following=state.followedProjects[key]===true,favorite=state.favoriteProjects[key]===true;
+ if(action==='follow'){following=!following;if(!following)favorite=false;}
+ else if(action==='favorite'){favorite=!favorite;if(favorite)following=true;}
+ try{
+  var out=await authority('/v1/professional/follows',{method:'POST',
+   body:JSON.stringify({eventBrand:'bfs',entityType:entity.type,entityRef:entity.ref,
+    displayName:entity.name,favorite:favorite,action:following?'save':'remove'})});
+  confirmed(out);
+  if(out.following!==following)throw Error('professional_confirmation_mismatch');
+  if(following&&(!out.data||out.data.favorite!==favorite))
+   throw Error('professional_favorite_not_confirmed');
+  state.followedProjects[key]=following;
+  state.favoriteProjects[key]=favorite;
+  if(!following)delete state.rewardStarted[key];
+  else if(out.data){
+   var stamp=Date.parse(out.data.followedAt||'');
+   if(Number.isFinite(stamp))state.rewardStarted[key]=stamp;
+  }
+  persistBfs();render();
+  actionNotice('Подписка / избранное подтверждены PostgreSQL.');
+ }catch(e){actionNotice('Подписка не сохранена: сервер не подтвердил действие.');}
+ finally{delete professionalInFlight[key];}
 }
-function followProject(name){var k=projectKey(name);state.followedProjects[k]=!state.followedProjects[k];if(state.followedProjects[k]&&!state.rewardStarted[k])state.rewardStarted[k]=Date.now();persistBfs();syncProfessional(name);render()}
-function favoriteProject(name){var k=projectKey(name);state.favoriteProjects[k]=!state.favoriteProjects[k];if(state.favoriteProjects[k])state.followedProjects[k]=true;persistBfs();syncProfessional(name);render()}
+function followProject(name){return syncProfessional(name,'follow');}
+function favoriteProject(name){return syncProfessional(name,'favorite');}
+
 function rewardProgress(name){var k=projectKey(name),start=state.rewardStarted[k];if(!start)return 0;return Math.min(30,Math.max(0,Math.floor((Date.now()-start)/86400000)))}
 function projectActions(name){var k=projectKey(name),followed=!!state.followedProjects[k],fav=!!state.favoriteProjects[k],days=rewardProgress(name);return '<div class="project-actions"><button data-follow-project="'+name+'">'+(followed?'✓ Подписка':'＋ Подписаться')+'</button><button data-favorite-project="'+name+'">'+(fav?'♥ Любимый':'♡ В любимые')+'</button></div>'+(followed?'<div class="reward-progress"><b>'+days+' дней связи</b><span>Server relationship signal. Конкретные rewards появляются только в опубликованных campaign.</span><i style="width:'+Math.min(100,days/30*100)+'%"></i></div>':'')}
 function bindProjectActions(){$$('[data-follow-project]').forEach(function(b){b.onclick=function(){followProject(b.dataset.followProject)}});$$('[data-favorite-project]').forEach(function(b){b.onclick=function(){favoriteProject(b.dataset.favoriteProject)}})}
@@ -152,19 +199,32 @@ function cards(){
 }
 function bindSessionActions(){
  bindProjectActions();
+ $$('[data-open-session]').forEach(function(b){b.onclick=function(){openSession(b.dataset.openSession);};});
  $$('[data-save]').forEach(function(b){
   b.onclick=async function(){
    var id=b.dataset.save;
-   state.saved[id]=!state.saved[id];
-   persistBfs();
+   if(agendaInFlight[id])return;
+   agendaInFlight[id]=true;b.disabled=true;
+   var desired=!state.saved[id];
    try{
-    if(state.saved[id])await authority('/v1/agenda/'+encodeURIComponent(id)+'/save',{method:'POST',body:JSON.stringify({reminderEnabled:true,reminderMinutes:20})});
-    else await authority('/v1/agenda/'+encodeURIComponent(id),{method:'DELETE'});
-   }catch(e){}
-   render();
+    var out=desired
+     ?await authority('/v1/agenda/'+encodeURIComponent(id)+'/save',
+       {method:'POST',body:JSON.stringify({reminderEnabled:false,reminderMinutes:20})})
+     :await authority('/v1/agenda/'+encodeURIComponent(id),{method:'DELETE'});
+    confirmed(out);
+    if(desired&&(!out.data||out.data.eventId!==id||out.data.demo===true))
+     throw Error('agenda_confirmation_mismatch');
+    if(!desired&&(out.ok!==true||out.eventId!==id))
+     throw Error('agenda_delete_not_confirmed');
+    if(desired)state.saved[id]=true;else delete state.saved[id];
+    persistBfs();render();
+    actionNotice('Расписание подтверждено PostgreSQL.');
+   }catch(e){actionNotice('Расписание не изменено: запись PostgreSQL не подтверждена.');}
+   finally{delete agendaInFlight[id];b.disabled=false;}
   };
  });
 }
+
 function today(){
  $('#content').innerHTML='<div class="registration-banner '+(registration()?'ok':'')+'"><b>'+(registration()?'BFS REGISTRATION · '+registration().status.toUpperCase():'Нужна отдельная регистрация BFS')+'</b><span>'+(registration()?'Общий профиль используется, участие BFS подтверждено отдельно.':'Профиль платформы можно использовать повторно — подтвердить BFS нужно отдельно.')+'</span><button id="registrationCta">'+(registration()?'ОТКРЫТЬ КАБИНЕТ':'ЗАРЕГИСТРИРОВАТЬСЯ')+'</button></div><div class="section-head"><h2>Сегодня</h2><span>28 SEPTEMBER</span></div>'+cards()+'<div class="section-head"><h2>Exhibition</h2><span>QR ACCESS</span></div><article class="card"><span class="tag">Khokhloma</span><h3>International exhibition access</h3><div class="meta">QR-код участника бизнес-программы также открывает доступ на выставку.</div></article>';
  $('#registrationCta').onclick=function(){parent.postMessage({type:registration()?'mfp-open-account':'mfp-open-registration',eventCode:'bfs'},'*')};bindSessionActions();
@@ -183,7 +243,29 @@ function openSession(id){
  var source=(window.MFP_DATA&&window.MFP_DATA.bfs.sessions||[]).filter(function(x){return x.id===id})[0]||{};
  var people=(source.speakerIds||[]).map(function(pid){return (window.MFP_DATA.bfs.speakers||[]).filter(function(x){return x.id===pid})[0]}).filter(Boolean);
  $('#content').innerHTML='<button class="small-action" id="backProgramme">← ПРОГРАММА</button><article class="card session-detail"><span class="tag">'+s.tag+'</span><h2>'+s.title+'</h2><div class="meta">'+s.date+' · '+s.time+' · '+s.hall+' · МКЗ «Зарядье»</div><h3>Участники</h3>'+(people.length?people.map(function(p){return '<div class="speaker"><div class="avatar"></div><div><b>'+p.name+'</b><span>'+p.role+' · '+p.org+'</span></div></div>'}).join(''):'<p class="meta">Состав участников ещё не связан в текущем официальном snapshot.</p>')+'<div class="media-status"><b>LIVE / REPLAY</b><span>На официальном источнике доступность трансляции или записи для этой сессии в текущем snapshot не подтверждена.</span></div><div class="card-actions"><button class="small-action" data-remind-session="'+s.id+'">🔔 НАПОМНИТЬ ЗА 20 МИН</button></div><button class="small-action" data-save="'+s.id+'">'+(state.saved[s.id]?'✓ В МОЕЙ ПРОГРАММЕ':'+ ДОБАВИТЬ')+'</button></article>';
- $('#backProgramme').onclick=programme;bindSessionActions();var rb=$('[data-remind-session]');if(rb)rb.onclick=async function(){try{await authority('/v1/agenda/'+encodeURIComponent(rb.dataset.remindSession)+'/save',{method:'POST',body:JSON.stringify({reminderEnabled:true,reminderMinutes:20})});state.saved[rb.dataset.remindSession]=true;persistBfs();}catch(e){}if(window.MFP_SYNC){window.MFP_SYNC.setReminder('bfs',rb.dataset.remindSession,20);window.MFP_SYNC.requestBrowserPermission();}rb.textContent='✓ НАПОМИНАНИЕ УСТАНОВЛЕНО';};
+ $('#backProgramme').onclick=programme;bindSessionActions();
+ var rb=$('[data-remind-session]');
+ if(rb)rb.onclick=async function(){
+   var id=rb.dataset.remindSession;
+   if(agendaInFlight[id])return;
+   agendaInFlight[id]=true;rb.disabled=true;
+   try{
+    var out=await authority('/v1/agenda/'+encodeURIComponent(id)+'/save',
+      {method:'POST',body:JSON.stringify({reminderEnabled:true,reminderMinutes:20})});
+    confirmed(out);
+    if(!out.data||out.data.eventId!==id||out.data.reminderEnabled!==true)
+     throw Error('reminder_confirmation_mismatch');
+    state.saved[id]=true;persistBfs();
+    if(window.MFP_SYNC){
+      window.MFP_SYNC.setReminder('bfs',id,20);
+      window.MFP_SYNC.requestBrowserPermission();
+    }
+    rb.textContent='✓ НАПОМИНАНИЕ СОХРАНЕНО';
+    actionNotice('Напоминание подтверждено PostgreSQL.');
+   }catch(e){actionNotice('Напоминание не установлено: запись PostgreSQL не подтверждена.');}
+   finally{delete agendaInFlight[id];rb.disabled=false;}
+ };
+
 }
 async function requestMeeting(input){
  if(meetingRequestPending)return;
@@ -326,6 +408,6 @@ window.addEventListener('message',function(e){
  }
 });
 // An old local meeting cache is not evidence of a PostgreSQL transaction.
-parent.postMessage({type:'mfp-request-account-state'},location.origin);renderMediaDeck();render();hydrateMadeVerified();restoreMeeting();
+parent.postMessage({type:'mfp-request-account-state'},location.origin);renderMediaDeck();render();hydrateMadeVerified();restoreMeeting();hydrateAgenda();hydrateProfessional();
 try{if(parent!==window)parent.postMessage({type:'mfp-frame-ready',eventCode:'bfs'},location.origin);}catch(_){}
 })();
