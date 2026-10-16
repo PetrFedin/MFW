@@ -3717,21 +3717,29 @@ async function router(req,res){
     const status=String(b.status||''),allowed=['requested','confirmed','reschedule_requested','completed','cancelled','declined'];
     if(!allowed.includes(status))return json(res,400,{error:'invalid_meeting_status'});
     if(pool){
-      const r=await pool.query(`UPDATE b2b_meetings SET status=$3,starts_at=COALESCE($4,starts_at),note=COALESCE($5,note),updated_at=now()
+      const client=await pool.connect();
+      let txActive=false;
+      let r;
+      try{
+        await client.query('BEGIN');txActive=true;
+      r=await client.query(`UPDATE b2b_meetings SET status=$3,starts_at=COALESCE($4,starts_at),note=COALESCE($5,note),updated_at=now()
         WHERE id::text=$1 AND requester_user_id::text=$2
         RETURNING id,organisation,starts_at AS "startsAt",status,note,metadata,updated_at AS "updatedAt"`,
         [id,userId,status,b.startsAt||null,b.note||null]);
       if(!r.rowCount)return json(res,404,{error:'meeting_not_found'});
-      await pool.query('INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,$3,$4::jsonb)',[id,userId,status,JSON.stringify({startsAt:b.startsAt||null,note:b.note||null})]);
+      await client.query('INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,$3,$4::jsonb)',[id,userId,status,JSON.stringify({startsAt:b.startsAt||null,note:b.note||null})]);
       const stageMap={requested:'meeting_requested',confirmed:'meeting_confirmed',completed:'met'};
       if(stageMap[status]){
         const m=r.rows[0],meta=m.metadata||{};
-        await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
+        await client.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
           VALUES($1,$2,'bfs',$3,$4,$5,$6,$7,$8,$9::jsonb)
           ON CONFLICT(meeting_id) DO UPDATE SET stage=EXCLUDED.stage,next_action=COALESCE(EXCLUDED.next_action,b2b_leads.next_action),updated_at=now()`,
           [id,userId,meta.organisationRef||null,m.organisation||meta.organisationName||null,meta.counterpartRef||null,meta.counterpartName||null,
            stageMap[status],status==='completed'?'Отправить follow-up после встречи':null,JSON.stringify({source:'meeting_state_machine'})]);
       }
+        await client.query('COMMIT');txActive=false;
+      }catch(err){if(txActive)await client.query('ROLLBACK');throw err;}
+      finally{client.release();}
       await track('meeting_status_changed',{meetingId:id,status},userId);
       return json(res,200,{data:r.rows[0],source:'postgres'});
     }
@@ -3768,23 +3776,31 @@ async function router(req,res){
         eventStorageId=ev.rows[0].id;
       }
       const startsAt=b.startsAt||null;
-      const saved=await pool.query(`INSERT INTO b2b_meetings(event_id,brand_id,requester_user_id,organisation,starts_at,status,note,source,metadata)
+      const client=await pool.connect();
+      let txActive=false;
+      let meeting;
+      try{
+        await client.query('BEGIN');txActive=true;
+      const saved=await client.query(`INSERT INTO b2b_meetings(event_id,brand_id,requester_user_id,organisation,starts_at,status,note,source,metadata)
         VALUES($1,$2,$3,$4,$5,'requested',$6,'app',$7::jsonb)
         RETURNING id,event_id AS "eventStorageId",brand_id AS "brandStorageId",requester_user_id AS "requesterUserId",organisation,starts_at AS "startsAt",status,note,created_at AS "createdAt"`,
         [eventStorageId,brandStorageId,user.rows[0].id,String(b.organisation||'').slice(0,200)||null,startsAt,String(b.note||'').slice(0,1000)||null,JSON.stringify({slot:b.slot||null,organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'})]);
-      const meeting=saved.rows[0],meetingMeta={
+      meeting=saved.rows[0];const meetingMeta={
         organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,
         counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'
       };
-      await pool.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null,...meetingMeta})]);
+      await client.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null,...meetingMeta})]);
       if(String(b.eventBrand||'bfs')==='bfs'){
-        await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
+        await client.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
           VALUES($1,$2,'bfs',$3,$4,$5,$6,'meeting_requested','Подтвердить встречу',$7::jsonb)
           ON CONFLICT(meeting_id) DO UPDATE SET stage='meeting_requested',organisation_ref=EXCLUDED.organisation_ref,
             organisation_name=EXCLUDED.organisation_name,counterpart_ref=EXCLUDED.counterpart_ref,counterpart_name=EXCLUDED.counterpart_name,
             next_action='Подтвердить встречу',updated_at=now()`,
           [meeting.id,user.rows[0].id,meetingMeta.organisationRef,meetingMeta.organisationName,meetingMeta.counterpartRef,meetingMeta.counterpartName,JSON.stringify({source:'meeting_request'})]);
       }
+        await client.query('COMMIT');txActive=false;
+      }catch(err){if(txActive)await client.query('ROLLBACK');throw err;}
+      finally{client.release();}
       await track('meeting_requested',{meetingId:String(meeting.id),brandId:b.brandId||null,eventId:b.eventId||null,eventBrand:b.eventBrand||'bfs'},requester);
       return json(res,201,{data:meeting,source:'postgres'});
     }
