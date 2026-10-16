@@ -244,7 +244,12 @@ async function refreshLeadPipeline(){
 function b2b(){
  var brandContext=crossBrandContext?'<div class="meeting-card cross-brand-context"><b>BRAND CONTEXT · '+esc(crossBrandContext.brandRef||'')+'</b><span>Источник: Made in Moscow → MFW canonical brand → BFS commercial flow</span><div class="card-actions"><button id="brandContextMeet">ЗАПРОСИТЬ ВСТРЕЧУ</button><button id="brandContextClear">СБРОСИТЬ</button></div></div>':'';
  var meeting=state.meeting?'<div class="meeting-card"><b>'+esc(state.meeting.delegate)+'</b><span>'+esc(state.meeting.startsAt||state.meeting.slot||'Время согласовывается')+' · '+esc(String(state.meeting.status||'requested').toUpperCase())+'</span>'+
-  '<div class="card-actions"><button id="meetingConfirm">CONFIRM</button><button id="meetingComplete">MEETING HELD</button><button id="cancelMeeting">CANCEL</button></div></div>':'';
+  '<div class="card-actions">'+
+   (['requested','reschedule_requested'].includes(state.meeting.status)
+    ?'<label>Согласованная дата и время<input id="meetingScheduledTime" type="datetime-local" aria-label="Согласованная дата и время"></label><button id="meetingConfirm">CONFIRM</button>':'')+
+   (state.meeting.status==='confirmed'?'<button id="meetingComplete">MEETING HELD</button>':'')+
+   (!['completed','cancelled','declined'].includes(state.meeting.status)?'<button id="cancelMeeting">CANCEL</button>':'')+
+   '</div></div>':'';
  $('#content').innerHTML='<div class="section-head"><h2>B2B meetings</h2><span>SERVER WORKFLOW</span></div>'+
   '<div class="b2b"><div class="time">NETWORKING</div><h3>People → meeting → follow-up → lead</h3><p class="meta">Встреча сохраняется в authority; после завершения создаётся follow-up lead.</p>'+
   '<div class="card-actions"><button class="lang" id="discoverDelegates">ЛЮДИ</button><button class="lang" id="orgDirectory">ОРГАНИЗАЦИИ</button></div></div>'+brandContext+meeting+'<div id="leadPipeline"></div>';
@@ -254,7 +259,16 @@ function b2b(){
  async function setMeetingStatus(status){
   if(!state.meeting||!state.meeting.id)return;
   try{
-   var out=await authority('/v1/meetings/'+encodeURIComponent(state.meeting.id),{method:'PATCH',body:JSON.stringify({status:status})});
+   var selectedTime=null;
+   if(status==='confirmed'){
+     var timeInput=document.getElementById('meetingScheduledTime');
+     if(!timeInput||!timeInput.value){actionNotice('Укажите согласованную дату и время встречи.');return;}
+     var instant=new Date(timeInput.value);
+     if(!Number.isFinite(instant.getTime())){actionNotice('Некорректная дата встречи.');return;}
+     selectedTime=instant.toISOString();
+   }
+   var out=await authority('/v1/meetings/'+encodeURIComponent(state.meeting.id),{
+     method:'PATCH',body:JSON.stringify({status:status,startsAt:selectedTime})});
    var updated=confirmed(out,true);
    if(updated.status!==status||String(updated.id)!==String(state.meeting.id))throw Error('unconfirmed_transition');
    state.meeting=Object.assign({},state.meeting,updated,{delegate:state.meeting.delegate,origin:'postgres'});
