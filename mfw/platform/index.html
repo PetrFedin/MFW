@@ -33,7 +33,10 @@
       <label>Компания<input name="company"></label>
       <label>Должность<input name="title"></label>
       <label>Страна<input name="country"></label>
+      <label class="privacy-choice"><input type="checkbox" name="networkingVisible"><span>Показывать мой профиль участникам деловой сети для контактов. Необязательно.</span></label>
+      <label class="privacy-choice"><input type="checkbox" name="marketingConsent"><span>Получать новости и предложения платформы. Необязательно, можно отключить позже.</span></label>
       <button class="save-profile" type="submit">СОХРАНИТЬ ОБЩИЙ ПРОФИЛЬ</button>
+      <p class="profile-sync-status" id="profileSyncStatus" role="status" aria-live="polite"></p>
     </form>
     <section class="organisation-panel" id="organisationPanel">
       <div class="drawer-kicker">ПОСТОЯННЫЙ ПРОФИЛЬ ОРГАНИЗАЦИИ</div>

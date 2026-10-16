@@ -48,7 +48,11 @@
   function deliverPendingRoute(){
     if(!frameReady||!pendingEventRoute||!frame.contentWindow)return;
     var route=pendingEventRoute;pendingEventRoute=null;
-    frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+    if(selectedEvent==='made'&&route.kind==='section'){
+      frame.contentWindow.postMessage({type:'made-open-section',section:route.section==='verified'?'verified':'home'},location.origin);
+    }else{
+      frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+    }
   }
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
@@ -123,7 +127,7 @@
     return authorityFetch('/v1/me/profile',{method:'PATCH',body:JSON.stringify({
       displayName:displayName(),primaryRole:String(primaryRole||'visitor').toLowerCase(),locale:'ru',
       organisation:accountState.profile.company||'',jobTitle:accountState.profile.title||'',
-      country:accountState.profile.country||'',marketingConsent:true,networkingVisible:true
+      country:accountState.profile.country||'',marketingConsent:accountState.profile.marketingConsent===true,networkingVisible:accountState.profile.networkingVisible===true
     })});
   }
   async function syncPlatformRegistration(code,reg){
@@ -154,6 +158,8 @@
       if(p.organisation!=null)accountState.profile.company=p.organisation||'';
       if(p.jobTitle!=null)accountState.profile.title=p.jobTitle||'';
       if(p.country!=null)accountState.profile.country=p.country||'';
+      if(typeof p.networkingVisible==='boolean')accountState.profile.networkingVisible=p.networkingVisible;
+      if(typeof p.marketingConsent==='boolean')accountState.profile.marketingConsent=p.marketingConsent;
       (d.platformRegistrations||[]).forEach(function(r){accountState.registrations[r.eventCode]=r;});
       if(Array.isArray(d.interests))setSelectedInterests(d.interests.map(function(x){return x.key;}));
       saveState();fillProfile();renderRegistrations();renderInterestPicker();if(accessToken())loadOrganisationRegistry();
@@ -206,7 +212,7 @@
     return out;
   }
 
-  var DEFAULT_PROFILE={firstName:'Алексей',lastName:'Иванов',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Индустрия моды',title:'Гость',country:'Россия'};
+  var DEFAULT_PROFILE={firstName:'',lastName:'',email:'',phone:'',company:'',title:'',country:'',networkingVisible:false,marketingConsent:false};
   var INTEREST_OPTIONS=[
     {id:'runway',label:'Показы'},
     {id:'emerging_brands',label:'Новые бренды'},
@@ -284,7 +290,7 @@
     notifyFrame();
   }
   function notifyFrame(){
-    try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},'*');}catch(e){}
+    try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},location.origin);}catch(e){}
   }
   function safeJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
   async function hydrateMadeDirectory(){
@@ -1646,7 +1652,9 @@
   }
   function fillProfile(){
     Object.keys(accountState.profile).forEach(function(key){
-      if(profileForm.elements[key]) profileForm.elements[key].value=accountState.profile[key]||'';
+      var field=profileForm.elements[key];if(!field)return;
+      if(field.type==='checkbox')field.checked=accountState.profile[key]===true;
+      else field.value=accountState.profile[key]||'';
     });
   }
   function statusLabel(reg){
@@ -1669,7 +1677,7 @@
     [].slice.call(registrationGrid.querySelectorAll('[data-register]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.register,false);};});
     [].slice.call(registrationGrid.querySelectorAll('[data-copy]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.copy,true);};});
     var openMade=registrationGrid.querySelector('[data-open-made]');if(openMade)openMade.onclick=function(){closeAccount();openEvent('made');};
-    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made');setTimeout(function(){try{frame.contentWindow.postMessage({type:'made-open-section',section:'verified'},'*');}catch(e){}},250);};
+    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made',{kind:'section',section:'verified'});};
   }
   function openAccount(){
     fillProfile();renderRegistrations();renderInterestPicker();renderOrganisationIdentity();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
@@ -1717,10 +1725,24 @@
   profileForm.onsubmit=async function(e){
     e.preventDefault();
     var fd=new FormData(profileForm);
-    accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()));
+    accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()),{
+      networkingVisible:fd.get('networkingVisible')==='on',
+      marketingConsent:fd.get('marketingConsent')==='on'
+    });
+    var syncStatus=document.getElementById('profileSyncStatus');
+    if(syncStatus)syncStatus.textContent='Профиль сохранён на этом устройстве. Проверяем серверную синхронизацию…';
     saveState();renderRegistrations();
     var preferred=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'visitor';
-    try{await syncProfileToAuthority(preferred);saveState();}catch(err){console.warn('profile authority sync failed',err);}
+    try{
+      var result=await syncProfileToAuthority(preferred);
+      if(syncStatus)syncStatus.textContent=result&&result.source==='postgres'&&result.ok===true
+        ?'Профиль подтверждён сервером PostgreSQL.'
+        :'Данные сохранены только на этом устройстве. Серверный профиль не подтверждён.';
+      saveState();
+    }catch(err){
+      console.warn('profile authority sync failed',err);
+      if(syncStatus)syncStatus.textContent='Данные сохранены только на этом устройстве. Синхронизация с сервером не удалась.';
+    }
   };
   registrationForm.onsubmit=async function(e){
     e.preventDefault();if(!currentRegistrationEvent)return;
@@ -1807,7 +1829,7 @@
     if(e.origin!==location.origin||e.source!==frame.contentWindow||!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-frame-ready'&&e.data.eventCode===selectedEvent){frameReady=true;notifyFrame();deliverPendingRoute();return;}
     if(e.data.type==='mfp-open-account')openAccount();
-    if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
+    if(e.data.type==='mfp-open-registration'&&['mfw','bfs'].includes(e.data.eventCode))openRegistration(e.data.eventCode,false);
     if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode,e.data.route||null);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });
