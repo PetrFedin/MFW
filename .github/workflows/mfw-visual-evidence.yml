@@ -1,0 +1,85 @@
+name: MFW Visual Evidence
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, integration/mfw-all-improvements-20261015]
+    paths: ['mfw/**', 'qa/capture-mfw-evidence.js', '.github/workflows/mfw-visual-evidence.yml']
+  schedule:
+    - cron: '17 8 * * 1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mfw-visual-evidence
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Chromium
+        working-directory: qa
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Start integration preview
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory mfw >/tmp/mfw-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/platform/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/mfw-preview.log
+          exit 1
+      - name: Capture public Chromium screenshots and 25-second video
+        working-directory: qa
+        env:
+          MFW_CAPTURE_OUTPUT: ../_mfw_evidence
+        run: node capture-mfw-evidence.js
+      - name: Upload media artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mfw-browser-evidence
+          path: _mfw_evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Publish separately labelled media to archive branch
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          archive_dir="$(mktemp -d)"
+          git fetch origin mfw-media-archive 2>/dev/null || true
+          if git show-ref --verify --quiet refs/remotes/origin/mfw-media-archive; then
+            git worktree add --detach "$archive_dir" refs/remotes/origin/mfw-media-archive
+            git -C "$archive_dir" switch -C mfw-media-archive
+          else
+            git worktree add --detach "$archive_dir" HEAD
+            git -C "$archive_dir" switch --orphan mfw-media-archive
+            git -C "$archive_dir" rm -rf --ignore-unmatch . >/dev/null
+          fi
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          shortsha="$(git rev-parse --short=10 HEAD)"
+          runkey="$stamp-$shortsha"
+          mkdir -p "$archive_dir/snapshots/$runkey" "$archive_dir/latest"
+          cp -a _mfw_evidence/. "$archive_dir/snapshots/$runkey/"
+          find "$archive_dir/latest" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          cp -a _mfw_evidence/. "$archive_dir/latest/"
+          printf '%s\n' '# MFW browser media' 'Captured live with Chromium.' 'Inspect latest/manifest.json for production vs preview provenance.' > "$archive_dir/README.md"
+          find "$archive_dir/snapshots" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +17 | while read -r old; do rm -rf "$old"; done
+          git -C "$archive_dir" add -A
+          if ! git -C "$archive_dir" diff --cached --quiet; then
+            git -C "$archive_dir" commit -m "media: MFW browser evidence $stamp $shortsha"
+            git -C "$archive_dir" push origin HEAD:refs/heads/mfw-media-archive
+          fi
