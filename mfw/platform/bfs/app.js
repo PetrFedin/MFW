@@ -311,7 +311,7 @@ async function organisationDirectory(reload){
   }).join('');
  bindProjectActions();
  $('[data-org-meet]').forEach(function(btn){btn.onclick=function(){var o=orgById(btn.dataset.orgMeet);if(!o)return;requestMeeting({organisationRef:o.id,organisationName:o.name});};});
- $$('[data-org-lead]').forEach(function(btn){btn.onclick=function(){leadStage(btn.dataset.orgLead,'qualified');};});
+ // CRM actions are delegated on the stable host to survive async view refresh.
 }
 async function refreshLeadPipeline(){
  var root=$('#leadPipeline');if(!root)return;
@@ -397,7 +397,16 @@ function profile(){
  $('#manageAccount').onclick=function(){parent.postMessage({type:'mfp-open-account'},'*')};
 }
 function render(){$$('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===state.view)});({today:today,programme:programme,speakers:showSpeakers,b2b:b2b,pass:pass,profile:profile}[state.view]||today)()}
-$$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
+$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
+var bfsContent=document.getElementById('content');
+if(bfsContent)bfsContent.addEventListener('click',function(event){
+ var button=event.target&&event.target.closest&&event.target.closest('[data-org-lead]');
+ if(!button||!bfsContent.contains(button)||button.disabled)return;
+ event.preventDefault();button.disabled=true;
+ Promise.resolve(leadStage(button.dataset.orgLead,'qualified')).finally(function(){
+  if(button.isConnected)button.disabled=false;
+ });
+});
 $('.lang').onclick=function(){state.lang=state.lang==='ru'?'en':'ru';$('.lang').textContent=state.lang==='ru'?'RU / EN':'EN / RU';};
 window.addEventListener('message',function(e){
  if(e.origin!==location.origin||e.source!==parent||!e.data||typeof e.data!=='object')return;
