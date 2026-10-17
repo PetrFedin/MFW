@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "mfw-027-catalog-observation-v1",
+  "source": "existing MFW Supabase project",
+  "observationDate": "2026-10-13",
+  "sourceType": "read-only pg_catalog + information_schema",
+  "original027Recovered": false,
+  "candidateEquivalenceVerified": false,
+  "independentReviewerApproved": false,
+  "isolatedPostgresReplayPassed": false,
+  "productionAdmitted": false,
+  "note": "This records current schema shape, not original SQL provenance or a running worker.",
+  "tables": {
+    "authority_outbox": {
+      "columnCount": 14,
+      "constraints": [
+        "authority_outbox_pkey",
+        "authority_outbox_event_key_key",
+        "authority_outbox_attempts_check",
+        "authority_outbox_status_check"
+      ],
+      "indexes": [
+        "authority_outbox_pkey",
+        "authority_outbox_event_key_key",
+        "authority_outbox_pending_idx",
+        "authority_outbox_topic_idx"
+      ]
+    },
+    "authority_delivery_receipts": {
+      "columnCount": 9,
+      "constraints": [
+        "authority_delivery_receipts_pkey",
+        "authority_delivery_receipts_event_key_key",
+        "authority_delivery_receipts_outbox_id_consumer_key",
+        "authority_delivery_receipts_outbox_id_fkey"
+      ],
+      "indexes": [
+        "authority_delivery_receipts_pkey",
+        "authority_delivery_receipts_event_key_key",
+        "authority_delivery_receipts_outbox_id_consumer_key",
+        "authority_delivery_receipts_topic_idx"
+      ]
+    }
+  },
+  "fanout": {
+    "supported": false,
+    "blocker": "receipt_event_key_globally_unique"
+  },
+  "blockers": [
+    "original_027_sql_not_recovered",
+    "isolated_postgres_17_replay_not_verified",
+    "backup_restore_not_verified",
+    "role_negative_tests_not_verified",
+    "receipt_event_key_globally_unique_prevents_independent_consumer_fanout",
+    "authority_live_postgres_admission_not_verified"
+  ]
+}

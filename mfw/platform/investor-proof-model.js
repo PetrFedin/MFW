@@ -395,7 +395,7 @@
       {stage:'DELIVERY',owner:'Platform',proof:'Placement / attendance / scan / engagement events',revenueGate:'Delivery evidence'},
       {stage:'HANDOFF',owner:'Partner',proof:'Approved lead or action handoff',revenueGate:'Commercial terms if applicable'},
       {stage:'REPORT',owner:'Platform',proof:'Auditable performance summary',revenueGate:'Invoice eligibility'},
-      {stage:'SETTLEMENT',owner:'Finance',proof:'Invoice / payment evidence',revenueGate:'Recognised revenue'}
+      {stage:'SETTLEMENT',owner:'Finance',proof:'Invoice / payment evidence',revenueGate:'Денежное поступление и признанная выручка проверяются отдельно'}
     ],
     brandFunnel:[
       {stage:'EXPOSURE',proof:'show / profile / replay view'},
@@ -409,11 +409,11 @@
       {stage:'OUTCOME',proof:'reported or verified commercial outcome'}
     ],
     revenueStreams:[
-      {id:'partner',payer:'Sponsor / strategic partner',product:'Partner & activation product',formula:'contracted packages × net contract value',recognition:'Contract + delivery + billing/payment evidence'},
-      {id:'brand',payer:'Brand / designer organisation',product:'Brand365 / CRM / professional tools',formula:'active paid brand accounts × annual plan',recognition:'Paid subscription contract + billing evidence'},
-      {id:'professional',payer:'Professional participant / organisation',product:'B2B / Deal Room services',formula:'paid plans + approved service/transaction fees',recognition:'Contract/fee terms + billable event + payment evidence'},
-      {id:'intelligence',payer:'Brand / sponsor / industry organisation',product:'Fashion Intelligence',formula:'subscribed organisations × annual intelligence plan',recognition:'Subscription contract + governed report/API delivery'},
-      {id:'api',payer:'Enterprise / technology / media partner',product:'Partner API / enterprise integration',formula:'enterprise contracts + approved metered usage',recognition:'Contract + usage/delivery record + billing evidence'}
+      {id:'partner',payer:'Sponsor / strategic partner',product:'Partner & activation product',formula:'contracted packages × net contract value',recognition:'Договор + исполнение обязательств + финансовое подтверждение; счёт и оплата отдельно'},
+      {id:'brand',payer:'Brand / designer organisation',product:'Brand365 / CRM / professional tools',formula:'active paid brand accounts × annual plan',recognition:'Договор подписки + период предоставления услуги + финансовое решение; оплата отдельно'},
+      {id:'professional',payer:'Professional participant / organisation',product:'B2B / Deal Room services',formula:'paid plans + approved service/transaction fees',recognition:'Условия тарифа + подтверждённое оказание услуги + решение финансовой функции'},
+      {id:'intelligence',payer:'Brand / sponsor / industry organisation',product:'Fashion Intelligence',formula:'subscribed organisations × annual intelligence plan',recognition:'Подписка + оказанная услуга / передача отчёта + финансовая приёмка'},
+      {id:'api',payer:'Enterprise / technology / media partner',product:'Partner API / enterprise integration',formula:'enterprise contracts + approved metered usage',recognition:'Договор + подтверждённое предоставление API + финансовая приёмка'}
     ],
     proofRules:[
       'Interest is not a lead unless an explicit professional action exists.',

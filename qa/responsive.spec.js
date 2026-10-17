@@ -179,7 +179,9 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   const bfs = page.frameLocator('#eventFrame');
   await expect(bfs.locator('.logo')).toBeVisible();
   await bfs.locator('[data-view="profile"]').click();
-  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible();
+  // The child frame receives the shared-profile bridge asynchronously; keep the assertion
+  // active but allow a little extra time under the seven-viewport CI matrix.
+  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible({ timeout: 15000 });
   await expect(bfs.getByText('MFW')).toBeVisible();
   await expect(bfs.getByText('СДЕЛАНО В МОСКВЕ')).toBeVisible();
 
@@ -969,7 +971,17 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toMatch(/mfp-shell-2026-10-06-p\d+/);
+  const serviceWorkerSource = await swResponse.text();
+  expect(serviceWorkerSource).toMatch(/const CACHE='mfp-shell-\d{4}-\d{2}-\d{2}-[a-z0-9]+';/);
+  const shellResponse = await page.request.get('/platform/index.html');
+  expect(shellResponse.ok()).toBeTruthy();
+  const shellHtml = await shellResponse.text();
+  const shellResources = [...shellHtml.matchAll(/(?:src|href)="\.\/([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g)]
+    .map((match) => '/platform/' + match[1]);
+  expect(shellResources.length).toBeGreaterThanOrEqual(7);
+  for (const resource of shellResources) {
+    expect(serviceWorkerSource).toContain("'" + resource + "'");
+  }
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
@@ -1020,4 +1032,150 @@ test('Admin Console navigation remains reachable on phone and tablet', async ({ 
   await expectNoDocumentOverflow(page);
   await expectTarget(page.locator('.sidebar .nav button').first(), 40);
   await page.screenshot({ path: testInfo.outputPath('admin-console.png') });
+});
+
+
+test('shared profile consent is explicit and persists across ecosystems',async({page})=>{
+  const profileUpdates=[];
+  await page.route('https://mfw-authority.onrender.com/v1/me/profile',async route=>{
+    profileUpdates.push(route.request().postDataJSON());
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,source:'postgres'})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#profileForm input[name="marketingConsent"]')).not.toBeChecked();
+  await expect(page.locator('#profileForm input[name="networkingVisible"]')).not.toBeChecked();
+  for(const [name,value] of Object.entries({firstName:'QA',lastName:'Privacy',email:'privacy@example.test',phone:'+10000000000'})){
+    await page.locator('#profileForm [name="'+name+'"]').fill(value);
+  }
+  await page.locator('#profileForm button[type="submit"]').click();
+  await expect(page.locator('#profileSyncStatus')).toContainText('PostgreSQL');
+  await expect.poll(()=>profileUpdates.length).toBeGreaterThan(0);
+  expect(profileUpdates.at(-1)).toMatchObject({marketingConsent:false,networkingVisible:false});
+  await page.locator('#profileForm input[name="marketingConsent"]').check();
+  await page.locator('#profileForm input[name="networkingVisible"]').check();
+  await page.locator('#profileForm button[type="submit"]').click();
+  await expect.poll(()=>profileUpdates.length).toBe(2);
+  expect(profileUpdates.at(-1)).toMatchObject({marketingConsent:true,networkingVisible:true});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#profileForm input[name="marketingConsent"]')).toBeChecked();
+  await expect(page.locator('#profileForm input[name="networkingVisible"]')).toBeChecked();
+});
+
+test('embedded application rejects forged parent-window account and route messages',async({page})=>{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const frame=page.frameLocator('#eventFrame');
+  await frame.locator('[data-view="profile"]').click();
+  await expect(frame.locator('#content')).not.toContainText('INJECTED ACCOUNT');
+  await frame.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-account-state',payload:{profile:{firstName:'INJECTED',lastName:'ACCOUNT'},registrations:{}}},
+      origin:location.origin,
+      source:window
+    }));
+  });
+  await expect(frame.locator('#content')).not.toContainText('INJECTED ACCOUNT');
+  await frame.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-route',route:{kind:'brand-buyer',brandRef:'forged'}},
+      origin:'https://untrusted.example',
+      source:window.parent
+    }));
+  });
+  await expect(frame.locator('#content')).not.toContainText('BRAND CONTEXT · forged');
+  await page.locator('[data-event="made"]').click();
+  const made=page.frameLocator('#eventFrame');
+  await made.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-account-state',payload:{profile:{firstName:'INJECTED'},registrations:{}}},
+      origin:location.origin,source:window
+    }));
+  });
+  await expect(made.locator('#madeAccountBridge')).not.toContainText('INJECTED');
+});
+
+test('BFS shared profile escapes HTML instead of rendering injected markup',async({page})=>{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await page.locator('#profileForm input[name="firstName"]').fill('<img src=x onerror=alert(1)>');
+  await page.locator('#profileForm input[name="lastName"]').fill('QA');
+  await page.locator('#profileForm input[name="email"]').fill('safe@example.test');
+  await page.locator('#profileForm input[name="phone"]').fill('+10000000000');
+  await page.locator('#profileForm button[type="submit"]').click();
+  await page.locator('#accountClose').click();
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="profile"]').click();
+  await expect(bfs.locator('#content')).toContainText('<img src=x onerror=alert(1)>');
+  await expect(bfs.locator('#content img')).toHaveCount(0);
+});
+
+
+test('BFS rejects demo meeting receipt and never shows a phantom meeting',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    const method=route.request().method();
+    await route.fulfill({status:method==='POST'?201:200,contentType:'application/json',
+      body:JSON.stringify(method==='POST'?
+       {source:'memory',data:{id:'demo_meeting',status:'requested',demo:true}}:
+       {source:'postgres',data:[]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').click();
+  await bfs.locator('#discoverDelegates').click();
+  await bfs.locator('[data-meet]').first().click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('не создан');
+  await expect(bfs.locator('#meetingConfirm')).toHaveCount(0);
+});
+
+test('BFS ignores locally forged CRM lead status and rejects demo lead confirmation',async({page})=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('bfsLeadState',JSON.stringify({'qa-org':{stage:'qualified',serverId:'fake'}}));
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:route.request().method()==='POST'?201:200,
+      contentType:'application/json',body:JSON.stringify(route.request().method()==='POST'?
+      {source:'memory',data:{id:'fake_lead',stage:'qualified',demo:true}}:
+      {source:'postgres',data:[]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').click();
+  await bfs.locator('#orgDirectory').click();
+  await expect(bfs.locator('#content')).not.toContainText('CRM · QUALIFIED');
+  await bfs.locator('[data-org-lead]').first().click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('не обновлена');
+});
+
+
+test('BFS agenda refuses a demo write and leaves session unsaved',async({page})=>{
+ await page.route('https://mfw-authority.onrender.com/v1/agenda/**',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'memory',data:{eventId:'s1',demo:true}})});
+ });
+ await page.route('https://mfw-authority.onrender.com/v1/agenda',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:[]})});
+ });
+ await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+ const bfs=page.frameLocator('#eventFrame');
+ await bfs.locator('[data-view="programme"]').first().click();
+ await bfs.locator('[data-save="s1"]').first().click();
+ await expect(bfs.locator('#bfsActionNotice')).toContainText('не изменено');
+ await expect(bfs.locator('[data-save="s1"]').first()).toContainText('ДОБАВИТЬ');
+});
+
+test('BFS subscription rejects demo confirmation and leaves follow button unchanged',async({page})=>{
+ await page.route('https://mfw-authority.onrender.com/v1/professional/follows**',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify(route.request().method()==='GET'
+    ?{source:'postgres',data:[]}
+    :{source:'memory',following:true,data:{favorite:false,demo:true}})});
+ });
+ await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+ const bfs=page.frameLocator('#eventFrame');
+ await bfs.locator('[data-view="speakers"]').click();
+ await bfs.locator('[data-follow-project]').first().click();
+ await expect(bfs.locator('#bfsActionNotice')).toContainText('не сохранена');
+ await expect(bfs.locator('[data-follow-project]').first()).toContainText('Подписаться');
 });

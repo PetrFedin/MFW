@@ -1036,3 +1036,62 @@ Production persistence is still not admitted:
 - Render currently reports authority auto-deploy disabled, so exact-SHA explicit deploy verification is mandatory until reconciled.
 
 No paid resource was created, PostgreSQL was not exposed externally, and the strict PostgreSQL guard was not enabled before the binding.
+
+
+## Commercial Proof Ladder · 2026-10-13 (DRAFT, NOT production-admitted)
+
+A read-only investor commercial-evidence ladder and interactive, zero-default economics calculator now exist in the feature branch. This is **not** evidence of realised revenue, signed contracts, bank receipts or durable PostgreSQL admission.
+
+- Eight evidence stages: pilot, signed contract, delivery, acceptance, invoice, accounting/finance, payment, renewal. Invoice, payment and recognition are distinct.
+- All stages render NOT EVIDENCED until authoritative, scoped server evidence exists. A browser flag cannot recognize revenue.
+- Editable modelled assumptions: paid Brand365 organisations, fees and variable cost, partner packages, package price/cost, fixed costs and 1–36 month horizon. Monetary fields start at zero.
+- The scenario computes commercial potential, contribution, simplified operating result, break-even brands and horizon potential. It does not assert actual sales or audited ARR.
+- Recognised revenue, billed amount, collected cash, audited ARR and MRR are separate unknown actuals, not filled from simulations.
+- Numeric validation fails closed; reset and navigation to existing Brand, Partner and Evidence Control views are present.
+- Dedicated Node contract tests and seven-device Playwright browser coverage must PASS before merge.
+- No backend contract registration, billing, payment, production data write or paid infrastructure change.
+- Spec: docs/MFW_INVESTOR_COMMERCIAL_PROOF_2026-10-13.md
+
+Authority PostgreSQL admission remains gated by historical app SQL 026–027, isolated backup/restore and negative role checks.
+
+The static investor evidence manifest has a corresponding MODELLED / blocked commercial-proof claim with code/test references; this is a preview traceability link, not a production business event.
+
+
+## 2026-10-15 — Reconciled execution audit (code vs live truth)
+
+Authoritative reference: [MFW execution audit](docs/MFW_EXECUTION_AUDIT_2026-10-15.md) with 35 individually traced workstreams and their acceptance evidence. The master integration plan was re-read from current `main` before this wave.
+
+**Current source boundary:** `main` at `7a2e7b98f9192862cbafe638cc3732c2db4f0f01` still contains application SQL 001–025. Separate PR #20 carries isolated (unapproved) 026/027 recovery candidates. PR #26 has a modelled investor scenario, and PR #30 an independent (not live-integrated) server financial evidence contract. Do not attribute these changes to deployed production or `main` until reviewed and merged.
+
+**Infrastructure read-only check:** existing Render `mfw-authority` on branch `main` reports `autoDeploy=no` and empty `healthCheckPath`. The existing free Render PostgreSQL `mfw-postgres` is suspended, while the separate connected MFW Supabase PostgreSQL 17 project reports `ACTIVE_HEALTHY`. This does not prove or imply that Authority uses Supabase. Secure provider selection/binding and original migration provenance remain P0 HOLD.
+
+**Live security catalog:** the connected Supabase project has broad default privileges for future public objects created by `postgres` and `supabase_admin`. P0 Issue #28 tracks independent review; synthetic future-object ACL hardening tests in PR #20 passed on disposable PostgreSQL 17. **No production database grants were modified.** RLS/no-policy and existing object privileges are separate security checks.
+
+**Quality evidence:** source-level MFW/BFS/Made product modules and responsive Chromium tests are not a substitute for signed-user registration/QR check-in, partner/sponsor acceptance, actual bank settlement, multiple-role tenant isolation or real phone browser evidence. Commercial and investor actuals remain unadmitted. Cross-project visual identities remain distinct, with Russian-first default.
+
+The next allowed implementation order is: historical migration and privilege review → protected PostgreSQL Authority admission → real JWT/organisation negative proofs and authenticated Golden Paths → transactional outbox/jobs → actual participant/B2B/Brand365/sponsor workflows → independently evidenced commercial finance → investor consumption. See workstream identifiers in `docs/mfw-execution-roadmap.json`.
+
+
+## 2026-10-15 — Independent late production delta (supersedes earlier SQL-origin claim)
+
+The historical Git-committed *application files* `026` and `027` were recovered from
+commits `626a1b86` and `105cbc1c`, respectively; PR #20 head
+`050bc73384d6960827ee78b7d916bbd3b2d1ab95` passed exact-head Responsive QA
+and Isolated PostgreSQL 17 Replay. This supersedes the earlier 2026-10-15 statement
+that 027's original repository source was not recovered. **Whether the identical
+bytes were applied to live PostgreSQL has not been attested.**
+
+Live Authority `/health`: release `b540bf54`, `dataMode=memory`.
+Live Authority `/ready`: HTTP 503. The published platform remains on `9fd9356c`.
+Connected MFW Supabase remains healthy with 27 application-history rows,
+88 public tables protected by RLS, but `auth.users=0`, `auth.sessions=0`,
+`authority_outbox=0` and `authority_delivery_receipts=0`.
+Future-object creator default ACL is still broad. PR #26/#31 and PR #20/#30
+edit shared files; integrated merge QA is mandatory.
+
+Source/evidence details: `docs/MFW_EXECUTION_AUDIT_2026-10-15.md`.
+No production update, live SQL grant changes, paid resources or credential handling.
+
+## 2026-10-15 — Unified integration candidate (not deployed)
+
+Draft integration work combines PR #20, #23, #24, #26, #29, #30, #31 without promoting unreviewed SQL or claiming PostgreSQL admission. Candidate includes both commercial proof UI and finance/identity verification boundaries. Release remains HOLD until integrated tests, independent review, real JWT and PostgreSQL Golden Paths are evidenced.

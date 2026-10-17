@@ -329,6 +329,22 @@
         "mfw-api/package.json",
         "docs/MFW_CAPITAL_AUTHORITY_2026-10-06.md"
       ]
+    },
+    {
+      "id": "commercial_proof_ladder_v1",
+      "claim": "Commercial pilot-to-revenue proof ladder and editable zero-default economics model are DEMO-ONLY; no admitted revenue, cash, ARR or MRR.",
+      "status": "implemented_preview",
+      "evidenceClass": "modelled",
+      "productionAdmission": "blocked",
+      "dataOrigin": "browser_assumptions_only",
+      "evidence": [
+        "mfw/platform/commercial-proof-model.js",
+        "mfw/platform/commercial-proof.css",
+        "mfw/platform/platform.js",
+        "qa/commercial-proof-model.test.js",
+        "qa/commercial-proof.spec.js",
+        "docs/MFW_INVESTOR_COMMERCIAL_PROOF_2026-10-13.md"
+      ]
     }
   ],
   "rules": [
@@ -628,5 +644,24 @@
     "default": "ru",
     "secondary": "en",
     "scope": "shared investor/control-tower shell"
+  },
+  "verificationBoundary": {
+    "runtimeAdmission": "blocked",
+    "stateClaimScope": "source-artifact-and-preview-presence-only",
+    "interpretationOfObserved": "Observed means a source or visual implementation exists in the repository; it does not establish verified attendee activity, customer transactions, production durability, revenue or an audit opinion.",
+    "actualCommercialMetrics": {
+      "recognisedRevenue": null,
+      "bankVerifiedCash": null,
+      "auditedARR": null,
+      "verifiedSponsorSettlement": null
+    },
+    "trustedCommercialSource": null,
+    "environmentProvenance": "demo; no live PostgreSQL Authority admission in this package",
+    "requiredEvidenceBeforeProduction": [
+      "verified latest exact-head Render Authority /ready=200 and dataMode=postgres",
+      "independent finance/payer source acceptance and full contract-to-cash trace",
+      "JWT membership and multi-tenant negative tests",
+      "reviewed production migration/schema/role and backup-restore acceptance"
+    ]
   }
 }

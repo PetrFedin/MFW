@@ -1,0 +1,46 @@
+name: MFW Future Public Grants Security (Scratch PG17)
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "mfw-api/security-candidates/**"
+      - ".github/workflows/mfw-default-grants-security.yml"
+permissions:
+  contents: read
+jobs:
+  default-grants-negative:
+    name: New public table/sequence grant boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mfw_default_acl_scratch_only
+          POSTGRES_DB: mfw_acl_ci
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mfw_acl_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      MFW_CI_DEFAULT_ACL: DISPOSABLE_ONLY
+      MFW_CI_PG_URL: postgresql://postgres:mfw_default_acl_scratch_only@127.0.0.1:5432/mfw_acl_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Refuse real database URLs
+        run: |
+          if test -n "$(printenv DATABASE_URL || true)"; then exit 1; fi
+          if test -n "$(printenv SUPABASE_DB_URL || true)"; then exit 1; fi
+      - name: Install API dependencies
+        working-directory: mfw-api
+        run: npm install --no-audit --no-fund
+      - name: Seed and check explicit default grants on disposable PG17
+        working-directory: mfw-api
+        run: node security-candidates/isolated-default-acl.test.js

@@ -25,6 +25,7 @@
   var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
   var INVESTOR_MODEL=window.MFP_INVESTOR_MODEL||{};
   var proofMode='live';
+  var economicsAssumptions=Object.assign({},window.MFP_COMMERCIAL_PROOF?window.MFP_COMMERCIAL_PROOF.defaults:{});
   var controlTowerView='case';
   var selectedControlCase='buyer-brand-alpha';
   var selectedPortfolioStage='INTENT';
@@ -47,7 +48,11 @@
   function deliverPendingRoute(){
     if(!frameReady||!pendingEventRoute||!frame.contentWindow)return;
     var route=pendingEventRoute;pendingEventRoute=null;
-    frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+    if(selectedEvent==='made'&&route.kind==='section'){
+      frame.contentWindow.postMessage({type:'made-open-section',section:route.section==='verified'?'verified':'home'},location.origin);
+    }else{
+      frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+    }
   }
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
@@ -122,7 +127,7 @@
     return authorityFetch('/v1/me/profile',{method:'PATCH',body:JSON.stringify({
       displayName:displayName(),primaryRole:String(primaryRole||'visitor').toLowerCase(),locale:'ru',
       organisation:accountState.profile.company||'',jobTitle:accountState.profile.title||'',
-      country:accountState.profile.country||'',marketingConsent:true,networkingVisible:true
+      country:accountState.profile.country||'',marketingConsent:accountState.profile.marketingConsent===true,networkingVisible:accountState.profile.networkingVisible===true
     })});
   }
   async function syncPlatformRegistration(code,reg){
@@ -153,6 +158,8 @@
       if(p.organisation!=null)accountState.profile.company=p.organisation||'';
       if(p.jobTitle!=null)accountState.profile.title=p.jobTitle||'';
       if(p.country!=null)accountState.profile.country=p.country||'';
+      if(typeof p.networkingVisible==='boolean')accountState.profile.networkingVisible=p.networkingVisible;
+      if(typeof p.marketingConsent==='boolean')accountState.profile.marketingConsent=p.marketingConsent;
       (d.platformRegistrations||[]).forEach(function(r){accountState.registrations[r.eventCode]=r;});
       if(Array.isArray(d.interests))setSelectedInterests(d.interests.map(function(x){return x.key;}));
       saveState();fillProfile();renderRegistrations();renderInterestPicker();if(accessToken())loadOrganisationRegistry();
@@ -205,7 +212,7 @@
     return out;
   }
 
-  var DEFAULT_PROFILE={firstName:'Алексей',lastName:'Иванов',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Индустрия моды',title:'Гость',country:'Россия'};
+  var DEFAULT_PROFILE={firstName:'',lastName:'',email:'',phone:'',company:'',title:'',country:'',networkingVisible:false,marketingConsent:false};
   var INTEREST_OPTIONS=[
     {id:'runway',label:'Показы'},
     {id:'emerging_brands',label:'Новые бренды'},
@@ -283,7 +290,7 @@
     notifyFrame();
   }
   function notifyFrame(){
-    try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},'*');}catch(e){}
+    try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},location.origin);}catch(e){}
   }
   function safeJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
   async function hydrateMadeDirectory(){
@@ -1098,6 +1105,88 @@
       '<div class="hub-note">В production бренд видит только свою first-party аудиторию и privacy-safe benchmark; competitor-level private data не раскрывается.</div>';
     bindProofMode();
   }
+  function commercialScenarioHtml(){
+    var model=window.MFP_COMMERCIAL_PROOF;
+    if(!model||model.version!=='mfw-commercial-proof-ladder-v1'){
+      return '<div class="commercial-validation">Финансовая модель недоступна. Показатели намеренно скрыты.</div>';
+    }
+    var audit=model.auditEvidence({});
+    return '<section class="commercial-proof" data-commercial-schema="'+h(model.version)+'">'+
+      '<div class="commercial-proof-heading"><div><div class="drawer-kicker">INVESTOR PROOF / ПРОВЕРЯЕМАЯ ЭКОНОМИКА</div>'+
+      '<h4>От пилота до признанной выручки — через доказательства.</h4>'+
+      '<p>Договор, исполнение, счёт, учёт и поступления — разные факты. Отсутствующий этап не заменяется встречами, охватами или модельными расчётами.</p></div>'+
+      '<span class="commercial-truth-tag">PRODUCTION REVENUE · НЕ ПОДТВЕРЖДЕНО</span></div>'+
+      '<div class="commercial-ladder-grid">'+audit.stages.map(function(stage,i){
+        return '<article class="commercial-ladder-card" data-commercial-stage="'+h(stage.id)+'">'+
+          '<small>'+String(i+1).padStart(2,'0')+' / '+h(stage.label)+'</small><b>'+h(stage.proof)+'</b>'+
+          '<p>'+h(stage.meaning)+'</p><span class="commercial-evidence-state">'+
+          (stage.evidenceState==='ADMITTED_SOURCE'?'ПРОВЕРЯЕМЫЙ ИСТОЧНИК':'НЕ ПОДТВЕРЖДЕНО')+
+          '</span></article>';
+      }).join('')+'</div>'+
+      '<div class="commercial-note">Это контрольный перечень необходимых источников, а не реестр реальных контрактов MFW. Счёт и оплата отдельно от признания выручки. Бухгалтерское решение принимает уполномоченная финансовая функция на основании принятой учётной политики.</div>'+
+      '<div class="commercial-scenario" aria-label="Калькулятор инвестиционного сценария">'+
+      '<div class="drawer-kicker">ИНТЕРАКТИВНЫЙ СЦЕНАРИЙ · MODELLED / НЕ ФАКТ</div>'+
+      '<h4>Сколько платящих организаций нужно для устойчивой модели?</h4>'+
+      '<p>Введите собственные допущения. По умолчанию все коммерческие суммы — ноль. Число организаций и тарифы постоянны в пределах выбранного горизонта; churn, CAC, налоги и инвестиции здесь не прогнозируются.</p>'+
+      '<div class="commercial-scenario-fields">'+model.fields.map(function(field){
+        return '<label class="commercial-input-label"><span>'+h(field.label)+'</span>'+
+        '<small>'+h(field.unit)+'</small><input type="number" inputmode="decimal" data-commercial-field="'+h(field.key)+'" '+
+        'min="'+h(field.min||0)+'" max="'+h(field.max)+'" step="'+h(field.step)+'" '+
+        'value="'+h(economicsAssumptions[field.key])+'""></label>';
+      }).join('')+'</div>'+
+      '<div class="commercial-scenario-results" id="commercialScenarioResults" aria-live="polite"></div>'+
+      '<div class="commercial-note">«Модельный коммерческий объём» — потенциальная сумма по заданным тарифам, не ARR, MRR и не признанная выручка. Операционный результат упрощён и исключает налоги, CAPEX, CAC и другие неуказанные расходы. Точка безубыточности не является прогнозом продаж.</div>'+
+      '<div class="commercial-cta-row"><button class="commercial-secondary" data-commercial-reset="1">СБРОСИТЬ ДОПУЩЕНИЯ</button>'+
+      '<div><button data-commercial-open="brand">КАБИНЕТ БРЕНДА →</button> '+
+      '<button data-commercial-open="partner">КАБИНЕТ ПАРТНЁРА →</button> '+
+      '<button data-commercial-open="proof">EVIDENCE CONTROL →</button></div></div>'+
+      '</div></section>';
+  }
+  function displayScenarioRubles(v){
+    return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(v)+' ₽';
+  }
+  function updateCommercialScenario(){
+    var root=document.getElementById('commercialScenarioResults');
+    if(!root)return;
+    var model=window.MFP_COMMERCIAL_PROOF;
+    if(!model){root.innerHTML='<div class="commercial-validation">Модель недоступна.</div>';return;}
+    try{
+      var sc=model.scenario(economicsAssumptions);
+      var cards=[
+        {id:'monthlyPotential',name:'Модельный объём / месяц',value:displayScenarioRubles(sc.monthly.potentialCommercialValue)},
+        {id:'monthlyContribution',name:'Вклад после переменных затрат',value:displayScenarioRubles(sc.monthly.contribution)},
+        {id:'monthlyResult',name:'Упрощённый результат / месяц',value:displayScenarioRubles(sc.monthly.operatingResult),negative:sc.monthly.operatingResult<0},
+        {id:'breakEvenBrands',name:'Для покрытия расходов · брендов',value:sc.breakEvenBrands===null?'Не рассчитывается':String(sc.breakEvenBrands)},
+        {id:'horizonPotential',name:'Модельный объём / '+sc.horizon.months+' мес.',value:displayScenarioRubles(sc.horizon.potentialCommercialValue)}
+      ];
+      root.innerHTML=cards.map(function(kpi){return '<article class="commercial-scenario-kpi'+(kpi.negative?' negative':'')+'"><span>'+h(kpi.name)+'</span>'+
+        '<strong data-commercial-kpi="'+h(kpi.id)+'">'+h(kpi.value)+'</strong></article>';}).join('');
+    }catch(err){
+      root.innerHTML='<div class="commercial-validation" role="alert">Некорректные допущения. Исправьте значения: пустые, отрицательные и недопустимо большие числа не используются в расчёте.</div>';
+    }
+  }
+  function bindCommercialScenario(){
+    [].slice.call(document.querySelectorAll('[data-commercial-field]')).forEach(function(input){
+      input.oninput=function(){
+        economicsAssumptions[input.dataset.commercialField]=input.value;
+        updateCommercialScenario();
+      };
+    });
+    var reset=document.querySelector('[data-commercial-reset]');
+    if(reset)reset.onclick=function(){
+      economicsAssumptions=Object.assign({},window.MFP_COMMERCIAL_PROOF.defaults);
+      renderEconomics();
+    };
+    [].slice.call(document.querySelectorAll('[data-commercial-open]')).forEach(function(button){
+      button.onclick=function(){
+        var target=button.dataset.commercialOpen;
+        if(['brand','partner','proof'].indexOf(target)<0)return;
+        hubTab=target;renderHub();
+      };
+    });
+    updateCommercialScenario();
+  }
+
   function renderEconomics(){
     var streams=INVESTOR_MODEL.revenueStreams||[];
     hubContent.innerHTML=
@@ -1106,7 +1195,9 @@
       '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE УСЛОВИЕ</b></div>'+
       streams.map(function(x){return '<div class="economics-row"><span>'+h(x.payer)+'</span><span>'+h(x.product)+'</span><code>'+h(x.formula)+'</code><em>'+h(x.recognition)+'</em></div>';}).join('')+'</div>'+
       '<div class="economics-proof-grid"><article><b>OBSERVED</b><span>Product actions and delivery events.</span></article><article><b>REPORTED</b><span>Partner-declared outcomes.</span></article><article><b>VERIFIED</b><span>Admitted external confirmation.</span></article><article><b>MODELLED</b><span>Scenario economics with explicit assumptions.</span></article></div>'+
-      '<div class="hub-note">Юнит-экономика, CAC, ROI, GMV, ARR и MRR считаются фактическими только при наличии исходного набора данных и периода расчёта. Демонстрационные подстановки намеренно отсутствуют.</div>';
+      '<div class="hub-note">Юнит-экономика, CAC, ROI, GMV, ARR и MRR считаются фактическими только при наличии исходного набора данных и периода расчёта. Демонстрационные подстановки намеренно отсутствуют.</div>'+
+      commercialScenarioHtml();
+    bindCommercialScenario();
   }
 
   function committeePolicy(){return INVESTOR_MODEL.investmentCommittee||{};}
@@ -1561,7 +1652,9 @@
   }
   function fillProfile(){
     Object.keys(accountState.profile).forEach(function(key){
-      if(profileForm.elements[key]) profileForm.elements[key].value=accountState.profile[key]||'';
+      var field=profileForm.elements[key];if(!field)return;
+      if(field.type==='checkbox')field.checked=accountState.profile[key]===true;
+      else field.value=accountState.profile[key]||'';
     });
   }
   function statusLabel(reg){
@@ -1584,7 +1677,7 @@
     [].slice.call(registrationGrid.querySelectorAll('[data-register]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.register,false);};});
     [].slice.call(registrationGrid.querySelectorAll('[data-copy]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.copy,true);};});
     var openMade=registrationGrid.querySelector('[data-open-made]');if(openMade)openMade.onclick=function(){closeAccount();openEvent('made');};
-    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made');setTimeout(function(){try{frame.contentWindow.postMessage({type:'made-open-section',section:'verified'},'*');}catch(e){}},250);};
+    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made',{kind:'section',section:'verified'});};
   }
   function openAccount(){
     fillProfile();renderRegistrations();renderInterestPicker();renderOrganisationIdentity();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
@@ -1632,10 +1725,24 @@
   profileForm.onsubmit=async function(e){
     e.preventDefault();
     var fd=new FormData(profileForm);
-    accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()));
+    accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()),{
+      networkingVisible:fd.get('networkingVisible')==='on',
+      marketingConsent:fd.get('marketingConsent')==='on'
+    });
+    var syncStatus=document.getElementById('profileSyncStatus');
+    if(syncStatus)syncStatus.textContent='Профиль сохранён на этом устройстве. Проверяем серверную синхронизацию…';
     saveState();renderRegistrations();
     var preferred=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'visitor';
-    try{await syncProfileToAuthority(preferred);saveState();}catch(err){console.warn('profile authority sync failed',err);}
+    try{
+      var result=await syncProfileToAuthority(preferred);
+      if(syncStatus)syncStatus.textContent=result&&result.source==='postgres'&&result.ok===true
+        ?'Профиль подтверждён сервером PostgreSQL.'
+        :'Данные сохранены только на этом устройстве. Серверный профиль не подтверждён.';
+      saveState();
+    }catch(err){
+      console.warn('profile authority sync failed',err);
+      if(syncStatus)syncStatus.textContent='Данные сохранены только на этом устройстве. Синхронизация с сервером не удалась.';
+    }
   };
   registrationForm.onsubmit=async function(e){
     e.preventDefault();if(!currentRegistrationEvent)return;
@@ -1722,7 +1829,7 @@
     if(e.origin!==location.origin||e.source!==frame.contentWindow||!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-frame-ready'&&e.data.eventCode===selectedEvent){frameReady=true;notifyFrame();deliverPendingRoute();return;}
     if(e.data.type==='mfp-open-account')openAccount();
-    if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
+    if(e.data.type==='mfp-open-registration'&&['mfw','bfs'].includes(e.data.eventCode))openRegistration(e.data.eventCode,false);
     if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode,e.data.route||null);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });

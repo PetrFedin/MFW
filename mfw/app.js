@@ -1728,10 +1728,12 @@
 
   async function createMeeting(){
     try{
-      var meetingOut=await api('/v1/meetings',{method:'POST',body:JSON.stringify({brandId:'b1',buyerId:state.userId||'demo_buyer',slot:'14:30'})});
-      await api('/v1/leads',{method:'POST',body:JSON.stringify({brandId:'b1',buyerId:state.userId||'demo_buyer',source:'meeting',stage:'meeting',note:'Showroom meeting confirmed'})});
-      state.meeting={id:meetingOut.data.id,slot:'14:30',status:'confirmed'};
-      closeSheet();render();toast(T('Встреча подтверждена сервером: 14:30','Meeting confirmed by server: 14:30'));track('meeting_confirmed',{brandId:'b1',slot:'14:30'});
+      if(!state.mfwMeetingRequestKey)state.mfwMeetingRequestKey='mfw_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,15);
+      var meetingOut=await api('/v1/meetings',{method:'POST',headers:{'Idempotency-Key':state.mfwMeetingRequestKey},body:JSON.stringify({eventBrand:'mfw',brandId:'b1',buyerId:state.userId||'demo_buyer',slot:'Время согласовывается'})});
+      if(meetingOut.source!=='postgres'||!meetingOut.data||meetingOut.data.status!=='requested')throw Error('meeting_not_authoritative');
+      state.mfwMeetingRequestKey=null;
+      state.meeting={id:meetingOut.data.id,slot:'Время согласовывается',status:'requested'};
+      closeSheet();render();toast(T('Запрос встречи сохранён. Время ожидает согласования','Meeting requested. Time is awaiting confirmation'));track('meeting_requested',{brandId:'b1'});
     }catch(_){
       toast(T('API недоступен — встреча не подтверждена','API unavailable — meeting not confirmed'));
     }
