@@ -1159,7 +1159,7 @@ test('BFS agenda refuses a demo write and leaves session unsaved',async({page})=
  });
  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
  const bfs=page.frameLocator('#eventFrame');
- await bfs.locator('[data-view="programme"]').click();
+ await bfs.locator('[data-view="programme"]').first().click();
  await bfs.locator('[data-save="s1"]').first().click();
  await expect(bfs.locator('#bfsActionNotice')).toContainText('не изменено');
  await expect(bfs.locator('[data-save="s1"]').first()).toContainText('ДОБАВИТЬ');
