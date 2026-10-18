@@ -10,7 +10,12 @@ function envFor(port) {
     PORT: String(port),
     MFW_REQUIRE_POSTGRES: 'false',
     RENDER_GIT_COMMIT: 'qa-feature-release',
-    MFW_FLAG_PROGRAMME_PRODUCTION_PREVIEW: 'true'
+    MFW_FLAG_PROGRAMME_PRODUCTION_PREVIEW: 'true',
+    // This localhost-only test explicitly opts into its synthetic demo user.
+    // Public/production Authority defaults to demo auth disabled.
+    MFW_ENABLE_DEMO_AUTH: 'true',
+    NODE_ENV: 'test',
+    MFW_ADMIN_TOKEN: ''
   };
   delete env.DATABASE_URL;
   return env;
@@ -82,6 +87,13 @@ async function stop(child) {
     assert.strictEqual(organizerBody.role, 'Organizer');
     assert.strictEqual(organizerBody.data.programme_production_preview.value, true);
     assert.strictEqual(organizerBody.data.programme_production_preview.reason, 'ENV_OVERRIDE');
+
+    // A self-selected Organizer flag may shape a noncritical preview, but
+    // must never be treated as a production administrative grant.
+    const admin = await fetch(base + '/v1/admin/overview', {
+      headers: { Authorization: 'Bearer ' + authBody.session }
+    });
+    assert.strictEqual(admin.status, 403, 'demo role cannot grant admin API access');
 
     const invalid = await fetch(base + '/v1/features?eventBrand=wrong', {
       headers: { Authorization: 'Bearer ' + authBody.session }

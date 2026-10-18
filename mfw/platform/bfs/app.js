@@ -110,12 +110,27 @@ function orgById(id){return (organisations||[]).filter(function(o){return o.id==
 function orgByName(name){return (organisations||[]).filter(function(o){return o.name===name})[0]||null}
 function madeBadgeForOrganisation(o){return o&&o.brandRef&&madeVerifiedByBrandRef[String(o.brandRef)]?'<span class="made-verified-bfs">СДЕЛАНО В МОСКВЕ · VERIFIED</span>':''}
 async function hydrateMadeVerified(){
+ var next=Object.create(null);
  try{
-  var out=await authority('/v1/made-in-moscow/brands',{method:'GET'}),rows=out&&Array.isArray(out.data)?out.data:[];
-  madeVerifiedByBrandRef={};rows.forEach(function(row){madeVerifiedByBrandRef[String(row.id)]=true;});
-  organisations.forEach(function(o){o.madeInMoscowVerified=!!(o.brandRef&&madeVerifiedByBrandRef[String(o.brandRef)]);});
-  render();
- }catch(e){}
+  var out=await authority('/v1/made-in-moscow/brands',{method:'GET'});
+  // A successful HTTP status, an arbitrary row or a memory-demo payload
+  // cannot establish approved Made in Moscow programme membership.
+  confirmed(out);
+  if(out.badge!=='made_in_moscow_verified'||!Array.isArray(out.data))
+   throw Error('verified_programme_authority_required');
+  out.data.forEach(function(row){
+   if(row&&typeof row.id==='string'&&row.id.trim()&&
+      typeof row.name==='string'&&row.name.trim())next[row.id]=true;
+  });
+ }catch(e){
+  // Revoked/inaccessible roster: fail closed rather than leave stale badges.
+  next=Object.create(null);
+ }
+ madeVerifiedByBrandRef=next;
+ organisations.forEach(function(o){
+  o.madeInMoscowVerified=!!(o.brandRef&&madeVerifiedByBrandRef[String(o.brandRef)]);
+ });
+ render();
 }
 async function leadStage(id,stage){
  var org=orgById(id),old=leadState[id]||{},normalized=stage==='qualified_lead'?'qualified':stage;

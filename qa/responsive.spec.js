@@ -1216,6 +1216,50 @@ test('BFS agenda keeps confirmed canonical save despite late stale GET',async({p
  }finally{unblockInitialGet();}
 });
 
+test('BFS Made verification badge requires an approved PostgreSQL roster',async({page})=>{
+ // Introduce ONE synthetic reviewed link inside the browser test. Real BFS
+ // organisations have no guessed link to a Made brand by default.
+ await page.route('**/platform/event-data.js**',async route=>{
+  const response=await route.fetch();
+  const body=await response.text();
+  const original='id:"fashion-paper",name:"Fashion Paper"';
+  expect(body).toContain(original);
+  await route.fulfill({response,
+    body:body.replace(original,'id:"fashion-paper",brandRef:"masterpeace",name:"Fashion Paper"')});
+ });
+ let rosterMode='demo';
+ await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+  const verified=rosterMode==='trusted';
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({
+    source:verified?'postgres':rosterMode==='missing_badge'?'postgres':'memory',
+    badge:rosterMode==='missing_badge'?null:'made_in_moscow_verified',
+    demo:!verified&&rosterMode!=='missing_badge',
+    data:[{id:'masterpeace',name:'Masterpeace'}]
+   })});
+ });
+ async function openDirectory(){
+  const request=page.waitForResponse(response=>
+   response.url().includes('/v1/made-in-moscow/brands')&&response.status()===200);
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await request; // No vacuous 0-badge assertion before the roster request.
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').first().click();
+  await bfs.locator('#orgDirectory').click();
+  await expect(bfs.locator('article.delegate')).not.toHaveCount(0);
+  return bfs;
+ }
+ let bfs=await openDirectory();
+ await expect(bfs.locator('.made-verified-bfs')).toHaveCount(0);
+ rosterMode='missing_badge';
+ bfs=await openDirectory();
+ await expect(bfs.locator('.made-verified-bfs')).toHaveCount(0);
+ rosterMode='trusted';
+ bfs=await openDirectory();
+ await expect(bfs.locator('.made-verified-bfs')).toHaveCount(1);
+ await expect(bfs.locator('.made-verified-bfs').first()).toContainText('VERIFIED');
+});
+
 test('BFS subscription rejects demo confirmation and leaves follow button unchanged',async({page})=>{
  await page.route('https://mfw-authority.onrender.com/v1/professional/follows**',async route=>{
   await route.fulfill({status:200,contentType:'application/json',

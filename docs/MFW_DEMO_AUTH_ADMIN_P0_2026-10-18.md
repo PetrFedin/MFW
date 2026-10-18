@@ -58,3 +58,7 @@ exploited; the latest confirmed Render Authority was in memory mode with
 
 **No database mutation, new paid infrastructure, Render redeploy or secret
 read/write occurred as part of this draft-source correction.**
+
+## CI regression discovered after security boundary change
+
+The first exact-head CI after this policy change failed at `feature-rollout-api.test.js:74`: it expected public `POST /v1/auth/demo` to return HTTP 200 with no explicit demo flag. The new default-deny server correctly returned 403. The fixture was repaired to pass `MFW_ENABLE_DEMO_AUTH=true` ONLY to its disposable `NODE_ENV=test`, `DATABASE_URL`-free child process; no production configuration changes were made. The test now additionally proves that a demo-chosen `Organizer` can preview a noncritical flag but cannot access `/v1/admin/overview` (HTTP 403). The newly added pure guard and real localhost HTTP negative tests both passed before this older fixture failed. Full next-commit CI is still required for final integrated acceptance.

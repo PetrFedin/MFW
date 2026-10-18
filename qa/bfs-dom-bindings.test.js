@@ -36,5 +36,12 @@ assert(source.includes("Программа временно недоступна
 assert(source.includes("agendaWriteRevision"),'late agenda hydration must not overwrite saved mutation');
 assert(source.includes("startedAtRevision!==agendaWriteRevision"),'stale GET guard required');
 assert(source.includes("confirmed(out)"),'BFS agenda cannot claim success from memory receipt');
+assert.match(source,/async function hydrateMadeVerified\(\)[\s\S]*?confirmed\(out\)/,
+ 'Made verified badges require PostgreSQL-authoritative roster receipt');
+assert(source.includes("out.badge!=='made_in_moscow_verified'"),
+ 'Made badge must require explicit server-side approved-roster classification');
+assert(source.includes("next=Object.create(null)"),
+ 'Unverified or unreachable Made roster must fail closed');
+
 console.log(JSON.stringify({event:'mfw_bfs_browser_bindings_contract',status:'pass',
  navigation:6,collectionSelectorCrashes:0,delegatedCrmLead:true}));
