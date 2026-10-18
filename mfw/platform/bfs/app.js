@@ -236,7 +236,7 @@ function programme(){
 }
 function showSpeakers(){
  $('#content').innerHTML='<div class="b2b-switch"><button id="orgDirectory">ОРГАНИЗАЦИИ</button></div><div class="section-head"><h2>Спикеры</h2><span>OFFICIAL DIRECTORY</span></div>'+speakers.map(function(s){var src=(window.MFP_DATA&&window.MFP_DATA.bfs.speakers||[]).filter(function(x){return x.id===s[2]})[0]||{};var linked=(src.sessionIds||[]).map(function(id){return sessions.filter(function(x){return x.id===id})[0]}).filter(Boolean);var speakerOrg=orgByName(s[3]);return '<div class="speaker"><div class="avatar"></div><div><b>'+s[0]+'</b>'+madeBadgeForOrganisation(speakerOrg)+'<span>'+s[1]+'</span>'+(linked.length?'<div class="speaker-links">'+linked.map(function(x){return '<button class="small-action" data-open-session="'+x.id+'">'+x.time+' · '+x.title+'</button>'}).join(''):'<div class="meta">Связанные сессии ещё не подтверждены в текущем snapshot.</div>')+projectActions(s[0])+'</div></div>'}).join('');
- bindProjectActions();$('[data-open-session]').forEach(function(btn){btn.onclick=function(){openSession(btn.dataset.openSession)}})
+ bindProjectActions();$$('[data-open-session]').forEach(function(btn){btn.onclick=function(){openSession(btn.dataset.openSession)}})
 }
 function openSession(id){
  var s=sessions.filter(function(x){return x.id===id})[0];if(!s)return;
@@ -310,7 +310,7 @@ async function organisationDirectory(reload){
     '<div class="org-actions"><button data-org-meet="'+o.id+'">ЗАПРОСИТЬ ВСТРЕЧУ</button><button data-org-lead="'+o.id+'">QUALIFY LEAD</button></div></article>';
   }).join('');
  bindProjectActions();
- $('[data-org-meet]').forEach(function(btn){btn.onclick=function(){var o=orgById(btn.dataset.orgMeet);if(!o)return;requestMeeting({organisationRef:o.id,organisationName:o.name});};});
+ $$('[data-org-meet]').forEach(function(btn){btn.onclick=function(){var o=orgById(btn.dataset.orgMeet);if(!o)return;requestMeeting({organisationRef:o.id,organisationName:o.name});};});
  // CRM actions are delegated on the stable host to survive async view refresh.
 }
 async function refreshLeadPipeline(){
@@ -397,7 +397,7 @@ function profile(){
  $('#manageAccount').onclick=function(){parent.postMessage({type:'mfp-open-account'},'*')};
 }
 function render(){$$('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===state.view)});({today:today,programme:programme,speakers:showSpeakers,b2b:b2b,pass:pass,profile:profile}[state.view]||today)()}
-$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
+$$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
 var bfsContent=document.getElementById('content');
 if(bfsContent)bfsContent.addEventListener('click',function(event){
  var button=event.target&&event.target.closest&&event.target.closest('[data-org-lead]');
