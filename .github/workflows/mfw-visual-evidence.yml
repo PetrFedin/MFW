@@ -29,6 +29,14 @@ jobs:
       - name: Install Chromium
         working-directory: qa
         run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Install FFmpeg for verified H.264 exports
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version | head -1
+          ffprobe -version | head -1
+      - name: Static syntax verification of the browser capture
+        run: node --check qa/capture-mfw-evidence.js
       - name: Start integration preview
         shell: bash
         run: |
