@@ -1,10 +1,10 @@
 {
   "id": "integration-preview",
   "url": "http://127.0.0.1:4173/platform/index.html",
-  "sourceSha": "a1ccde113944dc299590536153b61b4a32327d8e",
-  "capturedAt": "2026-10-18T13:15:29.278Z",
+  "sourceSha": "3bbbbe3bc468421af8e1dbb7415e131530bf5139",
+  "capturedAt": "2026-10-18T13:22:04.075Z",
   "environment": "unmerged-integration-preview",
-  "status": "captured_with_warnings",
+  "status": "captured",
   "screenshots": [
     {
       "file": "desktop-mfw.png",
@@ -13,8 +13,8 @@
     },
     {
       "file": "desktop-bfs.png",
-      "bytes": 83198,
-      "sha256": "69bdba983364d3741ad24862dd34e53f2ba5732d5388c9855f3952079f28e067"
+      "bytes": 130724,
+      "sha256": "fdd01ef172851e98cfb2d9e87434fc1b981fa994d87eae51386c3c96644834b1"
     },
     {
       "file": "desktop-made.png",
@@ -38,18 +38,23 @@
     },
     {
       "file": "desktop-bfs-programme.png",
-      "bytes": 83198,
-      "sha256": "69bdba983364d3741ad24862dd34e53f2ba5732d5388c9855f3952079f28e067"
+      "bytes": 130869,
+      "sha256": "603b5a69aeb2c40aad6a2ffb0c4731a5429bdb16d9964ed0335a6a88e28664da"
     },
     {
       "file": "desktop-bfs-speakers.png",
-      "bytes": 83198,
-      "sha256": "69bdba983364d3741ad24862dd34e53f2ba5732d5388c9855f3952079f28e067"
+      "bytes": 132171,
+      "sha256": "8e185030e52d2ce377a410528839de53a71e12f7469d00206830dde8e8ee287b"
     },
     {
       "file": "desktop-bfs-b2b.png",
-      "bytes": 83198,
-      "sha256": "69bdba983364d3741ad24862dd34e53f2ba5732d5388c9855f3952079f28e067"
+      "bytes": 132066,
+      "sha256": "81cb9f127cd66b912304149ef5fe9b78f6f903c92305c6e138d76270319f1386"
+    },
+    {
+      "file": "desktop-bfs-organisations.png",
+      "bytes": 112140,
+      "sha256": "72402f398cddeac79c300c99bff9804e26c6b4394344345f73891e50516e5cc5"
     },
     {
       "file": "desktop-made-verified.png",
@@ -83,8 +88,8 @@
     },
     {
       "file": "desktop-investor.png",
-      "bytes": 163791,
-      "sha256": "7489ee0dd59f72e4cd0b5bd1e9c29399d573dd3761b88905b30aae7d3683ee4e"
+      "bytes": 176096,
+      "sha256": "1f0dbd380f18535ffc7fb9224f877ca114c2da61d99eaa4574db11392f89eaca"
     },
     {
       "file": "mobile-mfw.png",
@@ -93,8 +98,8 @@
     },
     {
       "file": "mobile-bfs.png",
-      "bytes": 49438,
-      "sha256": "6c02fe65b4dd747e8b0ac801fbfb702bf58ecb6df477ff323e6fd39515b18c9a"
+      "bytes": 59814,
+      "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
     },
     {
       "file": "mobile-made.png",
@@ -113,13 +118,13 @@
     },
     {
       "file": "mobile-bfs-programme.png",
-      "bytes": 49438,
-      "sha256": "6c02fe65b4dd747e8b0ac801fbfb702bf58ecb6df477ff323e6fd39515b18c9a"
+      "bytes": 59814,
+      "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
     },
     {
       "file": "mobile-bfs-b2b.png",
-      "bytes": 49438,
-      "sha256": "6c02fe65b4dd747e8b0ac801fbfb702bf58ecb6df477ff323e6fd39515b18c9a"
+      "bytes": 60459,
+      "sha256": "3d427531f4c1aa89ffb69ee132ccf66aa384b4affe1e048671157118bc8d137e"
     },
     {
       "file": "mobile-made-verified.png",
@@ -135,41 +140,34 @@
   "video": {
     "file": "tour-25s.mp4",
     "durationSeconds": 25,
-    "bytes": 285449,
-    "sha256": "23a7add7f4e8794f718e8a2c7ceea773374187f932320bc9b6789c1ef4351bd1"
+    "bytes": 318407,
+    "sha256": "059c83791ed4b247ecf712edd290008079ae35e8e8bb089c37a8dc27571269eb"
   },
   "extraVideos": [
     {
       "topic": "mfw",
       "file": "mfw-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 562065,
-      "sha256": "963f16868f788bf40d3a77cf833e8629871361809eaeac68a26df66329667b64"
+      "bytes": 641045,
+      "sha256": "26dce110be7e20f23eab203e69896d7796154ef73b5ae68022ceae6e3ce25eda"
+    },
+    {
+      "topic": "bfs",
+      "file": "bfs-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 391183,
+      "sha256": "4f1b45e48992eb314ca877252b92da790a51e86a3a7e18eb96f34a2028823eeb"
     },
     {
       "topic": "made",
       "file": "made-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 1743262,
-      "sha256": "10e4651ffb21bde5223993931d8770f15aafeb3b160496e3e0c89c1fcbb6a6f3"
+      "bytes": 1686583,
+      "sha256": "2cee3dea2361dca6eb662e65a2e329423f3fa79bb4fde4c46257eef3e4b86520"
     }
   ],
-  "warnings": [
-    {
-      "scene": "desktop-bfs-organisations",
-      "error": "locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator('#eventFrame').contentFrame().locator('#orgDirectory').first()\n"
-    },
-    {
-      "scene": "video-bfs",
-      "error": "locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator('#eventFrame').contentFrame().locator('#orgDirectory').first()\n"
-    }
-  ],
-  "pageErrors": [
-    "$(...).forEach is not a function",
-    "$(...).forEach is not a function",
-    "$(...).forEach is not a function",
-    "$(...).forEach is not a function"
-  ],
+  "warnings": [],
+  "pageErrors": [],
   "error": null,
   "method": "Public Chromium browser capture without authentication"
 }
