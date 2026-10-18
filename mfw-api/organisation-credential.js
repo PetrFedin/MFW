@@ -11,6 +11,8 @@ class OrganisationCredentialAuthority{
     const proof=await this.registry.portableProof(organisationId);
     if(!proof)throw new Error('organisation_not_found');
     if(proof.organisation.verificationStatus!=='verified')throw new Error('organisation_not_verified');
+    const organisation=await this.registry.get(organisationId);
+    if(!organisation||organisation.status!=='active')throw new Error('organisation_inactive');
     const payload={
       credentialVersion:'mfw-organisation-credential-v1',
       issuerId:this.issuerId,keyId:this.keyId,alg:'ES256',
@@ -32,6 +34,8 @@ class OrganisationCredentialAuthority{
     if(revocation)return {status:'REVOKED',signatureValid:true,current:false,revoked:true,revocation};
     const proof=await this.registry.portableProof(envelope.payload.organisationId);
     if(!proof||proof.organisation.verificationStatus!=='verified')return {status:'STALE',signatureValid:true,current:false,revoked:false,reason:'organisation_not_currently_verified'};
+    const organisation=await this.registry.get(envelope.payload.organisationId);
+    if(!organisation||organisation.status!=='active')return {status:'STALE',signatureValid:true,current:false,revoked:false,reason:'organisation_inactive'};
     if(proof.proofSha256!==envelope.payload.portableProofSha256)return {status:'STALE',signatureValid:true,current:false,revoked:false,currentPortableProofSha256:proof.proofSha256};
     return {status:'VALID',signatureValid:true,current:true,revoked:false,credentialSha256:envelope.credentialSha256,portableProofSha256:proof.proofSha256};
   }

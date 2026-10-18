@@ -53,6 +53,8 @@ jobs:
         run: node mfw-api/recovery-candidates/isolated-replay.test.js
       - name: Replay origin-commit-pinned 026-027 SQL and compare real catalog shape
         run: node mfw-api/recovery-candidates/original-git-replay.test.js
+      - name: Deny forged self-claims and revoked organisation membership on real PG17
+        run: node mfw-api/recovery-candidates/organisation-claim-safety-scratch.test.js
       - name: Backup and restore origin-commit SQL in disposable PG17
         shell: bash
         run: |

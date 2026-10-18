@@ -46,14 +46,23 @@ class OrganisationRegistry{
             verified_at AS "verifiedAt",created_at AS "createdAt",updated_at AS "updatedAt"`,
           [clean.canonicalName,clean.normalizedName,clean.organisationType,clean.countryCode,clean.city,clean.website,JSON.stringify({claimSource:'self_claim'})]);
         const row=org.rows[0];
-        await client.query(`INSERT INTO professional_organisation_memberships(
+        if(row.status!=='active')throw new Error('organisation_inactive');
+        // Never let a public self-claim restore a revoked or operator-reviewed
+        // relationship. The conflict predicate is evaluated under the row lock.
+        const membership=await client.query(`INSERT INTO professional_organisation_memberships(
           organisation_id,user_id,role_title,relationship_role,status,source)
           VALUES($1,$2,$3,$4,'active','self_claim')
           ON CONFLICT(organisation_id,user_id) DO UPDATE SET
-            role_title=EXCLUDED.role_title,relationship_role=EXCLUDED.relationship_role,status='active',ended_at=NULL,updated_at=now()`,
+            role_title=EXCLUDED.role_title,relationship_role=EXCLUDED.relationship_role,
+            updated_at=now()
+          WHERE professional_organisation_memberships.source='self_claim'
+            AND professional_organisation_memberships.status='active'
+            AND professional_organisation_memberships.ended_at IS NULL
+          RETURNING role_title AS "roleTitle",relationship_role AS "relationshipRole",status,source`,
           [row.id,userId,clean.roleTitle,clean.relationshipRole]);
+        if(membership.rowCount!==1)throw new Error('organisation_membership_review_required');
         await client.query('COMMIT');
-        return {...row,relationship:{roleTitle:clean.roleTitle,relationshipRole:clean.relationshipRole,status:'active',source:'self_claim'}};
+        return {...row,relationship:membership.rows[0]};
       }catch(err){await client.query('ROLLBACK');throw err;}finally{client.release();}
     }
     const existing=[...this.memory.values()].find(x=>x.normalizedName===clean.normalizedName);
@@ -63,6 +72,11 @@ class OrganisationRegistry{
       countryCode:clean.countryCode,city:clean.city,website:clean.website,status:'active',
       verificationStatus:'unverified',verificationSource:null,verifiedAt:null,createdAt:new Date().toISOString(),members:new Map(),participation:[]
     };
+    if(row.status!=='active')throw new Error('organisation_inactive');
+    const current=row.members.get(String(userId));
+    if(current&&(current.source!=='self_claim'||current.status!=='active'||current.endedAt)){
+      throw new Error('organisation_membership_review_required');
+    }
     row.members.set(String(userId),{userId:String(userId),roleTitle:clean.roleTitle,relationshipRole:clean.relationshipRole,status:'active',source:'self_claim'});
     row.updatedAt=new Date().toISOString();
     this.memory.set(row.id,row);
@@ -93,13 +107,23 @@ class OrganisationRegistry{
   }
 
   async canRepresent(userId,organisationId){
+    // This method is the gate for signed organisation credentials, not a
+    // generic claim-status check. Self-claims are never sufficient.
     if(this.pool){
-      const r=await this.pool.query(`SELECT 1 FROM professional_organisation_memberships
-        WHERE organisation_id=$1 AND user_id=$2 AND status='active' LIMIT 1`,[organisationId,userId]);
+      const r=await this.pool.query(`SELECT 1
+        FROM professional_organisation_memberships m
+        JOIN professional_organisations o ON o.id=m.organisation_id
+        WHERE m.organisation_id=$1 AND m.user_id=$2
+          AND m.status='active' AND m.ended_at IS NULL
+          AND m.source='operator_verified'
+          AND o.status='active' AND o.verification_status='verified'
+        LIMIT 1`,[organisationId,userId]);
       return !!r.rowCount;
     }
     const row=this.memory.get(String(organisationId));
-    return !!(row&&row.members&&row.members.get(String(userId))?.status==='active');
+    const member=row&&row.members&&row.members.get(String(userId));
+    return !!(row&&row.status==='active'&&row.verificationStatus==='verified'&&
+      member&&member.status==='active'&&!member.endedAt&&member.source==='operator_verified');
   }
 
   async summary(){
