@@ -1,5 +1,6 @@
 const {reconcileMigrations}=require('./migration-parity');
 const { runMigrations } = require('./migration-runner');
+const {demoIssuerAllowed,configuredAdminTokenAccepted,sessionAllowedForMode}=require('./auth-demo-policy');
 const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -37,8 +38,8 @@ const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toL
 const RELEASE_SHA = String(process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
-const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
-const ADMIN_TOKEN_CONFIGURED = !!process.env.MFW_ADMIN_TOKEN && process.env.MFW_ADMIN_TOKEN !== 'mfw-demo-admin';
+const ADMIN_TOKEN = String(process.env.MFW_ADMIN_TOKEN || '');
+const ADMIN_TOKEN_CONFIGURED = Buffer.byteLength(ADMIN_TOKEN,'utf8')>=32 && ADMIN_TOKEN!=='mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_WEBHOOK_SECRET = process.env.MFW_TELEGRAM_WEBHOOK_SECRET || '';
 const VK_SERVICE_TOKEN = process.env.MFW_VK_SERVICE_TOKEN || '';
@@ -391,12 +392,16 @@ function sessionFromRequest(req){
   var auth=String(req.headers.authorization||'');
   if(!auth.startsWith('Bearer '))return null;
   var v=verifyToken(auth.slice(7));
-  return v.ok&&v.payload&&v.payload.typ==='session'?v.payload:null;
+  // No self-issued demo session can survive a transition to durable Authority.
+  return v.ok&&sessionAllowedForMode(v.payload,{
+    databaseConfigured:!!pool,requirePostgres:REQUIRE_POSTGRES
+  })?v.payload:null;
 }
 function adminOk(req){
-  if(req.headers['x-mfw-admin']===ADMIN_TOKEN)return true;
-  var p=sessionFromRequest(req);
-  return !!(p&&['Organizer','Staff'].indexOf(p.role)>=0);
+  // Demo Organizer/Staff are untrusted role claims. An explicit strong
+  // server secret is required until real reviewed operator RBAC is admitted.
+  return ADMIN_TOKEN_CONFIGURED &&
+    configuredAdminTokenAccepted(req.headers['x-mfw-admin'],ADMIN_TOKEN);
 }
 function userSubject(req,supplied){
   const session=sessionFromRequest(req);
@@ -1329,6 +1334,9 @@ async function runDeepSelfTest(){
 }
 
 async function runAcceleratedLoyaltyGoldenPath(){
+  // The synthetic golden path must never insert a user or brand grant into
+  // the real authoritative PostgreSQL during a demonstration.
+  if(pool||REQUIRE_POSTGRES)throw new Error('golden_path_requires_isolated_memory');
   const nonce=Date.now().toString(36)+'_'+crypto.randomBytes(3).toString('hex');
   const userId=await issueDemoUser('Golden Visitor '+nonce,'Visitor');
   const brandUserId=await issueDemoUser('Golden Brand '+nonce,'Designer');
@@ -3288,6 +3296,12 @@ async function router(req,res){
     return json(res,200,{data:readiness});
   }
   if(req.method==='POST'&&p==='/v1/auth/demo'){
+    if(!demoIssuerAllowed({
+      databaseConfigured:!!pool,
+      requirePostgres:REQUIRE_POSTGRES,
+      explicitOptIn:String(process.env.MFW_ENABLE_DEMO_AUTH||'').toLowerCase()==='true',
+      nodeEnv:process.env.NODE_ENV||''
+    }))return json(res,403,{error:'demo_auth_disabled'});
     const b=await readBody(req);
     const name=String(b.name||'Demo User').slice(0,120);
     const role=String(b.role||'Visitor').slice(0,40);
@@ -3991,6 +4005,7 @@ async function router(req,res){
       }});
     }
     if(req.method==='POST'&&p==='/v1/admin/golden-path/loyalty-30d'){
+      if(pool||REQUIRE_POSTGRES)return json(res,409,{error:'isolated_demo_only'});
       const report=await runAcceleratedLoyaltyGoldenPath();
       return json(res,report.ok?200:500,{data:report});
     }
