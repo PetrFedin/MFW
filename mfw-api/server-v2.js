@@ -1,6 +1,6 @@
 const {reconcileMigrations}=require('./migration-parity');
 const { runMigrations } = require('./migration-runner');
-const {demoIssuerAllowed,configuredAdminTokenAccepted,sessionAllowedForMode}=require('./auth-demo-policy');
+const {demoIssuerAllowed,configuredAdminTokenAccepted,sessionAllowedForMode,localDemoRequest}=require('./auth-demo-policy');
 const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -3301,7 +3301,7 @@ async function router(req,res){
       requirePostgres:REQUIRE_POSTGRES,
       explicitOptIn:String(process.env.MFW_ENABLE_DEMO_AUTH||'').toLowerCase()==='true',
       nodeEnv:process.env.NODE_ENV||''
-    }))return json(res,403,{error:'demo_auth_disabled'});
+    })||!localDemoRequest(req))return json(res,403,{error:'demo_auth_disabled'});
     const b=await readBody(req);
     const name=String(b.name||'Demo User').slice(0,120);
     const role=String(b.role||'Visitor').slice(0,40);

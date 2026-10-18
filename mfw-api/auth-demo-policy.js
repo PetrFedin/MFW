@@ -5,7 +5,8 @@ const crypto=require('node:crypto');
 // Never provide it on a published or PostgreSQL-backed Authority.
 function demoIssuerAllowed({databaseConfigured=false,requirePostgres=false,explicitOptIn=false,nodeEnv=''}={}){
  return explicitOptIn===true && databaseConfigured!==true &&
-   requirePostgres!==true && String(nodeEnv).toLowerCase()!=='production';
+   requirePostgres!==true &&
+   ['test','development'].includes(String(nodeEnv).toLowerCase());
 }
 
 // A public self-selected Organizer/Staff demo role is never admin authority.
@@ -25,4 +26,9 @@ function sessionAllowedForMode(session,{databaseConfigured=false,requirePostgres
  return true;
 }
 
-module.exports={demoIssuerAllowed,configuredAdminTokenAccepted,sessionAllowedForMode};
+// Check the transport peer, not client-controlled X-Forwarded-For headers.
+function localDemoRequest(req){
+ const peer=String(req&&req.socket&&req.socket.remoteAddress||'');
+ return peer==='127.0.0.1'||peer==='::1'||peer==='::ffff:127.0.0.1';
+}
+module.exports={demoIssuerAllowed,configuredAdminTokenAccepted,sessionAllowedForMode,localDemoRequest};

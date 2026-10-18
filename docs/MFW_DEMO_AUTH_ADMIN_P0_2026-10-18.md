@@ -62,3 +62,9 @@ read/write occurred as part of this draft-source correction.**
 ## CI regression discovered after security boundary change
 
 The first exact-head CI after this policy change failed at `feature-rollout-api.test.js:74`: it expected public `POST /v1/auth/demo` to return HTTP 200 with no explicit demo flag. The new default-deny server correctly returned 403. The fixture was repaired to pass `MFW_ENABLE_DEMO_AUTH=true` ONLY to its disposable `NODE_ENV=test`, `DATABASE_URL`-free child process; no production configuration changes were made. The test now additionally proves that a demo-chosen `Organizer` can preview a noncritical flag but cannot access `/v1/admin/overview` (HTTP 403). The newly added pure guard and real localhost HTTP negative tests both passed before this older fixture failed. Full next-commit CI is still required for final integrated acceptance.
+
+## Explicit isolated environment and loopback peer (further hardening)
+
+Even with `MFW_ENABLE_DEMO_AUTH=true`, the demo issuer is enabled **only** if `NODE_ENV` is exactly `development` or `test`, no DB is connected and `MFW_REQUIRE_POSTGRES` is false. Unset/unknown `NODE_ENV` now fail closed (rather than implicitly qualifying as nonproduction). In addition, `localDemoRequest(req)` rejects any network peer other than actual loopback (`127.0.0.1`, `::1`, or the IPv4-mapped loopback); it never trusts client-controlled proxy headers. This prevents a publicly exposed integration/preview endpoint from minting self-selected identities merely because the environment flag was accidentally copied.
+
+Unit tests cover missing environment, nonlocal peers and spoofed `X-Forwarded-For` values. The existing loopback HTTP QA tests still use `NODE_ENV=test`. No public demonstration or production user can use this path; real user onboarding remains a separate signed Auth/JWT implementation gate.
