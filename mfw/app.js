@@ -663,7 +663,7 @@
         btn.onclick=function(){
           var route={kind:btn.getAttribute('data-kind'),source:'brand_graph_v2'};
           if(route.kind==='brand-buyer')route.brandRef=btn.getAttribute('data-ref');else route.id=btn.getAttribute('data-ref');
-          parent.postMessage({type:'mfp-open-event',eventCode:btn.getAttribute('data-event'),route:route},'*');
+          parent.postMessage({type:'mfp-open-event',eventCode:btn.getAttribute('data-event'),route:route},location.origin);
         };
       });
     }catch(_){toast(T('Граф бренда недоступен','Brand graph unavailable'));}

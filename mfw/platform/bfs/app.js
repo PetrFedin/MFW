@@ -227,7 +227,7 @@ function bindSessionActions(){
 
 function today(){
  $('#content').innerHTML='<div class="registration-banner '+(registration()?'ok':'')+'"><b>'+(registration()?'BFS REGISTRATION · '+registration().status.toUpperCase():'Нужна отдельная регистрация BFS')+'</b><span>'+(registration()?'Общий профиль используется, участие BFS подтверждено отдельно.':'Профиль платформы можно использовать повторно — подтвердить BFS нужно отдельно.')+'</span><button id="registrationCta">'+(registration()?'ОТКРЫТЬ КАБИНЕТ':'ЗАРЕГИСТРИРОВАТЬСЯ')+'</button></div><div class="section-head"><h2>Сегодня</h2><span>28 SEPTEMBER</span></div>'+cards()+'<div class="section-head"><h2>Exhibition</h2><span>QR ACCESS</span></div><article class="card"><span class="tag">Khokhloma</span><h3>International exhibition access</h3><div class="meta">QR-код участника бизнес-программы также открывает доступ на выставку.</div></article>';
- $('#registrationCta').onclick=function(){parent.postMessage({type:registration()?'mfp-open-account':'mfp-open-registration',eventCode:'bfs'},'*')};bindSessionActions();
+ $('#registrationCta').onclick=function(){parent.postMessage({type:registration()?'mfp-open-account':'mfp-open-registration',eventCode:'bfs'},location.origin)};bindSessionActions();
 }
 function programme(){
  var changes=(window.MFP_SYNC&&window.MFP_SYNC.changes().relevant)||[];
@@ -386,7 +386,7 @@ async function loadBfsPass(){
 function pass(){
  if(!registration()){
   $('#content').innerHTML='<div class="section-head"><h2>My QR</h2><span>REGISTRATION REQUIRED</span></div><div class="b2b"><h3>Сначала подтвердите отдельную регистрацию BFS</h3><p class="meta">Общий аккаунт уже существует. Данные можно использовать повторно.</p><button class="lang" id="passRegister">REGISTER FOR BFS</button></div>';
-  $('#passRegister').onclick=function(){parent.postMessage({type:'mfp-open-registration',eventCode:'bfs'},'*')};return;
+  $('#passRegister').onclick=function(){parent.postMessage({type:'mfp-open-registration',eventCode:'bfs'},location.origin)};return;
  }
  $('#content').innerHTML='<div class="section-head"><h2>My QR</h2><span>LOADING AUTHORITY</span></div><div class="pass"><div class="meta">Выпускаем короткоживущий server-signed credential…</div></div>';
  loadBfsPass();
@@ -394,7 +394,7 @@ function pass(){
 function profile(){
  var p=state.account&&state.account.profile||{};var r=registration();
  $('#content').innerHTML='<div class="section-head"><h2>Personal account</h2><span>ONE PLATFORM ID</span></div><div class="profile-row"><b>'+esc(((p.firstName||'Guest')+' '+(p.lastName||'')))+'</b><span>GLOBAL PROFILE</span></div><div class="profile-row"><b>BFS</b><span>'+(r?r.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>MFW</b><span>'+(state.account&&state.account.registrations&&state.account.registrations.mfw?state.account.registrations.mfw.status:'NOT REGISTERED')+'</span></div><div class="profile-row"><b>СДЕЛАНО В МОСКВЕ</b><span>SHARED ID · BRAND STATUS SEPARATE</span></div><button class="small-action" id="manageAccount">MANAGE ACCOUNT & REGISTRATIONS</button>';
- $('#manageAccount').onclick=function(){parent.postMessage({type:'mfp-open-account'},'*')};
+ $('#manageAccount').onclick=function(){parent.postMessage({type:'mfp-open-account'},location.origin)};
 }
 function render(){$$('[data-view]').forEach(function(b){b.classList.toggle('active',b.dataset.view===state.view)});({today:today,programme:programme,speakers:showSpeakers,b2b:b2b,pass:pass,profile:profile}[state.view]||today)()}
 $$('[data-view]').forEach(function(b){b.onclick=function(){state.view=b.dataset.view;render()}});
