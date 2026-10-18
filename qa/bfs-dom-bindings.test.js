@@ -23,5 +23,18 @@ assert.match(source,/async function leadStage\(/,'CRM lead handler missing');
 assert.match(source,/function confirmed\(/,'PostgreSQL receipt qualification missing');
 assert(!source.includes("marketingConsent:true,networkingVisible:true"),
  'Consent cannot be hardcoded');
+// Canonical programme identifiers must agree with the PostgreSQL events.external_key
+// roster; locally invented "s1" IDs caused seven cross-device agenda failures.
+const officialData=fs.readFileSync(path.join(root,'mfw/platform/event-data.js'),'utf8');
+const canonicalIds=[...officialData.matchAll(/\{id:"(bfs-[a-z0-9-]+)"/g)].map(match=>match[1]);
+assert(canonicalIds.length>=20,'BFS canonical programme data missing');
+assert.equal(new Set(canonicalIds).size,canonicalIds.length,'duplicate canonical BFS session ID');
+assert(!source.includes("{id:'s1'"),'synthetic BFS fallback sessions cannot reach agenda writes');
+assert(source.includes("var sessions=[];"),'BFS must fail closed without official programme data');
+assert(source.includes("var speakers=[];"),'BFS must fail closed without official speakers');
+assert(source.includes("Программа временно недоступна"),'BFS must explain missing official schedule');
+assert(source.includes("agendaWriteRevision"),'late agenda hydration must not overwrite saved mutation');
+assert(source.includes("startedAtRevision!==agendaWriteRevision"),'stale GET guard required');
+assert(source.includes("confirmed(out)"),'BFS agenda cannot claim success from memory receipt');
 console.log(JSON.stringify({event:'mfw_bfs_browser_bindings_contract',status:'pass',
  navigation:6,collectionSelectorCrashes:0,delegatedCrmLead:true}));

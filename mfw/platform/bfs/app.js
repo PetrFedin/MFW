@@ -22,13 +22,10 @@ async function authority(path,options){
  if(!r.ok)throw Object.assign(new Error(out.error||('HTTP '+r.status)),{status:r.status,data:out});return out;
 }
 
-var sessions=[
-{id:'s1',date:'28 сентября',time:'11:00–12:15',title:'Искусственный интеллект в творческом процессе: инструмент или соавтор?',hall:'Большой зал',tag:'Креативные индустрии',moderator:'Официальная программа BFS',participants:['Спикеры с официальной карточки сессии']},
-{id:'s2',date:'28 сентября',time:'12:30–13:45',title:'Мода как символический капитал города',hall:'Большой зал',tag:'Предпринимательство и инвестиции',moderator:'Официальная программа BFS',participants:['Спикеры с официальной карточки сессии']},
-{id:'s3',date:'29 сентября',time:'14:00–15:15',title:'Лицом к будущему: готова ли индустрия моды к глобальной трансформации?',hall:'Открытый зал',tag:'Маркетинг и продажи',moderator:'Официальная программа BFS',participants:['Спикеры с официальной карточки сессии']},
-{id:'s4',date:'30 сентября',time:'15:30–16:45',title:'Мода как музейный артефакт: что выбирают и сохраняют ведущие музеи?',hall:'Малый зал',tag:'Креативные индустрии',moderator:'Официальная программа BFS',participants:['Спикеры с официальной карточки сессии']}
-];
-var speakers=[['Елена Ахмадуллина','Основатель бренда Alena Akhmadullina'],['Антон Алиханов','Министр промышленности и торговли РФ'],['Мустафа Джем Алтан','International Apparel Federation'],['Мадонна Мур','Основатель Fashion Paper']];
+// Only canonical sessions from the official event-data.js may be actionable.
+// Legacy placeholder IDs are not persisted in events.external_key.
+var sessions=[];
+var speakers=[];
 var delegates=[];
 var organisations=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations)||[];
 var madeVerifiedByBrandRef={};
@@ -37,6 +34,8 @@ var crossBrandContext=null;
 var leadState={};
 var meetingRequestPending=false;
 var agendaInFlight=Object.create(null),professionalInFlight=Object.create(null);
+// A late initial GET cannot erase a newer, server-confirmed agenda mutation.
+var agendaWriteRevision=0;
 var meetingKeys={};
 function confirmed(out,requireId){
  if(!out||out.source!=='postgres'||out.demo===true||
@@ -55,12 +54,18 @@ function actionNotice(message){
 
 // Server state alone qualifies an agenda/follow relation as persisted.
 async function hydrateAgenda(){
+ var startedAtRevision=agendaWriteRevision;
  try{
   var out=await authority('/v1/agenda',{method:'GET'});confirmed(out);
   var rows=Array.isArray(out.data)?out.data:[],next={};
   rows.forEach(function(x){if(x&&x.eventId)next[String(x.eventId)]=true;});
+  // Ignore a GET snapshot started before a successful POST, DELETE or reminder.
+  if(startedAtRevision!==agendaWriteRevision)return;
   state.saved=next;
- }catch(e){state.saved={};}
+ }catch(e){
+  if(startedAtRevision!==agendaWriteRevision)return;
+  state.saved={};
+ }
  if(state.view==='today'||state.view==='programme')render();
 }
 async function hydrateProfessional(){
@@ -195,6 +200,7 @@ function projectActions(name){var k=projectKey(name),followed=!!state.followedPr
 function bindProjectActions(){$$('[data-follow-project]').forEach(function(b){b.onclick=function(){followProject(b.dataset.followProject)}});$$('[data-favorite-project]').forEach(function(b){b.onclick=function(){favoriteProject(b.dataset.favoriteProject)}})}
 
 function cards(){
+ if(!sessions.length)return '<article class="card" role="status"><h3>Программа временно недоступна</h3><p class="meta">Официальный справочник сессий не загружен. Действия с расписанием недоступны до восстановления данных.</p></article>';
  return '<div class="grid">'+sessions.map(function(x){var saved=!!state.saved[x.id];return '<article class="card"><div class="time">'+x.time+'</div><span class="tag">'+x.tag+'</span><h3>'+x.title+'</h3><div class="meta">'+x.hall+' · МКЗ «Зарядье»</div><div class="card-actions"><button class="small-action" data-open-session="'+x.id+'">ПОДРОБНЕЕ</button><button class="small-action" data-save="'+x.id+'">'+(saved?'✓ В МОЕЙ ПРОГРАММЕ':'+ ДОБАВИТЬ')+'</button></div></article>'}).join('')+'</div>';
 }
 function bindSessionActions(){
@@ -217,6 +223,7 @@ function bindSessionActions(){
     if(!desired&&(out.ok!==true||out.eventId!==id))
      throw Error('agenda_delete_not_confirmed');
     if(desired)state.saved[id]=true;else delete state.saved[id];
+    agendaWriteRevision++;
     persistBfs();render();
     actionNotice('Расписание подтверждено PostgreSQL.');
    }catch(e){actionNotice('Расписание не изменено: запись PostgreSQL не подтверждена.');}
@@ -255,7 +262,7 @@ function openSession(id){
     confirmed(out);
     if(!out.data||out.data.eventId!==id||out.data.reminderEnabled!==true)
      throw Error('reminder_confirmation_mismatch');
-    state.saved[id]=true;persistBfs();
+    state.saved[id]=true;agendaWriteRevision++;persistBfs();
     if(window.MFP_SYNC){
       window.MFP_SYNC.setReminder('bfs',id,20);
       window.MFP_SYNC.requestBrowserPermission();

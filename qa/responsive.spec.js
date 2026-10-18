@@ -1148,10 +1148,14 @@ test('BFS ignores locally forged CRM lead status and rejects demo lead confirmat
 });
 
 
-test('BFS agenda refuses a demo write and leaves session unsaved',async({page})=>{
+test('BFS agenda rejects synthetic memory receipt for canonical session',async({page})=>{
+ const attempted=[];
  await page.route('https://mfw-authority.onrender.com/v1/agenda/**',async route=>{
+  const req=route.request(), path=new URL(req.url()).pathname;
+  attempted.push({method:req.method(),path});
+  const eventId=decodeURIComponent(path.split('/')[3]);
   await route.fulfill({status:200,contentType:'application/json',
-   body:JSON.stringify({source:'memory',data:{eventId:'s1',demo:true}})});
+   body:JSON.stringify({source:'memory',data:{eventId,demo:true}})});
  });
  await page.route('https://mfw-authority.onrender.com/v1/agenda',async route=>{
   await route.fulfill({status:200,contentType:'application/json',
@@ -1160,9 +1164,56 @@ test('BFS agenda refuses a demo write and leaves session unsaved',async({page})=
  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
  const bfs=page.frameLocator('#eventFrame');
  await bfs.locator('[data-view="programme"]').first().click();
- await bfs.locator('[data-save="s1"]').first().click();
+ const first=bfs.locator('[data-save]').first();
+ await expect(first).toBeVisible();
+ const eventId=await first.getAttribute('data-save');
+ expect(eventId).toMatch(/^bfs-[a-z0-9-]+$/);
+ await first.click();
  await expect(bfs.locator('#bfsActionNotice')).toContainText('не изменено');
- await expect(bfs.locator('[data-save="s1"]').first()).toContainText('ДОБАВИТЬ');
+ await expect(bfs.locator('[data-save="'+eventId+'"]')).toContainText('ДОБАВИТЬ');
+ expect(attempted).toEqual([{method:'POST',path:'/v1/agenda/'+eventId+'/save'}]);
+});
+
+test('BFS agenda keeps confirmed canonical save despite late stale GET',async({page})=>{
+ let unblockInitialGet, markGetStarted;
+ const initialGetStarted=new Promise(resolve=>{markGetStarted=resolve;});
+ const unblockGet=new Promise(resolve=>{unblockInitialGet=resolve;});
+ let getDelivered;
+ const initialGetDelivered=new Promise(resolve=>{getDelivered=resolve;});
+ const requests=[];
+ await page.route('https://mfw-authority.onrender.com/v1/agenda',async route=>{
+  markGetStarted();
+  await unblockGet;
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:[]})});
+  getDelivered();
+ });
+ await page.route('https://mfw-authority.onrender.com/v1/agenda/**',async route=>{
+  const request=route.request(),path=new URL(request.url()).pathname;
+  const eventId=decodeURIComponent(path.split('/')[3]);
+  requests.push({method:request.method(),path});
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:{eventId}})});
+ });
+ try{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await initialGetStarted;
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="programme"]').first().click();
+  const first=bfs.locator('[data-save]').first();
+  await expect(first).toBeVisible();
+  const eventId=await first.getAttribute('data-save');
+  expect(eventId).toMatch(/^bfs-[a-z0-9-]+$/);
+  await first.click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('подтверждено PostgreSQL');
+  await expect(bfs.locator('[data-save="'+eventId+'"]')).toContainText('В МОЕЙ ПРОГРАММЕ');
+  expect(requests).toEqual([{method:'POST',path:'/v1/agenda/'+eventId+'/save'}]);
+  unblockInitialGet();
+  await initialGetDelivered;
+  // Give the browser a task turn to apply the late GET response.
+  await page.waitForTimeout(100);
+  await expect(bfs.locator('[data-save="'+eventId+'"]')).toContainText('В МОЕЙ ПРОГРАММЕ');
+ }finally{unblockInitialGet();}
 });
 
 test('BFS subscription rejects demo confirmation and leaves follow button unchanged',async({page})=>{
