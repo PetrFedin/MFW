@@ -239,7 +239,20 @@ async function capture(browser,target){
    try{record.extraVideos.push(await recordFeatureTour(browser,target,out,topic));}
    catch(error){record.warnings.push({scene:'video-'+topic,error:String(error.message||error).slice(0,420)});}
   }
-  record.status=record.warnings.length?'captured_with_warnings':'captured';
+  const seen=new Map();
+  for(const shot of record.screenshots){
+   if(seen.has(shot.sha256))
+    record.warnings.push({scene:shot.file,error:'duplicate_visual_frame_of_'+seen.get(shot.sha256)});
+   else seen.set(shot.sha256,shot.file);
+  }
+  if(record.screenshots.length!==26)
+   record.warnings.push({scene:'screen_inventory',error:'expected_26_PNG_got_'+record.screenshots.length});
+  if(record.extraVideos.length!==3)
+   record.warnings.push({scene:'video_inventory',error:'expected_3_feature_tours_got_'+record.extraVideos.length});
+  if(record.pageErrors.length)
+   record.warnings.push({scene:'browser_javascript',error:'uncaught_'+record.pageErrors.join('; ').slice(0,500)});
+  record.portfolioReady=record.warnings.length===0&&!!record.video;
+  record.status=record.portfolioReady?'portfolio_ready':'diagnostic_only';
  }catch(error){
   record.error=String(error&&error.stack||error).slice(0,1300);
  }finally{
@@ -264,5 +277,5 @@ async function capture(browser,target){
   environment:r.id,status:r.status,shots:r.screenshots.length,
   seconds:r.video&&r.video.durationSeconds,error:r.error
  })))+'\n');
- if(!report.sources.some(x=>String(x.status).startsWith('captured')))process.exitCode=1;
+ if(!report.sources.some(x=>x.portfolioReady===true))process.exitCode=1;
 })().catch(err=>{console.error(err);process.exitCode=1;});
