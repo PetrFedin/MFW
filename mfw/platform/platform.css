@@ -805,3 +805,32 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .profile-form label.privacy-choice{grid-column:1/-1;display:flex;align-items:flex-start;gap:10px;line-height:1.45;text-transform:none;letter-spacing:normal;font-size:11px;font-weight:600}
 .profile-form label.privacy-choice input[type="checkbox"]{flex:0 0 18px;width:18px;height:18px;min-width:18px;margin:0;padding:0;accent-color:#111}
 .profile-form .profile-sync-status{grid-column:1/-1;margin:0;font-size:11px;line-height:1.45;color:#5a4c38}
+
+/* Portfolio-ready investor ecosystem cards: meaningful visual fallback when
+   third-party editorial image hosts are unavailable, never fake photography. */
+.investor-ecosystem-card:not([style]){
+  background-color:#14161c;
+  background-image:linear-gradient(135deg,#30343b 0%,#0e1118 58%,#070709 100%);
+}
+.investor-ecosystem-card[data-gallery-event="mfw"]:not([style]){
+  background-image:linear-gradient(135deg,#383944 0%,#161719 47%,#050505 100%);
+}
+.investor-ecosystem-card[data-gallery-event="bfs"]:not([style]){
+  background-image:linear-gradient(125deg,#fb6c42 0%,#b62f2f 30%,#182c20 63%,#0a111e 100%);
+}
+.investor-ecosystem-card[data-gallery-event="made"]:not([style]){
+  background-image:linear-gradient(130deg,#ff594b 0%,#d32d33 35%,#391c2d 66%,#101725 100%);
+}
+.investor-ecosystem-card::before{
+  content:"01";
+  position:absolute;right:14px;top:11px;
+  font-family:ui-monospace,monospace;font-size:54px;font-weight:900;
+  letter-spacing:-.09em;line-height:1;color:rgba(255,255,255,.17);
+  pointer-events:none;
+}
+.investor-ecosystem-card[data-gallery-event="bfs"]::before{content:"02";}
+.investor-ecosystem-card[data-gallery-event="made"]::before{content:"03";}
+.investor-ecosystem-card b{font-size:clamp(18px,1.7vw,25px);line-height:1;letter-spacing:-.035em;position:relative;z-index:1}
+.investor-ecosystem-card span{font-size:10px;letter-spacing:.13em;position:relative;z-index:1}
+.investor-ecosystem-card small{font-size:11px;line-height:1.4;color:#f0f0f0;position:relative;z-index:1;max-width:28ch}
+.investor-ecosystem-card:focus-visible{outline:3px solid #d7ff39;outline-offset:2px}
