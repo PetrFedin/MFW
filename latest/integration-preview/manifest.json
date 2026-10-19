@@ -1,10 +1,10 @@
 {
   "id": "integration-preview",
   "url": "http://127.0.0.1:4173/platform/index.html",
-  "sourceSha": "3bbbbe3bc468421af8e1dbb7415e131530bf5139",
-  "capturedAt": "2026-10-18T13:22:04.075Z",
+  "sourceSha": "b382638306ffca561c71e2c4c535449f3764d7b6",
+  "capturedAt": "2026-10-19T17:44:00.031Z",
   "environment": "unmerged-integration-preview",
-  "status": "captured",
+  "status": "portfolio_ready",
   "screenshots": [
     {
       "file": "desktop-mfw.png",
@@ -38,18 +38,18 @@
     },
     {
       "file": "desktop-bfs-programme.png",
-      "bytes": 130869,
-      "sha256": "603b5a69aeb2c40aad6a2ffb0c4731a5429bdb16d9964ed0335a6a88e28664da"
+      "bytes": 129100,
+      "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410"
     },
     {
       "file": "desktop-bfs-speakers.png",
-      "bytes": 132171,
-      "sha256": "8e185030e52d2ce377a410528839de53a71e12f7469d00206830dde8e8ee287b"
+      "bytes": 168259,
+      "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d"
     },
     {
       "file": "desktop-bfs-b2b.png",
-      "bytes": 132066,
-      "sha256": "81cb9f127cd66b912304149ef5fe9b78f6f903c92305c6e138d76270319f1386"
+      "bytes": 110674,
+      "sha256": "9cbc778e7e93170bff4dd52090bd5f4f5aafc22d988735b2f2abf299878903bf"
     },
     {
       "file": "desktop-bfs-organisations.png",
@@ -118,13 +118,13 @@
     },
     {
       "file": "mobile-bfs-programme.png",
-      "bytes": 59814,
-      "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
+      "bytes": 48354,
+      "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9"
     },
     {
       "file": "mobile-bfs-b2b.png",
-      "bytes": 60459,
-      "sha256": "3d427531f4c1aa89ffb69ee132ccf66aa384b4affe1e048671157118bc8d137e"
+      "bytes": 48060,
+      "sha256": "26cfa44702c531f164b3b8215164fe3b4be8f6055272e869cbc263d5bf26b91e"
     },
     {
       "file": "mobile-made-verified.png",
@@ -140,34 +140,35 @@
   "video": {
     "file": "tour-25s.mp4",
     "durationSeconds": 25,
-    "bytes": 318407,
-    "sha256": "059c83791ed4b247ecf712edd290008079ae35e8e8bb089c37a8dc27571269eb"
+    "bytes": 287718,
+    "sha256": "0e327ec3b218f4e9464a1e2dfe6e06f7c037aa35f5a0035f45456fc8eeb02703"
   },
   "extraVideos": [
     {
       "topic": "mfw",
       "file": "mfw-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 641045,
-      "sha256": "26dce110be7e20f23eab203e69896d7796154ef73b5ae68022ceae6e3ce25eda"
+      "bytes": 518090,
+      "sha256": "670d18da65cb34a5477d29f9bff75ed430a3a6e8a09951850c190cb1961b331c"
     },
     {
       "topic": "bfs",
       "file": "bfs-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 391183,
-      "sha256": "4f1b45e48992eb314ca877252b92da790a51e86a3a7e18eb96f34a2028823eeb"
+      "bytes": 415205,
+      "sha256": "01e7457077f0c21a008b1c389821a8d7c47d0ced0432b209e626df0a128176c9"
     },
     {
       "topic": "made",
       "file": "made-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 1686583,
-      "sha256": "2cee3dea2361dca6eb662e65a2e329423f3fa79bb4fde4c46257eef3e4b86520"
+      "bytes": 1608727,
+      "sha256": "6c757d575253fd7244521d801cf71d1934bea783da480d5757dda9d8cb3c4789"
     }
   ],
   "warnings": [],
   "pageErrors": [],
   "error": null,
-  "method": "Public Chromium browser capture without authentication"
+  "method": "Public Chromium browser capture without authentication",
+  "portfolioReady": true
 }

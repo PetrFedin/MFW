@@ -1,7 +1,7 @@
 {
   "schema": "mfw-public-browser-evidence-v1",
-  "capturedAt": "2026-10-18T13:22:04.075Z",
-  "captureCommit": "3bbbbe3bc468421af8e1dbb7415e131530bf5139",
+  "capturedAt": "2026-10-19T17:44:00.031Z",
+  "captureCommit": "b382638306ffca561c71e2c4c535449f3764d7b6",
   "warning": "Production source SHA not attested: a branch build is not the published release.",
   "consent": "Public screen only: no login, user registration, private data or simulated transactions",
   "sources": [
@@ -9,9 +9,9 @@
       "id": "production",
       "url": "https://mfw-platform.onrender.com/platform/index.html",
       "sourceSha": null,
-      "capturedAt": "2026-10-18T13:22:04.075Z",
+      "capturedAt": "2026-10-19T17:44:00.031Z",
       "environment": "published-live",
-      "status": "captured",
+      "status": "diagnostic_only",
       "screenshots": [
         {
           "file": "desktop-mfw.png",
@@ -45,23 +45,23 @@
         },
         {
           "file": "desktop-bfs-programme.png",
-          "bytes": 130869,
-          "sha256": "603b5a69aeb2c40aad6a2ffb0c4731a5429bdb16d9964ed0335a6a88e28664da"
+          "bytes": 129100,
+          "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410"
         },
         {
           "file": "desktop-bfs-speakers.png",
-          "bytes": 132171,
-          "sha256": "8e185030e52d2ce377a410528839de53a71e12f7469d00206830dde8e8ee287b"
+          "bytes": 168259,
+          "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d"
         },
         {
           "file": "desktop-bfs-b2b.png",
-          "bytes": 132066,
-          "sha256": "81cb9f127cd66b912304149ef5fe9b78f6f903c92305c6e138d76270319f1386"
+          "bytes": 110464,
+          "sha256": "a6ba4d947786baa3f673e6ddc603035293ae15798133774fcfe1d2f72231346c"
         },
         {
           "file": "desktop-bfs-organisations.png",
-          "bytes": 112140,
-          "sha256": "72402f398cddeac79c300c99bff9804e26c6b4394344345f73891e50516e5cc5"
+          "bytes": 73585,
+          "sha256": "72962adcdba342b9ebdf1b0a8036d11d001332b1df1e96bd11a71951f869b378"
         },
         {
           "file": "desktop-made-verified.png",
@@ -125,13 +125,13 @@
         },
         {
           "file": "mobile-bfs-programme.png",
-          "bytes": 59814,
-          "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
+          "bytes": 48354,
+          "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9"
         },
         {
           "file": "mobile-bfs-b2b.png",
-          "bytes": 60459,
-          "sha256": "3d427531f4c1aa89ffb69ee132ccf66aa384b4affe1e048671157118bc8d137e"
+          "bytes": 49525,
+          "sha256": "34a7621c7414b218d65b436a84f1da54c76f6f5d43a43fcf07ad8ece17ed9314"
         },
         {
           "file": "mobile-made-verified.png",
@@ -147,47 +147,53 @@
       "video": {
         "file": "tour-25s.mp4",
         "durationSeconds": 25,
-        "bytes": 300871,
-        "sha256": "2f43a5e87c1d26822123206060ca3c2f34c3d2109928397da56aaaa5535936ab"
+        "bytes": 246943,
+        "sha256": "fb49881f3825e59dd520e787049f04b5db23a34a20d46d28b2671a387e18c7a5"
       },
       "extraVideos": [
         {
           "topic": "mfw",
           "file": "mfw-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 617311,
-          "sha256": "8d7bbf8fdbf76e7232614fe01f1950762f25170c9921b89a0b3df1d818907bdf"
+          "bytes": 532799,
+          "sha256": "f95ca1a88bdf5cb288fc600f4fe7fb5e213b6c3c232348ff6afb2a8c6604f982"
         },
         {
           "topic": "bfs",
           "file": "bfs-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 345582,
-          "sha256": "390d5670c45c4a893f9ac93d2da809a027df5272596fa0bb6f39a109138a1be5"
+          "bytes": 461959,
+          "sha256": "79e9ae2d9f2b742b4e1d8313a7bcc781144b327edc6ca360f7aba79b276c1d31"
         },
         {
           "topic": "made",
           "file": "made-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 1716791,
-          "sha256": "6a49e4f2c0188e32e9e80acc0e2dce5aff67cd365347ba8c16a0d262cbd28173"
+          "bytes": 1639171,
+          "sha256": "4ab5e984549d241e1a46e465039f58ecf8cd2177557bc563d708fc3b466831c5"
         }
       ],
-      "warnings": [],
+      "warnings": [
+        {
+          "scene": "browser_javascript",
+          "error": "uncaught_$(...).forEach is not a function; $(...).forEach is not a function"
+        }
+      ],
       "pageErrors": [
         "$(...).forEach is not a function",
         "$(...).forEach is not a function"
       ],
       "error": null,
-      "method": "Public Chromium browser capture without authentication"
+      "method": "Public Chromium browser capture without authentication",
+      "portfolioReady": false
     },
     {
       "id": "integration-preview",
       "url": "http://127.0.0.1:4173/platform/index.html",
-      "sourceSha": "3bbbbe3bc468421af8e1dbb7415e131530bf5139",
-      "capturedAt": "2026-10-18T13:22:04.075Z",
+      "sourceSha": "b382638306ffca561c71e2c4c535449f3764d7b6",
+      "capturedAt": "2026-10-19T17:44:00.031Z",
       "environment": "unmerged-integration-preview",
-      "status": "captured",
+      "status": "portfolio_ready",
       "screenshots": [
         {
           "file": "desktop-mfw.png",
@@ -221,18 +227,18 @@
         },
         {
           "file": "desktop-bfs-programme.png",
-          "bytes": 130869,
-          "sha256": "603b5a69aeb2c40aad6a2ffb0c4731a5429bdb16d9964ed0335a6a88e28664da"
+          "bytes": 129100,
+          "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410"
         },
         {
           "file": "desktop-bfs-speakers.png",
-          "bytes": 132171,
-          "sha256": "8e185030e52d2ce377a410528839de53a71e12f7469d00206830dde8e8ee287b"
+          "bytes": 168259,
+          "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d"
         },
         {
           "file": "desktop-bfs-b2b.png",
-          "bytes": 132066,
-          "sha256": "81cb9f127cd66b912304149ef5fe9b78f6f903c92305c6e138d76270319f1386"
+          "bytes": 110674,
+          "sha256": "9cbc778e7e93170bff4dd52090bd5f4f5aafc22d988735b2f2abf299878903bf"
         },
         {
           "file": "desktop-bfs-organisations.png",
@@ -301,13 +307,13 @@
         },
         {
           "file": "mobile-bfs-programme.png",
-          "bytes": 59814,
-          "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
+          "bytes": 48354,
+          "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9"
         },
         {
           "file": "mobile-bfs-b2b.png",
-          "bytes": 60459,
-          "sha256": "3d427531f4c1aa89ffb69ee132ccf66aa384b4affe1e048671157118bc8d137e"
+          "bytes": 48060,
+          "sha256": "26cfa44702c531f164b3b8215164fe3b4be8f6055272e869cbc263d5bf26b91e"
         },
         {
           "file": "mobile-made-verified.png",
@@ -323,36 +329,37 @@
       "video": {
         "file": "tour-25s.mp4",
         "durationSeconds": 25,
-        "bytes": 318407,
-        "sha256": "059c83791ed4b247ecf712edd290008079ae35e8e8bb089c37a8dc27571269eb"
+        "bytes": 287718,
+        "sha256": "0e327ec3b218f4e9464a1e2dfe6e06f7c037aa35f5a0035f45456fc8eeb02703"
       },
       "extraVideos": [
         {
           "topic": "mfw",
           "file": "mfw-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 641045,
-          "sha256": "26dce110be7e20f23eab203e69896d7796154ef73b5ae68022ceae6e3ce25eda"
+          "bytes": 518090,
+          "sha256": "670d18da65cb34a5477d29f9bff75ed430a3a6e8a09951850c190cb1961b331c"
         },
         {
           "topic": "bfs",
           "file": "bfs-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 391183,
-          "sha256": "4f1b45e48992eb314ca877252b92da790a51e86a3a7e18eb96f34a2028823eeb"
+          "bytes": 415205,
+          "sha256": "01e7457077f0c21a008b1c389821a8d7c47d0ced0432b209e626df0a128176c9"
         },
         {
           "topic": "made",
           "file": "made-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 1686583,
-          "sha256": "2cee3dea2361dca6eb662e65a2e329423f3fa79bb4fde4c46257eef3e4b86520"
+          "bytes": 1608727,
+          "sha256": "6c757d575253fd7244521d801cf71d1934bea783da480d5757dda9d8cb3c4789"
         }
       ],
       "warnings": [],
       "pageErrors": [],
       "error": null,
-      "method": "Public Chromium browser capture without authentication"
+      "method": "Public Chromium browser capture without authentication",
+      "portfolioReady": true
     }
   ]
 }
