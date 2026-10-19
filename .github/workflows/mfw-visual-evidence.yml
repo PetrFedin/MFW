@@ -52,6 +52,14 @@ jobs:
         env:
           MFW_CAPTURE_OUTPUT: ../_mfw_evidence
         run: node capture-mfw-evidence.js
+      - name: Build provenance-checked portfolio gallery
+        if: always()
+        working-directory: qa
+        env:
+          MFW_CAPTURE_OUTPUT: ../_mfw_evidence
+        run: |
+          node --check portfolio-media-catalog.js
+          node portfolio-media-catalog.js
       - name: Upload media artifact
         if: always()
         uses: actions/upload-artifact@v4
