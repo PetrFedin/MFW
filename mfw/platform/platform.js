@@ -294,11 +294,24 @@
   }
   function safeJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
   async function hydrateMadeDirectory(){
+    madeVerifiedBrands=[];
     try{
-      var out=await authorityFetch('/v1/made-in-moscow/brands',{method:'GET'});
-      madeVerifiedBrands=Array.isArray(out&&out.data)?out.data:[];
-      if(!hubModal.classList.contains('hidden')&&hubTab==='directory')renderDirectory();
+      var responses=await Promise.all([
+        authorityFetch('/v1/made-in-moscow/brands',{method:'GET'}),
+        authorityFetch('/v1/made-in-moscow/overview',{method:'GET'})
+      ]);
+      var out=responses[0],overview=responses[1];
+      var admitted=out&&out.source==='postgres'&&out.badge==='made_in_moscow_verified'&&
+        out.demo!==true&&Array.isArray(out.data)&&overview&&overview.data&&
+        overview.data.persistence==='postgres'&&overview.data.productionAdmitted===true;
+      var seen=Object.create(null);
+      madeVerifiedBrands=admitted&&out.data.every(function(row){
+        if(!row||typeof row.id!=='string'||typeof row.name!=='string'||
+          !row.id.trim()||!row.name.trim()||seen[row.id])return false;
+        seen[row.id]=true;return true;
+      })?out.data:[];
     }catch(e){madeVerifiedBrands=[];}
+    if(!hubModal.classList.contains('hidden')&&hubTab==='directory')renderDirectory();
   }
   function getInterestState(){
     return {
