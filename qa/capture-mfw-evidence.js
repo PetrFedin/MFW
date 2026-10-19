@@ -69,7 +69,15 @@ async function prepareMfwPublicDemo(page){
 async function visitInside(page,selector,description){
  const button=page.frameLocator('#eventFrame').locator(selector).first();
  await button.click({timeout:20000});
- await delay(1250);
+ // Keep the actual BFS view in frame: otherwise mobile screenshots repeat
+ // the static header rather than showing the changed programme or directory.
+ if(selector.startsWith('[data-view=')||selector==='#orgDirectory'){
+  const content=page.frameLocator('#eventFrame').locator('#content');
+  await content.waitFor({state:'visible',timeout:20000});
+  await content.evaluate(el=>el.scrollIntoView({behavior:'instant',block:'start'}));
+  if((await content.innerText()).trim().length<60)throw Error('empty_bfs_content_'+description);
+ }
+ await delay(900);
  if(!(await page.locator('#eventFrame').count()))
   throw Error('frame_missing_'+description);
 }
