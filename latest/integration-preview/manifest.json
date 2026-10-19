@@ -1,8 +1,8 @@
 {
   "id": "integration-preview",
   "url": "http://127.0.0.1:4173/platform/index.html",
-  "sourceSha": "6c6d0b29d058e1e24b759071fdd35df1f5d10c66",
-  "capturedAt": "2026-10-19T19:49:02.650Z",
+  "sourceSha": "c3ea054eb90cb4af97c5ce3c05c77264aacac797",
+  "capturedAt": "2026-10-19T19:55:52.183Z",
   "environment": "unmerged-integration-preview",
   "status": "portfolio_ready",
   "screenshots": [
@@ -63,8 +63,8 @@
     },
     {
       "file": "desktop-made-brands.png",
-      "bytes": 89884,
-      "sha256": "2c9000e5f7a6b27de5dec9a097ee3aef962ad360483440bae483d3d31571ebbb"
+      "bytes": 91632,
+      "sha256": "981454a57bfd7bf0ca759bf4a714d45337b57fcceefe06b5fea141d0e47ed04f"
     },
     {
       "file": "desktop-made-market.png",
@@ -140,30 +140,30 @@
   "video": {
     "file": "tour-25s.mp4",
     "durationSeconds": 25,
-    "bytes": 267613,
-    "sha256": "c2a3b37659205359819671a29adf200513fe87d2990a211ac5fb4f52e54d7bbd"
+    "bytes": 262984,
+    "sha256": "08af5c56bbca88579c9306f2ac4f0162705c9fa4c582cd4bf83f8378495709ec"
   },
   "extraVideos": [
     {
       "topic": "mfw",
       "file": "mfw-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 515666,
-      "sha256": "ad96f017301ef4527f25d882e3c8a6c9db307d084647b05c493c11ad4f41b01f"
+      "bytes": 525512,
+      "sha256": "573d4628318f487c4e9a624bb7eb2881096c9616be3b00d67be372245e61e9af"
     },
     {
       "topic": "bfs",
       "file": "bfs-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 400640,
-      "sha256": "b9e30851821b58ccb27fe6b858ca890d6aa0893b26c41243229ff183acc19bd6"
+      "bytes": 434366,
+      "sha256": "7e5326d29909a45d11f9aeba22f8a75cfabaa6e0164af706f30b0960cb06aeb7"
     },
     {
       "topic": "made",
       "file": "made-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 1776145,
-      "sha256": "b5cc1c7fed7ea1a29b677dde95f6eb2ceecd2d4b215cd218b52ad70632fcd22d"
+      "bytes": 1804451,
+      "sha256": "e9ff8f81d0310281ba943c90d0a0217124f27b2320d71d16ebaba50b95feb2a4"
     }
   ],
   "warnings": [],
