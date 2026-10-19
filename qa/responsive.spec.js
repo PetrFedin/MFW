@@ -1243,6 +1243,12 @@ test('BFS Made verification badge requires an approved PostgreSQL roster',async(
    response.url().includes('/v1/made-in-moscow/brands')&&response.status()===200);
   await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
   await request; // No vacuous 0-badge assertion before the roster request.
+  // Confirm route-injected canonical linkage on all three reloads.
+  const linked=await page.frameLocator('#eventFrame').locator('body').evaluate(()=>{
+   const org=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations||[]).find(o=>o.id==='fashion-paper');
+   return org&&org.brandRef||null;
+  });
+  expect(linked).toBe('masterpeace');
   const bfs=page.frameLocator('#eventFrame');
   await bfs.locator('[data-view="b2b"]').first().click();
   await bfs.locator('#orgDirectory').click();
