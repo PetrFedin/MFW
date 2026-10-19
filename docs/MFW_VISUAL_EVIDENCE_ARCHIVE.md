@@ -19,3 +19,19 @@
 - https://raw.githubusercontent.com/PetrFedin/MFW/mfw-media-archive/latest/production/desktop-mfw.png
 - https://raw.githubusercontent.com/PetrFedin/MFW/mfw-media-archive/latest/production/tour-25s.mp4
 - https://raw.githubusercontent.com/PetrFedin/MFW/mfw-media-archive/latest/integration-preview/tour-25s.mp4
+
+
+## Portfolio gallery and automatic evidence qualification — 20 October 2026
+
+The integration workflow now runs `qa/portfolio-media-catalog.js` after browser capture and before publishing its archive. Each screenshot and MP4 must exist, match its recorded byte size and SHA-256, and have a valid PNG/MP4 file signature. Video duration must be 20–30 seconds. A clean source requires 26 distinct screenshots, 4 videos (general tour plus MFW/BFS/Made tours), no browser exceptions, and a source-specific provenance label. Integration preview source SHA must match the exact captured commit. Production SHA is never inferred from branch HEAD.
+
+New output files under `mfw-media-archive/latest/`:
+
+- `portfolio.html` — responsive landing-ready gallery of **qualified** screen captures and videos grouped by MFW, BFS, Made, and platform, with preview/production labels.
+- `portfolio-catalog.json` — machine-readable media inventory with SHA-256, source URL, commit, duration and qualification results.
+- `production/` and `integration-preview/` — underlying original captures and per-source diagnostic manifests.
+
+A run may succeed with qualified integration-preview media while production remains diagnostic-only, but **production diagnostic media must never be silently shown as investor-ready**. This is actual public-browser footage; it is not a claim of real registration, QR admission, payments, approved accounting, image licences or production deployment. For external use, review frames and third-party media rights independently.
+
+Gallery: https://raw.githubusercontent.com/PetrFedin/MFW/mfw-media-archive/latest/portfolio.html
+Index: https://raw.githubusercontent.com/PetrFedin/MFW/mfw-media-archive/latest/portfolio-catalog.json
