@@ -259,7 +259,7 @@ async function capture(browser,target){
    record.warnings.push({scene:'video_inventory',error:'expected_3_feature_tours_got_'+record.extraVideos.length});
   if(record.pageErrors.length)
    record.warnings.push({scene:'browser_javascript',error:'uncaught_'+record.pageErrors.join('; ').slice(0,500)});
-  record.portfolioReady=record.warnings.length===0&&!!record.video;
+  record.portfolioReady=record.warnings.length===0&&record.pageErrors.length===0&&!!record.video;
   record.status=record.portfolioReady?'portfolio_ready':'diagnostic_only';
  }catch(error){
   record.error=String(error&&error.stack||error).slice(0,1300);
