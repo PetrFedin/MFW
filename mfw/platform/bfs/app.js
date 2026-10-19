@@ -112,11 +112,12 @@ function madeBadgeForOrganisation(o){return o&&o.brandRef&&madeVerifiedByBrandRe
 async function hydrateMadeVerified(){
  var next=Object.create(null);
  try{
-  var out=await authority('/v1/made-in-moscow/brands',{method:'GET'});
+  var responses=await Promise.all([authority('/v1/made-in-moscow/brands',{method:'GET'}),authority('/v1/made-in-moscow/overview',{method:'GET'})]);
+  var out=responses[0],overview=responses[1];
   // A successful HTTP status, an arbitrary row or a memory-demo payload
   // cannot establish approved Made in Moscow programme membership.
   confirmed(out);
-  if(out.badge!=='made_in_moscow_verified'||!Array.isArray(out.data))
+  if(out.badge!=='made_in_moscow_verified'||!Array.isArray(out.data)||!overview||!overview.data||overview.data.persistence!=='postgres'||overview.data.productionAdmitted!==true)
    throw Error('verified_programme_authority_required');
   out.data.forEach(function(row){
    if(row&&typeof row.id==='string'&&row.id.trim()&&
