@@ -1,8 +1,8 @@
 {
   "id": "integration-preview",
   "url": "http://127.0.0.1:4173/platform/index.html",
-  "sourceSha": "b382638306ffca561c71e2c4c535449f3764d7b6",
-  "capturedAt": "2026-10-19T17:44:00.031Z",
+  "sourceSha": "6c6d0b29d058e1e24b759071fdd35df1f5d10c66",
+  "capturedAt": "2026-10-19T19:49:02.650Z",
   "environment": "unmerged-integration-preview",
   "status": "portfolio_ready",
   "screenshots": [
@@ -58,38 +58,38 @@
     },
     {
       "file": "desktop-made-verified.png",
-      "bytes": 100453,
-      "sha256": "3e8bebb729b7acac50b69092e60ab4f561aa1433cc8ac24fc42ff20c54dadb92"
+      "bytes": 100466,
+      "sha256": "1415e0485e00e3a87ce8665308b0bfadd642298db3041ad8b0227c10b7a54196"
     },
     {
       "file": "desktop-made-brands.png",
       "bytes": 89884,
-      "sha256": "52cfa12c273677bc2df4bf2f347f04b8a393da2f6f58b81b81ac7090de5e9d2d"
+      "sha256": "2c9000e5f7a6b27de5dec9a097ee3aef962ad360483440bae483d3d31571ebbb"
     },
     {
       "file": "desktop-made-market.png",
-      "bytes": 70480,
-      "sha256": "da8735280ad4ec132ebf5c56f8a19f713dc7fec4007ecb2d37b7759ef78c21dc"
+      "bytes": 70508,
+      "sha256": "09c2987ba530bf302ac3a0b644b3baca329cc03e631bc37e9cc725aa1bad7604"
     },
     {
       "file": "desktop-made-buyer.png",
-      "bytes": 82765,
-      "sha256": "96ca80b4d1f24c6744a67a087eae579cc0e20ad17be7e18d01a246bd0e6cdc81"
+      "bytes": 82740,
+      "sha256": "ff4f1c9b8a9de1123ff545192e3b1630697f924b47cb66d411c7cfc6c2112f63"
     },
     {
       "file": "desktop-made-brand365.png",
-      "bytes": 83125,
-      "sha256": "d8f825490a2ac9e12f93c9f9212e5a367b4d3a2047f2103640302c20f38d2734"
+      "bytes": 83146,
+      "sha256": "b32af7dd829eb7631e739a4baa92621679994334e24ce523aa4552cb9966c48f"
     },
     {
       "file": "desktop-made-evidence.png",
-      "bytes": 94045,
-      "sha256": "885f400fe16373f980dba572195ef1bb18d534bd13511569ae0b0defba061e28"
+      "bytes": 93973,
+      "sha256": "ce838051a2e721841f18ef7908f05c01992416e033a74899112785194d85d490"
     },
     {
       "file": "desktop-investor.png",
-      "bytes": 176096,
-      "sha256": "1f0dbd380f18535ffc7fb9224f877ca114c2da61d99eaa4574db11392f89eaca"
+      "bytes": 176141,
+      "sha256": "8eeebb863646c62ebeb4ee143e180b002e654e073a9facf9f3b7f59a027f61c2"
     },
     {
       "file": "mobile-mfw.png",
@@ -128,8 +128,8 @@
     },
     {
       "file": "mobile-made-verified.png",
-      "bytes": 48762,
-      "sha256": "4a0ad25057e351860e90182a7505423cea8b7d74410024fce24f34ddef92c087"
+      "bytes": 48814,
+      "sha256": "f996adcad3120de1e2c006ecfa798eeb4409a7984e5a668622d0d875e568f64b"
     },
     {
       "file": "mobile-made-buyer.png",
@@ -140,30 +140,30 @@
   "video": {
     "file": "tour-25s.mp4",
     "durationSeconds": 25,
-    "bytes": 287718,
-    "sha256": "0e327ec3b218f4e9464a1e2dfe6e06f7c037aa35f5a0035f45456fc8eeb02703"
+    "bytes": 267613,
+    "sha256": "c2a3b37659205359819671a29adf200513fe87d2990a211ac5fb4f52e54d7bbd"
   },
   "extraVideos": [
     {
       "topic": "mfw",
       "file": "mfw-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 518090,
-      "sha256": "670d18da65cb34a5477d29f9bff75ed430a3a6e8a09951850c190cb1961b331c"
+      "bytes": 515666,
+      "sha256": "ad96f017301ef4527f25d882e3c8a6c9db307d084647b05c493c11ad4f41b01f"
     },
     {
       "topic": "bfs",
       "file": "bfs-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 415205,
-      "sha256": "01e7457077f0c21a008b1c389821a8d7c47d0ced0432b209e626df0a128176c9"
+      "bytes": 400640,
+      "sha256": "b9e30851821b58ccb27fe6b858ca890d6aa0893b26c41243229ff183acc19bd6"
     },
     {
       "topic": "made",
       "file": "made-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 1608727,
-      "sha256": "6c757d575253fd7244521d801cf71d1934bea783da480d5757dda9d8cb3c4789"
+      "bytes": 1776145,
+      "sha256": "b5cc1c7fed7ea1a29b677dde95f6eb2ceecd2d4b215cd218b52ad70632fcd22d"
     }
   ],
   "warnings": [],
