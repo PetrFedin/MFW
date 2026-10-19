@@ -192,7 +192,9 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await expect(made.locator('#madeAccountBridge')).toContainText('MFW');
   await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
   await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
-  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(1);
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
+  await expect(made.locator('#madeBrandGrid .preview-pill')).toHaveCount(3);
+  await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
   await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
@@ -217,6 +219,14 @@ test('Made in Moscow bridge navigates back to MFW and BFS without losing platfor
 
 
 test('Made verified brand deep-links into exact MFW brand and preserves brand context for BFS', async ({ page }, testInfo) => {
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',badge:'made_in_moscow_verified',data:[{id:'masterpeace',name:'Masterpeace',city:'Москва'}]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({data:{verifiedBrands:1,persistence:'postgres',productionAdmitted:true}})});
+  });
   await page.addInitScript(() => {
     localStorage.setItem('mfwOpeningSeen', '1');
     localStorage.setItem('mfwOnboarded', '1');
@@ -1228,6 +1238,10 @@ test('BFS Made verification badge requires an approved PostgreSQL roster',async(
     body:body.replace(original,'id:"fashion-paper",brandRef:"masterpeace",name:"Fashion Paper"')});
  });
  let rosterMode='demo';
+ await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+  const trusted=rosterMode==='trusted';
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{verifiedBrands:trusted?1:0,persistence:trusted?'postgres':'memory_demo',productionAdmitted:trusted}})});
+ });
  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
   const verified=rosterMode==='trusted';
   await route.fulfill({status:200,contentType:'application/json',
@@ -1279,4 +1293,37 @@ test('BFS subscription rejects demo confirmation and leaves follow button unchan
  await bfs.locator('[data-follow-project]').first().click();
  await expect(bfs.locator('#bfsActionNotice')).toContainText('не сохранена');
  await expect(bfs.locator('[data-follow-project]').first()).toContainText('Подписаться');
+});
+
+test('Made Verified UI and Discover reject spoofed demo memberships',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({source:'memory',demo:true,badge:'made_in_moscow_verified',data:[{id:'masterpeace',name:'Masterpeace'}]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{persistence:'postgres',productionAdmitted:true,verifiedBrands:1}})});
+  });
+  await page.goto('/platform/index.html?event=made',{waitUntil:'domcontentloaded'});
+  const made=page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
+  await expect(made.locator('#madeBrandGrid .preview-pill')).toHaveCount(3);
+  await expect(made.locator('[data-made-open-mfw]')).toHaveCount(0);
+  await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
+  await page.locator('#hubBtn').click();
+  await page.locator('#directoryFilter').selectOption('MADE');
+  await expect(page.locator('.made-directory-card')).toHaveCount(0);
+});
+test('PostgreSQL roster without production admission remains unverified',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({source:'postgres',badge:'made_in_moscow_verified',data:[{id:'masterpeace',name:'Masterpeace'}]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{persistence:'postgres',productionAdmitted:false,verifiedBrands:1}})});
+  });
+  await page.goto('/platform/index.html?event=made',{waitUntil:'domcontentloaded'});
+  const made=page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
+  await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
+  await page.locator('#hubBtn').click();
+  await page.locator('#directoryFilter').selectOption('MADE');
+  await expect(page.locator('.made-directory-card')).toHaveCount(0);
 });
