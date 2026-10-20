@@ -1900,9 +1900,9 @@ async function router(req,res){
           JOIN partner_programs pp ON pp.id=bpm.program_id
           JOIN brands b ON b.id=bpm.brand_id
           WHERE pp.external_key='made_in_moscow' AND bpm.status='verified'
-            AND bpm.moderation_status='approved' AND b.status='published') AS "verifiedBrands",
+            AND bpm.moderation_status='approved' AND pp.status='active' AND b.status='published') AS "verifiedBrands",
         (SELECT count(*)::int FROM partner_service_applications psa JOIN partner_programs pp ON pp.id=psa.program_id
-          WHERE pp.external_key='made_in_moscow' AND psa.status='approved') AS "approvedServiceApplications"`);
+          WHERE pp.external_key='made_in_moscow' AND pp.status='active' AND psa.status='approved') AS "approvedServiceApplications"`);
       verifiedBrands=stats.rows[0].verifiedBrands||0;
       approvedServiceApplications=stats.rows[0].approvedServiceApplications||0;
     }
@@ -1924,14 +1924,14 @@ async function router(req,res){
       FROM brand_program_memberships bpm
       JOIN partner_programs pp ON pp.id=bpm.program_id
       JOIN brands b ON b.id=bpm.brand_id
-      WHERE pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved' AND b.status='published'
+      WHERE pp.external_key='made_in_moscow' AND pp.status='active' AND bpm.status='verified' AND bpm.moderation_status='approved' AND b.status='published'
       ORDER BY b.name`);
     return json(res,200,{data:r.rows,source:'postgres',badge:'made_in_moscow_verified'});
   }
   if(req.method==='GET'&&p==='/v1/brands'){
     if(pool){
       const r=await pool.query(`SELECT COALESCE(b.external_key,b.slug,b.id::text) AS id,b.slug,b.name,b.city,b.country,b.description,b.status,b.metadata,
-        COALESCE(bool_or(pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved'),false) AS "madeInMoscowVerified"
+        COALESCE(bool_or(pp.external_key='made_in_moscow' AND pp.status='active' AND bpm.status='verified' AND bpm.moderation_status='approved'),false) AS "madeInMoscowVerified"
         FROM brands b
         LEFT JOIN brand_program_memberships bpm ON bpm.brand_id=b.id
         LEFT JOIN partner_programs pp ON pp.id=bpm.program_id
@@ -1971,10 +1971,12 @@ async function router(req,res){
       }
 
       const made=await pool.query(`SELECT bpm.status,bpm.moderation_status AS "moderationStatus",bpm.verified_at AS "verifiedAt",bpm.reviewed_at AS "reviewedAt",
-        bpm.source_url AS "sourceUrl",bpm.source_snapshot_hash AS "sourceSnapshotHash"
+        bpm.source_url AS "sourceUrl",bpm.source_snapshot_hash AS "sourceSnapshotHash",
+        pp.status AS "programStatus",b.status AS "brandStatus"
         FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+        JOIN brands b ON b.id=bpm.brand_id
         WHERE bpm.brand_id=$1 AND pp.external_key='made_in_moscow' LIMIT 1`,[storageId]);
-      if(made.rowCount){const x=made.rows[0],verified=x.status==='verified'&&x.moderationStatus==='approved';add({
+      if(made.rowCount){const x=made.rows[0],verified=x.status==='verified'&&x.moderationStatus==='approved'&&x.programStatus==='active'&&x.brandStatus==='published';add({
         id:'made:membership',kind:'made_verification',label:'Сделано в Москве',occurredAt:x.verifiedAt||x.reviewedAt||null,
         truthClass:verified?'verified':'reported',authority:'made_in_moscow_programme_roster',sourceClass:'programme_membership',
         sourceRef:'brand_program_memberships',sourceUrl:x.sourceUrl||null,proofHash:x.sourceSnapshotHash||null,
@@ -2067,8 +2069,10 @@ async function router(req,res){
       const [madeR,collectionR,shortlistR,meetingR,leadR,brand365R]=await Promise.all([
         pool.query(`SELECT bpm.status,bpm.moderation_status AS "moderationStatus",bpm.source_url AS "sourceUrl",
           bpm.source_snapshot_hash AS "sourceSnapshotHash",bpm.verified_at AS "verifiedAt",bpm.reviewed_at AS "reviewedAt",
-          pp.external_key AS "programKey",pp.name AS "programName"
+          pp.external_key AS "programKey",pp.name AS "programName",
+          pp.status AS "programStatus",b.status AS "brandStatus"
           FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+          JOIN brands b ON b.id=bpm.brand_id
           WHERE bpm.brand_id=$1 AND pp.external_key='made_in_moscow' LIMIT 1`,[storageId]),
         pool.query(`SELECT id::text id,season,title,status,created_at AS "createdAt" FROM collections
           WHERE brand_id=$1 ORDER BY created_at DESC LIMIT 12`,[storageId]),
@@ -2124,7 +2128,7 @@ async function router(req,res){
       };
     }
 
-    const madeVerified=!!(made&&made.status==='verified'&&made.moderationStatus==='approved');
+    const madeVerified=!!(made&&made.status==='verified'&&made.moderationStatus==='approved'&&made.programStatus==='active'&&made.brandStatus==='published');
     push({
       id:'made',type:'programme_status',label:'Made in Moscow',status:madeVerified?'verified':(made?String(made.status||'pending'):'not_evidenced'),
       truthClass:madeVerified?'verified':'not_evidenced',
@@ -2220,7 +2224,7 @@ async function router(req,res){
     const collections=memory.collections.filter(x=>x.brandId===brand.id);
     let partnerPrograms=[];
     if(pool){
-      const membership=await pool.query(`SELECT pp.external_key AS "programKey",pp.name,bpm.status,bpm.moderation_status AS "moderationStatus",
+      const membership=await pool.query(`SELECT pp.external_key AS "programKey",pp.name,pp.status AS "programStatus",b.status AS "brandStatus",bpm.status,bpm.moderation_status AS "moderationStatus",
         bpm.external_ref AS "externalRef",bpm.source_url AS "sourceUrl",bpm.verified_at AS "verifiedAt"
         FROM brand_program_memberships bpm
         JOIN partner_programs pp ON pp.id=bpm.program_id
@@ -2229,7 +2233,7 @@ async function router(req,res){
         ORDER BY pp.external_key`,[String(brandId)]);
       partnerPrograms=membership.rows;
     }
-    return json(res,200,{data:{...brand,collections,partnerPrograms,madeInMoscowVerified:partnerPrograms.some(x=>x.programKey==='made_in_moscow'&&x.status==='verified'&&x.moderationStatus==='approved')}});
+    return json(res,200,{data:{...brand,collections,partnerPrograms,madeInMoscowVerified:partnerPrograms.some(x=>x.programKey==='made_in_moscow'&&x.programStatus==='active'&&x.brandStatus==='published'&&x.status==='verified'&&x.moderationStatus==='approved')}});
   }
   if(req.method==='GET'&&p==='/v1/collections'){
     const brandId=url.searchParams.get('brandId');

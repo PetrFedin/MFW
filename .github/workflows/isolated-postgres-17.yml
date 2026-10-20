@@ -94,5 +94,7 @@ jobs:
         run: node mfw-api/recovery-candidates/outbox-worker-scratch.test.js
       - name: Verify atomic BFS meeting history and CRM lead in scratch PG17
         run: node mfw-api/recovery-candidates/bfs-atomic-lifecycle-scratch.test.js
+      - name: Verify Made roster / overview / brand projection parity (scratch PG17)
+        run: node mfw-api/recovery-candidates/made-roster-parity-scratch.test.js
       - name: Validate production meeting lifecycle transition contract
         run: node mfw-api/meeting-lifecycle.test.js
