@@ -1,0 +1,174 @@
+{
+  "id": "integration-preview",
+  "url": "http://127.0.0.1:4173/platform/index.html",
+  "sourceSha": "11f5d9dfbd05ecdbca978904b4f1f3de936d1b24",
+  "capturedAt": "2026-10-20T00:40:11.205Z",
+  "environment": "unmerged-integration-preview",
+  "status": "portfolio_ready",
+  "screenshots": [
+    {
+      "file": "desktop-mfw.png",
+      "bytes": 63763,
+      "sha256": "b24929e441eea0edefd46045ba057079e4486343e59c172ea017e109c52f41e9"
+    },
+    {
+      "file": "desktop-bfs.png",
+      "bytes": 130724,
+      "sha256": "fdd01ef172851e98cfb2d9e87434fc1b981fa994d87eae51386c3c96644834b1"
+    },
+    {
+      "file": "desktop-made.png",
+      "bytes": 165310,
+      "sha256": "8f01c14afc04672468a81248dae0ef1d5a03e9cf51464f3b021e733d3dfe9279"
+    },
+    {
+      "file": "desktop-mfw-schedule.png",
+      "bytes": 116223,
+      "sha256": "dd6be77c2a84e614e9100748c44794751a359bd6af0d19f4b7114d5c08805997"
+    },
+    {
+      "file": "desktop-mfw-discover.png",
+      "bytes": 636386,
+      "sha256": "56c6bb0c57ed409afacfd7652b3c566da0ac72d1317a33a398071348d8022488"
+    },
+    {
+      "file": "desktop-mfw-live.png",
+      "bytes": 778675,
+      "sha256": "4a123e5d5b9ed3976d34a4c8704e4959a62c0a90305639761dbfe784877ab71b"
+    },
+    {
+      "file": "desktop-bfs-programme.png",
+      "bytes": 129100,
+      "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410"
+    },
+    {
+      "file": "desktop-bfs-speakers.png",
+      "bytes": 168259,
+      "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d"
+    },
+    {
+      "file": "desktop-bfs-b2b.png",
+      "bytes": 110674,
+      "sha256": "9cbc778e7e93170bff4dd52090bd5f4f5aafc22d988735b2f2abf299878903bf"
+    },
+    {
+      "file": "desktop-bfs-organisations.png",
+      "bytes": 112140,
+      "sha256": "72402f398cddeac79c300c99bff9804e26c6b4394344345f73891e50516e5cc5"
+    },
+    {
+      "file": "desktop-made-verified.png",
+      "bytes": 100466,
+      "sha256": "1415e0485e00e3a87ce8665308b0bfadd642298db3041ad8b0227c10b7a54196"
+    },
+    {
+      "file": "desktop-made-brands.png",
+      "bytes": 91632,
+      "sha256": "981454a57bfd7bf0ca759bf4a714d45337b57fcceefe06b5fea141d0e47ed04f"
+    },
+    {
+      "file": "desktop-made-market.png",
+      "bytes": 70508,
+      "sha256": "09c2987ba530bf302ac3a0b644b3baca329cc03e631bc37e9cc725aa1bad7604"
+    },
+    {
+      "file": "desktop-made-buyer.png",
+      "bytes": 82740,
+      "sha256": "ff4f1c9b8a9de1123ff545192e3b1630697f924b47cb66d411c7cfc6c2112f63"
+    },
+    {
+      "file": "desktop-made-brand365.png",
+      "bytes": 83146,
+      "sha256": "b32af7dd829eb7631e739a4baa92621679994334e24ce523aa4552cb9966c48f"
+    },
+    {
+      "file": "desktop-made-evidence.png",
+      "bytes": 93973,
+      "sha256": "ce838051a2e721841f18ef7908f05c01992416e033a74899112785194d85d490"
+    },
+    {
+      "file": "desktop-investor.png",
+      "bytes": 176141,
+      "sha256": "8eeebb863646c62ebeb4ee143e180b002e654e073a9facf9f3b7f59a027f61c2"
+    },
+    {
+      "file": "mobile-mfw.png",
+      "bytes": 41725,
+      "sha256": "45189783ba56210861ae03b10fd8314f8583cbf25e1d6023c7e20384b241aa98"
+    },
+    {
+      "file": "mobile-bfs.png",
+      "bytes": 59814,
+      "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
+    },
+    {
+      "file": "mobile-made.png",
+      "bytes": 50405,
+      "sha256": "89193ff5a7b751ea650b19ab03d2f58a9362ab64b4700031fe999c42f31e84f8"
+    },
+    {
+      "file": "mobile-mfw-schedule.png",
+      "bytes": 66424,
+      "sha256": "d52cd7b34030e123a7b8d020eadccf71e45b84b56c54bfb7c308f829fe3fb472"
+    },
+    {
+      "file": "mobile-mfw-discover.png",
+      "bytes": 197148,
+      "sha256": "3099d16316b880bfd271f70f5dfce75c6fae1a3dce5a7bb16077f8fc6f23dc21"
+    },
+    {
+      "file": "mobile-bfs-programme.png",
+      "bytes": 48354,
+      "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9"
+    },
+    {
+      "file": "mobile-bfs-b2b.png",
+      "bytes": 48060,
+      "sha256": "26cfa44702c531f164b3b8215164fe3b4be8f6055272e869cbc263d5bf26b91e"
+    },
+    {
+      "file": "mobile-made-verified.png",
+      "bytes": 48814,
+      "sha256": "f996adcad3120de1e2c006ecfa798eeb4409a7984e5a668622d0d875e568f64b"
+    },
+    {
+      "file": "mobile-made-buyer.png",
+      "bytes": 27086,
+      "sha256": "16ce6172e5cc8d1aa4d356e327113de30ab50b8a5f55e913e114ef928935eb1f"
+    }
+  ],
+  "video": {
+    "file": "tour-25s.mp4",
+    "durationSeconds": 25,
+    "bytes": 276165,
+    "sha256": "8f115f2544b3695e1df7be3b562793f3f463915fd4466423a9f5aaf22873fc1e"
+  },
+  "extraVideos": [
+    {
+      "topic": "mfw",
+      "file": "mfw-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 594511,
+      "sha256": "6a1096264e88a01bf608f713508647033026cd37d9dd727d7880043286d74913"
+    },
+    {
+      "topic": "bfs",
+      "file": "bfs-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 490999,
+      "sha256": "6159224230dd44809e49740f6baac914a17944145aba88caa2a6a541b114e3e2"
+    },
+    {
+      "topic": "made",
+      "file": "made-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 1742804,
+      "sha256": "f4858d1976c2078cca9a56bdb9640a467b6a4966eaf462f7aff37ff00c0e7eda"
+    }
+  ],
+  "warnings": [],
+  "pageErrors": [],
+  "error": null,
+  "method": "Public Chromium browser capture without authentication",
+  "portfolioReady": true
+}

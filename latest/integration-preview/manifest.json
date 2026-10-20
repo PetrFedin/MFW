@@ -1,8 +1,8 @@
 {
   "id": "integration-preview",
   "url": "http://127.0.0.1:4173/platform/index.html",
-  "sourceSha": "56f6363a21848fe5f7369383d5e6763178957067",
-  "capturedAt": "2026-10-19T22:53:13.394Z",
+  "sourceSha": "11f5d9dfbd05ecdbca978904b4f1f3de936d1b24",
+  "capturedAt": "2026-10-20T00:40:11.205Z",
   "environment": "unmerged-integration-preview",
   "status": "portfolio_ready",
   "screenshots": [
@@ -140,30 +140,30 @@
   "video": {
     "file": "tour-25s.mp4",
     "durationSeconds": 25,
-    "bytes": 265366,
-    "sha256": "bce16a2689108cd24f7d9a89aab6102c785d01be86799137f978fb582c8d843c"
+    "bytes": 276165,
+    "sha256": "8f115f2544b3695e1df7be3b562793f3f463915fd4466423a9f5aaf22873fc1e"
   },
   "extraVideos": [
     {
       "topic": "mfw",
       "file": "mfw-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 594980,
-      "sha256": "b58dacf32d6550628e39dfbab2d522c4b31b577bf81be3bba8a39e3c88771030"
+      "bytes": 594511,
+      "sha256": "6a1096264e88a01bf608f713508647033026cd37d9dd727d7880043286d74913"
     },
     {
       "topic": "bfs",
       "file": "bfs-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 458559,
-      "sha256": "4adcd4c5b62c10786d2ccf6aa26fa67555dc888b32728036518bf96ca69747dc"
+      "bytes": 490999,
+      "sha256": "6159224230dd44809e49740f6baac914a17944145aba88caa2a6a541b114e3e2"
     },
     {
       "topic": "made",
       "file": "made-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 1738728,
-      "sha256": "86c1adcae6a8341c849cf102414e07fcfc0dc112fe88d8bef593282b407d8be2"
+      "bytes": 1742804,
+      "sha256": "f4858d1976c2078cca9a56bdb9640a467b6a4966eaf462f7aff37ff00c0e7eda"
     }
   ],
   "warnings": [],

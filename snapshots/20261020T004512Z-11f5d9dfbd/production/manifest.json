@@ -1,0 +1,182 @@
+{
+  "id": "production",
+  "url": "https://mfw-platform.onrender.com/platform/index.html",
+  "sourceSha": null,
+  "capturedAt": "2026-10-20T00:40:11.205Z",
+  "environment": "published-live",
+  "status": "diagnostic_only",
+  "screenshots": [
+    {
+      "file": "desktop-mfw.png",
+      "bytes": 63763,
+      "sha256": "b24929e441eea0edefd46045ba057079e4486343e59c172ea017e109c52f41e9"
+    },
+    {
+      "file": "desktop-bfs.png",
+      "bytes": 130724,
+      "sha256": "fdd01ef172851e98cfb2d9e87434fc1b981fa994d87eae51386c3c96644834b1"
+    },
+    {
+      "file": "desktop-made.png",
+      "bytes": 165309,
+      "sha256": "dacbd4b513e029b8775b9faa6a94beb309a0c32b26b660a764d6beda5ec9ec1e"
+    },
+    {
+      "file": "desktop-mfw-schedule.png",
+      "bytes": 116223,
+      "sha256": "dd6be77c2a84e614e9100748c44794751a359bd6af0d19f4b7114d5c08805997"
+    },
+    {
+      "file": "desktop-mfw-discover.png",
+      "bytes": 636386,
+      "sha256": "56c6bb0c57ed409afacfd7652b3c566da0ac72d1317a33a398071348d8022488"
+    },
+    {
+      "file": "desktop-mfw-live.png",
+      "bytes": 778675,
+      "sha256": "4a123e5d5b9ed3976d34a4c8704e4959a62c0a90305639761dbfe784877ab71b"
+    },
+    {
+      "file": "desktop-bfs-programme.png",
+      "bytes": 129100,
+      "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410"
+    },
+    {
+      "file": "desktop-bfs-speakers.png",
+      "bytes": 168259,
+      "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d"
+    },
+    {
+      "file": "desktop-bfs-b2b.png",
+      "bytes": 112150,
+      "sha256": "f637f5c6cf9d5421a09337f399e623e59bc072a82bcff6118a589f3d6fea5898"
+    },
+    {
+      "file": "desktop-bfs-organisations.png",
+      "bytes": 73585,
+      "sha256": "72962adcdba342b9ebdf1b0a8036d11d001332b1df1e96bd11a71951f869b378"
+    },
+    {
+      "file": "desktop-made-verified.png",
+      "bytes": 100453,
+      "sha256": "3e8bebb729b7acac50b69092e60ab4f561aa1433cc8ac24fc42ff20c54dadb92"
+    },
+    {
+      "file": "desktop-made-brands.png",
+      "bytes": 89884,
+      "sha256": "52cfa12c273677bc2df4bf2f347f04b8a393da2f6f58b81b81ac7090de5e9d2d"
+    },
+    {
+      "file": "desktop-made-market.png",
+      "bytes": 70480,
+      "sha256": "da8735280ad4ec132ebf5c56f8a19f713dc7fec4007ecb2d37b7759ef78c21dc"
+    },
+    {
+      "file": "desktop-made-buyer.png",
+      "bytes": 82765,
+      "sha256": "96ca80b4d1f24c6744a67a087eae579cc0e20ad17be7e18d01a246bd0e6cdc81"
+    },
+    {
+      "file": "desktop-made-brand365.png",
+      "bytes": 83125,
+      "sha256": "d8f825490a2ac9e12f93c9f9212e5a367b4d3a2047f2103640302c20f38d2734"
+    },
+    {
+      "file": "desktop-made-evidence.png",
+      "bytes": 94045,
+      "sha256": "885f400fe16373f980dba572195ef1bb18d534bd13511569ae0b0defba061e28"
+    },
+    {
+      "file": "desktop-investor.png",
+      "bytes": 163791,
+      "sha256": "7489ee0dd59f72e4cd0b5bd1e9c29399d573dd3761b88905b30aae7d3683ee4e"
+    },
+    {
+      "file": "mobile-mfw.png",
+      "bytes": 41725,
+      "sha256": "45189783ba56210861ae03b10fd8314f8583cbf25e1d6023c7e20384b241aa98"
+    },
+    {
+      "file": "mobile-bfs.png",
+      "bytes": 59814,
+      "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6"
+    },
+    {
+      "file": "mobile-made.png",
+      "bytes": 50540,
+      "sha256": "88286332c322ce52e1a604d57048fd92f77367953bb3c0802bc8c9f186b1f5f2"
+    },
+    {
+      "file": "mobile-mfw-schedule.png",
+      "bytes": 66424,
+      "sha256": "d52cd7b34030e123a7b8d020eadccf71e45b84b56c54bfb7c308f829fe3fb472"
+    },
+    {
+      "file": "mobile-mfw-discover.png",
+      "bytes": 197148,
+      "sha256": "3099d16316b880bfd271f70f5dfce75c6fae1a3dce5a7bb16077f8fc6f23dc21"
+    },
+    {
+      "file": "mobile-bfs-programme.png",
+      "bytes": 48354,
+      "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9"
+    },
+    {
+      "file": "mobile-bfs-b2b.png",
+      "bytes": 49525,
+      "sha256": "34a7621c7414b218d65b436a84f1da54c76f6f5d43a43fcf07ad8ece17ed9314"
+    },
+    {
+      "file": "mobile-made-verified.png",
+      "bytes": 48762,
+      "sha256": "4a0ad25057e351860e90182a7505423cea8b7d74410024fce24f34ddef92c087"
+    },
+    {
+      "file": "mobile-made-buyer.png",
+      "bytes": 27086,
+      "sha256": "16ce6172e5cc8d1aa4d356e327113de30ab50b8a5f55e913e114ef928935eb1f"
+    }
+  ],
+  "video": {
+    "file": "tour-25s.mp4",
+    "durationSeconds": 25,
+    "bytes": 247718,
+    "sha256": "135aebec87ab579a59b047ca1498dc3c719a79fb5a7e625681670a651104a201"
+  },
+  "extraVideos": [
+    {
+      "topic": "mfw",
+      "file": "mfw-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 516354,
+      "sha256": "a23200ce64be98e7465bb395d7390622f3a4fcab2de95c5ba9a2b66394d20419"
+    },
+    {
+      "topic": "bfs",
+      "file": "bfs-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 427446,
+      "sha256": "dc0622a4dcfe34c27df0ac76fe3d04830282e888c6356c12477a74fd01f0ef42"
+    },
+    {
+      "topic": "made",
+      "file": "made-tour-25s.mp4",
+      "durationSeconds": 25,
+      "bytes": 1753981,
+      "sha256": "11c1461783135e81a7752d4fc46d3799e8b44f79848fb6e976cd166acc7928c8"
+    }
+  ],
+  "warnings": [
+    {
+      "scene": "browser_javascript",
+      "error": "uncaught_$(...).forEach is not a function; $(...).forEach is not a function"
+    }
+  ],
+  "pageErrors": [
+    "$(...).forEach is not a function",
+    "$(...).forEach is not a function"
+  ],
+  "error": null,
+  "method": "Public Chromium browser capture without authentication",
+  "portfolioReady": false
+}
