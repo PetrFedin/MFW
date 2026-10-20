@@ -69,10 +69,12 @@ async function main(){
     assert.equal(member.rows[0].source,'operator_verified');
     assert.equal(member.rows[0].status,'revoked');
     assert(member.rows[0].ended_at);
+    assert.equal((await registry.list({limit:50})).find(row=>row.id===orgId).activeRepresentativeCount,0);
 
     const second=await registry.claimForUser(U2,claim);
     assert.equal(second.id,orgId);
     assert.equal(second.relationship.source,'self_claim');
+    assert.equal((await registry.list({limit:50})).find(row=>row.id===orgId).activeRepresentativeCount,1);
     assert.equal(await registry.canRepresent(U2,orgId),false);
     const resubmit=await registry.claimForUser(U2,{...claim,relationshipRole:'buyer'});
     assert.equal(resubmit.relationship.source,'self_claim');
@@ -83,6 +85,7 @@ async function main(){
       /organisation_membership_review_required/);
     const inactive=await pool.query("SELECT status FROM public.professional_organisation_memberships WHERE organisation_id=$1 AND user_id=$2",[orgId,U2]);
     assert.equal(inactive.rows[0].status,'revoked');
+    assert.equal((await registry.list({limit:50})).find(row=>row.id===orgId).activeRepresentativeCount,0);
 
     // Suspended company cannot receive new representation claims.
     await pool.query("UPDATE public.professional_organisations SET status='suspended' WHERE id=$1",[orgId]);
