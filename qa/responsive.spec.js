@@ -1398,3 +1398,78 @@ test('memory-demo source cannot forge a confirmed organisation account',async({p
   await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
   await expect(page.locator('#organisationCurrent')).not.toContainText('Injected Verified');
 });
+
+
+test('Follow-up Center requires session and refuses demo CRM rows',async({page})=>{
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
+  await expect(page.locator('#followupSummary')).toHaveCount(0);
+
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'memory',demo:true,data:[{
+        id:'fake-1',stage:'won',counterpartName:'Demo sale'
+      }]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[]})});
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('#followupState')).toContainText('Данные не подтверждены');
+  await expect(page.locator('#followupQueue')).toHaveCount(0);
+  await expect(page.locator('#hubContent')).not.toContainText('Demo sale');
+});
+
+test('Follow-up Center filters owner scoped CRM deadlines and escapes names',async({page},testInfo)=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[
+        {id:'lead-1',stage:'qualified',eventBrand:'bfs',
+          counterpartName:'Atelier <> & Co',meetingId:'meeting-1',
+          nextAction:'Review linesheet',nextActionAt:'2026-10-15T10:00:00Z'},
+        {id:'lead-2',stage:'interest',eventBrand:'mfw',
+          counterpartName:'No next step',meetingId:'',nextAction:null,nextActionAt:null},
+        {id:'lead-3',stage:'won',eventBrand:'made_in_moscow',
+          counterpartName:'CRM won ≠ paid order',meetingId:'meeting-elsewhere',
+          nextAction:null,nextActionAt:null}
+      ]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[{id:'meeting-1',status:'completed'}]})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('#followupSummary')).toBeVisible();
+  await expect(page.locator('.followup-item')).toHaveCount(3);
+  await expect(page.locator('.followup-kpis b').first()).toHaveText('3');
+  await expect(page.locator('.followup-item').first()).toContainText('ПРОСРОЧЕНО');
+  await expect(page.locator('#hubContent')).toContainText('Atelier <> & Co');
+  await expect(page.locator('#followupQueue img')).toHaveCount(0);
+  await expect(page.locator('#hubContent')).toContainText('не подтверждённый заказ');
+  await page.locator('[data-followup-filter="missing"]').click();
+  await expect(page.locator('.followup-item')).toHaveCount(1);
+  await expect(page.locator('.followup-item')).toContainText('No next step');
+  await page.locator('[data-followup-filter="closed"]').click();
+  await expect(page.locator('.followup-item')).toHaveCount(1);
+  await expect(page.locator('.followup-item')).toContainText('CRM won ≠ paid order');
+  await expect(page.locator('.followup-item')).toContainText('Не найдена среди доступных мне встреч');
+  await page.locator('[data-followup-filter="all"]').click();
+  await expectTarget(page.locator('[data-followup-filter="overdue"]'),44);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({path:testInfo.outputPath('followup-center.png')});
+
+  // A logout or token invalidation cannot retain previously projected CRM rows.
+  await page.evaluate(()=>localStorage.removeItem('mfwAccessToken'));
+  await page.locator('#followupRefresh').click();
+  await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
+  await expect(page.locator('.followup-item')).toHaveCount(0);
+});
