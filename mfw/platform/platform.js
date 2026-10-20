@@ -19,6 +19,7 @@
   var hubModal=document.getElementById('hubModal');
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
+  var followupFilter='all',followupRequest=0,followupEvidence=null;
   var investorDemoIndex=0;
   var investorDemoActive=false;
   var AUTHORITY='https://mfw-authority.onrender.com';
@@ -1594,6 +1595,85 @@
       '<div class="hub-note">Preview only: production issuer/status registry, revocation and portable credentials remain dependency-gated behind durable identity, PostgreSQL history and policy review.</div>';
   }
 
+
+  // B2B follow-up is a private read-only projection over two owner-scoped
+  // Authority queries. No synthetic conversions, financial amounts or
+  // invitations are created by this screen.
+  function showFollowupBoard(projection){
+    if(hubTab!=='followup')return;
+    var statuses={all:'Все',overdue:'Просрочено',missing:'Нет следующего шага',
+      scheduled:'Запланировано',closed:'Закрыто'};
+    var statusLabels={overdue:'ПРОСРОЧЕНО',missing:'ТРЕБУЕТСЯ ПЛАН',
+      scheduled:'ЗАПЛАНИРОВАНО',closed:'ЗАКРЫТО'};
+    var items=projection.rows.filter(function(row){
+      return followupFilter==='all'||row.dueStatus===followupFilter;
+    });
+    hubContent.innerHTML=
+      '<div class="followup-header"><div><div class="drawer-kicker">B2B · POST-EVENT OPERATIONS</div>'+
+      '<h3>Центр последующих действий</h3><p>Список рабочих действий по встречам и CRM-лидам. Все показатели рассчитаны только по вашему серверному доступу.</p></div>'+
+      '<button type="button" id="followupRefresh">ОБНОВИТЬ</button></div>'+
+      '<div class="followup-truth" role="note">ИСТОЧНИК: POSTGRESQL · ЛИЧНЫЙ КОНТУР. Этап «won» — это статус CRM, а не подтверждённый заказ или выручка. Просрочка определяется по сроку следующего действия.</div>'+
+      '<div class="followup-kpis" id="followupSummary">'+
+      [['all','Всего лидов'],['overdue','Просрочено'],['missing','Без плана'],['scheduled','Запланировано'],['closed','Закрыто']].map(function(pair){
+        return '<div><b>'+h(projection.totals[pair[0]])+'</b><span>'+h(pair[1])+'</span></div>';
+      }).join('')+'</div>'+
+      '<div class="followup-controls" role="group" aria-label="Фильтр последующих действий">'+
+      Object.keys(statuses).map(function(key){
+        return '<button type="button" data-followup-filter="'+h(key)+'" aria-pressed="'+(key===followupFilter?'true':'false')+'"'+
+        (key===followupFilter?' class="active"':'')+'>'+h(statuses[key])+'</button>';
+      }).join('')+'</div>'+
+      '<div class="followup-queue" id="followupQueue" aria-live="polite">'+
+      (items.length?items.map(function(row){
+        var eventLabel=h(row.eventLabel),name=h(row.counterpart||row.organisation||'Контрагент не указан');
+        var due=row.dueAt===null?'Срок не указан':formatWhen(new Date(row.dueAt).toISOString());
+        return '<article class="followup-item" data-followup-row="'+h(row.id)+'">'+
+          '<div class="followup-row-top"><span>'+eventLabel+'</span>'+
+          '<strong class="followup-status '+h(row.dueStatus)+'">'+h(statusLabels[row.dueStatus]||'НЕОПРЕДЕЛЕНО')+'</strong></div>'+
+          '<h4>'+name+'</h4><p>'+h(row.stageLabel)+'</p>'+
+          '<dl><div><dt>Следующее действие</dt><dd>'+h(row.nextAction||'Не назначено')+'</dd></div>'+
+          '<div><dt>Срок</dt><dd>'+h(due)+'</dd></div>'+
+          '<div><dt>Встреча</dt><dd>'+h(row.meetingLinked?row.meetingStatus||
+          'Доступна в моём реестре':row.meetingId?
+          'Не найдена среди доступных мне встреч':'Не связана')+'</dd></div></dl>'+
+          '</article>';
+      }).join(''):'<p class="followup-empty">В этом фильтре нет записей, подтверждённых серверной выборкой.</p>')+
+      '</div><p class="followup-foot">Это рабочий обзор для контроля действий, а не CRM с правом редактирования. Договоры, контакты, коммерческие цены, заказы и финансовые результаты не экспортируются и не вычисляются.</p>';
+    [].slice.call(hubContent.querySelectorAll('[data-followup-filter]')).forEach(function(button){
+      button.onclick=function(){
+        followupFilter=button.dataset.followupFilter;
+        showFollowupBoard(projection);
+      };
+    });
+    var refresh=hubContent.querySelector('#followupRefresh');
+    if(refresh)refresh.onclick=renderFollowup;
+  }
+  async function renderFollowup(){
+    var request=++followupRequest,token=accessToken();
+    followupEvidence=null;
+    if(!token){
+      hubContent.innerHTML='<div class="followup-denied" id="followupState" role="status"><h3>Нужна авторизация</h3><p>Центр B2B показывает только ваши встречи и CRM-лиды. Вход и серверное подтверждение личности обязательны. Демонстрационные данные не подменяют реальные.</p></div>';
+      return;
+    }
+    hubContent.innerHTML='<div class="followup-denied" id="followupState" role="status">Получаем ваши встречи и CRM-лиды из PostgreSQL Authority…</div>';
+    try{
+      if(!window.MFP_B2B_FOLLOWUP||typeof window.MFP_B2B_FOLLOWUP.build!=='function')
+        throw new Error('followup_contract_not_loaded');
+      var responses=await Promise.all([
+        authorityFetch('/v1/b2b/leads',{method:'GET'}),
+        authorityFetch('/v1/meetings',{method:'GET'})
+      ]);
+      if(request!==followupRequest||token!==accessToken()||hubTab!=='followup')return;
+      var result=window.MFP_B2B_FOLLOWUP.build(responses[0],responses[1],Date.now());
+      if(!result.ready)throw new Error(result.reason||'evidence_not_admitted');
+      followupEvidence=result;
+      showFollowupBoard(result);
+    }catch(error){
+      if(request!==followupRequest||token!==accessToken()||hubTab!=='followup')return;
+      followupEvidence=null;
+      hubContent.innerHTML='<div class="followup-denied" id="followupState" role="status"><h3>Данные не подтверждены</h3><p>Авторизованный PostgreSQL Authority не предоставил согласованную выборку встреч и лидов. Сводка намеренно скрыта: демонстрационные строки, чужие данные и старые локальные результаты не показываются.</p></div>';
+    }
+  }
+
   function renderHub(){
     [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.classList.toggle('active',b.dataset.hubTab===hubTab);});
     if(hubTab==='today')renderToday();
@@ -1605,6 +1685,7 @@
     else if(hubTab==='partner')renderPartnerConsole();
     else if(hubTab==='brand')renderBrandCockpit();
     else if(hubTab==='dealroom')renderDealRoomPreview();
+    else if(hubTab==='followup')renderFollowup();
     else if(hubTab==='trust')renderTrustPassportPreview();
     else if(hubTab==='economics')renderEconomics();
     else if(hubTab==='committee')renderInvestmentCommittee();
