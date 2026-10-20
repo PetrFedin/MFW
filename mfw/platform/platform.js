@@ -1675,6 +1675,7 @@
   }
 
   function renderHub(){
+    if(hubTab!=='followup'){followupEvidence=null;followupRequest++;}
     [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.classList.toggle('active',b.dataset.hubTab===hubTab);});
     if(hubTab==='today')renderToday();
     else if(hubTab==='directory')renderDirectory();
@@ -1955,6 +1956,17 @@
   buttons.forEach(function(b){b.addEventListener('click',function(){openEvent(b.dataset.event);});});
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstallPrompt=e;document.body.classList.add('installable');});
   window.addEventListener('appinstalled',function(){deferredInstallPrompt=null;document.body.classList.remove('installable');});
+  // A login change in another browser tab immediately invalidates a cached
+  // private follow-up projection; returning to the tab revalidates access.
+  window.addEventListener('storage',function(event){
+    if((event.key==='mfwAccessToken'||event.key===null)&&
+       hubTab==='followup'&&!hubModal.classList.contains('hidden'))
+      renderFollowup();
+  });
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden&&hubTab==='followup'&&!hubModal.classList.contains('hidden'))
+      renderFollowup();
+  });
   window.addEventListener('online',updateNetworkStatus);
   window.addEventListener('offline',updateNetworkStatus);
   document.addEventListener('keydown',function(e){

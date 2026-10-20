@@ -862,3 +862,7 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
 .followup-denied{padding:22px;border:1px dashed #656773;background:#191c21;border-radius:10px;line-height:1.6}
 .followup-denied h3{margin:0 0 10px}.followup-denied p{margin:0;color:#ddd}
 @media(max-width:680px){.followup-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-kpis>div:last-child{grid-column:1/-1}.followup-queue{grid-template-columns:1fr}.followup-header{align-items:start}}
+
+/* Explicit contrast for the private B2B queue in BFS and Made shell themes. */
+.followup-item,.followup-kpis>div,.followup-denied{color:#f4f4ee}
+.followup-item dd,.followup-item h4{color:#f4f4ee}

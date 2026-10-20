@@ -1432,7 +1432,7 @@ test('Follow-up Center filters owner scoped CRM deadlines and escapes names',asy
     await route.fulfill({status:200,contentType:'application/json',
       body:JSON.stringify({source:'postgres',data:[
         {id:'lead-1',stage:'qualified',eventBrand:'bfs',
-          counterpartName:'Atelier <> & Co',meetingId:'meeting-1',
+          counterpartName:'<img src=x onerror=alert(1)> Atelier & Co',meetingId:'meeting-1',
           nextAction:'Review linesheet',nextActionAt:'2026-10-15T10:00:00Z'},
         {id:'lead-2',stage:'interest',eventBrand:'mfw',
           counterpartName:'No next step',meetingId:'',nextAction:null,nextActionAt:null},
@@ -1452,7 +1452,7 @@ test('Follow-up Center filters owner scoped CRM deadlines and escapes names',asy
   await expect(page.locator('.followup-item')).toHaveCount(3);
   await expect(page.locator('.followup-kpis b').first()).toHaveText('3');
   await expect(page.locator('.followup-item').first()).toContainText('ПРОСРОЧЕНО');
-  await expect(page.locator('#hubContent')).toContainText('Atelier <> & Co');
+  await expect(page.locator('#hubContent')).toContainText('<img src=x onerror=alert(1)> Atelier & Co');
   await expect(page.locator('#followupQueue img')).toHaveCount(0);
   await expect(page.locator('#hubContent')).toContainText('не подтверждённый заказ');
   await page.locator('[data-followup-filter="missing"]').click();
@@ -1468,8 +1468,11 @@ test('Follow-up Center filters owner scoped CRM deadlines and escapes names',asy
   await page.screenshot({path:testInfo.outputPath('followup-center.png')});
 
   // A logout or token invalidation cannot retain previously projected CRM rows.
-  await page.evaluate(()=>localStorage.removeItem('mfwAccessToken'));
-  await page.locator('#followupRefresh').click();
+  await page.evaluate(()=>{
+    localStorage.removeItem('mfwAccessToken');
+    window.dispatchEvent(new StorageEvent('storage',{key:'mfwAccessToken',
+      oldValue:'qa-session',newValue:null,storageArea:localStorage}));
+  });
   await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
   await expect(page.locator('.followup-item')).toHaveCount(0);
 });
