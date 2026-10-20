@@ -1327,3 +1327,74 @@ test('PostgreSQL roster without production admission remains unverified',async({
   await page.locator('#directoryFilter').selectOption('MADE');
   await expect(page.locator('.made-directory-card')).toHaveCount(0);
 });
+
+
+test('organisation directory name match never grants user representation',async({page})=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('mfwAccessToken','qa-session');
+    localStorage.setItem('mfp.account.v1',JSON.stringify({profile:{
+      firstName:'QA',lastName:'Account',company:'Maison Listed Verified'
+    },registrations:{mfw:null,bfs:null}}));
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations?limit=50',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'postgres',data:[{id:'listed-org',name:'Maison Listed Verified',
+        status:'active',verificationStatus:'verified',organisationType:'brand'}]
+    })});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations/mine',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'postgres',authority:'session_scoped_organisation_memberships',data:[]
+    })});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationDirectory')).toContainText('Maison Listed Verified');
+  await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
+  await expect(page.locator('#organisationCurrent')).not.toContainText('Maison Listed Verified');
+  await expect(page.locator('#organisationCurrent')).toContainText('Совпадение названия');
+});
+
+test('organisation self claim and operator verification remain separate and revocable',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  let operatorApproved=false,relationshipActive=true;
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations/mine',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'postgres',authority:'session_scoped_organisation_memberships',
+      data:relationshipActive?[{id:'member-org',name:'Atelier QA',
+        status:'active',verificationStatus:'verified',organisationType:'brand',
+        representationVerified:operatorApproved,relationship:{
+          status:'active',relationshipRole:'representative',
+          source:operatorApproved?'operator_verified':'self_claim'
+        }}]:[]
+    })});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toContainText('БЕЗ ПОДТВЕРЖДЁННЫХ ПРАВ');
+  await expect(page.locator('#organisationCurrent')).toContainText('Самостоятельное заявление');
+  operatorApproved=true;
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toHaveText('ПОЛНОМОЧИЯ ПОДТВЕРЖДЕНЫ');
+  relationshipActive=false;
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
+});
+
+test('memory-demo source cannot forge a confirmed organisation account',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations/mine',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'memory_demo',authority:'session_scoped_organisation_memberships',
+      data:[{id:'fake-org',name:'Injected Verified',status:'active',
+        verificationStatus:'verified',representationVerified:true,
+        relationship:{status:'active',source:'operator_verified'}}]
+    })});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
+  await expect(page.locator('#organisationCurrent')).not.toContainText('Injected Verified');
+});
