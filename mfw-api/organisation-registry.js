@@ -83,6 +83,45 @@ class OrganisationRegistry{
     return this.publicRow(row,{forUserId:userId});
   }
 
+  // Private affiliation: the public directory must never establish user rights.
+  async forUser(userId){
+    if(!userId)throw new Error('session_required');
+    if(this.pool){
+      const result=await this.pool.query(`SELECT
+        o.id,o.canonical_name AS "name",o.organisation_type AS "organisationType",
+        o.country_code AS "countryCode",o.city,o.website,o.status,
+        o.verification_status AS "verificationStatus",
+        o.verification_source AS "verificationSource",o.verified_at AS "verifiedAt",
+        o.created_at AS "createdAt",o.updated_at AS "updatedAt",
+        (SELECT count(*)::int FROM professional_organisation_memberships a
+          WHERE a.organisation_id=o.id AND a.status='active' AND a.ended_at IS NULL)
+          AS "activeRepresentativeCount",
+        (SELECT count(*)::int FROM professional_organisation_participation p
+          WHERE p.organisation_id=o.id AND p.status<>'revoked') AS "participationCount",
+        json_build_object('roleTitle',m.role_title,'relationshipRole',m.relationship_role,
+          'status',m.status,'source',m.source) AS relationship
+        FROM professional_organisation_memberships m
+        JOIN professional_organisations o ON o.id=m.organisation_id
+        WHERE m.user_id=$1 AND m.status='active' AND m.ended_at IS NULL
+          AND o.status='active'
+        ORDER BY (o.verification_status='verified' AND m.source='operator_verified') DESC,
+          o.canonical_name LIMIT 50`,[String(userId)]);
+      return result.rows.map(row=>({...row,representationVerified:
+        row.verificationStatus==='verified'&&row.relationship.source==='operator_verified'&&
+        row.relationship.status==='active'}));
+    }
+    return [...this.memory.values()].filter(row=>{
+      const member=row.members&&row.members.get(String(userId));
+      return row.status==='active'&&member&&member.status==='active'&&!member.endedAt;
+    }).map(row=>{
+      const item=this.publicRow(row,{forUserId:userId});
+      item.representationVerified=item.verificationStatus==='verified'&&
+        item.relationship.source==='operator_verified'&&item.relationship.status==='active';
+      return item;
+    }).sort((a,b)=>Number(b.representationVerified)-Number(a.representationVerified)||
+      a.name.localeCompare(b.name)).slice(0,50);
+  }
+
   async list({limit=50,type=null,verifiedOnly=false}={}){
     limit=Math.max(1,Math.min(200,Number(limit)||50));
     if(type&&!TYPES.has(type))throw new Error('organisation_type_invalid');

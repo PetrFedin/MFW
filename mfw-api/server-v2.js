@@ -1787,6 +1787,15 @@ async function router(req,res){
     const revoked=[...memory.revoked.entries()].map(([jti,v])=>({jti,...v}));
     return json(res,200,{generatedAt:new Date().toISOString(),revoked,demo:true});
   }
+  if(req.method==='GET'&&p==='/v1/network/organisations/mine'){
+    const session=sessionFromRequest(req);
+    if(!session||!session.sub)return json(res,401,{error:'session_required'});
+    try{
+      const data=await organisationRegistry.forUser(String(session.sub));
+      return json(res,200,{data,source:pool?'postgres':'memory_demo',
+        authority:'session_scoped_organisation_memberships'});
+    }catch(_){return json(res,500,{error:'organisation_membership_lookup_failed'});}
+  }
   if(req.method==='GET'&&p==='/v1/network/organisations/summary'){
     try{
       const data=await organisationRegistry.summary();

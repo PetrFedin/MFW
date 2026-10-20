@@ -166,43 +166,88 @@
     }catch(e){}
   }
 
-  var organisationState={items:[],current:null,loading:false,error:''};
+  var organisationState={items:[],mine:[],current:null,loading:false,error:''};
   function organisationTypeLabel(v){
     return ({brand:'BRAND',buyer:'BUYER / RETAILER',media:'MEDIA',institution:'INSTITUTION',service_provider:'SERVICE PROVIDER',education:'EDUCATION',government:'GOVERNMENT',other:'OTHER'})[v]||String(v||'ORGANISATION').toUpperCase();
   }
   function organisationVerificationLabel(v){
     return ({verified:'VERIFIED',submitted:'SUBMITTED',rejected:'REJECTED',expired:'EXPIRED',unverified:'UNVERIFIED'})[v]||String(v||'UNVERIFIED').toUpperCase();
   }
+  function hasVerifiedRepresentation(row){
+    return !!(row&&row.representationVerified===true&&row.status==='active'&&
+      row.verificationStatus==='verified'&&row.relationship&&
+      row.relationship.status==='active'&&row.relationship.source==='operator_verified');
+  }
   function renderOrganisationIdentity(){
     if(!organisationPanel)return;
-    var current=organisationState.current;
-    organisationStatus.textContent=current?organisationVerificationLabel(current.verificationStatus):'НЕ ПРИВЯЗАНА';
-    organisationStatus.className='organisation-status '+(current&&current.verificationStatus==='verified'?'verified':'');
-    organisationCurrent.innerHTML=current
-      ? '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+' · '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4><p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p><small>'+h((current.relationship&&current.relationship.relationshipRole)||'representative')+(current.relationship&&current.relationship.roleTitle?' · '+h(current.relationship.roleTitle):'')+'</small><div class="organisation-proof"><span>'+h(current.activeRepresentativeCount||1)+' representatives</span><span>'+h(current.participationCount||0)+' participation records</span></div></article>'
-      : '<p class="organisation-empty">Привяжите профиль к организации. Это создаёт persistent identity, но не подтверждает организацию автоматически.</p>';
+    var current=organisationState.current,approved=hasVerifiedRepresentation(current);
+    organisationStatus.textContent=!current?'НЕ ПРИВЯЗАНА':approved?
+      'ПОЛНОМОЧИЯ ПОДТВЕРЖДЕНЫ':'ЗАЯВЛЕНИЕ · БЕЗ ПОДТВЕРЖДЁННЫХ ПРАВ';
+    organisationStatus.className='organisation-status '+(approved?'verified':'');
+    var mine=organisationState.mine||[];
+    var choice=mine.length>1?
+      '<label class="organisation-choice">МОИ ОРГАНИЗАЦИИ<select id="organisationAccountSelect" style="width:100%;padding:10px;margin:6px 0 12px">'+
+      mine.map(function(o){return '<option value="'+h(o.id)+'"'+(current&&current.id===o.id?' selected':'')+'>'+h(o.name)+'</option>';}).join('')+
+      '</select></label>':'';
+    var relationship=current&&current.relationship||{};
+    organisationCurrent.innerHTML=current?choice+
+      '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+
+      ' · ОРГАНИЗАЦИЯ '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4>'+
+      '<p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p>'+
+      '<small>'+h(approved?'Оператор подтвердил полномочия':
+        'Самостоятельное заявление не подтверждает представительство и не даёт права подписи')+'</small>'+
+      '<p>'+h(relationship.relationshipRole||'')+(relationship.roleTitle?' · '+h(relationship.roleTitle):'')+'</p>'+
+      '<div class="organisation-proof"><span>'+h(current.activeRepresentativeCount??0)+' заявленных представителей</span>'+
+      '<span>'+h(current.participationCount??0)+' записей участия</span></div></article>':
+      '<p class="organisation-empty">Нет подтверждённой сервером связи с организацией. Совпадение названия компании в профиле с публичным реестром не создаёт представительских прав.</p>';
+    var selector=organisationCurrent.querySelector('#organisationAccountSelect');
+    if(selector)selector.onchange=function(){
+      organisationState.current=mine.find(function(row){return row.id===selector.value;})||null;
+      renderOrganisationIdentity();
+    };
     var rows=(organisationState.items||[]).slice(0,12);
-    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' показано</span></div>'+
-      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' записей истории</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
+    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Публичный реестр организаций</b><span>'+rows.length+' показано</span></div>'+
+      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+
+      h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+
+      '</small></div><span>'+h(x.participationCount||0)+' записей истории</span></article>';}).join(''):
+      '<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
   }
   async function loadOrganisationRegistry(){
     if(organisationState.loading)return;
-    organisationState.loading=true;organisationState.error='';renderOrganisationIdentity();
+    organisationState.loading=true;organisationState.error='';
+    var token=accessToken(),preferred=organisationState.current&&organisationState.current.id;
+    // Revoke the last account's display affiliation before network refresh.
+    organisationState.current=null;organisationState.mine=[];organisationState.items=[];
+    renderOrganisationIdentity();
     try{
-      var out=await authorityFetch('/v1/network/organisations?limit=50',{method:'GET'});
-      organisationState.items=out.data||[];
-      var company=String(accountState.profile.company||'').trim().toLowerCase().replace(/\s+/g,' ');
-      if(company&&!organisationState.current){
-        organisationState.current=organisationState.items.filter(function(x){return String(x.name||'').trim().toLowerCase().replace(/\s+/g,' ')===company;})[0]||null;
-      }
-    }catch(e){organisationState.error=e.message||'registry_unavailable';}
-    finally{organisationState.loading=false;renderOrganisationIdentity();}
+      if(!token)throw new Error('session_required');
+      var responses=await Promise.all([
+        authorityFetch('/v1/network/organisations?limit=50',{method:'GET'}),
+        authorityFetch('/v1/network/organisations/mine',{method:'GET'})
+      ]);
+      if(accessToken()!==token)throw new Error('session_changed');
+      organisationState.items=Array.isArray(responses[0]&&responses[0].data)?responses[0].data:[];
+      var mine=responses[1];
+      organisationState.mine=mine&&mine.source==='postgres'&&
+        mine.authority==='session_scoped_organisation_memberships'&&Array.isArray(mine.data)?
+        mine.data.filter(function(row){
+          return row&&row.status==='active'&&row.relationship&&row.relationship.status==='active';
+        }):[];
+      organisationState.current=organisationState.mine.find(function(x){return x.id===preferred;})||
+        organisationState.mine[0]||null;
+    }catch(err){
+      organisationState.current=null;organisationState.mine=[];organisationState.items=[];
+      organisationState.error=err.message||'registry_unavailable';
+    }finally{organisationState.loading=false;renderOrganisationIdentity();}
   }
   async function claimOrganisation(values){
     var role=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor';
     await ensureAuthoritySession(role,false);
     var out=await authorityFetch('/v1/network/organisations/claim',{method:'POST',body:JSON.stringify(values)});
-    organisationState.current=out.data||null;
+    if(!out||out.authority!=='self_claim_unverified'||!out.data||
+       !out.data.relationship||out.data.relationship.source!=='self_claim')
+      throw new Error('organisation_claim_not_confirmed');
+    organisationState.current=Object.assign({},out.data,{representationVerified:false});
     if(organisationState.current&&organisationState.current.name){
       accountState.profile.company=organisationState.current.name;
       if(organisationState.current.relationship&&organisationState.current.relationship.roleTitle)accountState.profile.title=organisationState.current.relationship.roleTitle;
