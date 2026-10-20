@@ -14,6 +14,7 @@ const { shouldRunReverificationCatchup } = require('./reverification-catchup');
 const { OrganisationRegistry } = require('./organisation-registry');
 const { OrganisationCredentialAuthority } = require('./organisation-credential');
 const {MeetingLifecycleError,requestKey,createMeeting,updateMeeting}=require('./meeting-lifecycle');
+const {LeadOwnershipError,upsertOwnedLead}=require('./b2b-lead-ownership');
 const {
   CAPITAL_EVENT_TYPES,
   CAPITAL_AGGREGATE_TYPES,
@@ -3692,19 +3693,15 @@ async function router(req,res){
     const allowed=['interest','meeting_requested','meeting_confirmed','met','follow_up','qualified','won','lost'];
     if(!allowed.includes(stage))return json(res,400,{error:'invalid_lead_stage'});
     if(pool){
-      const r=await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,next_action_at,notes,metadata)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb)
-        ON CONFLICT(meeting_id) DO UPDATE SET stage=EXCLUDED.stage,next_action=EXCLUDED.next_action,next_action_at=EXCLUDED.next_action_at,
-          notes=EXCLUDED.notes,updated_at=now()
-        RETURNING id,meeting_id AS "meetingId",event_brand AS "eventBrand",organisation_ref AS "organisationRef",
-          organisation_name AS "organisationName",counterpart_ref AS "counterpartRef",counterpart_name AS "counterpartName",
-          stage,next_action AS "nextAction",next_action_at AS "nextActionAt",notes,created_at AS "createdAt",updated_at AS "updatedAt"`,
-        [b.meetingId||null,userId,String(b.eventBrand||'bfs'),String(b.organisationRef||'').slice(0,160)||null,
-         String(b.organisationName||'').slice(0,200)||null,String(b.counterpartRef||'').slice(0,160)||null,
-         String(b.counterpartName||'').slice(0,200)||null,stage,String(b.nextAction||'').slice(0,500)||null,
-         b.nextActionAt||null,String(b.notes||'').slice(0,2000)||null,JSON.stringify(b.metadata||{})]);
-      await track('b2b_lead_updated',{leadId:String(r.rows[0].id),stage},userId);
-      return json(res,201,{data:r.rows[0],source:'postgres'});
+      try{
+        const data=await upsertOwnedLead({pool,userId,body:b});
+        await track('b2b_lead_updated',{leadId:String(data.id),stage:data.stage},userId);
+        return json(res,201,{data,source:'postgres'});
+      }catch(error){
+        if(error instanceof LeadOwnershipError)
+          return json(res,error.httpStatus,{error:error.code});
+        throw error;
+      }
     }
     const id=String(b.id||('lead_'+crypto.randomBytes(6).toString('hex')));
     const item={id,ownerUserId:String(userId),eventBrand:String(b.eventBrand||'bfs'),organisationRef:b.organisationRef||null,organisationName:b.organisationName||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,stage,nextAction:b.nextAction||null,nextActionAt:b.nextActionAt||null,notes:b.notes||null,updatedAt:new Date().toISOString(),demo:true};
