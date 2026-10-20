@@ -48,6 +48,8 @@ const {OrganisationRegistry,normalizeOrganisationName,validateClaim}=require('./
   await assert.rejects(()=>registry.claimForUser('user-1',{name:'Maison Test'}),
     /organisation_membership_review_required/);
   assert.equal(stored.members.get('user-1').status,'revoked');
+  assert.equal((await registry.list({limit:10}))[0].activeRepresentativeCount,1);
+  assert.equal((await registry.summary()).activeRepresentatives,1);
   assert.deepEqual(await registry.forUser('user-1'),[],'revoked membership hidden from My Organisations');
 
   // Ordinary repeated active self-claims remain allowed, but cannot become
@@ -56,6 +58,8 @@ const {OrganisationRegistry,normalizeOrganisationName,validateClaim}=require('./
   assert.equal(stored.members.get('user-2').source,'self_claim');
   assert.equal(await registry.canRepresent('user-2',first.id),false);
   stored.members.get('user-2').status='revoked';
+  assert.equal((await registry.list({limit:10}))[0].activeRepresentativeCount,0);
+  assert.equal((await registry.summary()).activeRepresentatives,0);
   await assert.rejects(()=>registry.claimForUser('user-2',{name:'Maison Test'}),
     /organisation_membership_review_required/);
 
