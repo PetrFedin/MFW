@@ -1,7 +1,7 @@
 {
   "schema": "mfw-portfolio-media-v1",
-  "capturedAt": "2026-10-20T01:09:19.082Z",
-  "captureCommit": "04944a800326e224e9bfb138d9d874ae9965ff79",
+  "capturedAt": "2026-10-20T01:15:25.474Z",
+  "captureCommit": "fee8c2034f4125853053fa6ad0bafddc4995cc02",
   "evidenceBoundary": "Recorded public UI only, not proof of admission, participants, media rights, payments, QR issuance or accepted revenue.",
   "sources": [
     {
@@ -9,7 +9,7 @@
       "environment": "published-live",
       "url": "https://mfw-platform.onrender.com/platform/index.html",
       "sourceSha": null,
-      "capturedAt": "2026-10-20T01:09:19.082Z",
+      "capturedAt": "2026-10-20T01:15:25.474Z",
       "portfolioReady": false,
       "errors": [
         "capture_not_portfolio_ready",
@@ -23,8 +23,8 @@
       "id": "integration-preview",
       "environment": "unmerged-integration-preview",
       "url": "http://127.0.0.1:4173/platform/index.html",
-      "sourceSha": "04944a800326e224e9bfb138d9d874ae9965ff79",
-      "capturedAt": "2026-10-20T01:09:19.082Z",
+      "sourceSha": "fee8c2034f4125853053fa6ad0bafddc4995cc02",
+      "capturedAt": "2026-10-20T01:15:25.474Z",
       "portfolioReady": true,
       "errors": [],
       "issueCount": 0,
@@ -242,32 +242,32 @@
         {
           "title": "PLATFORM TOUR",
           "file": "integration-preview/tour-25s.mp4",
-          "sha256": "138b6584c7a24371f65ed002dec82b07fb8abaea4328edf6b1ee2ea7865111f2",
-          "bytes": 265142,
+          "sha256": "e40e1a8d9939dc577ae51a7ae403aea2f499c6ab9013d8f4e3f23965c607250f",
+          "bytes": 278291,
           "durationSeconds": 25,
           "ecosystem": "platform"
         },
         {
           "title": "MFW",
           "file": "integration-preview/mfw-tour-25s.mp4",
-          "sha256": "3a0d69ee7a093ca0c759431464fad44a8b7b4e367777ec1bd93d119c4cbf431b",
-          "bytes": 596878,
+          "sha256": "1d4b00ef0f7eae2bf2c48bbe42b7057fbeff171271b86e2c571294ea04c468f8",
+          "bytes": 592464,
           "durationSeconds": 25,
           "ecosystem": "mfw"
         },
         {
           "title": "BFS",
           "file": "integration-preview/bfs-tour-25s.mp4",
-          "sha256": "8221e21e2577c298abd3d272fe5597fe62d8d53d2dba624f9bbff544115f7d41",
-          "bytes": 459287,
+          "sha256": "f8dad69c7b9b05234bfc7d807be36c36acd64ee6e44c55236f6f9cb527a46872",
+          "bytes": 434319,
           "durationSeconds": 25,
           "ecosystem": "bfs"
         },
         {
           "title": "MADE",
           "file": "integration-preview/made-tour-25s.mp4",
-          "sha256": "d0bbbffc09c8064a5f89fb8eb79bc5c2bff52f69c3e1bd0c1b2df473731f580b",
-          "bytes": 1780229,
+          "sha256": "056cdfb1ae86c3c7e2a9b5f02b4d38bad18aea7e16307eab1adebb73beb79908",
+          "bytes": 1764004,
           "durationSeconds": 25,
           "ecosystem": "made"
         }
