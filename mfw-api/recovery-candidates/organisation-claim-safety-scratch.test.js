@@ -35,6 +35,10 @@ async function main(){
     const orgId=first.id;
     assert.equal(first.relationship.source,'self_claim');
     assert.equal(first.relationship.status,'active');
+    assert.equal((await registry.forUser(U1))[0].representationVerified,false);
+    assert.deepEqual(await registry.forUser(U2),[],'unrelated user cannot see membership');
+    assert((await registry.list({limit:50})).every(row=>!Object.hasOwn(row,'relationship')),
+      'public directory must not expose private representatives');
     assert.equal(await registry.canRepresent(U1,orgId),false,
       'unverified self-claim cannot produce signed organisation credential');
 
@@ -45,6 +49,7 @@ async function main(){
     // Simulate a reviewed relationship on this disposable fixture only.
     await pool.query("UPDATE public.professional_organisation_memberships SET source='operator_verified' WHERE organisation_id=$1 AND user_id=$2",[orgId,U1]);
     assert.equal(await registry.canRepresent(U1,orgId),true);
+    assert.equal((await registry.forUser(U1))[0].representationVerified,true);
     await assert.rejects(registry.claimForUser(U1,{...claim,relationshipRole:'owner'}),
       /organisation_membership_review_required/,
       'public self-claim must not replace an operator-approved relationship');
@@ -57,6 +62,7 @@ async function main(){
     // is evaluated under the ON CONFLICT row lock.
     await pool.query("UPDATE public.professional_organisation_memberships SET status='revoked',ended_at=now() WHERE organisation_id=$1 AND user_id=$2",[orgId,U1]);
     assert.equal(await registry.canRepresent(U1,orgId),false);
+    assert.deepEqual(await registry.forUser(U1),[],'revoked membership disappears');
     await assert.rejects(registry.claimForUser(U1,claim),
       /organisation_membership_review_required/);
     member=await pool.query("SELECT source,status,ended_at FROM public.professional_organisation_memberships WHERE organisation_id=$1 AND user_id=$2",[orgId,U1]);
@@ -85,10 +91,13 @@ async function main(){
     assert.equal(nonmember.rows[0].n,0);
     await pool.query("UPDATE public.professional_organisation_memberships SET status='active',ended_at=NULL WHERE organisation_id=$1 AND user_id=$2",[orgId,U1]);
     assert.equal(await registry.canRepresent(U1,orgId),false,'suspended organisation cannot issue proof');
+    assert.deepEqual(await registry.forUser(U1),[],'suspended organisation hidden');
     await pool.query("UPDATE public.professional_organisations SET status='active',verification_status='expired' WHERE id=$1",[orgId]);
     assert.equal(await registry.canRepresent(U1,orgId),false,'expired verification cannot issue proof');
+    assert.equal((await registry.forUser(U1))[0].representationVerified,false);
     await pool.query("UPDATE public.professional_organisations SET verification_status='verified' WHERE id=$1",[orgId]);
     assert.equal(await registry.canRepresent(U1,orgId),true);
+    assert.equal((await registry.forUser(U1))[0].representationVerified,true);
 
     console.log(JSON.stringify({
       gate:'mfw_organisation_claim_privilege_safety_pg17',status:'pass',
