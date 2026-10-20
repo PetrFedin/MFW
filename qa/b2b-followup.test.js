@@ -56,6 +56,17 @@ const unknown=build(p([{id:'unrecognized',stage:'new_private_stage',
 assert.equal(unknown.ready,true);
 assert.equal(unknown.rows[0].dueStatus,'missing');
 assert.equal(unknown.rows[0].event,'unknown');
+const ambiguousTime=build(p([{
+  id:'tz-missing',stage:'qualified',nextAction:'Call',nextActionAt:'2026-10-18T12:00:00'
+}]),p([]),now);
+assert.equal(ambiguousTime.ready,true);
+assert.equal(ambiguousTime.rows[0].dueStatus,'missing',
+  'timezone-less deadline must not silently use client local time');
+const offsetTime=build(p([{
+  id:'tz-offset',stage:'qualified',nextAction:'Call',nextActionAt:'2026-10-19T14:00:00+03:00'
+}]),p([]),now);
+assert.equal(offsetTime.rows[0].dueStatus,'overdue',
+  'explicit timezone offset gives deterministic classification');
 assert.equal(unknown.rows[0].stage,'unknown');
 // Text stays ordinary data in the projection and must be HTML-escaped at the UI boundary.
 const unsafe=build(p([{id:'unsafe',stage:'interest',

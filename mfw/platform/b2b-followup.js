@@ -19,7 +19,9 @@
     return s.length&&s.length<=160?s:'';
   }
   function timestamp(v){
-    if(typeof v!=='string'||!/\d{4}-\d{2}-\d{2}T/.test(v))return null;
+    // Never interpret a server deadline as the browser's local wall time.
+    // PostgreSQL timestamptz serializes with an explicit zone/offset.
+    if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v))return null;
     var t=Date.parse(v);
     return Number.isFinite(t)?t:null;
   }
