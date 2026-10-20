@@ -71,6 +71,37 @@ async function call(base,path,options={}){
   assert.equal(auth.body.user.demo,true);
   assert.equal(auth.body.user.role,'Organizer');
   const bearer={'authorization':'Bearer '+auth.body.session};
+  const anonymousMine=await call(base,'/v1/network/organisations/mine');
+  assert.equal(anonymousMine.status,401,'anonymous user cannot query memberships');
+  const initialMine=await call(base,'/v1/network/organisations/mine',{headers:bearer});
+  assert.equal(initialMine.status,200);
+  assert.equal(initialMine.body.source,'memory_demo');
+  assert.equal(initialMine.body.authority,'session_scoped_organisation_memberships');
+  assert.deepEqual(initialMine.body.data,[],'no name-inferred organisation links');
+  const claim=await call(base,'/v1/network/organisations/claim',{
+   method:'POST',headers:bearer,body:JSON.stringify({
+    name:'CI Maison Legal Boundary',organisationType:'brand',relationshipRole:'representative'
+   })
+  });
+  assert.equal(claim.status,200);
+  assert.equal(claim.body.authority,'self_claim_unverified');
+  assert.equal(claim.body.data.verificationStatus,'unverified');
+  const mine=await call(base,'/v1/network/organisations/mine',{headers:bearer});
+  assert.equal(mine.status,200);
+  assert.equal(mine.body.data.length,1);
+  assert.equal(mine.body.data[0].relationship.source,'self_claim');
+  assert.equal(mine.body.data[0].representationVerified,false);
+  // The same public organisation can exist while a different subject has no
+  // affiliated relationship; this must not be inferred from the brand name.
+  const other=await call(base,'/v1/auth/demo',{method:'POST',body:JSON.stringify({
+   name:'Other CI person',identityKey:'ci-other-account',role:'Visitor'
+  })});
+  assert.equal(other.status,200);
+  const otherMine=await call(base,'/v1/network/organisations/mine',{
+   headers:{authorization:'Bearer '+other.body.session}
+  });
+  assert.equal(otherMine.status,200);
+  assert.deepEqual(otherMine.body.data,[],'cross-account organisation exposure forbidden');
   const role=await call(base,'/v1/admin/overview',{headers:bearer});
   assert.equal(role.status,403,'self-selected Organizer role MUST NOT be admin');
   const fallback=await call(base,'/v1/admin/overview',{headers:{'x-mfw-admin':'mfw-demo-admin'}});
