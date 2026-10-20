@@ -1896,8 +1896,11 @@ async function router(req,res){
     let verifiedBrands=0,approvedServiceApplications=0;
     if(pool){
       const stats=await pool.query(`SELECT
-        (SELECT count(*)::int FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
-          WHERE pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved') AS "verifiedBrands",
+        (SELECT count(*)::int FROM brand_program_memberships bpm
+          JOIN partner_programs pp ON pp.id=bpm.program_id
+          JOIN brands b ON b.id=bpm.brand_id
+          WHERE pp.external_key='made_in_moscow' AND bpm.status='verified'
+            AND bpm.moderation_status='approved' AND b.status='published') AS "verifiedBrands",
         (SELECT count(*)::int FROM partner_service_applications psa JOIN partner_programs pp ON pp.id=psa.program_id
           WHERE pp.external_key='made_in_moscow' AND psa.status='approved') AS "approvedServiceApplications"`);
       verifiedBrands=stats.rows[0].verifiedBrands||0;
