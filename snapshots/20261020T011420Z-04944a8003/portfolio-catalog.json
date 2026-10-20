@@ -1,0 +1,277 @@
+{
+  "schema": "mfw-portfolio-media-v1",
+  "capturedAt": "2026-10-20T01:09:19.082Z",
+  "captureCommit": "04944a800326e224e9bfb138d9d874ae9965ff79",
+  "evidenceBoundary": "Recorded public UI only, not proof of admission, participants, media rights, payments, QR issuance or accepted revenue.",
+  "sources": [
+    {
+      "id": "production",
+      "environment": "published-live",
+      "url": "https://mfw-platform.onrender.com/platform/index.html",
+      "sourceSha": null,
+      "capturedAt": "2026-10-20T01:09:19.082Z",
+      "portfolioReady": false,
+      "errors": [
+        "capture_not_portfolio_ready",
+        "capture_errors_present"
+      ],
+      "issueCount": 3,
+      "screenshots": [],
+      "videos": []
+    },
+    {
+      "id": "integration-preview",
+      "environment": "unmerged-integration-preview",
+      "url": "http://127.0.0.1:4173/platform/index.html",
+      "sourceSha": "04944a800326e224e9bfb138d9d874ae9965ff79",
+      "capturedAt": "2026-10-20T01:09:19.082Z",
+      "portfolioReady": true,
+      "errors": [],
+      "issueCount": 0,
+      "screenshots": [
+        {
+          "title": "MFW",
+          "file": "integration-preview/desktop-mfw.png",
+          "sha256": "b24929e441eea0edefd46045ba057079e4486343e59c172ea017e109c52f41e9",
+          "bytes": 63763,
+          "device": "desktop",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "BFS",
+          "file": "integration-preview/desktop-bfs.png",
+          "sha256": "fdd01ef172851e98cfb2d9e87434fc1b981fa994d87eae51386c3c96644834b1",
+          "bytes": 130724,
+          "device": "desktop",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "MADE",
+          "file": "integration-preview/desktop-made.png",
+          "sha256": "8f01c14afc04672468a81248dae0ef1d5a03e9cf51464f3b021e733d3dfe9279",
+          "bytes": 165310,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MFW SCHEDULE",
+          "file": "integration-preview/desktop-mfw-schedule.png",
+          "sha256": "dd6be77c2a84e614e9100748c44794751a359bd6af0d19f4b7114d5c08805997",
+          "bytes": 116223,
+          "device": "desktop",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "MFW DISCOVER",
+          "file": "integration-preview/desktop-mfw-discover.png",
+          "sha256": "56c6bb0c57ed409afacfd7652b3c566da0ac72d1317a33a398071348d8022488",
+          "bytes": 636386,
+          "device": "desktop",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "MFW LIVE",
+          "file": "integration-preview/desktop-mfw-live.png",
+          "sha256": "4a123e5d5b9ed3976d34a4c8704e4959a62c0a90305639761dbfe784877ab71b",
+          "bytes": 778675,
+          "device": "desktop",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "BFS PROGRAMME",
+          "file": "integration-preview/desktop-bfs-programme.png",
+          "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410",
+          "bytes": 129100,
+          "device": "desktop",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "BFS SPEAKERS",
+          "file": "integration-preview/desktop-bfs-speakers.png",
+          "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d",
+          "bytes": 168259,
+          "device": "desktop",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "BFS B2B",
+          "file": "integration-preview/desktop-bfs-b2b.png",
+          "sha256": "9cbc778e7e93170bff4dd52090bd5f4f5aafc22d988735b2f2abf299878903bf",
+          "bytes": 110674,
+          "device": "desktop",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "BFS ORGANISATIONS",
+          "file": "integration-preview/desktop-bfs-organisations.png",
+          "sha256": "72402f398cddeac79c300c99bff9804e26c6b4394344345f73891e50516e5cc5",
+          "bytes": 112140,
+          "device": "desktop",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "MADE VERIFIED",
+          "file": "integration-preview/desktop-made-verified.png",
+          "sha256": "1415e0485e00e3a87ce8665308b0bfadd642298db3041ad8b0227c10b7a54196",
+          "bytes": 100466,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MADE BRANDS",
+          "file": "integration-preview/desktop-made-brands.png",
+          "sha256": "981454a57bfd7bf0ca759bf4a714d45337b57fcceefe06b5fea141d0e47ed04f",
+          "bytes": 91632,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MADE MARKET",
+          "file": "integration-preview/desktop-made-market.png",
+          "sha256": "09c2987ba530bf302ac3a0b644b3baca329cc03e631bc37e9cc725aa1bad7604",
+          "bytes": 70508,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MADE BUYER",
+          "file": "integration-preview/desktop-made-buyer.png",
+          "sha256": "ff4f1c9b8a9de1123ff545192e3b1630697f924b47cb66d411c7cfc6c2112f63",
+          "bytes": 82740,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MADE BRAND365",
+          "file": "integration-preview/desktop-made-brand365.png",
+          "sha256": "b32af7dd829eb7631e739a4baa92621679994334e24ce523aa4552cb9966c48f",
+          "bytes": 83146,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MADE EVIDENCE",
+          "file": "integration-preview/desktop-made-evidence.png",
+          "sha256": "ce838051a2e721841f18ef7908f05c01992416e033a74899112785194d85d490",
+          "bytes": 93973,
+          "device": "desktop",
+          "ecosystem": "made"
+        },
+        {
+          "title": "INVESTOR",
+          "file": "integration-preview/desktop-investor.png",
+          "sha256": "8eeebb863646c62ebeb4ee143e180b002e654e073a9facf9f3b7f59a027f61c2",
+          "bytes": 176141,
+          "device": "desktop",
+          "ecosystem": "platform"
+        },
+        {
+          "title": "MFW",
+          "file": "integration-preview/mobile-mfw.png",
+          "sha256": "45189783ba56210861ae03b10fd8314f8583cbf25e1d6023c7e20384b241aa98",
+          "bytes": 41725,
+          "device": "mobile",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "BFS",
+          "file": "integration-preview/mobile-bfs.png",
+          "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6",
+          "bytes": 59814,
+          "device": "mobile",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "MADE",
+          "file": "integration-preview/mobile-made.png",
+          "sha256": "89193ff5a7b751ea650b19ab03d2f58a9362ab64b4700031fe999c42f31e84f8",
+          "bytes": 50405,
+          "device": "mobile",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MFW SCHEDULE",
+          "file": "integration-preview/mobile-mfw-schedule.png",
+          "sha256": "d52cd7b34030e123a7b8d020eadccf71e45b84b56c54bfb7c308f829fe3fb472",
+          "bytes": 66424,
+          "device": "mobile",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "MFW DISCOVER",
+          "file": "integration-preview/mobile-mfw-discover.png",
+          "sha256": "3099d16316b880bfd271f70f5dfce75c6fae1a3dce5a7bb16077f8fc6f23dc21",
+          "bytes": 197148,
+          "device": "mobile",
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "BFS PROGRAMME",
+          "file": "integration-preview/mobile-bfs-programme.png",
+          "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9",
+          "bytes": 48354,
+          "device": "mobile",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "BFS B2B",
+          "file": "integration-preview/mobile-bfs-b2b.png",
+          "sha256": "26cfa44702c531f164b3b8215164fe3b4be8f6055272e869cbc263d5bf26b91e",
+          "bytes": 48060,
+          "device": "mobile",
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "MADE VERIFIED",
+          "file": "integration-preview/mobile-made-verified.png",
+          "sha256": "f996adcad3120de1e2c006ecfa798eeb4409a7984e5a668622d0d875e568f64b",
+          "bytes": 48814,
+          "device": "mobile",
+          "ecosystem": "made"
+        },
+        {
+          "title": "MADE BUYER",
+          "file": "integration-preview/mobile-made-buyer.png",
+          "sha256": "16ce6172e5cc8d1aa4d356e327113de30ab50b8a5f55e913e114ef928935eb1f",
+          "bytes": 27086,
+          "device": "mobile",
+          "ecosystem": "made"
+        }
+      ],
+      "videos": [
+        {
+          "title": "PLATFORM TOUR",
+          "file": "integration-preview/tour-25s.mp4",
+          "sha256": "138b6584c7a24371f65ed002dec82b07fb8abaea4328edf6b1ee2ea7865111f2",
+          "bytes": 265142,
+          "durationSeconds": 25,
+          "ecosystem": "platform"
+        },
+        {
+          "title": "MFW",
+          "file": "integration-preview/mfw-tour-25s.mp4",
+          "sha256": "3a0d69ee7a093ca0c759431464fad44a8b7b4e367777ec1bd93d119c4cbf431b",
+          "bytes": 596878,
+          "durationSeconds": 25,
+          "ecosystem": "mfw"
+        },
+        {
+          "title": "BFS",
+          "file": "integration-preview/bfs-tour-25s.mp4",
+          "sha256": "8221e21e2577c298abd3d272fe5597fe62d8d53d2dba624f9bbff544115f7d41",
+          "bytes": 459287,
+          "durationSeconds": 25,
+          "ecosystem": "bfs"
+        },
+        {
+          "title": "MADE",
+          "file": "integration-preview/made-tour-25s.mp4",
+          "sha256": "d0bbbffc09c8064a5f89fb8eb79bc5c2bff52f69c3e1bd0c1b2df473731f580b",
+          "bytes": 1780229,
+          "durationSeconds": 25,
+          "ecosystem": "made"
+        }
+      ]
+    }
+  ]
+}
