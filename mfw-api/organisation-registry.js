@@ -134,7 +134,7 @@ class OrganisationRegistry{
         country_code AS "countryCode",city,website,status,verification_status AS "verificationStatus",
         verification_source AS "verificationSource",verified_at AS "verifiedAt",
         created_at AS "createdAt",updated_at AS "updatedAt",
-        (SELECT count(*)::int FROM professional_organisation_memberships m WHERE m.organisation_id=o.id AND m.status='active') AS "activeRepresentativeCount",
+        (SELECT count(*)::int FROM professional_organisation_memberships m WHERE m.organisation_id=o.id AND m.status='active' AND m.ended_at IS NULL) AS "activeRepresentativeCount",
         (SELECT count(*)::int FROM professional_organisation_participation p WHERE p.organisation_id=o.id AND p.status<>'revoked') AS "participationCount"
         FROM professional_organisations o WHERE ${where.join(' AND ')}
         ORDER BY (verification_status='verified') DESC,canonical_name LIMIT $${params.length}`,params);
@@ -170,7 +170,7 @@ class OrganisationRegistry{
       const r=await this.pool.query(`SELECT
         count(*) FILTER (WHERE status='active')::int AS "activeOrganisations",
         count(*) FILTER (WHERE status='active' AND verification_status='verified')::int AS "verifiedOrganisations",
-        (SELECT count(*)::int FROM professional_organisation_memberships WHERE status='active') AS "activeRepresentatives",
+        (SELECT count(*)::int FROM professional_organisation_memberships WHERE status='active' AND ended_at IS NULL) AS "activeRepresentatives",
         (SELECT count(*)::int FROM professional_organisation_participation WHERE status<>'revoked') AS "participationRecords",
         (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked') AS "organisationsWithHistory",
         (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked' AND event_brand='mfw') AS "mfwOrganisations",
@@ -193,7 +193,7 @@ class OrganisationRegistry{
     return {
       activeOrganisations:rows.length,
       verifiedOrganisations:rows.filter(x=>x.verificationStatus==='verified').length,
-      activeRepresentatives:rows.reduce((n,x)=>n+(x.members?x.members.size:0),0),
+      activeRepresentatives:rows.reduce((n,x)=>n+(x.members?[...x.members.values()].filter(m=>m.status==='active'&&!m.endedAt).length:0),0),
       participationRecords:participation.length,
       organisationsWithHistory:new Set(participation.map(p=>p.organisationId)).size,
       mfwOrganisations:byBrand('mfw'),
@@ -268,7 +268,7 @@ class OrganisationRegistry{
   }
 
   publicRow(row,{forUserId=null}={}){
-    const out={id:row.id,name:row.name,organisationType:row.organisationType,countryCode:row.countryCode||null,city:row.city||null,website:row.website||null,status:row.status,verificationStatus:row.verificationStatus,verificationSource:row.verificationSource||null,verifiedAt:row.verifiedAt||null,createdAt:row.createdAt,updatedAt:row.updatedAt||row.createdAt,activeRepresentativeCount:row.members?row.members.size:0,participationCount:row.participation?row.participation.length:0};
+    const out={id:row.id,name:row.name,organisationType:row.organisationType,countryCode:row.countryCode||null,city:row.city||null,website:row.website||null,status:row.status,verificationStatus:row.verificationStatus,verificationSource:row.verificationSource||null,verifiedAt:row.verifiedAt||null,createdAt:row.createdAt,updatedAt:row.updatedAt||row.createdAt,activeRepresentativeCount:row.members?[...row.members.values()].filter(m=>m.status==='active'&&!m.endedAt).length:0,participationCount:row.participation?row.participation.filter(p=>p.status!=='revoked').length:0};
     if(forUserId&&row.members&&row.members.has(String(forUserId)))out.relationship=row.members.get(String(forUserId));
     return out;
   }
