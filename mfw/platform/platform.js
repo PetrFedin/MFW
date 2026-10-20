@@ -671,9 +671,11 @@
         '<div><b>ЗАЯВЛЕННОЕ</b><span>коммерческий результат, добровольно заявленный партнёром</span></div>'+
         '<div><b>ПОДТВЕРЖДЁННОЕ</b><span>результат, подтверждённый допущенной внешней интеграцией</span></div>'+
       '</div></section>'+
-      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ ДЕЛОВЫЕ СВЯЗИ BFS</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ БРЕНДЫ MFW</button></div>'+
+      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ ДЕЛОВЫЕ СВЯЗИ BFS</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ БРЕНДЫ MFW</button><button data-deal-followup="true">ОТКРЫТЬ B2B FOLLOW-UP</button></div>'+
       '<div class="hub-note">Граница предпросмотра: Комната сделки показывает будущий продуктовый контракт. Рабочий жизненный цикл, ACL, документы, сроки, идемпотентность и аудит допускаются только после Phase 0 PostgreSQL и формальной политики.</div>';
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
+    var followup=hubContent.querySelector('[data-deal-followup]');
+    if(followup)followup.onclick=function(){hubTab='followup';renderHub();};
   }
 
   function evidenceBadge(cls){

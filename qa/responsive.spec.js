@@ -955,6 +955,7 @@ test('Deal Room preview is read-only and viewport safe', async ({ page }, testIn
   await expect(page.locator('.dealroom-stage-grid article')).toHaveCount(5);
   const requestButtons = page.locator('.request-chip-grid button');
   await expect(requestButtons).toHaveCount(8);
+  await expect(page.locator('[data-deal-followup]')).toBeVisible();
   for (const button of await requestButtons.all()) {
     await expect(button).toBeDisabled();
   }
@@ -965,6 +966,9 @@ test('Deal Room preview is read-only and viewport safe', async ({ page }, testIn
   expect(box.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
   expect(box.height).toBeLessThanOrEqual(page.viewportSize().height + 1);
   await page.screenshot({ path: testInfo.outputPath('deal-room-preview.png') });
+  await page.locator('[data-deal-followup]').click();
+  await expect(page.locator('[data-hub-tab="followup"]')).toHaveClass(/active/);
+  await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
 });
 
 test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) => {
