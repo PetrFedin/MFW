@@ -1,7 +1,7 @@
 {
   "schema": "mfw-public-browser-evidence-v1",
-  "capturedAt": "2026-10-20T01:15:25.474Z",
-  "captureCommit": "fee8c2034f4125853053fa6ad0bafddc4995cc02",
+  "capturedAt": "2026-10-20T01:22:02.667Z",
+  "captureCommit": "6b65b59d0f8d85834e5def2d5ee1bc4ae2139c07",
   "warning": "Production source SHA not attested: a branch build is not the published release.",
   "consent": "Public screen only: no login, user registration, private data or simulated transactions",
   "sources": [
@@ -9,7 +9,7 @@
       "id": "production",
       "url": "https://mfw-platform.onrender.com/platform/index.html",
       "sourceSha": null,
-      "capturedAt": "2026-10-20T01:15:25.474Z",
+      "capturedAt": "2026-10-20T01:22:02.667Z",
       "environment": "published-live",
       "status": "diagnostic_only",
       "screenshots": [
@@ -147,30 +147,30 @@
       "video": {
         "file": "tour-25s.mp4",
         "durationSeconds": 25,
-        "bytes": 298511,
-        "sha256": "5716bed57427bd4d162b303ba5fce3f53da3fa896a83ca946b554d5220727062"
+        "bytes": 281194,
+        "sha256": "c33a03c9a75d7b20577cd8d59b3fb2bb002cc513c582bdffc5818d7d0a957f49"
       },
       "extraVideos": [
         {
           "topic": "mfw",
           "file": "mfw-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 588568,
-          "sha256": "11e5a44a41f89c2cc028f4de201010426e9d89140cfe66ca2eb5c3c20a55a9e7"
+          "bytes": 549640,
+          "sha256": "39e80af55cb9c891b0bdecb8ca1fd052a32a34dfa63e87a83d67b178ee933af5"
         },
         {
           "topic": "bfs",
           "file": "bfs-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 460477,
-          "sha256": "1717d7125f3884678d13fe767d34de29958539de9fff04bbd5c833303c85fb67"
+          "bytes": 411678,
+          "sha256": "f436106b787ca777efb7fdf59006fb34d9317379303de1256bdfbeb1dbdced4f"
         },
         {
           "topic": "made",
           "file": "made-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 1727628,
-          "sha256": "61c477193866220b7aa5e318e43c9edd48f3f0e1862dcf5708d351cac5e7b847"
+          "bytes": 1734942,
+          "sha256": "e1ed98f22f0c86a34a98fc14499d3e0a6db1a493f81b6d05fd48356567126023"
         }
       ],
       "warnings": [
@@ -190,8 +190,8 @@
     {
       "id": "integration-preview",
       "url": "http://127.0.0.1:4173/platform/index.html",
-      "sourceSha": "fee8c2034f4125853053fa6ad0bafddc4995cc02",
-      "capturedAt": "2026-10-20T01:15:25.474Z",
+      "sourceSha": "6b65b59d0f8d85834e5def2d5ee1bc4ae2139c07",
+      "capturedAt": "2026-10-20T01:22:02.667Z",
       "environment": "unmerged-integration-preview",
       "status": "portfolio_ready",
       "screenshots": [
@@ -329,30 +329,30 @@
       "video": {
         "file": "tour-25s.mp4",
         "durationSeconds": 25,
-        "bytes": 278291,
-        "sha256": "e40e1a8d9939dc577ae51a7ae403aea2f499c6ab9013d8f4e3f23965c607250f"
+        "bytes": 281373,
+        "sha256": "292be57524240268a5487eab6881bd3e382117a9a20263c92fd84ffa81da3b08"
       },
       "extraVideos": [
         {
           "topic": "mfw",
           "file": "mfw-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 592464,
-          "sha256": "1d4b00ef0f7eae2bf2c48bbe42b7057fbeff171271b86e2c571294ea04c468f8"
+          "bytes": 595167,
+          "sha256": "377f39d45775d190aef83e1721bb4eef95e1ee3f5f4f90959e343f2b29074238"
         },
         {
           "topic": "bfs",
           "file": "bfs-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 434319,
-          "sha256": "f8dad69c7b9b05234bfc7d807be36c36acd64ee6e44c55236f6f9cb527a46872"
+          "bytes": 490007,
+          "sha256": "9308cdbd808360393524c1eecd8b049148f5072089ddb5d9b88307761f3cc587"
         },
         {
           "topic": "made",
           "file": "made-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 1764004,
-          "sha256": "056cdfb1ae86c3c7e2a9b5f02b4d38bad18aea7e16307eab1adebb73beb79908"
+          "bytes": 1800344,
+          "sha256": "3287c8a10db70cf458447d95eee4e106cb81e619c4516489c54e61e3bab7a564"
         }
       ],
       "warnings": [],
