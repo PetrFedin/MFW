@@ -5,6 +5,8 @@ var AUTHORITY='https://mfw-authority.onrender.com';
 var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems&&window.MFP_MEDIA.ecosystems.made||{};
 var accountState={profile:{},registrations:{mfw:null,bfs:null}};
 var madeOverview=null;
+// Empty state is an editorial explanation, never fabricated brand cards.
+var unverifiedPreview=(document.getElementById('madeBrandGrid')||{}).innerHTML||'';
 function renderEditorialMedia(){
   var images=MEDIA.images||{},videos=Array.isArray(MEDIA.videos)?MEDIA.videos:[];
   var hero=document.getElementById('madeHeroVisual');
@@ -24,47 +26,81 @@ function renderAccountBridge(){
       '<article><small>BFS</small><b>'+esc(statusLabel(bfs))+'</b><span>сессии · делегаты · B2B</span><button data-bridge-event="bfs">ОТКРЫТЬ BFS</button></article>'+
       '<article><small>СДЕЛАНО В МОСКВЕ</small><b>'+((madeOverview&&madeOverview.productionAdmitted)?'AUTHORITY READY':'VERIFIED STATUS SEPARATE')+'</b><span>общий ID, отдельная верификация бренда</span><button data-bridge-section="verified">VERIFIED</button></article>'+
     '</div>';
-  [].slice.call(root.querySelectorAll('[data-bridge-event]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:b.dataset.bridgeEvent},'*');};});
+  [].slice.call(root.querySelectorAll('[data-bridge-event]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:b.dataset.bridgeEvent},location.origin);};});
   [].slice.call(root.querySelectorAll('[data-bridge-section]')).forEach(function(b){b.onclick=function(){go(b.dataset.bridgeSection);};});
 }
 function bindBrandActions(){
-  [].slice.call(document.querySelectorAll('[data-made-open-mfw]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'mfw',route:{kind:'brand',id:b.dataset.madeOpenMfw,source:'made_in_moscow'}},'*');};});
-  [].slice.call(document.querySelectorAll('[data-made-open-buyer]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'bfs',route:{kind:'brand-buyer',brandRef:b.dataset.madeOpenBuyer,source:'made_in_moscow'}},'*');};});
+  [].slice.call(document.querySelectorAll('[data-made-open-mfw]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'mfw',route:{kind:'brand',id:b.dataset.madeOpenMfw,source:'made_in_moscow'}},location.origin);};});
+  [].slice.call(document.querySelectorAll('[data-made-open-buyer]')).forEach(function(b){b.onclick=function(){parent.postMessage({type:'mfp-open-event',eventCode:'bfs',route:{kind:'brand-buyer',brandRef:b.dataset.madeOpenBuyer,source:'made_in_moscow'}},location.origin);};});
+}
+function resetVerifiedRoster(){
+  madeOverview=null;
+  var grid=document.getElementById('madeBrandGrid');
+  if(grid)grid.innerHTML=unverifiedPreview;
+  var count=document.getElementById('verifiedBrandCount');
+  if(count)count.textContent='—';
+  var admission=document.getElementById('madeAdmissionState');
+  if(admission){
+    admission.classList.remove('ready');
+    admission.innerHTML='<b>PRODUCTION ADMISSION · WAITING</b><span>Статус брендов не подтверждён: нужен действующий PostgreSQL Authority и утверждённый реестр. В интерфейсе не показываются неподтверждённые бренды.</span>';
+  }
+  renderAccountBridge();
+}
+function admittedRoster(brands,overview){
+  return !!(brands&&brands.source==='postgres'&&
+    brands.badge==='made_in_moscow_verified'&&brands.demo!==true&&
+    Array.isArray(brands.data)&&overview&&overview.data&&
+    overview.data.persistence==='postgres'&&overview.data.productionAdmitted===true);
 }
 async function hydrateVerifiedRoster(){
+  resetVerifiedRoster();
   try{
     var responses=await Promise.all([
       fetch(AUTHORITY+'/v1/made-in-moscow/brands',{headers:{'Cache-Control':'no-cache'}}),
       fetch(AUTHORITY+'/v1/made-in-moscow/overview',{headers:{'Cache-Control':'no-cache'}})
     ]);
-    var brandsBody=await responses[0].json();
-    var overviewBody=await responses[1].json();
-    var rows=Array.isArray(brandsBody.data)?brandsBody.data:[];
-    madeOverview=overviewBody&&overviewBody.data||null;
-    var count=document.getElementById('verifiedBrandCount');
-    if(count)count.textContent=String(overviewBody&&overviewBody.data&&overviewBody.data.verifiedBrands!=null?overviewBody.data.verifiedBrands:rows.length);
-    if(rows.length){
-      var grid=document.getElementById('madeBrandGrid');
-      if(grid)grid.innerHTML=rows.slice(0,12).map(function(b,i){
+    if(!responses[0].ok||!responses[1].ok)throw Error('made_roster_http_unavailable');
+    var payloads=await Promise.all(responses.map(function(response){return response.json();}));
+    var brandsBody=payloads[0],overviewBody=payloads[1];
+    // A successful HTTP 200 with rows, a mock source or a demo claim
+    // is not evidence of an approved programme membership.
+    if(!admittedRoster(brandsBody,overviewBody))return;
+    var rows=brandsBody.data,seen=Object.create(null);
+    if(!rows.every(function(row){
+      if(!row||typeof row.id!=='string'||typeof row.name!=='string'||
+         !row.id.trim()||!row.name.trim()||seen[row.id])return false;
+      seen[row.id]=true;return true;
+    }))return;
+    var grid=document.getElementById('madeBrandGrid');
+    if(grid&&rows.length){
+      grid.innerHTML=rows.slice(0,12).map(function(b,i){
         var cls=['red','blue','cream'][i%3];
-        return '<article class="brand-card '+cls+'"><div class="verified-pill">СДЕЛАНО В МОСКВЕ · VERIFIED</div><div><small>VERIFIED ROSTER</small><h3>'+esc(b.name)+'</h3><p>'+esc(b.city||'Москва')+' · canonical MFW brand</p><div class="brand-actions"><button data-made-open-mfw="'+esc(b.id)+'">ОТКРЫТЬ В MFW</button><button data-made-open-buyer="'+esc(b.id)+'">BUYER BRIDGE</button></div></div></article>';
-      }).join('')+'<article class="brand-card cream preview-card"><div><small>DEMO SLOT · PREVIEW ONLY</small><h3>Московский бренд</h3><p>Неподтверждённый preview не получает Verified badge и не считается участником программы.</p></div></article>';
+        return '<article class="brand-card '+cls+'"><div class="verified-pill">СДЕЛАНО В МОСКВЕ · VERIFIED</div><div><small>APPROVED POSTGRESQL ROSTER</small><h3>'+esc(b.name)+'</h3><p>'+esc(b.city||'Москва')+' · canonical MFW brand</p><div class="brand-actions"><button data-made-open-mfw="'+esc(b.id)+'">ОТКРЫТЬ В MFW</button><button data-made-open-buyer="'+esc(b.id)+'">BUYER BRIDGE</button></div></div></article>';
+      }).join('');
       bindBrandActions();
     }
+    if(grid&&!rows.length){
+      grid.innerHTML='<article class="made-roster-empty" data-roster-empty="empty">'+
+        '<div class="made-roster-empty-kicker"><span class="preview-pill">УТВЕРЖДЁННЫЙ РЕЕСТР · 0</span></div>'+
+        '<div class="made-roster-empty-copy"><h3>Опубликованных брендов пока нет</h3>'+
+        '<p>Authority допустил реестр, но не вернул опубликованных участников. Это не демонстрационные карточки.</p></div></article>';
+    }
+    madeOverview=overviewBody.data;
+    var count=document.getElementById('verifiedBrandCount');
+    if(count)count.textContent=String(rows.length);
     var admission=document.getElementById('madeAdmissionState');
     if(admission){
-      var admitted=!!(madeOverview&&madeOverview.productionAdmitted);
-      admission.innerHTML='<b>'+(admitted?'POSTGRESQL AUTHORITY · READY':'PRODUCTION ADMISSION · WAITING')+'</b><span>'+(admitted?'Verified roster и service applications читаются из admitted PostgreSQL authority.':'Раздел работает как связанный preview; реальные Verified бренды не публикуются без PostgreSQL admission и утверждённого roster.')+'</span>';
-      admission.classList.toggle('ready',admitted);
+      admission.classList.add('ready');
+      admission.innerHTML='<b>POSTGRESQL AUTHORITY · READY</b><span>Получена допущенная серверная выборка брендов. Количество отражает реестр, а не демонстрационные данные.</span>';
     }
     renderAccountBridge();
-  }catch(_){renderAccountBridge();}
+  }catch(_){resetVerifiedRoster();}
 }
 function go(section){var el=document.getElementById(section);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});nav.forEach(function(b){b.classList.toggle('active',b.dataset.section===section);});}
 nav.forEach(function(b){b.addEventListener('click',function(){go(b.dataset.section);});});
-[].slice.call(document.querySelectorAll('[data-action]')).forEach(function(b){b.addEventListener('click',function(){var a=b.dataset.action;if(a==='account')parent.postMessage({type:'mfp-open-account'},'*');if(a==='mfw')parent.postMessage({type:'mfp-open-event',eventCode:'mfw'},'*');if(a==='bfs')parent.postMessage({type:'mfp-open-event',eventCode:'bfs'},'*');});});
-window.addEventListener('message',function(e){if(!e.data||typeof e.data!=='object')return;if(e.data.type==='made-open-section')go(e.data.section||'home');if(e.data.type==='mfp-account-state'){accountState=e.data.payload||accountState;var profile=accountState.profile||{};var btn=document.querySelector('[data-action="account"]');if(btn&&profile.firstName)btn.textContent=String(profile.firstName).toUpperCase()+' · ONE ID';renderAccountBridge();}});
-try{parent.postMessage({type:'mfp-request-account-state'},'*');}catch(e){}
+[].slice.call(document.querySelectorAll('[data-action]')).forEach(function(b){b.addEventListener('click',function(){var a=b.dataset.action;if(a==='account')parent.postMessage({type:'mfp-open-account'},location.origin);if(a==='mfw')parent.postMessage({type:'mfp-open-event',eventCode:'mfw'},location.origin);if(a==='bfs')parent.postMessage({type:'mfp-open-event',eventCode:'bfs'},location.origin);});});
+window.addEventListener('message',function(e){if(e.origin!==location.origin||e.source!==parent||!e.data||typeof e.data!=='object')return;if(e.data.type==='made-open-section')go(e.data.section||'home');if(e.data.type==='mfp-account-state'){accountState=e.data.payload||accountState;var profile=accountState.profile||{};var btn=document.querySelector('[data-action="account"]');if(btn&&profile.firstName)btn.textContent=String(profile.firstName).toUpperCase()+' · ONE ID';renderAccountBridge();}});
+try{parent.postMessage({type:'mfp-request-account-state'},location.origin);}catch(e){}
 renderEditorialMedia();
 renderAccountBridge();
 hydrateVerifiedRoster();

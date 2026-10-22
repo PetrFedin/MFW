@@ -1,8 +1,11 @@
-const CACHE='mfp-shell-2026-10-06-p6';
+const CACHE='mfp-shell-2026-10-20-f1';
 const CORE=[
   '/platform/index.html',
-  '/platform/platform.css?v=20261006i1',
-  '/platform/platform.js?v=20261006p6',
+  '/platform/platform.css?v=20261020f1',
+  '/platform/platform.js?v=20261020f1',
+  '/platform/b2b-followup.js?v=20261020f1',
+  '/platform/commercial-proof-model.js?v=20261013c1',
+  '/platform/commercial-proof.css?v=20261013c1',
   '/platform/event-data.js',
   '/platform/media-manifest.js?v=20261006i1',
   '/platform/investor-proof-model.js?v=20261006p6',

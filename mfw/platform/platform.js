@@ -19,12 +19,14 @@
   var hubModal=document.getElementById('hubModal');
   var hubContent=document.getElementById('hubContent');
   var hubTab='directory';
+  var followupFilter='all',followupRequest=0,followupEvidence=null;
   var investorDemoIndex=0;
   var investorDemoActive=false;
   var AUTHORITY='https://mfw-authority.onrender.com';
   var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems?window.MFP_MEDIA.ecosystems:{};
   var INVESTOR_MODEL=window.MFP_INVESTOR_MODEL||{};
   var proofMode='live';
+  var economicsAssumptions=Object.assign({},window.MFP_COMMERCIAL_PROOF?window.MFP_COMMERCIAL_PROOF.defaults:{});
   var controlTowerView='case';
   var selectedControlCase='buyer-brand-alpha';
   var selectedPortfolioStage='INTENT';
@@ -47,7 +49,11 @@
   function deliverPendingRoute(){
     if(!frameReady||!pendingEventRoute||!frame.contentWindow)return;
     var route=pendingEventRoute;pendingEventRoute=null;
-    frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+    if(selectedEvent==='made'&&route.kind==='section'){
+      frame.contentWindow.postMessage({type:'made-open-section',section:route.section==='verified'?'verified':'home'},location.origin);
+    }else{
+      frame.contentWindow.postMessage({type:'mfp-route',route:route},location.origin);
+    }
   }
   function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function abbr(code,expansion){return '<abbr class="ui-abbr" tabindex="0" title="'+h(expansion)+'">'+h(code)+'</abbr>';}
@@ -122,7 +128,7 @@
     return authorityFetch('/v1/me/profile',{method:'PATCH',body:JSON.stringify({
       displayName:displayName(),primaryRole:String(primaryRole||'visitor').toLowerCase(),locale:'ru',
       organisation:accountState.profile.company||'',jobTitle:accountState.profile.title||'',
-      country:accountState.profile.country||'',marketingConsent:true,networkingVisible:true
+      country:accountState.profile.country||'',marketingConsent:accountState.profile.marketingConsent===true,networkingVisible:accountState.profile.networkingVisible===true
     })});
   }
   async function syncPlatformRegistration(code,reg){
@@ -153,49 +159,96 @@
       if(p.organisation!=null)accountState.profile.company=p.organisation||'';
       if(p.jobTitle!=null)accountState.profile.title=p.jobTitle||'';
       if(p.country!=null)accountState.profile.country=p.country||'';
+      if(typeof p.networkingVisible==='boolean')accountState.profile.networkingVisible=p.networkingVisible;
+      if(typeof p.marketingConsent==='boolean')accountState.profile.marketingConsent=p.marketingConsent;
       (d.platformRegistrations||[]).forEach(function(r){accountState.registrations[r.eventCode]=r;});
       if(Array.isArray(d.interests))setSelectedInterests(d.interests.map(function(x){return x.key;}));
       saveState();fillProfile();renderRegistrations();renderInterestPicker();if(accessToken())loadOrganisationRegistry();
     }catch(e){}
   }
 
-  var organisationState={items:[],current:null,loading:false,error:''};
+  var organisationState={items:[],mine:[],current:null,loading:false,error:''};
   function organisationTypeLabel(v){
     return ({brand:'BRAND',buyer:'BUYER / RETAILER',media:'MEDIA',institution:'INSTITUTION',service_provider:'SERVICE PROVIDER',education:'EDUCATION',government:'GOVERNMENT',other:'OTHER'})[v]||String(v||'ORGANISATION').toUpperCase();
   }
   function organisationVerificationLabel(v){
     return ({verified:'VERIFIED',submitted:'SUBMITTED',rejected:'REJECTED',expired:'EXPIRED',unverified:'UNVERIFIED'})[v]||String(v||'UNVERIFIED').toUpperCase();
   }
+  function hasVerifiedRepresentation(row){
+    return !!(row&&row.representationVerified===true&&row.status==='active'&&
+      row.verificationStatus==='verified'&&row.relationship&&
+      row.relationship.status==='active'&&row.relationship.source==='operator_verified');
+  }
   function renderOrganisationIdentity(){
     if(!organisationPanel)return;
-    var current=organisationState.current;
-    organisationStatus.textContent=current?organisationVerificationLabel(current.verificationStatus):'НЕ ПРИВЯЗАНА';
-    organisationStatus.className='organisation-status '+(current&&current.verificationStatus==='verified'?'verified':'');
-    organisationCurrent.innerHTML=current
-      ? '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+' · '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4><p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p><small>'+h((current.relationship&&current.relationship.relationshipRole)||'representative')+(current.relationship&&current.relationship.roleTitle?' · '+h(current.relationship.roleTitle):'')+'</small><div class="organisation-proof"><span>'+h(current.activeRepresentativeCount||1)+' representatives</span><span>'+h(current.participationCount||0)+' participation records</span></div></article>'
-      : '<p class="organisation-empty">Привяжите профиль к организации. Это создаёт persistent identity, но не подтверждает организацию автоматически.</p>';
+    var current=organisationState.current,approved=hasVerifiedRepresentation(current);
+    organisationStatus.textContent=!current?'НЕ ПРИВЯЗАНА':approved?
+      'ПОЛНОМОЧИЯ ПОДТВЕРЖДЕНЫ':'ЗАЯВЛЕНИЕ · БЕЗ ПОДТВЕРЖДЁННЫХ ПРАВ';
+    organisationStatus.className='organisation-status '+(approved?'verified':'');
+    var mine=organisationState.mine||[];
+    var choice=mine.length>1?
+      '<label class="organisation-choice">МОИ ОРГАНИЗАЦИИ<select id="organisationAccountSelect" style="width:100%;padding:10px;margin:6px 0 12px">'+
+      mine.map(function(o){return '<option value="'+h(o.id)+'"'+(current&&current.id===o.id?' selected':'')+'>'+h(o.name)+'</option>';}).join('')+
+      '</select></label>':'';
+    var relationship=current&&current.relationship||{};
+    organisationCurrent.innerHTML=current?choice+
+      '<article class="organisation-card current"><div class="kind">'+h(organisationTypeLabel(current.organisationType))+
+      ' · ОРГАНИЗАЦИЯ '+h(organisationVerificationLabel(current.verificationStatus))+'</div><h4>'+h(current.name)+'</h4>'+
+      '<p>'+h([current.city,current.countryCode].filter(Boolean).join(' · ')||'Локация не указана')+'</p>'+
+      '<small>'+h(approved?'Оператор подтвердил полномочия':
+        'Самостоятельное заявление не подтверждает представительство и не даёт права подписи')+'</small>'+
+      '<p>'+h(relationship.relationshipRole||'')+(relationship.roleTitle?' · '+h(relationship.roleTitle):'')+'</p>'+
+      '<div class="organisation-proof"><span>'+h(current.activeRepresentativeCount??0)+' заявленных представителей</span>'+
+      '<span>'+h(current.participationCount??0)+' записей участия</span></div></article>':
+      '<p class="organisation-empty">Нет подтверждённой сервером связи с организацией. Совпадение названия компании в профиле с публичным реестром не создаёт представительских прав.</p>';
+    var selector=organisationCurrent.querySelector('#organisationAccountSelect');
+    if(selector)selector.onchange=function(){
+      organisationState.current=mine.find(function(row){return row.id===selector.value;})||null;
+      renderOrganisationIdentity();
+    };
     var rows=(organisationState.items||[]).slice(0,12);
-    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Реестр организаций</b><span>'+rows.length+' показано</span></div>'+
-      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+'</small></div><span>'+h(x.participationCount||0)+' записей истории</span></article>';}).join(''):'<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
+    organisationDirectory.innerHTML='<div class="organisation-directory-head"><b>Публичный реестр организаций</b><span>'+rows.length+' показано</span></div>'+
+      (rows.length?rows.map(function(x){return '<article class="organisation-mini"><div><b>'+h(x.name)+'</b><small>'+
+      h(organisationTypeLabel(x.organisationType))+' · '+h(organisationVerificationLabel(x.verificationStatus))+
+      '</small></div><span>'+h(x.participationCount||0)+' записей истории</span></article>';}).join(''):
+      '<p class="organisation-empty">'+h(organisationState.loading?'Загрузка…':'Организации пока не найдены.')+'</p>');
   }
   async function loadOrganisationRegistry(){
     if(organisationState.loading)return;
-    organisationState.loading=true;organisationState.error='';renderOrganisationIdentity();
+    organisationState.loading=true;organisationState.error='';
+    var token=accessToken(),preferred=organisationState.current&&organisationState.current.id;
+    // Revoke the last account's display affiliation before network refresh.
+    organisationState.current=null;organisationState.mine=[];organisationState.items=[];
+    renderOrganisationIdentity();
     try{
-      var out=await authorityFetch('/v1/network/organisations?limit=50',{method:'GET'});
-      organisationState.items=out.data||[];
-      var company=String(accountState.profile.company||'').trim().toLowerCase().replace(/\s+/g,' ');
-      if(company&&!organisationState.current){
-        organisationState.current=organisationState.items.filter(function(x){return String(x.name||'').trim().toLowerCase().replace(/\s+/g,' ')===company;})[0]||null;
-      }
-    }catch(e){organisationState.error=e.message||'registry_unavailable';}
-    finally{organisationState.loading=false;renderOrganisationIdentity();}
+      if(!token)throw new Error('session_required');
+      var responses=await Promise.all([
+        authorityFetch('/v1/network/organisations?limit=50',{method:'GET'}),
+        authorityFetch('/v1/network/organisations/mine',{method:'GET'})
+      ]);
+      if(accessToken()!==token)throw new Error('session_changed');
+      organisationState.items=Array.isArray(responses[0]&&responses[0].data)?responses[0].data:[];
+      var mine=responses[1];
+      organisationState.mine=mine&&mine.source==='postgres'&&
+        mine.authority==='session_scoped_organisation_memberships'&&Array.isArray(mine.data)?
+        mine.data.filter(function(row){
+          return row&&row.status==='active'&&row.relationship&&row.relationship.status==='active';
+        }):[];
+      organisationState.current=organisationState.mine.find(function(x){return x.id===preferred;})||
+        organisationState.mine[0]||null;
+    }catch(err){
+      organisationState.current=null;organisationState.mine=[];organisationState.items=[];
+      organisationState.error=err.message||'registry_unavailable';
+    }finally{organisationState.loading=false;renderOrganisationIdentity();}
   }
   async function claimOrganisation(values){
     var role=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'Visitor';
     await ensureAuthoritySession(role,false);
     var out=await authorityFetch('/v1/network/organisations/claim',{method:'POST',body:JSON.stringify(values)});
-    organisationState.current=out.data||null;
+    if(!out||out.authority!=='self_claim_unverified'||!out.data||
+       !out.data.relationship||out.data.relationship.source!=='self_claim')
+      throw new Error('organisation_claim_not_confirmed');
+    organisationState.current=Object.assign({},out.data,{representationVerified:false});
     if(organisationState.current&&organisationState.current.name){
       accountState.profile.company=organisationState.current.name;
       if(organisationState.current.relationship&&organisationState.current.relationship.roleTitle)accountState.profile.title=organisationState.current.relationship.roleTitle;
@@ -205,7 +258,7 @@
     return out;
   }
 
-  var DEFAULT_PROFILE={firstName:'Алексей',lastName:'Иванов',email:'alex@example.com',phone:'+7 900 000-00-00',company:'Индустрия моды',title:'Гость',country:'Россия'};
+  var DEFAULT_PROFILE={firstName:'',lastName:'',email:'',phone:'',company:'',title:'',country:'',networkingVisible:false,marketingConsent:false};
   var INTEREST_OPTIONS=[
     {id:'runway',label:'Показы'},
     {id:'emerging_brands',label:'Новые бренды'},
@@ -283,15 +336,28 @@
     notifyFrame();
   }
   function notifyFrame(){
-    try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},'*');}catch(e){}
+    try{frame.contentWindow.postMessage({type:'mfp-account-state',payload:accountState},location.origin);}catch(e){}
   }
   function safeJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){return fallback;}}
   async function hydrateMadeDirectory(){
+    madeVerifiedBrands=[];
     try{
-      var out=await authorityFetch('/v1/made-in-moscow/brands',{method:'GET'});
-      madeVerifiedBrands=Array.isArray(out&&out.data)?out.data:[];
-      if(!hubModal.classList.contains('hidden')&&hubTab==='directory')renderDirectory();
+      var responses=await Promise.all([
+        authorityFetch('/v1/made-in-moscow/brands',{method:'GET'}),
+        authorityFetch('/v1/made-in-moscow/overview',{method:'GET'})
+      ]);
+      var out=responses[0],overview=responses[1];
+      var admitted=out&&out.source==='postgres'&&out.badge==='made_in_moscow_verified'&&
+        out.demo!==true&&Array.isArray(out.data)&&overview&&overview.data&&
+        overview.data.persistence==='postgres'&&overview.data.productionAdmitted===true;
+      var seen=Object.create(null);
+      madeVerifiedBrands=admitted&&out.data.every(function(row){
+        if(!row||typeof row.id!=='string'||typeof row.name!=='string'||
+          !row.id.trim()||!row.name.trim()||seen[row.id])return false;
+        seen[row.id]=true;return true;
+      })?out.data:[];
     }catch(e){madeVerifiedBrands=[];}
+    if(!hubModal.classList.contains('hidden')&&hubTab==='directory')renderDirectory();
   }
   function getInterestState(){
     return {
@@ -605,9 +671,11 @@
         '<div><b>ЗАЯВЛЕННОЕ</b><span>коммерческий результат, добровольно заявленный партнёром</span></div>'+
         '<div><b>ПОДТВЕРЖДЁННОЕ</b><span>результат, подтверждённый допущенной внешней интеграцией</span></div>'+
       '</div></section>'+
-      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ ДЕЛОВЫЕ СВЯЗИ BFS</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ БРЕНДЫ MFW</button></div>'+
+      '<div class="dealroom-actions"><button data-deal-open="bfs">ОТКРЫТЬ ДЕЛОВЫЕ СВЯЗИ BFS</button><button class="secondary" data-deal-open="mfw">ОТКРЫТЬ БРЕНДЫ MFW</button><button data-deal-followup="true">ОТКРЫТЬ B2B FOLLOW-UP</button></div>'+
       '<div class="hub-note">Граница предпросмотра: Комната сделки показывает будущий продуктовый контракт. Рабочий жизненный цикл, ACL, документы, сроки, идемпотентность и аудит допускаются только после Phase 0 PostgreSQL и формальной политики.</div>';
     [].slice.call(document.querySelectorAll('[data-deal-open]')).forEach(function(b){b.onclick=function(){hubModal.classList.add('hidden');openEvent(b.dataset.dealOpen);};});
+    var followup=hubContent.querySelector('[data-deal-followup]');
+    if(followup)followup.onclick=function(){hubTab='followup';renderHub();};
   }
 
   function evidenceBadge(cls){
@@ -1098,6 +1166,104 @@
       '<div class="hub-note">В production бренд видит только свою first-party аудиторию и privacy-safe benchmark; competitor-level private data не раскрывается.</div>';
     bindProofMode();
   }
+  function commercialScenarioHtml(){
+    var model=window.MFP_COMMERCIAL_PROOF;
+    if(!model||model.version!=='mfw-commercial-proof-ladder-v1'){
+      return '<div class="commercial-validation">Финансовая модель недоступна. Показатели намеренно скрыты.</div>';
+    }
+    var audit=model.auditEvidence({});
+    return '<section class="commercial-proof" data-commercial-schema="'+h(model.version)+'">'+
+      '<div class="commercial-proof-heading"><div><div class="drawer-kicker">INVESTOR PROOF / ПРОВЕРЯЕМАЯ ЭКОНОМИКА</div>'+
+      '<h4>От пилота до признанной выручки — через доказательства.</h4>'+
+      '<p>Договор, исполнение, счёт, учёт и поступления — разные факты. Отсутствующий этап не заменяется встречами, охватами или модельными расчётами.</p></div>'+
+      '<span class="commercial-truth-tag">PRODUCTION REVENUE · НЕ ПОДТВЕРЖДЕНО</span></div>'+
+      '<div class="commercial-ladder-grid">'+audit.stages.map(function(stage,i){
+        return '<article class="commercial-ladder-card" data-commercial-stage="'+h(stage.id)+'">'+
+          '<small>'+String(i+1).padStart(2,'0')+' / '+h(stage.label)+'</small><b>'+h(stage.proof)+'</b>'+
+          '<p>'+h(stage.meaning)+'</p><span class="commercial-evidence-state">'+
+          (stage.evidenceState==='ADMITTED_SOURCE'?'ПРОВЕРЯЕМЫЙ ИСТОЧНИК':'НЕ ПОДТВЕРЖДЕНО')+
+          '</span></article>';
+      }).join('')+'</div>'+
+      '<div class="commercial-note">Это контрольный перечень необходимых источников, а не реестр реальных контрактов MFW. Счёт и оплата отдельно от признания выручки. Бухгалтерское решение принимает уполномоченная финансовая функция на основании принятой учётной политики.</div>'+
+      '<div class="commercial-scenario" aria-label="Калькулятор инвестиционного сценария">'+
+      '<div class="drawer-kicker">ИНТЕРАКТИВНЫЙ СЦЕНАРИЙ · MODELLED / НЕ ФАКТ</div>'+
+      '<h4>Сколько платящих организаций нужно для устойчивой модели?</h4>'+
+      '<p>Введите собственные допущения. По умолчанию все коммерческие суммы — ноль. Число организаций и тарифы постоянны в пределах выбранного горизонта; churn, CAC, налоги и инвестиции здесь не прогнозируются.</p>'+
+      '<div class="commercial-scenario-fields">'+model.fields.map(function(field){
+        return '<label class="commercial-input-label"><span>'+h(field.label)+'</span>'+
+        '<small>'+h(field.unit)+'</small><input type="number" inputmode="decimal" data-commercial-field="'+h(field.key)+'" '+
+        'min="'+h(field.min||0)+'" max="'+h(field.max)+'" step="'+h(field.step)+'" '+
+        'value="'+h(economicsAssumptions[field.key])+'""></label>';
+      }).join('')+'</div>'+
+      '<div class="commercial-scenario-results" id="commercialScenarioResults" aria-live="polite"></div>'+
+      '<div class="commercial-note">«Модельный коммерческий объём» — потенциальная сумма по заданным тарифам, не ARR, MRR и не признанная выручка. Операционный результат упрощён и исключает налоги, CAPEX, CAC и другие неуказанные расходы. Точка безубыточности не является прогнозом продаж.</div>'+
+      '<div class="commercial-cta-row"><button class="commercial-secondary" data-commercial-reset="1">СБРОСИТЬ ДОПУЩЕНИЯ</button>'+
+      '<div><button data-commercial-open="brand">КАБИНЕТ БРЕНДА →</button> '+
+      '<button data-commercial-open="partner">КАБИНЕТ ПАРТНЁРА →</button> '+
+      '<button data-commercial-open="proof">EVIDENCE CONTROL →</button></div></div>'+
+      '</div></section>';
+  }
+  function displayScenarioRubles(v){
+    return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(v)+' ₽';
+  }
+  function updateCommercialScenario(){
+    var root=document.getElementById('commercialScenarioResults');
+    if(!root)return;
+    var model=window.MFP_COMMERCIAL_PROOF;
+    if(!model){root.innerHTML='<div class="commercial-validation">Модель недоступна.</div>';return;}
+    try{
+      var sc=model.scenario(economicsAssumptions);
+      var cards=[
+        {id:'monthlyPotential',name:'Модельный объём / месяц',value:displayScenarioRubles(sc.monthly.potentialCommercialValue)},
+        {id:'monthlyContribution',name:'Вклад после переменных затрат',value:displayScenarioRubles(sc.monthly.contribution)},
+        {id:'monthlyResult',name:'Упрощённый результат / месяц',value:displayScenarioRubles(sc.monthly.operatingResult),negative:sc.monthly.operatingResult<0},
+        {id:'breakEvenBrands',name:'Для покрытия расходов · брендов',value:sc.breakEvenBrands===null?'Не рассчитывается':String(sc.breakEvenBrands)},
+        {id:'horizonPotential',name:'Модельный объём / '+sc.horizon.months+' мес.',value:displayScenarioRubles(sc.horizon.potentialCommercialValue)}
+      ];
+      var stress=model.sensitivity(economicsAssumptions);
+      root.innerHTML=cards.map(function(kpi){return '<article class="commercial-scenario-kpi'+(kpi.negative?' negative':'')+'"><span>'+h(kpi.name)+'</span>'+
+        '<strong data-commercial-kpi="'+h(kpi.id)+'">'+h(kpi.value)+'</strong></article>';}).join('')+
+        '<section class="commercial-sensitivity" id="commercialSensitivity" aria-label="Чувствительность операционной модели">'+
+        '<div class="commercial-sensitivity-head"><div><span>ЧУВСТВИТЕЛЬНОСТЬ / КОНТРОЛЬ ДОПУЩЕНИЙ</span>'+
+        '<h5>Что произойдёт с моделью при изменении условий</h5></div>'+
+        '<small>Равные количества клиентов во всех сценариях · без вероятностей</small></div>'+
+        '<div class="commercial-sensitivity-table" role="table">'+
+        '<div class="commercial-sensitivity-row heading" role="row"><b>Сценарий</b><b>Объём / мес.</b><b>Результат / мес.</b><b>Изменение</b><b>Безубыт. брендов</b></div>'+
+        stress.rows.map(function(row){
+          return '<div class="commercial-sensitivity-row" data-sensitivity-case="'+h(row.id)+'" role="row">'+
+            '<span>'+h(row.label)+'</span><b>'+h(displayScenarioRubles(row.monthlyPotentialValue))+'</b>'+
+            '<b'+(row.monthlyOperatingResult<0?' class="negative"':'')+'>'+h(displayScenarioRubles(row.monthlyOperatingResult))+'</b>'+
+            '<b>'+h(displayScenarioRubles(row.deltaToBaseline))+'</b>'+
+            '<b>'+h(row.breakEvenBrands===null?'Не достигается':row.breakEvenBrands)+'</b></div>';
+        }).join('')+'</div>'+
+        '<details class="commercial-sensitivity-method"><summary>Методика стресс-проверки</summary><p>'+h(stress.method)+'</p></details>'+
+        '<p>Сценарии не учитывают изменение спроса, состава клиентов, сезонности, налогов и финансирования. Это арифметическая чувствительность, а не подтверждённый бизнес-результат.</p></section>';
+    }catch(err){
+      root.innerHTML='<div class="commercial-validation" role="alert">Некорректные допущения. Исправьте значения: пустые, отрицательные и недопустимо большие числа не используются в расчёте.</div>';
+    }
+  }
+  function bindCommercialScenario(){
+    [].slice.call(document.querySelectorAll('[data-commercial-field]')).forEach(function(input){
+      input.oninput=function(){
+        economicsAssumptions[input.dataset.commercialField]=input.value;
+        updateCommercialScenario();
+      };
+    });
+    var reset=document.querySelector('[data-commercial-reset]');
+    if(reset)reset.onclick=function(){
+      economicsAssumptions=Object.assign({},window.MFP_COMMERCIAL_PROOF.defaults);
+      renderEconomics();
+    };
+    [].slice.call(document.querySelectorAll('[data-commercial-open]')).forEach(function(button){
+      button.onclick=function(){
+        var target=button.dataset.commercialOpen;
+        if(['brand','partner','proof'].indexOf(target)<0)return;
+        hubTab=target;renderHub();
+      };
+    });
+    updateCommercialScenario();
+  }
+
   function renderEconomics(){
     var streams=INVESTOR_MODEL.revenueStreams||[];
     hubContent.innerHTML=
@@ -1106,7 +1272,9 @@
       '<div class="economics-table"><div class="economics-row head"><b>PAYER</b><b>PRODUCT</b><b>FORMULA</b><b>REVENUE УСЛОВИЕ</b></div>'+
       streams.map(function(x){return '<div class="economics-row"><span>'+h(x.payer)+'</span><span>'+h(x.product)+'</span><code>'+h(x.formula)+'</code><em>'+h(x.recognition)+'</em></div>';}).join('')+'</div>'+
       '<div class="economics-proof-grid"><article><b>OBSERVED</b><span>Product actions and delivery events.</span></article><article><b>REPORTED</b><span>Partner-declared outcomes.</span></article><article><b>VERIFIED</b><span>Admitted external confirmation.</span></article><article><b>MODELLED</b><span>Scenario economics with explicit assumptions.</span></article></div>'+
-      '<div class="hub-note">Юнит-экономика, CAC, ROI, GMV, ARR и MRR считаются фактическими только при наличии исходного набора данных и периода расчёта. Демонстрационные подстановки намеренно отсутствуют.</div>';
+      '<div class="hub-note">Юнит-экономика, CAC, ROI, GMV, ARR и MRR считаются фактическими только при наличии исходного набора данных и периода расчёта. Демонстрационные подстановки намеренно отсутствуют.</div>'+
+      commercialScenarioHtml();
+    bindCommercialScenario();
   }
 
   function committeePolicy(){return INVESTOR_MODEL.investmentCommittee||{};}
@@ -1445,7 +1613,141 @@
       '<div class="hub-note">Preview only: production issuer/status registry, revocation and portable credentials remain dependency-gated behind durable identity, PostgreSQL history and policy review.</div>';
   }
 
+
+  // B2B follow-up is a private read-only projection over two owner-scoped
+  // Authority queries. No synthetic conversions, financial amounts or
+  // invitations are created by this screen.
+  function showFollowupBoard(projection){
+    if(hubTab!=='followup')return;
+    var a=projection.analytics,totals=projection.totals;
+    var statuses={all:'Все',priority:'Требуют внимания',overdue:'Просрочено',
+      missing:'Без плана',scheduled:'Запланировано',closed:'Закрыто'};
+    var statusLabels={overdue:'ПРОСРОЧЕНО',missing:'НЕТ ПЛАНА',
+      scheduled:'ЗАПЛАНИРОВАНО',closed:'ЗАКРЫТО'};
+    var stageNames={interest:'Интерес',meeting_requested:'Запрос встречи',
+      meeting_confirmed:'Встреча согласована',met:'Встреча проведена',
+      follow_up:'Последующие действия',qualified:'Квалифицирован',
+      won:'Выигран по данным CRM',lost:'Закрыт без результата',
+      unknown:'Неопределённый этап'};
+    var items=projection.rows.filter(function(row){
+      return followupFilter==='all'||(followupFilter==='priority'?
+        row.priorityScore>=60&&row.dueStatus!=='closed':row.dueStatus===followupFilter);
+    });
+    var percentage=function(v){return v===null?'—':String(v).replace('.',',')+'%';};
+    var stages=Object.keys(stageNames).filter(function(k){return a.stageMix[k]>0;});
+    var highest=Math.max(1,...stages.map(function(k){return a.stageMix[k];}));
+    hubContent.innerHTML=
+      '<div class="followup-header"><div><div class="drawer-kicker">ДЕЛОВЫЕ СВЯЗИ · ПОСЛЕ МЕРОПРИЯТИЯ</div>'+
+      '<h3>Центр последующих действий</h3><p>Встречи, CRM и следующие шаги в одной рабочей очереди. Приоритет рассчитывается по срокам и целостности связей, не по предполагаемой ценности клиента.</p></div>'+
+      '<button type="button" id="followupRefresh" aria-label="Повторно загрузить свои встречи и лиды">Обновить данные ↗</button></div>'+
+      '<p class="followup-truth" role="note">ПРОВЕРЯЕМАЯ ОСНОВА · PostgreSQL · Только доступные вам записи. Статус CRM «won» не подтверждает оплату, заказ или выручку.</p>'+
+      '<div class="followup-kpis" id="followupSummary">'+
+      [['all','Всего лидов'],['overdue','Просрочено'],['missing','Без плана'],['scheduled','Запланировано'],['closed','Закрыто']].map(function(pair){
+        return '<div><b>'+h(totals[pair[0]])+'</b><span>'+h(pair[1])+'</span></div>';
+      }).join('')+'</div>'+
+      '<section class="followup-intelligence" id="followupAnalytics" aria-label="Аналитика следующих действий">'+
+        '<div class="followup-section-title"><div><span>01 / ОПЕРАЦИОННАЯ АНАЛИТИКА</span><h4>Где требуется действие</h4></div><small>На '+h(formatWhen(projection.asOf))+' · только наблюдаемое</small></div>'+
+        '<div class="followup-analytics-grid">'+
+        '<article><span>Открытые лиды</span><strong>'+h(a.open)+'</strong><small>Без закрытых CRM-статусов</small></article>'+
+        '<article><span>В зоне внимания</span><strong>'+h(a.needsAttention)+'</strong><small>Приоритет от 60 / 100</small></article>'+
+        '<article><span>План действий заполнен</span><strong>'+h(percentage(a.actionCoveragePct))+'</strong><small>'+h(a.plannedActions)+' из '+h(a.open)+' открытых</small></article>'+
+        '<article><span>Встречи найдены</span><strong>'+h(percentage(a.meetingLinkCoveragePct))+'</strong><small>'+h(a.linkedMeetings)+' из '+h(a.meetingRefs)+' связанных</small></article>'+
+        '</div>'+
+        '<div class="followup-insights"><span>В ближайшие 72 часа <b>'+h(a.dueSoon)+'</b></span>'+
+        '<span>Нарушения связи/этапа <b>'+h(totals.unlinkedMeetings+a.meetingConflicts)+'</b></span>'+
+        '<span>Просрочка суммарно <b>'+h(a.overdueDaysTotal)+' дн.</b></span></div>'+
+        '<div class="followup-stage-head"><span>СТРУКТУРА CRM</span><small>Количество записей по этапам, не конверсия</small></div>'+
+        '<div class="followup-stage-bars" id="followupStageMix">'+
+        (stages.length?stages.map(function(k){
+          var n=a.stageMix[k];
+          return '<div class="followup-stage-row"><span>'+h(stageNames[k])+'</span>'+
+            '<div class="followup-stage-track" role="img" aria-label="'+h(stageNames[k]+': '+n)+'">'+
+            '<i style="width:'+h(Math.round(n/highest*100))+'%"></i></div><b>'+h(n)+'</b></div>';
+        }).join(''):'<p class="followup-empty">Этапы не представлены.</p>')+
+        '</div>'+
+        '<details class="followup-method"><summary>Как рассчитывается приоритет и полнота данных</summary><p>'+h(a.methodology)+'</p>'+
+        '<p>Значение «—» означает отсутствие знаменателя, а не 0%. Приоритет служит только для сортировки задач; не оценивает людей и не является вероятностью сделки.</p></details>'+
+      '</section>'+
+      '<div class="followup-queue-head"><div><span>02 / РАБОЧАЯ ОЧЕРЕДЬ</span><h4>Контакты и сроки</h4></div>'+
+      '<span id="followupVisibleCount">Показано '+h(items.length)+' из '+h(totals.all)+'</span></div>'+
+      '<div class="followup-controls" role="group" aria-label="Фильтр последующих действий">'+
+      Object.keys(statuses).map(function(key){
+        return '<button type="button" data-followup-filter="'+h(key)+'" aria-pressed="'+(key===followupFilter?'true':'false')+'"'+
+        (key===followupFilter?' class="active"':'')+'>'+h(statuses[key])+'</button>';
+      }).join('')+'</div>'+
+      '<div class="followup-queue" id="followupQueue" aria-live="polite">'+
+      (items.length?items.map(function(row){
+        var eventLabel=h(row.eventLabel),name=h(row.counterpart||row.organisation||'Контрагент не указан');
+        var due=row.dueAt===null?'Срок не указан':formatWhen(new Date(row.dueAt).toISOString());
+        var priorityLabel=row.dueStatus==='closed'?'ЗАКРЫТО':
+          'ПРИОРИТЕТ '+String(row.priorityScore)+' / 100';
+        return '<article class="followup-item" data-followup-row="'+h(row.id)+'" data-priority-band="'+h(row.priorityBand)+'">'+
+          '<div class="followup-row-top"><span>'+eventLabel+'</span>'+
+          '<strong class="followup-status '+h(row.dueStatus)+'">'+h(statusLabels[row.dueStatus]||'НЕОПРЕДЕЛЕНО')+'</strong></div>'+
+          '<div class="followup-priority '+h(row.priorityBand)+'">'+h(priorityLabel)+'</div>'+
+          '<h4>'+name+'</h4><p>'+h(row.stageLabel)+'</p>'+
+          '<dl><div><dt>Следующее действие</dt><dd>'+h(row.nextAction||'Не назначено')+'</dd></div>'+
+          '<div><dt>Срок</dt><dd>'+h(due)+'</dd></div>'+
+          '<div><dt>Встреча</dt><dd>'+h(row.meetingLinked?row.meetingStatus||
+          'Доступна в моём реестре':row.meetingId?
+          'Не найдена среди доступных мне встреч':'Не связана')+'</dd></div></dl>'+
+          (row.priorityReasons.length?'<div class="followup-reasons"><b>ПРИЧИНЫ ПРИОРИТЕТА</b>'+
+          '<ul>'+row.priorityReasons.map(function(reason){return '<li>'+h(reason)+'</li>';}).join('')+'</ul></div>':'')+
+          (row.event==='bfs'&&row.meetingLinked?
+            '<button type="button" class="followup-route-button" data-followup-open-meeting="'+h(row.meetingId)+'">Открыть встречу в BFS ↗</button>':'')+
+          '</article>';
+      }).join(''):'<p class="followup-empty">По выбранному фильтру нет записей, подтверждённых серверной выборкой.</p>')+
+      '</div><p class="followup-foot">Сводка предназначена для контроля задач. Она не выполняет рассылку, не изменяет CRM и не считает договоры, коммерческие цены, заказы или выручку.</p>';
+    [].slice.call(hubContent.querySelectorAll('[data-followup-filter]')).forEach(function(button){
+      button.onclick=function(){
+        followupFilter=button.dataset.followupFilter;
+        showFollowupBoard(projection);
+      };
+    });
+    [].slice.call(hubContent.querySelectorAll('[data-followup-open-meeting]')).forEach(function(button){
+      button.onclick=function(){
+        var id=button.dataset.followupOpenMeeting;
+        var selected=projection.rows.find(function(row){
+          return row.meetingId===id&&row.meetingLinked&&row.event==='bfs';
+        });
+        if(!selected)return;
+        followupEvidence=null;followupRequest++;
+        hubModal.classList.add('hidden');
+        openEvent('bfs',{kind:'meeting',meetingId:id,source:'mfw_followup'});
+      };
+    });
+    var refresh=hubContent.querySelector('#followupRefresh');
+    if(refresh)refresh.onclick=renderFollowup;
+  }
+  async function renderFollowup(){
+    var request=++followupRequest,token=accessToken();
+    followupEvidence=null;
+    if(!token){
+      hubContent.innerHTML='<div class="followup-denied" id="followupState" role="status"><h3>Нужна авторизация</h3><p>Центр B2B показывает только ваши встречи и CRM-лиды. Вход и серверное подтверждение личности обязательны. Демонстрационные данные не подменяют реальные.</p></div>';
+      return;
+    }
+    hubContent.innerHTML='<div class="followup-denied" id="followupState" role="status">Получаем ваши встречи и CRM-лиды из PostgreSQL Authority…</div>';
+    try{
+      if(!window.MFP_B2B_FOLLOWUP||typeof window.MFP_B2B_FOLLOWUP.build!=='function')
+        throw new Error('followup_contract_not_loaded');
+      var responses=await Promise.all([
+        authorityFetch('/v1/b2b/leads',{method:'GET'}),
+        authorityFetch('/v1/meetings',{method:'GET'})
+      ]);
+      if(request!==followupRequest||token!==accessToken()||hubTab!=='followup')return;
+      var result=window.MFP_B2B_FOLLOWUP.build(responses[0],responses[1],Date.now());
+      if(!result.ready)throw new Error(result.reason||'evidence_not_admitted');
+      followupEvidence=result;
+      showFollowupBoard(result);
+    }catch(error){
+      if(request!==followupRequest||token!==accessToken()||hubTab!=='followup')return;
+      followupEvidence=null;
+      hubContent.innerHTML='<div class="followup-denied" id="followupState" role="status"><h3>Данные не подтверждены</h3><p>Авторизованный PostgreSQL Authority не предоставил согласованную выборку встреч и лидов. Сводка намеренно скрыта: демонстрационные строки, чужие данные и старые локальные результаты не показываются.</p></div>';
+    }
+  }
+
   function renderHub(){
+    if(hubTab!=='followup'){followupEvidence=null;followupRequest++;}
     [].slice.call(document.querySelectorAll('[data-hub-tab]')).forEach(function(b){b.classList.toggle('active',b.dataset.hubTab===hubTab);});
     if(hubTab==='today')renderToday();
     else if(hubTab==='directory')renderDirectory();
@@ -1456,6 +1758,7 @@
     else if(hubTab==='partner')renderPartnerConsole();
     else if(hubTab==='brand')renderBrandCockpit();
     else if(hubTab==='dealroom')renderDealRoomPreview();
+    else if(hubTab==='followup')renderFollowup();
     else if(hubTab==='trust')renderTrustPassportPreview();
     else if(hubTab==='economics')renderEconomics();
     else if(hubTab==='committee')renderInvestmentCommittee();
@@ -1561,7 +1864,9 @@
   }
   function fillProfile(){
     Object.keys(accountState.profile).forEach(function(key){
-      if(profileForm.elements[key]) profileForm.elements[key].value=accountState.profile[key]||'';
+      var field=profileForm.elements[key];if(!field)return;
+      if(field.type==='checkbox')field.checked=accountState.profile[key]===true;
+      else field.value=accountState.profile[key]||'';
     });
   }
   function statusLabel(reg){
@@ -1584,7 +1889,7 @@
     [].slice.call(registrationGrid.querySelectorAll('[data-register]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.register,false);};});
     [].slice.call(registrationGrid.querySelectorAll('[data-copy]')).forEach(function(b){b.onclick=function(){openRegistration(b.dataset.copy,true);};});
     var openMade=registrationGrid.querySelector('[data-open-made]');if(openMade)openMade.onclick=function(){closeAccount();openEvent('made');};
-    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made');setTimeout(function(){try{frame.contentWindow.postMessage({type:'made-open-section',section:'verified'},'*');}catch(e){}},250);};
+    var madeInfo=registrationGrid.querySelector('[data-made-account]');if(madeInfo)madeInfo.onclick=function(){closeAccount();openEvent('made',{kind:'section',section:'verified'});};
   }
   function openAccount(){
     fillProfile();renderRegistrations();renderInterestPicker();renderOrganisationIdentity();accountDrawer.classList.remove('hidden');accountDrawer.setAttribute('aria-hidden','false');hydrateAccountFromAuthority();
@@ -1632,10 +1937,24 @@
   profileForm.onsubmit=async function(e){
     e.preventDefault();
     var fd=new FormData(profileForm);
-    accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()));
+    accountState.profile=Object.assign({},accountState.profile,Object.fromEntries(fd.entries()),{
+      networkingVisible:fd.get('networkingVisible')==='on',
+      marketingConsent:fd.get('marketingConsent')==='on'
+    });
+    var syncStatus=document.getElementById('profileSyncStatus');
+    if(syncStatus)syncStatus.textContent='Профиль сохранён на этом устройстве. Проверяем серверную синхронизацию…';
     saveState();renderRegistrations();
     var preferred=(accountState.registrations.mfw&&accountState.registrations.mfw.registrationType)||(accountState.registrations.bfs&&accountState.registrations.bfs.registrationType)||'visitor';
-    try{await syncProfileToAuthority(preferred);saveState();}catch(err){console.warn('profile authority sync failed',err);}
+    try{
+      var result=await syncProfileToAuthority(preferred);
+      if(syncStatus)syncStatus.textContent=result&&result.source==='postgres'&&result.ok===true
+        ?'Профиль подтверждён сервером PostgreSQL.'
+        :'Данные сохранены только на этом устройстве. Серверный профиль не подтверждён.';
+      saveState();
+    }catch(err){
+      console.warn('profile authority sync failed',err);
+      if(syncStatus)syncStatus.textContent='Данные сохранены только на этом устройстве. Синхронизация с сервером не удалась.';
+    }
   };
   registrationForm.onsubmit=async function(e){
     e.preventDefault();if(!currentRegistrationEvent)return;
@@ -1709,6 +2028,17 @@
   buttons.forEach(function(b){b.addEventListener('click',function(){openEvent(b.dataset.event);});});
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstallPrompt=e;document.body.classList.add('installable');});
   window.addEventListener('appinstalled',function(){deferredInstallPrompt=null;document.body.classList.remove('installable');});
+  // A login change in another browser tab immediately invalidates a cached
+  // private follow-up projection; returning to the tab revalidates access.
+  window.addEventListener('storage',function(event){
+    if((event.key==='mfwAccessToken'||event.key===null)&&
+       hubTab==='followup'&&!hubModal.classList.contains('hidden'))
+      renderFollowup();
+  });
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden&&hubTab==='followup'&&!hubModal.classList.contains('hidden'))
+      renderFollowup();
+  });
   window.addEventListener('online',updateNetworkStatus);
   window.addEventListener('offline',updateNetworkStatus);
   document.addEventListener('keydown',function(e){
@@ -1722,7 +2052,7 @@
     if(e.origin!==location.origin||e.source!==frame.contentWindow||!e.data||typeof e.data!=='object')return;
     if(e.data.type==='mfp-frame-ready'&&e.data.eventCode===selectedEvent){frameReady=true;notifyFrame();deliverPendingRoute();return;}
     if(e.data.type==='mfp-open-account')openAccount();
-    if(e.data.type==='mfp-open-registration')openRegistration(e.data.eventCode||'bfs',false);
+    if(e.data.type==='mfp-open-registration'&&['mfw','bfs'].includes(e.data.eventCode))openRegistration(e.data.eventCode,false);
     if(e.data.type==='mfp-open-event'&&['mfw','bfs','made'].includes(e.data.eventCode))openEvent(e.data.eventCode,e.data.route||null);
     if(e.data.type==='mfp-request-account-state')notifyFrame();
   });

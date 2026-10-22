@@ -1,3 +1,6 @@
+const {reconcileMigrations}=require('./migration-parity');
+const { runMigrations } = require('./migration-runner');
+const {demoIssuerAllowed,configuredAdminTokenAccepted,sessionAllowedForMode,localDemoRequest}=require('./auth-demo-policy');
 const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -10,6 +13,8 @@ const { FeatureEvaluator, FEATURE_DEFINITIONS } = require('./feature-flags');
 const { shouldRunReverificationCatchup } = require('./reverification-catchup');
 const { OrganisationRegistry } = require('./organisation-registry');
 const { OrganisationCredentialAuthority } = require('./organisation-credential');
+const {MeetingLifecycleError,requestKey,createMeeting,updateMeeting}=require('./meeting-lifecycle');
+const {LeadOwnershipError,upsertOwnedLead}=require('./b2b-lead-ownership');
 const {
   CAPITAL_EVENT_TYPES,
   CAPITAL_AGGREGATE_TYPES,
@@ -34,8 +39,8 @@ const REQUIRE_POSTGRES = String(process.env.MFW_REQUIRE_POSTGRES || 'false').toL
 const RELEASE_SHA = String(process.env.RENDER_GIT_COMMIT || process.env.GITHUB_SHA || '').trim() || 'unknown';
 const KEY_SEED_CONFIGURED = !!String(process.env.MFW_ES256_SEED || '').trim();
 const KEY_SEED = process.env.MFW_ES256_SEED || 'mfw-demo-authority-seed-rotate-before-production';
-const ADMIN_TOKEN = process.env.MFW_ADMIN_TOKEN || 'mfw-demo-admin';
-const ADMIN_TOKEN_CONFIGURED = !!process.env.MFW_ADMIN_TOKEN && process.env.MFW_ADMIN_TOKEN !== 'mfw-demo-admin';
+const ADMIN_TOKEN = String(process.env.MFW_ADMIN_TOKEN || '');
+const ADMIN_TOKEN_CONFIGURED = Buffer.byteLength(ADMIN_TOKEN,'utf8')>=32 && ADMIN_TOKEN!=='mfw-demo-admin';
 const TELEGRAM_BOT_TOKEN = process.env.MFW_TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_WEBHOOK_SECRET = process.env.MFW_TELEGRAM_WEBHOOK_SECRET || '';
 const VK_SERVICE_TOKEN = process.env.MFW_VK_SERVICE_TOKEN || '';
@@ -388,12 +393,16 @@ function sessionFromRequest(req){
   var auth=String(req.headers.authorization||'');
   if(!auth.startsWith('Bearer '))return null;
   var v=verifyToken(auth.slice(7));
-  return v.ok&&v.payload&&v.payload.typ==='session'?v.payload:null;
+  // No self-issued demo session can survive a transition to durable Authority.
+  return v.ok&&sessionAllowedForMode(v.payload,{
+    databaseConfigured:!!pool,requirePostgres:REQUIRE_POSTGRES
+  })?v.payload:null;
 }
 function adminOk(req){
-  if(req.headers['x-mfw-admin']===ADMIN_TOKEN)return true;
-  var p=sessionFromRequest(req);
-  return !!(p&&['Organizer','Staff'].indexOf(p.role)>=0);
+  // Demo Organizer/Staff are untrusted role claims. An explicit strong
+  // server secret is required until real reviewed operator RBAC is admitted.
+  return ADMIN_TOKEN_CONFIGURED &&
+    configuredAdminTokenAccepted(req.headers['x-mfw-admin'],ADMIN_TOKEN);
 }
 function userSubject(req,supplied){
   const session=sessionFromRequest(req);
@@ -712,28 +721,9 @@ async function query(sql,params=[]){
 
 async function migrate(){
   if(!pool) return;
-  await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations(
-    filename text PRIMARY KEY,
-    applied_at timestamptz NOT NULL DEFAULT now()
-  )`);
-  const dir=path.join(__dirname,'migrations');
-  const files=fs.readdirSync(dir).filter(f=>f.endsWith('.sql')).sort();
-  for(const file of files){
-    const seen=await pool.query('SELECT 1 FROM schema_migrations WHERE filename=$1',[file]);
-    if(seen.rowCount) continue;
-    const sql=fs.readFileSync(path.join(dir,file),'utf8');
-    const client=await pool.connect();
-    try{
-      await client.query('BEGIN');
-      await client.query(sql);
-      await client.query('INSERT INTO schema_migrations(filename) VALUES($1)',[file]);
-      await client.query('COMMIT');
-      console.log(JSON.stringify({event:'migration_applied',file}));
-    }catch(err){
-      await client.query('ROLLBACK');
-      throw err;
-    }finally{ client.release(); }
-  }
+  await runMigrations(pool,{
+    onApplied:file=>console.log(JSON.stringify({event:'migration_applied',file}))
+  });
 }
 
 async function checkDatabaseSchema(){
@@ -749,7 +739,8 @@ async function checkDatabaseSchema(){
 
   const applied=await pool.query('SELECT filename FROM schema_migrations ORDER BY filename');
   const appliedSet=new Set(applied.rows.map(x=>x.filename));
-  const missingMigrations=requiredMigrations.filter(x=>!appliedSet.has(x));
+  const migrationParity=reconcileMigrations(requiredMigrations,applied.rows.map(x=>x.filename));
+  const {missingMigrations,unexpectedMigrations,duplicateMigrations}=migrationParity;
 
   const requiredTables=[
     'users','profiles','events','event_registrations','passes','brands','collections','looks',
@@ -806,10 +797,12 @@ async function checkDatabaseSchema(){
     WHERE t.relname='capital_ledger_events' AND tg.tgname='trg_capital_ledger_immutable' AND NOT tg.tgisinternal LIMIT 1`);
   if(!capitalTrigger.rowCount)contractErrors.push('capital_ledger_immutability_trigger_missing');
 
-  const ready=!missingMigrations.length&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
+  if(unexpectedMigrations.length)contractErrors.push('unexpected_migrations');
+  if(duplicateMigrations.length)contractErrors.push('duplicate_migrations');
+  const ready=migrationParity.ready&&!missingTables.length&&!missingColumns.length&&!contractErrors.length;
   return {
     configured:true,ready,mode:'postgres',
-    migrations:[...appliedSet],requiredMigrations,missingMigrations,missingTables,missingColumns,contractErrors,
+    migrations:[...appliedSet],requiredMigrations,missingMigrations,unexpectedMigrations,duplicateMigrations,missingTables,missingColumns,contractErrors,
     checkedAt:new Date().toISOString()
   };
 }
@@ -1342,6 +1335,9 @@ async function runDeepSelfTest(){
 }
 
 async function runAcceleratedLoyaltyGoldenPath(){
+  // The synthetic golden path must never insert a user or brand grant into
+  // the real authoritative PostgreSQL during a demonstration.
+  if(pool||REQUIRE_POSTGRES)throw new Error('golden_path_requires_isolated_memory');
   const nonce=Date.now().toString(36)+'_'+crypto.randomBytes(3).toString('hex');
   const userId=await issueDemoUser('Golden Visitor '+nonce,'Visitor');
   const brandUserId=await issueDemoUser('Golden Brand '+nonce,'Designer');
@@ -1792,6 +1788,15 @@ async function router(req,res){
     const revoked=[...memory.revoked.entries()].map(([jti,v])=>({jti,...v}));
     return json(res,200,{generatedAt:new Date().toISOString(),revoked,demo:true});
   }
+  if(req.method==='GET'&&p==='/v1/network/organisations/mine'){
+    const session=sessionFromRequest(req);
+    if(!session||!session.sub)return json(res,401,{error:'session_required'});
+    try{
+      const data=await organisationRegistry.forUser(String(session.sub));
+      return json(res,200,{data,source:pool?'postgres':'memory_demo',
+        authority:'session_scoped_organisation_memberships'});
+    }catch(_){return json(res,500,{error:'organisation_membership_lookup_failed'});}
+  }
   if(req.method==='GET'&&p==='/v1/network/organisations/summary'){
     try{
       const data=await organisationRegistry.summary();
@@ -1901,10 +1906,13 @@ async function router(req,res){
     let verifiedBrands=0,approvedServiceApplications=0;
     if(pool){
       const stats=await pool.query(`SELECT
-        (SELECT count(*)::int FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
-          WHERE pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved') AS "verifiedBrands",
+        (SELECT count(*)::int FROM brand_program_memberships bpm
+          JOIN partner_programs pp ON pp.id=bpm.program_id
+          JOIN brands b ON b.id=bpm.brand_id
+          WHERE pp.external_key='made_in_moscow' AND bpm.status='verified'
+            AND bpm.moderation_status='approved' AND pp.status='active' AND b.status='published') AS "verifiedBrands",
         (SELECT count(*)::int FROM partner_service_applications psa JOIN partner_programs pp ON pp.id=psa.program_id
-          WHERE pp.external_key='made_in_moscow' AND psa.status='approved') AS "approvedServiceApplications"`);
+          WHERE pp.external_key='made_in_moscow' AND pp.status='active' AND psa.status='approved') AS "approvedServiceApplications"`);
       verifiedBrands=stats.rows[0].verifiedBrands||0;
       approvedServiceApplications=stats.rows[0].approvedServiceApplications||0;
     }
@@ -1926,14 +1934,14 @@ async function router(req,res){
       FROM brand_program_memberships bpm
       JOIN partner_programs pp ON pp.id=bpm.program_id
       JOIN brands b ON b.id=bpm.brand_id
-      WHERE pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved' AND b.status='published'
+      WHERE pp.external_key='made_in_moscow' AND pp.status='active' AND bpm.status='verified' AND bpm.moderation_status='approved' AND b.status='published'
       ORDER BY b.name`);
     return json(res,200,{data:r.rows,source:'postgres',badge:'made_in_moscow_verified'});
   }
   if(req.method==='GET'&&p==='/v1/brands'){
     if(pool){
       const r=await pool.query(`SELECT COALESCE(b.external_key,b.slug,b.id::text) AS id,b.slug,b.name,b.city,b.country,b.description,b.status,b.metadata,
-        COALESCE(bool_or(pp.external_key='made_in_moscow' AND bpm.status='verified' AND bpm.moderation_status='approved'),false) AS "madeInMoscowVerified"
+        COALESCE(bool_or(pp.external_key='made_in_moscow' AND pp.status='active' AND bpm.status='verified' AND bpm.moderation_status='approved'),false) AS "madeInMoscowVerified"
         FROM brands b
         LEFT JOIN brand_program_memberships bpm ON bpm.brand_id=b.id
         LEFT JOIN partner_programs pp ON pp.id=bpm.program_id
@@ -1973,10 +1981,12 @@ async function router(req,res){
       }
 
       const made=await pool.query(`SELECT bpm.status,bpm.moderation_status AS "moderationStatus",bpm.verified_at AS "verifiedAt",bpm.reviewed_at AS "reviewedAt",
-        bpm.source_url AS "sourceUrl",bpm.source_snapshot_hash AS "sourceSnapshotHash"
+        bpm.source_url AS "sourceUrl",bpm.source_snapshot_hash AS "sourceSnapshotHash",
+        pp.status AS "programStatus",b.status AS "brandStatus"
         FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+        JOIN brands b ON b.id=bpm.brand_id
         WHERE bpm.brand_id=$1 AND pp.external_key='made_in_moscow' LIMIT 1`,[storageId]);
-      if(made.rowCount){const x=made.rows[0],verified=x.status==='verified'&&x.moderationStatus==='approved';add({
+      if(made.rowCount){const x=made.rows[0],verified=x.status==='verified'&&x.moderationStatus==='approved'&&x.programStatus==='active'&&x.brandStatus==='published';add({
         id:'made:membership',kind:'made_verification',label:'Сделано в Москве',occurredAt:x.verifiedAt||x.reviewedAt||null,
         truthClass:verified?'verified':'reported',authority:'made_in_moscow_programme_roster',sourceClass:'programme_membership',
         sourceRef:'brand_program_memberships',sourceUrl:x.sourceUrl||null,proofHash:x.sourceSnapshotHash||null,
@@ -2069,8 +2079,10 @@ async function router(req,res){
       const [madeR,collectionR,shortlistR,meetingR,leadR,brand365R]=await Promise.all([
         pool.query(`SELECT bpm.status,bpm.moderation_status AS "moderationStatus",bpm.source_url AS "sourceUrl",
           bpm.source_snapshot_hash AS "sourceSnapshotHash",bpm.verified_at AS "verifiedAt",bpm.reviewed_at AS "reviewedAt",
-          pp.external_key AS "programKey",pp.name AS "programName"
+          pp.external_key AS "programKey",pp.name AS "programName",
+          pp.status AS "programStatus",b.status AS "brandStatus"
           FROM brand_program_memberships bpm JOIN partner_programs pp ON pp.id=bpm.program_id
+          JOIN brands b ON b.id=bpm.brand_id
           WHERE bpm.brand_id=$1 AND pp.external_key='made_in_moscow' LIMIT 1`,[storageId]),
         pool.query(`SELECT id::text id,season,title,status,created_at AS "createdAt" FROM collections
           WHERE brand_id=$1 ORDER BY created_at DESC LIMIT 12`,[storageId]),
@@ -2126,7 +2138,7 @@ async function router(req,res){
       };
     }
 
-    const madeVerified=!!(made&&made.status==='verified'&&made.moderationStatus==='approved');
+    const madeVerified=!!(made&&made.status==='verified'&&made.moderationStatus==='approved'&&made.programStatus==='active'&&made.brandStatus==='published');
     push({
       id:'made',type:'programme_status',label:'Made in Moscow',status:madeVerified?'verified':(made?String(made.status||'pending'):'not_evidenced'),
       truthClass:madeVerified?'verified':'not_evidenced',
@@ -2222,7 +2234,7 @@ async function router(req,res){
     const collections=memory.collections.filter(x=>x.brandId===brand.id);
     let partnerPrograms=[];
     if(pool){
-      const membership=await pool.query(`SELECT pp.external_key AS "programKey",pp.name,bpm.status,bpm.moderation_status AS "moderationStatus",
+      const membership=await pool.query(`SELECT pp.external_key AS "programKey",pp.name,pp.status AS "programStatus",b.status AS "brandStatus",bpm.status,bpm.moderation_status AS "moderationStatus",
         bpm.external_ref AS "externalRef",bpm.source_url AS "sourceUrl",bpm.verified_at AS "verifiedAt"
         FROM brand_program_memberships bpm
         JOIN partner_programs pp ON pp.id=bpm.program_id
@@ -2231,7 +2243,7 @@ async function router(req,res){
         ORDER BY pp.external_key`,[String(brandId)]);
       partnerPrograms=membership.rows;
     }
-    return json(res,200,{data:{...brand,collections,partnerPrograms,madeInMoscowVerified:partnerPrograms.some(x=>x.programKey==='made_in_moscow'&&x.status==='verified'&&x.moderationStatus==='approved')}});
+    return json(res,200,{data:{...brand,collections,partnerPrograms,madeInMoscowVerified:partnerPrograms.some(x=>x.programKey==='made_in_moscow'&&x.programStatus==='active'&&x.brandStatus==='published'&&x.status==='verified'&&x.moderationStatus==='approved')}});
   }
   if(req.method==='GET'&&p==='/v1/collections'){
     const brandId=url.searchParams.get('brandId');
@@ -3301,6 +3313,12 @@ async function router(req,res){
     return json(res,200,{data:readiness});
   }
   if(req.method==='POST'&&p==='/v1/auth/demo'){
+    if(!demoIssuerAllowed({
+      databaseConfigured:!!pool,
+      requirePostgres:REQUIRE_POSTGRES,
+      explicitOptIn:String(process.env.MFW_ENABLE_DEMO_AUTH||'').toLowerCase()==='true',
+      nodeEnv:process.env.NODE_ENV||''
+    })||!localDemoRequest(req))return json(res,403,{error:'demo_auth_disabled'});
     const b=await readBody(req);
     const name=String(b.name||'Demo User').slice(0,120);
     const role=String(b.role||'Visitor').slice(0,40);
@@ -3675,19 +3693,15 @@ async function router(req,res){
     const allowed=['interest','meeting_requested','meeting_confirmed','met','follow_up','qualified','won','lost'];
     if(!allowed.includes(stage))return json(res,400,{error:'invalid_lead_stage'});
     if(pool){
-      const r=await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,next_action_at,notes,metadata)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb)
-        ON CONFLICT(meeting_id) DO UPDATE SET stage=EXCLUDED.stage,next_action=EXCLUDED.next_action,next_action_at=EXCLUDED.next_action_at,
-          notes=EXCLUDED.notes,updated_at=now()
-        RETURNING id,meeting_id AS "meetingId",event_brand AS "eventBrand",organisation_ref AS "organisationRef",
-          organisation_name AS "organisationName",counterpart_ref AS "counterpartRef",counterpart_name AS "counterpartName",
-          stage,next_action AS "nextAction",next_action_at AS "nextActionAt",notes,created_at AS "createdAt",updated_at AS "updatedAt"`,
-        [b.meetingId||null,userId,String(b.eventBrand||'bfs'),String(b.organisationRef||'').slice(0,160)||null,
-         String(b.organisationName||'').slice(0,200)||null,String(b.counterpartRef||'').slice(0,160)||null,
-         String(b.counterpartName||'').slice(0,200)||null,stage,String(b.nextAction||'').slice(0,500)||null,
-         b.nextActionAt||null,String(b.notes||'').slice(0,2000)||null,JSON.stringify(b.metadata||{})]);
-      await track('b2b_lead_updated',{leadId:String(r.rows[0].id),stage},userId);
-      return json(res,201,{data:r.rows[0],source:'postgres'});
+      try{
+        const data=await upsertOwnedLead({pool,userId,body:b});
+        await track('b2b_lead_updated',{leadId:String(data.id),stage:data.stage},userId);
+        return json(res,201,{data,source:'postgres'});
+      }catch(error){
+        if(error instanceof LeadOwnershipError)
+          return json(res,error.httpStatus,{error:error.code});
+        throw error;
+      }
     }
     const id=String(b.id||('lead_'+crypto.randomBytes(6).toString('hex')));
     const item={id,ownerUserId:String(userId),eventBrand:String(b.eventBrand||'bfs'),organisationRef:b.organisationRef||null,organisationName:b.organisationName||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,stage,nextAction:b.nextAction||null,nextActionAt:b.nextActionAt||null,notes:b.notes||null,updatedAt:new Date().toISOString(),demo:true};
@@ -3728,27 +3742,20 @@ async function router(req,res){
   if(req.method==='PATCH'&&p.startsWith('/v1/meetings/')&&!p.includes('/proposals')){
     const id=p.split('/')[3],b=await readBody(req),userId=userSubject(req,b.userId||'demo_user');
     if(!userId)return json(res,401,{error:'authenticated_mfw_id_required'});
-    const status=String(b.status||''),allowed=['requested','confirmed','reschedule_requested','completed','cancelled','declined'];
-    if(!allowed.includes(status))return json(res,400,{error:'invalid_meeting_status'});
+    const status=String(b.status||'');
     if(pool){
-      const r=await pool.query(`UPDATE b2b_meetings SET status=$3,starts_at=COALESCE($4,starts_at),note=COALESCE($5,note),updated_at=now()
-        WHERE id::text=$1 AND requester_user_id::text=$2
-        RETURNING id,organisation,starts_at AS "startsAt",status,note,metadata,updated_at AS "updatedAt"`,
-        [id,userId,status,b.startsAt||null,b.note||null]);
-      if(!r.rowCount)return json(res,404,{error:'meeting_not_found'});
-      await pool.query('INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,$3,$4::jsonb)',[id,userId,status,JSON.stringify({startsAt:b.startsAt||null,note:b.note||null})]);
-      const stageMap={requested:'meeting_requested',confirmed:'meeting_confirmed',completed:'met'};
-      if(stageMap[status]){
-        const m=r.rows[0],meta=m.metadata||{};
-        await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
-          VALUES($1,$2,'bfs',$3,$4,$5,$6,$7,$8,$9::jsonb)
-          ON CONFLICT(meeting_id) DO UPDATE SET stage=EXCLUDED.stage,next_action=COALESCE(EXCLUDED.next_action,b2b_leads.next_action),updated_at=now()`,
-          [id,userId,meta.organisationRef||null,m.organisation||meta.organisationName||null,meta.counterpartRef||null,meta.counterpartName||null,
-           stageMap[status],status==='completed'?'Отправить follow-up после встречи':null,JSON.stringify({source:'meeting_state_machine'})]);
+      try{
+        const result=await updateMeeting({pool,userId,id,status,
+          startsAt:b.startsAt??null,note:b.note??null});
+        return json(res,200,{data:result.data,source:'postgres',replayed:result.noop});
+      }catch(error){
+        if(error instanceof MeetingLifecycleError)
+          return json(res,error.httpStatus,{error:error.code,...error.details});
+        throw error;
       }
-      await track('meeting_status_changed',{meetingId:id,status},userId);
-      return json(res,200,{data:r.rows[0],source:'postgres'});
     }
+    if(!['requested','confirmed','reschedule_requested','completed','cancelled','declined'].includes(status))
+      return json(res,400,{error:'invalid_meeting_status'});
     const m=memory.meetings.get(id);if(!m)return json(res,404,{error:'meeting_not_found'});
     m.status=status;m.updatedAt=new Date().toISOString();
     const lead=[...memory.b2bLeads.values()].find(x=>String(x.meetingId)===String(id));
@@ -3767,40 +3774,26 @@ async function router(req,res){
     const requester=userSubject(req,b.buyerId||b.userId||'demo_buyer');
     if(!requester)return json(res,401,{error:'authenticated_mfw_id_required'});
     if(pool){
-      const user=await pool.query('SELECT id FROM users WHERE id::text=$1 LIMIT 1',[requester]);
-      if(!user.rowCount)return json(res,404,{error:'user_not_found'});
-      let brandStorageId=null;
-      if(b.brandId){
-        const brand=await brand365Store.brandByRef(String(b.brandId));
-        if(!brand)return json(res,404,{error:'brand_not_found'});
-        brandStorageId=brand.storageId;
+      try{
+        const key=requestKey(req.headers['idempotency-key']);
+        let brandStorageId=null,eventStorageId=null;
+        if(b.brandId){
+          const brand=await brand365Store.brandByRef(String(b.brandId));
+          if(!brand)return json(res,404,{error:'brand_not_found'});
+          brandStorageId=brand.storageId;
+        }
+        if(b.eventId){
+          const ev=await pool.query('SELECT id FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1',[String(b.eventId)]);
+          if(!ev.rowCount)return json(res,404,{error:'event_not_found'});
+          eventStorageId=ev.rows[0].id;
+        }
+        const result=await createMeeting({pool,userId:requester,body:b,key,brandStorageId,eventStorageId});
+        return json(res,result.replayed?200:201,{data:result.data,source:'postgres',replayed:result.replayed});
+      }catch(error){
+        if(error instanceof MeetingLifecycleError)
+          return json(res,error.httpStatus,{error:error.code,...error.details});
+        throw error;
       }
-      let eventStorageId=null;
-      if(b.eventId){
-        const ev=await pool.query('SELECT id FROM events WHERE external_key=$1 OR id::text=$1 LIMIT 1',[String(b.eventId)]);
-        if(!ev.rowCount)return json(res,404,{error:'event_not_found'});
-        eventStorageId=ev.rows[0].id;
-      }
-      const startsAt=b.startsAt||null;
-      const saved=await pool.query(`INSERT INTO b2b_meetings(event_id,brand_id,requester_user_id,organisation,starts_at,status,note,source,metadata)
-        VALUES($1,$2,$3,$4,$5,'requested',$6,'app',$7::jsonb)
-        RETURNING id,event_id AS "eventStorageId",brand_id AS "brandStorageId",requester_user_id AS "requesterUserId",organisation,starts_at AS "startsAt",status,note,created_at AS "createdAt"`,
-        [eventStorageId,brandStorageId,user.rows[0].id,String(b.organisation||'').slice(0,200)||null,startsAt,String(b.note||'').slice(0,1000)||null,JSON.stringify({slot:b.slot||null,organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'})]);
-      const meeting=saved.rows[0],meetingMeta={
-        organisationRef:b.organisationRef||null,organisationName:b.organisationName||b.organisation||null,
-        counterpartRef:b.counterpartRef||null,counterpartName:b.counterpartName||null,eventBrand:b.eventBrand||'bfs'
-      };
-      await pool.query("INSERT INTO b2b_meeting_events(meeting_id,actor_user_id,event_type,payload) VALUES($1,$2,'requested',$3::jsonb)",[meeting.id,user.rows[0].id,JSON.stringify({brandId:b.brandId||null,eventId:b.eventId||null,...meetingMeta})]);
-      if(String(b.eventBrand||'bfs')==='bfs'){
-        await pool.query(`INSERT INTO b2b_leads(meeting_id,owner_user_id,event_brand,organisation_ref,organisation_name,counterpart_ref,counterpart_name,stage,next_action,metadata)
-          VALUES($1,$2,'bfs',$3,$4,$5,$6,'meeting_requested','Подтвердить встречу',$7::jsonb)
-          ON CONFLICT(meeting_id) DO UPDATE SET stage='meeting_requested',organisation_ref=EXCLUDED.organisation_ref,
-            organisation_name=EXCLUDED.organisation_name,counterpart_ref=EXCLUDED.counterpart_ref,counterpart_name=EXCLUDED.counterpart_name,
-            next_action='Подтвердить встречу',updated_at=now()`,
-          [meeting.id,user.rows[0].id,meetingMeta.organisationRef,meetingMeta.organisationName,meetingMeta.counterpartRef,meetingMeta.counterpartName,JSON.stringify({source:'meeting_request'})]);
-      }
-      await track('meeting_requested',{meetingId:String(meeting.id),brandId:b.brandId||null,eventId:b.eventId||null,eventBrand:b.eventBrand||'bfs'},requester);
-      return json(res,201,{data:meeting,source:'postgres'});
     }
     const id='mtg_'+crypto.randomBytes(8).toString('hex');
     const meeting={id,brandId:b.brandId?String(b.brandId):null,buyerId:requester,organisation:b.organisation||null,
@@ -4025,6 +4018,7 @@ async function router(req,res){
       }});
     }
     if(req.method==='POST'&&p==='/v1/admin/golden-path/loyalty-30d'){
+      if(pool||REQUIRE_POSTGRES)return json(res,409,{error:'isolated_demo_only'});
       const report=await runAcceleratedLoyaltyGoldenPath();
       return json(res,report.ok?200:500,{data:report});
     }

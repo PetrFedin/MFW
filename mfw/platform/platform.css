@@ -801,3 +801,152 @@ body:not(.bfs-mode):not(.made-mode) .control-view-tabs button.active{background:
     height:calc(100dvh - 94px);
   }
 }
+/* Explicit opt-in controls shared across MFW, BFS and Made in Moscow. */
+.profile-form label.privacy-choice{grid-column:1/-1;display:flex;align-items:flex-start;gap:10px;line-height:1.45;text-transform:none;letter-spacing:normal;font-size:11px;font-weight:600}
+.profile-form label.privacy-choice input[type="checkbox"]{flex:0 0 18px;width:18px;height:18px;min-width:18px;margin:0;padding:0;accent-color:#111}
+.profile-form .profile-sync-status{grid-column:1/-1;margin:0;font-size:11px;line-height:1.45;color:#5a4c38}
+
+/* Portfolio-ready investor ecosystem cards: meaningful visual fallback when
+   third-party editorial image hosts are unavailable, never fake photography. */
+.investor-ecosystem-card:not([style]){
+  background-color:#14161c;
+  background-image:linear-gradient(135deg,#30343b 0%,#0e1118 58%,#070709 100%);
+}
+.investor-ecosystem-card[data-gallery-event="mfw"]:not([style]){
+  background-image:linear-gradient(135deg,#383944 0%,#161719 47%,#050505 100%);
+}
+.investor-ecosystem-card[data-gallery-event="bfs"]:not([style]){
+  background-image:linear-gradient(125deg,#fb6c42 0%,#b62f2f 30%,#182c20 63%,#0a111e 100%);
+}
+.investor-ecosystem-card[data-gallery-event="made"]:not([style]){
+  background-image:linear-gradient(130deg,#ff594b 0%,#d32d33 35%,#391c2d 66%,#101725 100%);
+}
+.investor-ecosystem-card::before{
+  content:"01";
+  position:absolute;right:14px;top:11px;
+  font-family:ui-monospace,monospace;font-size:54px;font-weight:900;
+  letter-spacing:-.09em;line-height:1;color:rgba(255,255,255,.17);
+  pointer-events:none;
+}
+.investor-ecosystem-card[data-gallery-event="bfs"]::before{content:"02";}
+.investor-ecosystem-card[data-gallery-event="made"]::before{content:"03";}
+.investor-ecosystem-card b{font-size:clamp(18px,1.7vw,25px);line-height:1;letter-spacing:-.035em;position:relative;z-index:1}
+.investor-ecosystem-card span{font-size:10px;letter-spacing:.13em;position:relative;z-index:1}
+.investor-ecosystem-card small{font-size:11px;line-height:1.4;color:#f0f0f0;position:relative;z-index:1;max-width:28ch}
+.investor-ecosystem-card:focus-visible{outline:3px solid #d7ff39;outline-offset:2px}
+
+
+/* Verified B2B follow-up queue — seven-viewport, keyboard-accessible presentation. */
+.followup-header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px;border-bottom:1px solid #3e4046;padding:4px 0 22px}
+.followup-header h3{font-size:clamp(25px,3.8vw,43px);font-family:Georgia,serif;line-height:1.05;letter-spacing:-.035em;margin:8px 0}
+.followup-header p{color:#ccc;max-width:64ch;font-size:13px;line-height:1.55}
+.followup-header button,.followup-controls button{min-height:44px;padding:9px 14px;border:1px solid #74777d;background:transparent;color:inherit;border-radius:8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.followup-header button:focus-visible,.followup-controls button:focus-visible{outline:3px solid #ceff38;outline-offset:2px}
+.followup-truth{margin:18px 0;padding:12px 14px;background:#1c2517;border-left:3px solid #ceff38;color:#ecf7d7;font-size:11px;line-height:1.65}
+.followup-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:16px 0 18px}
+.followup-kpis>div{min-width:0;border:1px solid #38383a;background:#191b1f;border-radius:9px;padding:16px 12px;display:flex;flex-direction:column;gap:7px}
+.followup-kpis b{font-size:clamp(21px,3vw,33px);line-height:1;font-variant-numeric:tabular-nums}
+.followup-kpis span{font-size:11px;color:#ddd;line-height:1.3}
+.followup-controls{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.followup-controls .active{background:#ceff38;color:#101212;border-color:#ceff38}
+.followup-queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:12px}
+.followup-item{border:1px solid #393c43;background:#14171b;border-radius:10px;padding:18px;min-width:0;overflow-wrap:anywhere}
+.followup-row-top{display:flex;justify-content:space-between;flex-wrap:wrap;align-items:center;gap:7px;color:#ddd;font-size:11px}
+.followup-status{border:1px solid #73767d;border-radius:4px;padding:4px 6px;font-size:10px;font-weight:800}
+.followup-status.overdue{border-color:#ed7967;color:#ffaf9e}.followup-status.missing{border-color:#e4ba6b;color:#f7d491}
+.followup-status.scheduled{border-color:#b5e58b;color:#d8f2b8}
+.followup-item h4{font-size:20px;margin:13px 0 6px}.followup-item p{font-size:12px;color:#bbb;margin:0 0 12px}
+.followup-item dl{margin:0;display:grid;gap:9px}.followup-item dl>div{border-top:1px solid #363840;padding-top:9px}
+.followup-item dt{font-size:10px;color:#abb1b9;letter-spacing:.04em}.followup-item dd{font-size:12px;margin:4px 0 0}
+.followup-foot,.followup-empty{font-size:12px;line-height:1.7;color:#ccc;margin:22px 0}
+.followup-denied{padding:22px;border:1px dashed #656773;background:#191c21;border-radius:10px;line-height:1.6}
+.followup-denied h3{margin:0 0 10px}.followup-denied p{margin:0;color:#ddd}
+@media(max-width:680px){.followup-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-kpis>div:last-child{grid-column:1/-1}.followup-queue{grid-template-columns:1fr}.followup-header{align-items:start}}
+
+/* Explicit contrast for the private B2B queue in BFS and Made shell themes. */
+.followup-item,.followup-kpis>div,.followup-denied{color:#f4f4ee}
+.followup-item dd,.followup-item h4{color:#f4f4ee}
+
+
+/* MFW design system 2026-10-23 · editorial rather than generated-dashboard UI
+   Preserve event identities, native contrast and existing accessible tap targets. */
+:root{--mfp-canvas:#0c0c0c;--mfp-text:#f2efe7;--mfp-muted:#aba9a3;--mfp-line:#333330}
+.platform-bar{background:var(--mfp-canvas);border-bottom:1px solid var(--mfp-line);box-shadow:none}
+.platform-wordmark{font-weight:750;letter-spacing:.15em;line-height:1.16;font-size:10px}
+.event-switcher{border:0;border-radius:0;background:transparent;gap:0;padding:0;box-shadow:inset 0 -1px 0 #363633}
+.event-button{border-radius:0;letter-spacing:.045em;padding:11px 14px 12px;font-weight:700;border-bottom:2px solid transparent}
+.event-button.active{background:transparent;color:var(--mfp-text);border-bottom-color:var(--mfp-text)}
+body.bfs-mode .event-button.active{background:transparent;color:#181818;border-bottom-color:#181818}
+.platform-actions>button{border-radius:2px;font-weight:680;letter-spacing:.035em;box-shadow:none;min-height:36px}
+.platform-actions>button:focus-visible,.event-button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.hub-tabs{border-radius:0;border-color:#696862}
+.hub-tabs button{font-weight:700;letter-spacing:.04em;min-height:42px}
+.hub-tabs button.active{background:#eae5d9;color:#111}
+.investor-ecosystem-card:not([style]){background-image:none;background-color:#22211e;border:1px solid #4b4942}
+.investor-ecosystem-card[data-gallery-event="mfw"]:not([style]){background-image:none;background-color:#292822}
+.investor-ecosystem-card[data-gallery-event="bfs"]:not([style]){background-image:none;background-color:#313b37}
+.investor-ecosystem-card[data-gallery-event="made"]:not([style]){background-image:none;background-color:#44322f}
+.investor-ecosystem-card::before{content:none!important}
+
+/* Read-only commercial operations: source, denominator and reason codes stay visible. */
+.followup-header{border-bottom:1px solid #57554e}
+.followup-header h3{font-size:clamp(27px,3.5vw,42px);line-height:1.13;letter-spacing:-.028em}
+.followup-header p{max-width:72ch;color:#dad8d1}
+.followup-header button,.followup-controls button{border-radius:2px;border-color:#64635e;color:#f1eee6}
+.followup-header button:hover,.followup-controls button:hover{border-color:#f0ede5}
+.followup-controls .active{color:#171717;background:#ece6d9;border-color:#ece6d9}
+.followup-truth{background:#242620;border-left:2px solid #adaf9a;color:#e0e4d9}
+.followup-kpis>div{border-radius:2px;background:#1b1d1e;border-color:#42413d;padding:17px 14px}
+.followup-kpis b{font-variant-numeric:tabular-nums}
+.followup-intelligence{margin:26px 0 28px;padding:22px;border:1px solid #464640;background:#151719;color:#eeeae2}
+.followup-section-title,.followup-queue-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.followup-section-title span,.followup-queue-head>div>span,.followup-stage-head>span{font-size:10px;letter-spacing:.09em;font-weight:750;color:#bdb8af}
+.followup-section-title h4,.followup-queue-head h4{font-family:Georgia,serif;font-weight:500;font-size:clamp(24px,2.8vw,32px);line-height:1.12;letter-spacing:-.035em;margin:8px 0 0}
+.followup-section-title small,.followup-queue-head>span{font-size:11px;color:#c4c3bd}
+.followup-analytics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.followup-analytics-grid article{min-width:0;display:flex;flex-direction:column;gap:9px;padding:16px;background:#202225;border-top:2px solid #aaa79c}
+.followup-analytics-grid span{font-size:11px;line-height:1.3;color:#ddd9d0}
+.followup-analytics-grid strong{font-size:clamp(26px,3.2vw,39px);font-weight:560;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.followup-analytics-grid small{font-size:10px;line-height:1.45;color:#c5c1b7}
+.followup-insights{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 24px}
+.followup-insights>span{font-size:11px;color:#d6d4ce;border:1px solid #42433f;padding:9px 12px}
+.followup-insights b{font-size:12px;color:#fff;margin-left:6px;font-variant-numeric:tabular-nums}
+.followup-stage-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0}
+.followup-stage-head small{font-size:10px;color:#adaaa1}
+.followup-stage-bars{display:grid;gap:7px}
+.followup-stage-row{display:grid;grid-template-columns:minmax(115px,1.2fr) minmax(80px,3fr) 32px;gap:12px;align-items:center;font-size:11px;color:#e4e0d8}
+.followup-stage-row b{text-align:right;font-variant-numeric:tabular-nums}
+.followup-stage-track{height:7px;background:#323431;overflow:hidden}
+.followup-stage-track i{height:100%;background:#c5bfb0;display:block;min-width:0}
+.followup-method{margin-top:16px;border-top:1px solid #41423e;padding-top:14px;color:#dcd9cf}
+.followup-method summary{cursor:pointer;font-size:11px;min-height:32px;font-weight:650}
+.followup-method p{font-size:11px;line-height:1.65;color:#c3c0b7;max-width:84ch}
+.followup-queue-head{margin:20px 0 14px}
+.followup-queue{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.followup-item{background:#1a1d1e;border:1px solid #464742;border-radius:2px;padding:18px 17px}
+.followup-item[data-priority-band="urgent"]{border-left:3px solid #e19384}
+.followup-item[data-priority-band="attention"]{border-left:3px solid #d2bb8d}
+.followup-item[data-priority-band="soon"]{border-left:3px solid #a5b9aa}
+.followup-item h4{font-size:21px;letter-spacing:-.02em;margin-top:8px}
+.followup-priority{margin-top:12px;font-size:10px;font-weight:750;letter-spacing:.04em;color:#d7d5cd}
+.followup-priority.urgent{color:#f0a998}.followup-priority.attention{color:#ecd2a2}
+.followup-status{border-radius:2px}
+.followup-reasons{border-top:1px solid #444741;margin-top:14px;padding-top:12px;color:#d5d3cc}
+.followup-reasons b{font-size:9px;letter-spacing:.08em}
+.followup-reasons ul{padding-left:18px;margin:8px 0 0;display:grid;gap:5px}
+.followup-reasons li{font-size:11px;line-height:1.45}
+.followup-foot{color:#d4d1c9}
+@media(max-width:850px){.followup-analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){
+ .followup-intelligence{padding:15px 13px}
+ .followup-analytics-grid article{padding:12px}
+ .followup-analytics-grid strong{font-size:28px}
+ .followup-stage-row{grid-template-columns:minmax(95px,1fr) minmax(55px,2fr) 20px;gap:8px}
+ .followup-kpis>div{padding:13px}
+}
+@media(prefers-reduced-motion:reduce){.platform-bar *,.followup-item *{animation:none!important;transition:none!important}}
+
+/* Explicit, session-validated cross-ecosystem navigation for an owned meeting. */
+.followup-route-button{width:100%;min-height:44px;text-align:left;margin-top:16px;padding:12px 14px;border:1px solid #9e9b8f;background:transparent;color:#f3efe7;font:inherit;font-size:12px;font-weight:720;cursor:pointer}
+.followup-route-button:hover{background:#2b2d2c}
+.followup-route-button:focus-visible{outline:3px solid #d9d2c2;outline-offset:2px}

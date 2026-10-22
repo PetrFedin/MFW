@@ -5,7 +5,9 @@ const {OrganisationCredentialAuthority}=require('./organisation-credential');
 function authority({configured=true}={}){
   const {privateKey,publicKey}=crypto.generateKeyPairSync('ec',{namedCurve:'prime256v1'});
   let proofHash='a'.repeat(64);
+  let organisationStatus='active';
   const registry={
+    async get(id){ return id==='org-1'?{id,status:organisationStatus}:null; },
     async portableProof(id){
       if(id!=='org-1')return null;
       return {
@@ -22,7 +24,7 @@ function authority({configured=true}={}){
     registry,privateKey,publicKey,keyConfigured:configured,
     keyId:'test-org-key',issuerId:'mfw-test',memory
   });
-  return {service,setProofHash(v){proofHash=v;}};
+  return {service,setProofHash(v){proofHash=v;},setOrganisationStatus(v){organisationStatus=v;}};
 }
 
 (async()=>{
@@ -35,6 +37,14 @@ function authority({configured=true}={}){
   const valid=await fx.service.verify(credential);
   assert.equal(valid.status,'VALID');
   assert.equal(valid.signatureValid,true);
+
+  fx.setOrganisationStatus('suspended');
+  await assert.rejects(()=>fx.service.issue('org-1'),/organisation_inactive/);
+  const suspended=await fx.service.verify(credential);
+  assert.equal(suspended.status,'STALE');
+  assert.equal(suspended.reason,'organisation_inactive');
+  fx.setOrganisationStatus('active');
+  assert.equal((await fx.service.verify(credential)).status,'VALID');
 
   const tampered={...credential,payload:{...credential.payload,portableProofSha256:'c'.repeat(64)}};
   const bad=await fx.service.verify(tampered);

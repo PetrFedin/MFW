@@ -179,7 +179,9 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   const bfs = page.frameLocator('#eventFrame');
   await expect(bfs.locator('.logo')).toBeVisible();
   await bfs.locator('[data-view="profile"]').click();
-  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible();
+  // The child frame receives the shared-profile bridge asynchronously; keep the assertion
+  // active but allow a little extra time under the seven-viewport CI matrix.
+  await expect(bfs.getByText(/QA Ecosystem/)).toBeVisible({ timeout: 15000 });
   await expect(bfs.getByText('MFW')).toBeVisible();
   await expect(bfs.getByText('СДЕЛАНО В МОСКВЕ')).toBeVisible();
 
@@ -190,8 +192,11 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await expect(made.locator('#madeAccountBridge')).toContainText('MFW');
   await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
   await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
-  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(1);
-  await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
+  await expect(made.locator('#madeBrandGrid .preview-pill')).toHaveCount(1);
+  await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
+  await expect(made.locator('#madeBrandGrid')).toContainText('Бренды появятся после проверки реестра');
+  await expect(made.locator('#madeBrandGrid .brand-card')).toHaveCount(0);
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
 });
@@ -215,6 +220,14 @@ test('Made in Moscow bridge navigates back to MFW and BFS without losing platfor
 
 
 test('Made verified brand deep-links into exact MFW brand and preserves brand context for BFS', async ({ page }, testInfo) => {
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',badge:'made_in_moscow_verified',data:[{id:'masterpeace',name:'Masterpeace',city:'Москва'}]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({data:{verifiedBrands:1,persistence:'postgres',productionAdmitted:true}})});
+  });
   await page.addInitScript(() => {
     localStorage.setItem('mfwOpeningSeen', '1');
     localStorage.setItem('mfwOnboarded', '1');
@@ -222,6 +235,7 @@ test('Made verified brand deep-links into exact MFW brand and preserves brand co
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   const made = page.frameLocator('#eventFrame');
   await expect(made.locator('#madeBrandGrid')).toContainText('Masterpeace');
+  await expect(made.locator('#madeBrandGrid .made-roster-empty')).toHaveCount(0);
 
   await made.locator('[data-made-open-mfw="masterpeace"]').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
@@ -943,6 +957,7 @@ test('Deal Room preview is read-only and viewport safe', async ({ page }, testIn
   await expect(page.locator('.dealroom-stage-grid article')).toHaveCount(5);
   const requestButtons = page.locator('.request-chip-grid button');
   await expect(requestButtons).toHaveCount(8);
+  await expect(page.locator('[data-deal-followup]')).toBeVisible();
   for (const button of await requestButtons.all()) {
     await expect(button).toBeDisabled();
   }
@@ -953,6 +968,9 @@ test('Deal Room preview is read-only and viewport safe', async ({ page }, testIn
   expect(box.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
   expect(box.height).toBeLessThanOrEqual(page.viewportSize().height + 1);
   await page.screenshot({ path: testInfo.outputPath('deal-room-preview.png') });
+  await page.locator('[data-deal-followup]').click();
+  await expect(page.locator('[data-hub-tab="followup"]')).toHaveClass(/active/);
+  await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
 });
 
 test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) => {
@@ -969,7 +987,17 @@ test('PWA shell and direct ecosystem shortcuts are available', async ({ page }) 
 
   const swResponse = await page.request.get('/sw.js');
   expect(swResponse.ok()).toBeTruthy();
-  expect(await swResponse.text()).toMatch(/mfp-shell-2026-10-06-p\d+/);
+  const serviceWorkerSource = await swResponse.text();
+  expect(serviceWorkerSource).toMatch(/const CACHE='mfp-shell-\d{4}-\d{2}-\d{2}-[a-z0-9]+';/);
+  const shellResponse = await page.request.get('/platform/index.html');
+  expect(shellResponse.ok()).toBeTruthy();
+  const shellHtml = await shellResponse.text();
+  const shellResources = [...shellHtml.matchAll(/(?:src|href)="\.\/([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g)]
+    .map((match) => '/platform/' + match[1]);
+  expect(shellResources.length).toBeGreaterThanOrEqual(7);
+  for (const resource of shellResources) {
+    expect(serviceWorkerSource).toContain("'" + resource + "'");
+  }
 
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-event="made"]')).toHaveClass(/active/);
@@ -1020,4 +1048,497 @@ test('Admin Console navigation remains reachable on phone and tablet', async ({ 
   await expectNoDocumentOverflow(page);
   await expectTarget(page.locator('.sidebar .nav button').first(), 40);
   await page.screenshot({ path: testInfo.outputPath('admin-console.png') });
+});
+
+
+test('shared profile consent is explicit and persists across ecosystems',async({page})=>{
+  const profileUpdates=[];
+  await page.route('https://mfw-authority.onrender.com/v1/me/profile',async route=>{
+    profileUpdates.push(route.request().postDataJSON());
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,source:'postgres'})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#profileForm input[name="marketingConsent"]')).not.toBeChecked();
+  await expect(page.locator('#profileForm input[name="networkingVisible"]')).not.toBeChecked();
+  for(const [name,value] of Object.entries({firstName:'QA',lastName:'Privacy',email:'privacy@example.test',phone:'+10000000000'})){
+    await page.locator('#profileForm [name="'+name+'"]').fill(value);
+  }
+  await page.locator('#profileForm button[type="submit"]').click();
+  await expect(page.locator('#profileSyncStatus')).toContainText('PostgreSQL');
+  await expect.poll(()=>profileUpdates.length).toBeGreaterThan(0);
+  expect(profileUpdates.at(-1)).toMatchObject({marketingConsent:false,networkingVisible:false});
+  await page.locator('#profileForm input[name="marketingConsent"]').check();
+  await page.locator('#profileForm input[name="networkingVisible"]').check();
+  await page.locator('#profileForm button[type="submit"]').click();
+  await expect.poll(()=>profileUpdates.length).toBe(2);
+  expect(profileUpdates.at(-1)).toMatchObject({marketingConsent:true,networkingVisible:true});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#profileForm input[name="marketingConsent"]')).toBeChecked();
+  await expect(page.locator('#profileForm input[name="networkingVisible"]')).toBeChecked();
+});
+
+test('embedded application rejects forged parent-window account and route messages',async({page})=>{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const frame=page.frameLocator('#eventFrame');
+  await frame.locator('[data-view="profile"]').click();
+  await expect(frame.locator('#content')).not.toContainText('INJECTED ACCOUNT');
+  await frame.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-account-state',payload:{profile:{firstName:'INJECTED',lastName:'ACCOUNT'},registrations:{}}},
+      origin:location.origin,
+      source:window
+    }));
+  });
+  await expect(frame.locator('#content')).not.toContainText('INJECTED ACCOUNT');
+  await frame.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-route',route:{kind:'brand-buyer',brandRef:'forged'}},
+      origin:'https://untrusted.example',
+      source:window.parent
+    }));
+  });
+  await expect(frame.locator('#content')).not.toContainText('BRAND CONTEXT · forged');
+  await page.locator('[data-event="made"]').click();
+  const made=page.frameLocator('#eventFrame');
+  await made.locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-account-state',payload:{profile:{firstName:'INJECTED'},registrations:{}}},
+      origin:location.origin,source:window
+    }));
+  });
+  await expect(made.locator('#madeAccountBridge')).not.toContainText('INJECTED');
+});
+
+test('BFS shared profile escapes HTML instead of rendering injected markup',async({page})=>{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await page.locator('#profileForm input[name="firstName"]').fill('<img src=x onerror=alert(1)>');
+  await page.locator('#profileForm input[name="lastName"]').fill('QA');
+  await page.locator('#profileForm input[name="email"]').fill('safe@example.test');
+  await page.locator('#profileForm input[name="phone"]').fill('+10000000000');
+  await page.locator('#profileForm button[type="submit"]').click();
+  await page.locator('#accountClose').click();
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="profile"]').click();
+  await expect(bfs.locator('#content')).toContainText('<img src=x onerror=alert(1)>');
+  await expect(bfs.locator('#content img')).toHaveCount(0);
+});
+
+
+test('BFS rejects demo meeting receipt and never shows a phantom meeting',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    const method=route.request().method();
+    await route.fulfill({status:method==='POST'?201:200,contentType:'application/json',
+      body:JSON.stringify(method==='POST'?
+       {source:'memory',data:{id:'demo_meeting',status:'requested',demo:true}}:
+       {source:'postgres',data:[]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').click();
+  await bfs.locator('#discoverDelegates').click();
+  await bfs.locator('[data-meet]').first().click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('не создан');
+  await expect(bfs.locator('#meetingConfirm')).toHaveCount(0);
+});
+
+test('BFS ignores locally forged CRM lead status and rejects demo lead confirmation',async({page})=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('bfsLeadState',JSON.stringify({'qa-org':{stage:'qualified',serverId:'fake'}}));
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:route.request().method()==='POST'?201:200,
+      contentType:'application/json',body:JSON.stringify(route.request().method()==='POST'?
+      {source:'memory',data:{id:'fake_lead',stage:'qualified',demo:true}}:
+      {source:'postgres',data:[]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').click();
+  await bfs.locator('#orgDirectory').click();
+  await expect(bfs.locator('#content')).not.toContainText('CRM · QUALIFIED');
+  await bfs.locator('[data-org-lead]').first().click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('не обновлена');
+});
+
+
+test('BFS agenda rejects synthetic memory receipt for canonical session',async({page})=>{
+ const attempted=[];
+ await page.route('https://mfw-authority.onrender.com/v1/agenda/**',async route=>{
+  const req=route.request(), path=new URL(req.url()).pathname;
+  attempted.push({method:req.method(),path});
+  const eventId=decodeURIComponent(path.split('/')[3]);
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'memory',data:{eventId,demo:true}})});
+ });
+ await page.route('https://mfw-authority.onrender.com/v1/agenda',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:[]})});
+ });
+ await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+ const bfs=page.frameLocator('#eventFrame');
+ await bfs.locator('[data-view="programme"]').first().click();
+ const first=bfs.locator('[data-save]').first();
+ await expect(first).toBeVisible();
+ const eventId=await first.getAttribute('data-save');
+ expect(eventId).toMatch(/^bfs-[a-z0-9-]+$/);
+ await first.click();
+ await expect(bfs.locator('#bfsActionNotice')).toContainText('не изменено');
+ await expect(bfs.locator('[data-save="'+eventId+'"]')).toContainText('ДОБАВИТЬ');
+ expect(attempted).toEqual([{method:'POST',path:'/v1/agenda/'+eventId+'/save'}]);
+});
+
+test('BFS agenda keeps confirmed canonical save despite late stale GET',async({page})=>{
+ let unblockInitialGet, markGetStarted;
+ const initialGetStarted=new Promise(resolve=>{markGetStarted=resolve;});
+ const unblockGet=new Promise(resolve=>{unblockInitialGet=resolve;});
+ let getDelivered;
+ const initialGetDelivered=new Promise(resolve=>{getDelivered=resolve;});
+ const requests=[];
+ await page.route('https://mfw-authority.onrender.com/v1/agenda',async route=>{
+  markGetStarted();
+  await unblockGet;
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:[]})});
+  getDelivered();
+ });
+ await page.route('https://mfw-authority.onrender.com/v1/agenda/**',async route=>{
+  const request=route.request(),path=new URL(request.url()).pathname;
+  const eventId=decodeURIComponent(path.split('/')[3]);
+  requests.push({method:request.method(),path});
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({source:'postgres',data:{eventId}})});
+ });
+ try{
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await initialGetStarted;
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="programme"]').first().click();
+  const first=bfs.locator('[data-save]').first();
+  await expect(first).toBeVisible();
+  const eventId=await first.getAttribute('data-save');
+  expect(eventId).toMatch(/^bfs-[a-z0-9-]+$/);
+  await first.click();
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('подтверждено PostgreSQL');
+  await expect(bfs.locator('[data-save="'+eventId+'"]')).toContainText('В МОЕЙ ПРОГРАММЕ');
+  expect(requests).toEqual([{method:'POST',path:'/v1/agenda/'+eventId+'/save'}]);
+  unblockInitialGet();
+  await initialGetDelivered;
+  // Give the browser a task turn to apply the late GET response.
+  await page.waitForTimeout(100);
+  await expect(bfs.locator('[data-save="'+eventId+'"]')).toContainText('В МОЕЙ ПРОГРАММЕ');
+ }finally{unblockInitialGet();}
+});
+
+test('BFS Made verification badge requires an approved PostgreSQL roster',async({page})=>{
+ // Introduce ONE synthetic reviewed link inside the browser test. Real BFS
+ // organisations have no guessed link to a Made brand by default.
+ await page.route('**/platform/event-data.js**',async route=>{
+  const response=await route.fetch();
+  const body=await response.text();
+  const original='id:"fashion-paper",name:"Fashion Paper"';
+  expect(body).toContain(original);
+  await route.fulfill({response,
+    body:body.replace(original,'id:"fashion-paper",brandRef:"masterpeace",name:"Fashion Paper"')});
+ });
+ let rosterMode='demo';
+ await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+  const trusted=rosterMode==='trusted';
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{verifiedBrands:trusted?1:0,persistence:trusted?'postgres':'memory_demo',productionAdmitted:trusted}})});
+ });
+ await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+  const verified=rosterMode==='trusted';
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({
+    source:verified?'postgres':rosterMode==='missing_badge'?'postgres':'memory',
+    badge:rosterMode==='missing_badge'?null:'made_in_moscow_verified',
+    demo:!verified&&rosterMode!=='missing_badge',
+    data:[{id:'masterpeace',name:'Masterpeace'}]
+   })});
+ });
+ async function openDirectory(){
+  const request=page.waitForResponse(response=>
+   response.url().includes('/v1/made-in-moscow/brands')&&response.status()===200);
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await request; // No vacuous 0-badge assertion before the roster request.
+  // Confirm route-injected canonical linkage on all three reloads.
+  const linked=await page.frameLocator('#eventFrame').locator('body').evaluate(()=>{
+   const org=(window.MFP_DATA&&window.MFP_DATA.bfs&&window.MFP_DATA.bfs.organisations||[]).find(o=>o.id==='fashion-paper');
+   return org&&org.brandRef||null;
+  });
+  expect(linked).toBe('masterpeace');
+  const bfs=page.frameLocator('#eventFrame');
+  await bfs.locator('[data-view="b2b"]').first().click();
+  await bfs.locator('#orgDirectory').click();
+  await expect(bfs.locator('article.delegate')).not.toHaveCount(0);
+  return bfs;
+ }
+ let bfs=await openDirectory();
+ await expect(bfs.locator('.made-verified-bfs')).toHaveCount(0);
+ rosterMode='missing_badge';
+ bfs=await openDirectory();
+ await expect(bfs.locator('.made-verified-bfs')).toHaveCount(0);
+ rosterMode='trusted';
+ bfs=await openDirectory();
+ await expect(bfs.locator('.made-verified-bfs')).toHaveCount(1);
+ await expect(bfs.locator('.made-verified-bfs').first()).toContainText('VERIFIED');
+});
+
+test('BFS subscription rejects demo confirmation and leaves follow button unchanged',async({page})=>{
+ await page.route('https://mfw-authority.onrender.com/v1/professional/follows**',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify(route.request().method()==='GET'
+    ?{source:'postgres',data:[]}
+    :{source:'memory',following:true,data:{favorite:false,demo:true}})});
+ });
+ await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+ const bfs=page.frameLocator('#eventFrame');
+ await bfs.locator('[data-view="speakers"]').click();
+ await bfs.locator('[data-follow-project]').first().click();
+ await expect(bfs.locator('#bfsActionNotice')).toContainText('не сохранена');
+ await expect(bfs.locator('[data-follow-project]').first()).toContainText('Подписаться');
+});
+
+test('Made Verified UI and Discover reject spoofed demo memberships',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({source:'memory',demo:true,badge:'made_in_moscow_verified',data:[{id:'masterpeace',name:'Masterpeace'}]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{persistence:'postgres',productionAdmitted:true,verifiedBrands:1}})});
+  });
+  await page.goto('/platform/index.html?event=made',{waitUntil:'domcontentloaded'});
+  const made=page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
+  await expect(made.locator('#madeBrandGrid .preview-pill')).toHaveCount(3);
+  await expect(made.locator('[data-made-open-mfw]')).toHaveCount(0);
+  await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
+  await page.locator('#hubBtn').click();
+  await page.locator('#directoryFilter').selectOption('MADE');
+  await expect(page.locator('.made-directory-card')).toHaveCount(0);
+});
+test('PostgreSQL roster without production admission remains unverified',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({source:'postgres',badge:'made_in_moscow_verified',data:[{id:'masterpeace',name:'Masterpeace'}]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{persistence:'postgres',productionAdmitted:false,verifiedBrands:1}})});
+  });
+  await page.goto('/platform/index.html?event=made',{waitUntil:'domcontentloaded'});
+  const made=page.frameLocator('#eventFrame');
+  await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
+  await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
+  await page.locator('#hubBtn').click();
+  await page.locator('#directoryFilter').selectOption('MADE');
+  await expect(page.locator('.made-directory-card')).toHaveCount(0);
+});
+
+
+test('organisation directory name match never grants user representation',async({page})=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('mfwAccessToken','qa-session');
+    localStorage.setItem('mfp.account.v1',JSON.stringify({profile:{
+      firstName:'QA',lastName:'Account',company:'Maison Listed Verified'
+    },registrations:{mfw:null,bfs:null}}));
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations?limit=50',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'postgres',data:[{id:'listed-org',name:'Maison Listed Verified',
+        status:'active',verificationStatus:'verified',organisationType:'brand'}]
+    })});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations/mine',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'postgres',authority:'session_scoped_organisation_memberships',data:[]
+    })});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationDirectory')).toContainText('Maison Listed Verified');
+  await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
+  await expect(page.locator('#organisationCurrent')).not.toContainText('Maison Listed Verified');
+  await expect(page.locator('#organisationCurrent')).toContainText('Совпадение названия');
+});
+
+test('organisation self claim and operator verification remain separate and revocable',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  let operatorApproved=false,relationshipActive=true;
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations/mine',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'postgres',authority:'session_scoped_organisation_memberships',
+      data:relationshipActive?[{id:'member-org',name:'Atelier QA',
+        status:'active',verificationStatus:'verified',organisationType:'brand',
+        representationVerified:operatorApproved,relationship:{
+          status:'active',relationshipRole:'representative',
+          source:operatorApproved?'operator_verified':'self_claim'
+        }}]:[]
+    })});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toContainText('БЕЗ ПОДТВЕРЖДЁННЫХ ПРАВ');
+  await expect(page.locator('#organisationCurrent')).toContainText('Самостоятельное заявление');
+  operatorApproved=true;
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toHaveText('ПОЛНОМОЧИЯ ПОДТВЕРЖДЕНЫ');
+  relationshipActive=false;
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
+});
+
+test('memory-demo source cannot forge a confirmed organisation account',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/network/organisations/mine',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+      source:'memory_demo',authority:'session_scoped_organisation_memberships',
+      data:[{id:'fake-org',name:'Injected Verified',status:'active',
+        verificationStatus:'verified',representationVerified:true,
+        relationship:{status:'active',source:'operator_verified'}}]
+    })});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#accountBtn').click();
+  await expect(page.locator('#organisationStatus')).toHaveText('НЕ ПРИВЯЗАНА');
+  await expect(page.locator('#organisationCurrent')).not.toContainText('Injected Verified');
+});
+
+
+test('Follow-up Center requires session and refuses demo CRM rows',async({page})=>{
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
+  await expect(page.locator('#followupSummary')).toHaveCount(0);
+
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'memory',demo:true,data:[{
+        id:'fake-1',stage:'won',counterpartName:'Demo sale'
+      }]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[]})});
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('#followupState')).toContainText('Данные не подтверждены');
+  await expect(page.locator('#followupQueue')).toHaveCount(0);
+  await expect(page.locator('#hubContent')).not.toContainText('Demo sale');
+});
+
+test('Follow-up Center filters owner scoped CRM deadlines and escapes names',async({page},testInfo)=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[
+        {id:'lead-1',stage:'qualified',eventBrand:'bfs',
+          counterpartName:'<img src=x onerror=alert(1)> Atelier & Co',meetingId:'meeting-1',
+          nextAction:'Review linesheet',nextActionAt:'2026-10-15T10:00:00Z'},
+        {id:'lead-2',stage:'interest',eventBrand:'mfw',
+          counterpartName:'No next step',meetingId:'',nextAction:null,nextActionAt:null},
+        {id:'lead-3',stage:'won',eventBrand:'made_in_moscow',
+          counterpartName:'CRM won ≠ paid order',meetingId:'meeting-elsewhere',
+          nextAction:null,nextActionAt:null}
+      ]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[{id:'meeting-1',status:'completed'}]})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('#followupSummary')).toBeVisible();
+  await expect(page.locator('.followup-item')).toHaveCount(3);
+  await expect(page.locator('.followup-kpis b').first()).toHaveText('3');
+  await expect(page.locator('#followupAnalytics')).toBeVisible();
+  await expect(page.locator('#followupAnalytics')).toContainText('План действий заполнен');
+  await expect(page.locator('#followupAnalytics')).toContainText('1 из 2 открытых');
+  await expect(page.locator('#followupAnalytics')).toContainText('1 из 2 связанных');
+  await expect(page.locator('#followupAnalytics')).toContainText('50%');
+  await expect(page.locator('#followupStageMix .followup-stage-row')).toHaveCount(3);
+  await expect(page.locator('.followup-item').first()).toContainText('ПРИОРИТЕТ');
+  await expect(page.locator('.followup-item').first()).toContainText('ПРИЧИНЫ ПРИОРИТЕТА');
+  await page.locator('[data-followup-filter="priority"]').click();
+  await expect(page.locator('.followup-item')).toHaveCount(2);
+  await expect(page.locator('#followupVisibleCount')).toContainText('Показано 2 из 3');
+  await page.locator('[data-followup-filter="all"]').click();
+  await expect(page.locator('.followup-item').first()).toContainText('ПРОСРОЧЕНО');
+  await expect(page.locator('#hubContent')).toContainText('<img src=x onerror=alert(1)> Atelier & Co');
+  await expect(page.locator('#followupQueue img')).toHaveCount(0);
+  await expect(page.locator('#hubContent')).toContainText('не подтверждённый заказ');
+  await page.locator('[data-followup-filter="missing"]').click();
+  await expect(page.locator('.followup-item')).toHaveCount(1);
+  await expect(page.locator('.followup-item')).toContainText('No next step');
+  await page.locator('[data-followup-filter="closed"]').click();
+  await expect(page.locator('.followup-item')).toHaveCount(1);
+  await expect(page.locator('.followup-item')).toContainText('CRM won ≠ paid order');
+  await expect(page.locator('.followup-item')).toContainText('Не найдена среди доступных мне встреч');
+  await page.locator('[data-followup-filter="all"]').click();
+  await expectTarget(page.locator('[data-followup-filter="overdue"]'),44);
+  await expectNoDocumentOverflow(page);
+  await page.screenshot({path:testInfo.outputPath('followup-center.png')});
+
+  // A logout or token invalidation cannot retain previously projected CRM rows.
+  await page.evaluate(()=>{
+    localStorage.removeItem('mfwAccessToken');
+    window.dispatchEvent(new StorageEvent('storage',{key:'mfwAccessToken',
+      oldValue:'qa-session',newValue:null,storageArea:localStorage}));
+  });
+  await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
+  await expect(page.locator('.followup-item')).toHaveCount(0);
+});
+
+test('Follow-up opens the exact owner-scoped meeting in BFS, not merely the latest',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[{
+        id:'lead-target',stage:'meeting_requested',eventBrand:'bfs',
+        meetingId:'meeting-1',counterpartName:'Target Buyer',
+        nextAction:'Check',nextActionAt:'2026-10-28T12:00:00Z'
+      }]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[
+        {id:'meeting-2',organisation:'Other Buyer',status:'confirmed',startsAt:'2026-10-29T12:00:00Z'},
+        {id:'meeting-1',organisation:'Target Buyer',status:'requested',startsAt:null}
+      ]})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('[data-followup-open-meeting="meeting-1"]')).toBeVisible();
+  await page.locator('[data-followup-open-meeting="meeting-1"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  const bfs=page.frameLocator('#eventFrame');
+  await expect(bfs.locator('#content')).toContainText('Target Buyer');
+  await expect(bfs.locator('#content')).not.toContainText('Other Buyer');
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('личного B2B Follow-up');
+});
+
+test('BFS refuses a missing deep-linked meeting instead of selecting unrelated owner data',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[{
+        id:'meeting-elsewhere',organisation:'Wrong Meeting',status:'requested'
+      }]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await page.frameLocator('#eventFrame').locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-route',route:{kind:'meeting',meetingId:'missing-owner-meeting'}},
+      origin:location.origin,source:window.parent
+    }));
+  });
+  const bfs=page.frameLocator('#eventFrame');
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('отсутствует среди доступных вам записей');
+  await expect(bfs.locator('#content')).not.toContainText('Wrong Meeting');
 });

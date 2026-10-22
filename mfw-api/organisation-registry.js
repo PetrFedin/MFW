@@ -46,14 +46,23 @@ class OrganisationRegistry{
             verified_at AS "verifiedAt",created_at AS "createdAt",updated_at AS "updatedAt"`,
           [clean.canonicalName,clean.normalizedName,clean.organisationType,clean.countryCode,clean.city,clean.website,JSON.stringify({claimSource:'self_claim'})]);
         const row=org.rows[0];
-        await client.query(`INSERT INTO professional_organisation_memberships(
+        if(row.status!=='active')throw new Error('organisation_inactive');
+        // Never let a public self-claim restore a revoked or operator-reviewed
+        // relationship. The conflict predicate is evaluated under the row lock.
+        const membership=await client.query(`INSERT INTO professional_organisation_memberships(
           organisation_id,user_id,role_title,relationship_role,status,source)
           VALUES($1,$2,$3,$4,'active','self_claim')
           ON CONFLICT(organisation_id,user_id) DO UPDATE SET
-            role_title=EXCLUDED.role_title,relationship_role=EXCLUDED.relationship_role,status='active',ended_at=NULL,updated_at=now()`,
+            role_title=EXCLUDED.role_title,relationship_role=EXCLUDED.relationship_role,
+            updated_at=now()
+          WHERE professional_organisation_memberships.source='self_claim'
+            AND professional_organisation_memberships.status='active'
+            AND professional_organisation_memberships.ended_at IS NULL
+          RETURNING role_title AS "roleTitle",relationship_role AS "relationshipRole",status,source`,
           [row.id,userId,clean.roleTitle,clean.relationshipRole]);
+        if(membership.rowCount!==1)throw new Error('organisation_membership_review_required');
         await client.query('COMMIT');
-        return {...row,relationship:{roleTitle:clean.roleTitle,relationshipRole:clean.relationshipRole,status:'active',source:'self_claim'}};
+        return {...row,relationship:membership.rows[0]};
       }catch(err){await client.query('ROLLBACK');throw err;}finally{client.release();}
     }
     const existing=[...this.memory.values()].find(x=>x.normalizedName===clean.normalizedName);
@@ -63,10 +72,54 @@ class OrganisationRegistry{
       countryCode:clean.countryCode,city:clean.city,website:clean.website,status:'active',
       verificationStatus:'unverified',verificationSource:null,verifiedAt:null,createdAt:new Date().toISOString(),members:new Map(),participation:[]
     };
+    if(row.status!=='active')throw new Error('organisation_inactive');
+    const current=row.members.get(String(userId));
+    if(current&&(current.source!=='self_claim'||current.status!=='active'||current.endedAt)){
+      throw new Error('organisation_membership_review_required');
+    }
     row.members.set(String(userId),{userId:String(userId),roleTitle:clean.roleTitle,relationshipRole:clean.relationshipRole,status:'active',source:'self_claim'});
     row.updatedAt=new Date().toISOString();
     this.memory.set(row.id,row);
     return this.publicRow(row,{forUserId:userId});
+  }
+
+  // Private affiliation: the public directory must never establish user rights.
+  async forUser(userId){
+    if(!userId)throw new Error('session_required');
+    if(this.pool){
+      const result=await this.pool.query(`SELECT
+        o.id,o.canonical_name AS "name",o.organisation_type AS "organisationType",
+        o.country_code AS "countryCode",o.city,o.website,o.status,
+        o.verification_status AS "verificationStatus",
+        o.verification_source AS "verificationSource",o.verified_at AS "verifiedAt",
+        o.created_at AS "createdAt",o.updated_at AS "updatedAt",
+        (SELECT count(*)::int FROM professional_organisation_memberships a
+          WHERE a.organisation_id=o.id AND a.status='active' AND a.ended_at IS NULL)
+          AS "activeRepresentativeCount",
+        (SELECT count(*)::int FROM professional_organisation_participation p
+          WHERE p.organisation_id=o.id AND p.status<>'revoked') AS "participationCount",
+        json_build_object('roleTitle',m.role_title,'relationshipRole',m.relationship_role,
+          'status',m.status,'source',m.source) AS relationship
+        FROM professional_organisation_memberships m
+        JOIN professional_organisations o ON o.id=m.organisation_id
+        WHERE m.user_id=$1 AND m.status='active' AND m.ended_at IS NULL
+          AND o.status='active'
+        ORDER BY (o.verification_status='verified' AND m.source='operator_verified') DESC,
+          o.canonical_name LIMIT 50`,[String(userId)]);
+      return result.rows.map(row=>({...row,representationVerified:
+        row.verificationStatus==='verified'&&row.relationship.source==='operator_verified'&&
+        row.relationship.status==='active'}));
+    }
+    return [...this.memory.values()].filter(row=>{
+      const member=row.members&&row.members.get(String(userId));
+      return row.status==='active'&&member&&member.status==='active'&&!member.endedAt;
+    }).map(row=>{
+      const item=this.publicRow(row,{forUserId:userId});
+      item.representationVerified=item.verificationStatus==='verified'&&
+        item.relationship.source==='operator_verified'&&item.relationship.status==='active';
+      return item;
+    }).sort((a,b)=>Number(b.representationVerified)-Number(a.representationVerified)||
+      a.name.localeCompare(b.name)).slice(0,50);
   }
 
   async list({limit=50,type=null,verifiedOnly=false}={}){
@@ -81,7 +134,7 @@ class OrganisationRegistry{
         country_code AS "countryCode",city,website,status,verification_status AS "verificationStatus",
         verification_source AS "verificationSource",verified_at AS "verifiedAt",
         created_at AS "createdAt",updated_at AS "updatedAt",
-        (SELECT count(*)::int FROM professional_organisation_memberships m WHERE m.organisation_id=o.id AND m.status='active') AS "activeRepresentativeCount",
+        (SELECT count(*)::int FROM professional_organisation_memberships m WHERE m.organisation_id=o.id AND m.status='active' AND m.ended_at IS NULL) AS "activeRepresentativeCount",
         (SELECT count(*)::int FROM professional_organisation_participation p WHERE p.organisation_id=o.id AND p.status<>'revoked') AS "participationCount"
         FROM professional_organisations o WHERE ${where.join(' AND ')}
         ORDER BY (verification_status='verified') DESC,canonical_name LIMIT $${params.length}`,params);
@@ -93,13 +146,23 @@ class OrganisationRegistry{
   }
 
   async canRepresent(userId,organisationId){
+    // This method is the gate for signed organisation credentials, not a
+    // generic claim-status check. Self-claims are never sufficient.
     if(this.pool){
-      const r=await this.pool.query(`SELECT 1 FROM professional_organisation_memberships
-        WHERE organisation_id=$1 AND user_id=$2 AND status='active' LIMIT 1`,[organisationId,userId]);
+      const r=await this.pool.query(`SELECT 1
+        FROM professional_organisation_memberships m
+        JOIN professional_organisations o ON o.id=m.organisation_id
+        WHERE m.organisation_id=$1 AND m.user_id=$2
+          AND m.status='active' AND m.ended_at IS NULL
+          AND m.source='operator_verified'
+          AND o.status='active' AND o.verification_status='verified'
+        LIMIT 1`,[organisationId,userId]);
       return !!r.rowCount;
     }
     const row=this.memory.get(String(organisationId));
-    return !!(row&&row.members&&row.members.get(String(userId))?.status==='active');
+    const member=row&&row.members&&row.members.get(String(userId));
+    return !!(row&&row.status==='active'&&row.verificationStatus==='verified'&&
+      member&&member.status==='active'&&!member.endedAt&&member.source==='operator_verified');
   }
 
   async summary(){
@@ -107,7 +170,7 @@ class OrganisationRegistry{
       const r=await this.pool.query(`SELECT
         count(*) FILTER (WHERE status='active')::int AS "activeOrganisations",
         count(*) FILTER (WHERE status='active' AND verification_status='verified')::int AS "verifiedOrganisations",
-        (SELECT count(*)::int FROM professional_organisation_memberships WHERE status='active') AS "activeRepresentatives",
+        (SELECT count(*)::int FROM professional_organisation_memberships WHERE status='active' AND ended_at IS NULL) AS "activeRepresentatives",
         (SELECT count(*)::int FROM professional_organisation_participation WHERE status<>'revoked') AS "participationRecords",
         (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked') AS "organisationsWithHistory",
         (SELECT count(DISTINCT organisation_id)::int FROM professional_organisation_participation WHERE status<>'revoked' AND event_brand='mfw') AS "mfwOrganisations",
@@ -130,7 +193,7 @@ class OrganisationRegistry{
     return {
       activeOrganisations:rows.length,
       verifiedOrganisations:rows.filter(x=>x.verificationStatus==='verified').length,
-      activeRepresentatives:rows.reduce((n,x)=>n+(x.members?x.members.size:0),0),
+      activeRepresentatives:rows.reduce((n,x)=>n+(x.members?[...x.members.values()].filter(m=>m.status==='active'&&!m.endedAt).length:0),0),
       participationRecords:participation.length,
       organisationsWithHistory:new Set(participation.map(p=>p.organisationId)).size,
       mfwOrganisations:byBrand('mfw'),
@@ -205,7 +268,7 @@ class OrganisationRegistry{
   }
 
   publicRow(row,{forUserId=null}={}){
-    const out={id:row.id,name:row.name,organisationType:row.organisationType,countryCode:row.countryCode||null,city:row.city||null,website:row.website||null,status:row.status,verificationStatus:row.verificationStatus,verificationSource:row.verificationSource||null,verifiedAt:row.verifiedAt||null,createdAt:row.createdAt,updatedAt:row.updatedAt||row.createdAt,activeRepresentativeCount:row.members?row.members.size:0,participationCount:row.participation?row.participation.length:0};
+    const out={id:row.id,name:row.name,organisationType:row.organisationType,countryCode:row.countryCode||null,city:row.city||null,website:row.website||null,status:row.status,verificationStatus:row.verificationStatus,verificationSource:row.verificationSource||null,verifiedAt:row.verifiedAt||null,createdAt:row.createdAt,updatedAt:row.updatedAt||row.createdAt,activeRepresentativeCount:row.members?[...row.members.values()].filter(m=>m.status==='active'&&!m.endedAt).length:0,participationCount:row.participation?row.participation.filter(p=>p.status!=='revoked').length:0};
     if(forUserId&&row.members&&row.members.has(String(forUserId)))out.relationship=row.members.get(String(forUserId));
     return out;
   }

@@ -46,6 +46,15 @@ test('rapid switches retain final MFW route with visible UI', async ({ page }) =
 });
 
 test('Made brand deep link resolves exact MFW brand on first visit', async ({ page }) => {
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/brands',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({data:[{id:'masterpeace',name:'Masterpeace',city:'Москва'}],
+        source:'postgres',badge:'made_in_moscow_verified'})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/made-in-moscow/overview',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({data:{verifiedBrands:1,productionAdmitted:true,persistence:'postgres'}})});
+  });
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   const made = page.frameLocator('#eventFrame');
   await expect(made.locator('[data-made-open-mfw="masterpeace"]')).toBeVisible();

@@ -12,7 +12,7 @@ const matrix = [
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: ['responsive.spec.js','navigation-readiness.spec.js'],
+  testMatch: ['responsive.spec.js','navigation-readiness.spec.js','commercial-proof.spec.js'],
   fullyParallel: true,
   retries: 1,
   timeout: 30000,
@@ -20,6 +20,9 @@ module.exports = defineConfig({
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:4173',
+    // Playwright route fixtures must not be silently bypassed by the app's
+    // PWA Service Worker after navigating between MFW/BFS/Made screens.
+    serviceWorkers: 'block',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure'
   },

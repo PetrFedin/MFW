@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "mfw-integration-source-v1",
+  "productionAdmitted": false,
+  "mainBase": "7a2e7b98f9192862cbafe638cc3732c2db4f0f01",
+  "sourcePRs": [
+    20,
+    23,
+    24,
+    26,
+    29,
+    30,
+    31
+  ],
+  "collisions": [
+    "mfw-api/package.json",
+    ".github/workflows/responsive-qa.yml",
+    "mfw/platform/evidence-package.json",
+    "CURRENT_STATE.md",
+    "README.md"
+  ],
+  "sourceState": "candidate_not_deployed",
+  "actualRevenueVerified": false,
+  "history027LiveBytesVerified": false
+}

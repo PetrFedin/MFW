@@ -59,6 +59,8 @@ function buildProductionEvidence(readyResult,healthResult,deepResult,errors){
 
   pushIf(errors,schema.ready!==true,'schema_reconciliation_not_ready');
   pushIf(errors,(schema.missingMigrations||[]).length!==0,'schema_missing_migrations');
+  pushIf(errors,(schema.unexpectedMigrations||[]).length!==0,'schema_unexpected_migrations');
+  pushIf(errors,(schema.duplicateMigrations||[]).length!==0,'schema_duplicate_migrations');
   pushIf(errors,(schema.missingTables||[]).length!==0,'schema_missing_tables');
   pushIf(errors,(schema.missingColumns||[]).length!==0,'schema_missing_columns');
   pushIf(errors,(schema.contractErrors||[]).length!==0,'schema_contract_errors');
@@ -93,6 +95,8 @@ function buildProductionEvidence(readyResult,healthResult,deepResult,errors){
     schemaContract:{
       ready:schema.ready===true,
       missingMigrations:schema.missingMigrations||[],
+      unexpectedMigrations:schema.unexpectedMigrations||[],
+      duplicateMigrations:schema.duplicateMigrations||[],
       missingTables:schema.missingTables||[],
       missingColumns:schema.missingColumns||[],
       contractErrors:schema.contractErrors||[]
