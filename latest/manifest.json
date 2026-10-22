@@ -1,7 +1,7 @@
 {
   "schema": "mfw-public-browser-evidence-v1",
-  "capturedAt": "2026-10-20T01:29:52.358Z",
-  "captureCommit": "fc75a5492880775350ff71d1a21d5497ffdc221a",
+  "capturedAt": "2026-10-22T21:57:02.932Z",
+  "captureCommit": "c449daf4ad177d70ae78dd74c00704a82cf825a8",
   "warning": "Production source SHA not attested: a branch build is not the published release.",
   "consent": "Public screen only: no login, user registration, private data or simulated transactions",
   "sources": [
@@ -9,7 +9,7 @@
       "id": "production",
       "url": "https://mfw-platform.onrender.com/platform/index.html",
       "sourceSha": null,
-      "capturedAt": "2026-10-20T01:29:52.358Z",
+      "capturedAt": "2026-10-22T21:57:02.932Z",
       "environment": "published-live",
       "status": "diagnostic_only",
       "screenshots": [
@@ -55,8 +55,8 @@
         },
         {
           "file": "desktop-bfs-b2b.png",
-          "bytes": 112150,
-          "sha256": "f637f5c6cf9d5421a09337f399e623e59bc072a82bcff6118a589f3d6fea5898"
+          "bytes": 110464,
+          "sha256": "a6ba4d947786baa3f673e6ddc603035293ae15798133774fcfe1d2f72231346c"
         },
         {
           "file": "desktop-bfs-organisations.png",
@@ -147,30 +147,30 @@
       "video": {
         "file": "tour-25s.mp4",
         "durationSeconds": 25,
-        "bytes": 238701,
-        "sha256": "cb86fffb03d855c9cd731dca9a3e63ba322112fac6a02af8c6ff0347d18a7b0a"
+        "bytes": 314438,
+        "sha256": "4aa86c0e2ca4c44c3abcb906e140bce451f56a8058eb4bc156e5035d24788bca"
       },
       "extraVideos": [
         {
           "topic": "mfw",
           "file": "mfw-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 532064,
-          "sha256": "9abbd239307a76c5807dae912cbb08e4798917e52ca3871f004ea0830a6f56d6"
+          "bytes": 566179,
+          "sha256": "29b6fb9325ba76624a6479d6ef90a7995de37884d05d5ff8be2a5dde693c15c6"
         },
         {
           "topic": "bfs",
           "file": "bfs-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 409021,
-          "sha256": "6219ab1c2f5c05fcc3d55901c9f58e329b837c66fbe12c23d76859a092e3cd4a"
+          "bytes": 470130,
+          "sha256": "98b5665fa3820ea478006b71e8082d755dfa5599fa614e4cd4234c4f1b0e9224"
         },
         {
           "topic": "made",
           "file": "made-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 1775610,
-          "sha256": "715ec7439ae8ac5d08cdc343bfff3984385f93b61f18dac3028ef16ba4a29d60"
+          "bytes": 1749751,
+          "sha256": "67d2a84a5a9a3c0025d6ee4b96ca85ad4c3f4f9fba7f0af420a74cc26c5ee375"
         }
       ],
       "warnings": [
@@ -190,8 +190,8 @@
     {
       "id": "integration-preview",
       "url": "http://127.0.0.1:4173/platform/index.html",
-      "sourceSha": "fc75a5492880775350ff71d1a21d5497ffdc221a",
-      "capturedAt": "2026-10-20T01:29:52.358Z",
+      "sourceSha": "c449daf4ad177d70ae78dd74c00704a82cf825a8",
+      "capturedAt": "2026-10-22T21:57:02.932Z",
       "environment": "unmerged-integration-preview",
       "status": "portfolio_ready",
       "screenshots": [
@@ -329,30 +329,30 @@
       "video": {
         "file": "tour-25s.mp4",
         "durationSeconds": 25,
-        "bytes": 303059,
-        "sha256": "c0b7371b0a0194567d50419fbc72aa51e20709dcb05c75b28a7e0a00ff96c967"
+        "bytes": 262191,
+        "sha256": "4309be695980cb77b3faa706173d8577af9ce30f557c7fe17563e0351a442b85"
       },
       "extraVideos": [
         {
           "topic": "mfw",
           "file": "mfw-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 589413,
-          "sha256": "3da7e9682da4807eaa7f569bf9c0201bb05ff57253ce22a28acf1e7859e0d9c3"
+          "bytes": 572222,
+          "sha256": "2358b35c8e369269cb00adf134ee91c2ece869bc94b9b78b35f394de3bbc051e"
         },
         {
           "topic": "bfs",
           "file": "bfs-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 465040,
-          "sha256": "430910d648981739b4386cae73534813bdaf75dec3821a347e312b301b97eaa9"
+          "bytes": 439083,
+          "sha256": "5d39639f8bf563199daa9a2862572f7645a484f32e1cb3659f8526961f8c6ab3"
         },
         {
           "topic": "made",
           "file": "made-tour-25s.mp4",
           "durationSeconds": 25,
-          "bytes": 1802402,
-          "sha256": "0d51858975b3042ec3de29ffbf2700cf271d9f01731d90159ca1824a177705f1"
+          "bytes": 1786934,
+          "sha256": "1a39cec8ebba3b7ce1252d883b9a66677abd3e58b205356bf4052c4c1b435af9"
         }
       ],
       "warnings": [],
