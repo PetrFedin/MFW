@@ -1494,3 +1494,51 @@ test('Follow-up Center filters owner scoped CRM deadlines and escapes names',asy
   await expect(page.locator('#followupState')).toContainText('Нужна авторизация');
   await expect(page.locator('.followup-item')).toHaveCount(0);
 });
+
+test('Follow-up opens the exact owner-scoped meeting in BFS, not merely the latest',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('mfwAccessToken','qa-session'));
+  await page.route('https://mfw-authority.onrender.com/v1/b2b/leads',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[{
+        id:'lead-target',stage:'meeting_requested',eventBrand:'bfs',
+        meetingId:'meeting-1',counterpartName:'Target Buyer',
+        nextAction:'Check',nextActionAt:'2026-10-28T12:00:00Z'
+      }]})});
+  });
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[
+        {id:'meeting-2',organisation:'Other Buyer',status:'confirmed',startsAt:'2026-10-29T12:00:00Z'},
+        {id:'meeting-1',organisation:'Target Buyer',status:'requested',startsAt:null}
+      ]})});
+  });
+  await page.goto('/platform/index.html',{waitUntil:'domcontentloaded'});
+  await page.locator('#hubBtn').click();
+  await page.locator('[data-hub-tab="followup"]').click();
+  await expect(page.locator('[data-followup-open-meeting="meeting-1"]')).toBeVisible();
+  await page.locator('[data-followup-open-meeting="meeting-1"]').click();
+  await expect(page.locator('[data-event="bfs"]')).toHaveClass(/active/);
+  const bfs=page.frameLocator('#eventFrame');
+  await expect(bfs.locator('#content')).toContainText('Target Buyer');
+  await expect(bfs.locator('#content')).not.toContainText('Other Buyer');
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('личного B2B Follow-up');
+});
+
+test('BFS refuses a missing deep-linked meeting instead of selecting unrelated owner data',async({page})=>{
+  await page.route('https://mfw-authority.onrender.com/v1/meetings',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({source:'postgres',data:[{
+        id:'meeting-elsewhere',organisation:'Wrong Meeting',status:'requested'
+      }]})});
+  });
+  await page.goto('/platform/index.html?event=bfs',{waitUntil:'domcontentloaded'});
+  await page.frameLocator('#eventFrame').locator('body').evaluate(()=>{
+    window.dispatchEvent(new MessageEvent('message',{
+      data:{type:'mfp-route',route:{kind:'meeting',meetingId:'missing-owner-meeting'}},
+      origin:location.origin,source:window.parent
+    }));
+  });
+  const bfs=page.frameLocator('#eventFrame');
+  await expect(bfs.locator('#bfsActionNotice')).toContainText('отсутствует среди доступных вам записей');
+  await expect(bfs.locator('#content')).not.toContainText('Wrong Meeting');
+});

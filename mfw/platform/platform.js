@@ -1677,6 +1677,8 @@
           'Не найдена среди доступных мне встреч':'Не связана')+'</dd></div></dl>'+
           (row.priorityReasons.length?'<div class="followup-reasons"><b>ПРИЧИНЫ ПРИОРИТЕТА</b>'+
           '<ul>'+row.priorityReasons.map(function(reason){return '<li>'+h(reason)+'</li>';}).join('')+'</ul></div>':'')+
+          (row.event==='bfs'&&row.meetingLinked?
+            '<button type="button" class="followup-route-button" data-followup-open-meeting="'+h(row.meetingId)+'">Открыть встречу в BFS ↗</button>':'')+
           '</article>';
       }).join(''):'<p class="followup-empty">По выбранному фильтру нет записей, подтверждённых серверной выборкой.</p>')+
       '</div><p class="followup-foot">Сводка предназначена для контроля задач. Она не выполняет рассылку, не изменяет CRM и не считает договоры, коммерческие цены, заказы или выручку.</p>';
@@ -1684,6 +1686,18 @@
       button.onclick=function(){
         followupFilter=button.dataset.followupFilter;
         showFollowupBoard(projection);
+      };
+    });
+    [].slice.call(hubContent.querySelectorAll('[data-followup-open-meeting]')).forEach(function(button){
+      button.onclick=function(){
+        var id=button.dataset.followupOpenMeeting;
+        var selected=projection.rows.find(function(row){
+          return row.meetingId===id&&row.meetingLinked&&row.event==='bfs';
+        });
+        if(!selected)return;
+        followupEvidence=null;followupRequest++;
+        hubModal.classList.add('hidden');
+        openEvent('bfs',{kind:'meeting',meetingId:id,source:'mfw_followup'});
       };
     });
     var refresh=hubContent.querySelector('#followupRefresh');

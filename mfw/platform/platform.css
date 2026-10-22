@@ -945,3 +945,8 @@ body.bfs-mode .event-button.active{background:transparent;color:#181818;border-b
  .followup-kpis>div{padding:13px}
 }
 @media(prefers-reduced-motion:reduce){.platform-bar *,.followup-item *{animation:none!important;transition:none!important}}
+
+/* Explicit, session-validated cross-ecosystem navigation for an owned meeting. */
+.followup-route-button{width:100%;min-height:44px;text-align:left;margin-top:16px;padding:12px 14px;border:1px solid #9e9b8f;background:transparent;color:#f3efe7;font:inherit;font-size:12px;font-weight:720;cursor:pointer}
+.followup-route-button:hover{background:#2b2d2c}
+.followup-route-button:focus-visible{outline:3px solid #d9d2c2;outline-offset:2px}

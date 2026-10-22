@@ -33,6 +33,7 @@ var crossBrandContext=null;
 // CRM state is hydrated from Authority, never from a stale localStorage claim.
 var leadState={};
 var meetingRequestPending=false;
+var requestedMeetingRef=null,meetingReadRevision=0;
 var agendaInFlight=Object.create(null),professionalInFlight=Object.create(null);
 // A late initial GET cannot erase a newer, server-confirmed agenda mutation.
 var agendaWriteRevision=0;
@@ -95,15 +96,23 @@ async function restoreLeads(){
  }catch(e){leadState={};}
 }
 async function restoreMeeting(){
+ var revision=++meetingReadRevision,requested=requestedMeetingRef;
  try{
   var out=await authority('/v1/meetings',{method:'GET'});confirmed(out);
+  if(revision!==meetingReadRevision||requested!==requestedMeetingRef)return;
   var rows=(Array.isArray(out.data)?out.data:[]).filter(function(x){return x&&x.id;});
-  var latest=rows[0]||null;
-  state.meeting=latest?{id:String(latest.id),
-    delegate:latest.organisation||(latest.metadata&&latest.metadata.counterpartName)||'BFS contact',
-    slot:'Время согласовывается',startsAt:latest.startsAt||null,status:latest.status,
+  var chosen=requested?rows.find(function(x){return String(x.id)===requested;})||null:rows[0]||null;
+  state.meeting=chosen?{id:String(chosen.id),
+    delegate:chosen.organisation||(chosen.metadata&&chosen.metadata.counterpartName)||'BFS contact',
+    slot:'Время согласовывается',startsAt:chosen.startsAt||null,status:chosen.status,
     origin:'postgres'}:null;
- }catch(e){state.meeting=null;}
+  if(requested&&!chosen)actionNotice('Эта встреча отсутствует среди доступных вам записей. Переключение не предоставляет дополнительных прав.');
+  else if(requested)actionNotice('Открыта встреча из личного B2B Follow-up. Данные подтверждены сервером.');
+ }catch(e){
+  if(revision!==meetingReadRevision||requested!==requestedMeetingRef)return;
+  state.meeting=null;
+  if(requested)actionNotice('Встреча не открыта: требуется доступная авторизованная серверная запись.');
+ }
  if(state.view==='b2b')render();
 }
 function orgById(id){return (organisations||[]).filter(function(o){return o.id===id})[0]||null}
@@ -305,6 +314,7 @@ async function requestMeeting(input){
   })});
   var row=confirmed(out,true);
   if(row.status!=='requested')throw Error('unconfirmed_meeting_status');
+  requestedMeetingRef=null;meetingReadRevision++;
   delete meetingKeys[scope];
   state.meeting={id:String(row.id),delegate:input.counterpartName||input.organisationName||'BFS contact',
     slot:'Время согласовывается',startsAt:row.startsAt||null,
@@ -434,6 +444,12 @@ $('.lang').onclick=function(){state.lang=state.lang==='ru'?'en':'ru';$('.lang').
 window.addEventListener('message',function(e){
  if(e.origin!==location.origin||e.source!==parent||!e.data||typeof e.data!=='object')return;
  if(e.data.type==='mfp-account-state'){state.account=e.data.payload;render();}
+ if(e.data.type==='mfp-route'&&e.data.route&&e.data.route.kind==='meeting'){
+   var ref=String(e.data.route.meetingId||'');
+   if(!/^[a-zA-Z0-9_-]{1,160}$/.test(ref)){actionNotice('Некорректный идентификатор встречи.');return;}
+   requestedMeetingRef=ref;
+   state.meeting=null;state.view='b2b';render();restoreMeeting();
+ }
  if(e.data.type==='mfp-route'&&e.data.route&&e.data.route.kind==='brand-buyer'){
    crossBrandContext={brandRef:String(e.data.route.brandRef||''),source:String(e.data.route.source||'platform')};
    state.view='b2b';render();
