@@ -53,3 +53,13 @@
 .brand-actions button:focus-visible,.top-actions button:focus-visible,.nav button:focus-visible,.hero-actions button:focus-visible{outline:3px solid #1a1a1a;outline-offset:3px}
 .made-photo-card,.made-video-card{border-radius:0}
 @media(max-width:600px){.brand-card{min-height:230px;padding:18px}.hero h1{line-height:.91}.section-head h2{line-height:1.1}}
+
+/* Source-first editorial brand directory. No synthetic brand placeholder cards. */
+.made-roster-empty{grid-column:1/-1;min-height:260px;border-top:1px solid var(--ink);border-bottom:1px solid var(--made-outline);background:#f4f1eb;padding:26px 30px;display:grid;grid-template-columns:minmax(170px,.55fr) minmax(0,1.6fr);gap:clamp(20px,5vw,80px);align-items:start;color:#1a1a19}
+.made-roster-empty-kicker{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.made-roster-empty-kicker>span:last-child{font-size:10px;letter-spacing:.08em;color:#6c645d}
+.made-roster-empty .preview-pill{background:transparent;border:1px solid #605b55;color:#262420;font-size:10px;line-height:1.3}
+.made-roster-empty h3{font-family:Georgia,"Times New Roman",serif;font-weight:500;font-size:clamp(30px,4vw,49px);line-height:1.1;letter-spacing:-.045em;margin:0 0 16px;max-width:17ch}
+.made-roster-empty p{font-size:14px;line-height:1.7;max-width:58ch;margin:0 0 22px}
+.made-roster-empty small{font-size:10px;letter-spacing:.08em;color:#746e68}
+@media(max-width:760px){.made-roster-empty{grid-template-columns:1fr;min-height:0;padding:24px 18px;gap:20px}.made-roster-empty h3{font-size:clamp(28px,8vw,41px)}}

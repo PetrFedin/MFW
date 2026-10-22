@@ -5,7 +5,7 @@ var AUTHORITY='https://mfw-authority.onrender.com';
 var MEDIA=window.MFP_MEDIA&&window.MFP_MEDIA.ecosystems&&window.MFP_MEDIA.ecosystems.made||{};
 var accountState={profile:{},registrations:{mfw:null,bfs:null}};
 var madeOverview=null;
-// Original HTML holds only labelled unverified preview cards.
+// Empty state is an editorial explanation, never fabricated brand cards.
 var unverifiedPreview=(document.getElementById('madeBrandGrid')||{}).innerHTML||'';
 function renderEditorialMedia(){
   var images=MEDIA.images||{},videos=Array.isArray(MEDIA.videos)?MEDIA.videos:[];
@@ -42,7 +42,7 @@ function resetVerifiedRoster(){
   var admission=document.getElementById('madeAdmissionState');
   if(admission){
     admission.classList.remove('ready');
-    admission.innerHTML='<b>PRODUCTION ADMISSION · WAITING</b><span>Статус брендов не подтверждён: нужен действующий PostgreSQL Authority и утверждённый реестр. Демонстрационные карточки не являются Verified.</span>';
+    admission.innerHTML='<b>PRODUCTION ADMISSION · WAITING</b><span>Статус брендов не подтверждён: нужен действующий PostgreSQL Authority и утверждённый реестр. В интерфейсе не показываются неподтверждённые бренды.</span>';
   }
   renderAccountBridge();
 }
@@ -76,8 +76,14 @@ async function hydrateVerifiedRoster(){
       grid.innerHTML=rows.slice(0,12).map(function(b,i){
         var cls=['red','blue','cream'][i%3];
         return '<article class="brand-card '+cls+'"><div class="verified-pill">СДЕЛАНО В МОСКВЕ · VERIFIED</div><div><small>APPROVED POSTGRESQL ROSTER</small><h3>'+esc(b.name)+'</h3><p>'+esc(b.city||'Москва')+' · canonical MFW brand</p><div class="brand-actions"><button data-made-open-mfw="'+esc(b.id)+'">ОТКРЫТЬ В MFW</button><button data-made-open-buyer="'+esc(b.id)+'">BUYER BRIDGE</button></div></div></article>';
-      }).join('')+'<article class="brand-card cream preview-card"><div><span class="preview-pill">PREVIEW · НЕ ВЕРИФИЦИРОВАНО</span><small>DEMO SLOT · PREVIEW ONLY</small><h3>Московский бренд</h3><p>Неподтверждённый preview не получает Verified badge.</p></div></article>';
+      }).join('');
       bindBrandActions();
+    }
+    if(grid&&!rows.length){
+      grid.innerHTML='<article class="made-roster-empty" data-roster-empty="empty">'+
+        '<div class="made-roster-empty-kicker"><span class="preview-pill">УТВЕРЖДЁННЫЙ РЕЕСТР · 0</span></div>'+
+        '<div class="made-roster-empty-copy"><h3>Опубликованных брендов пока нет</h3>'+
+        '<p>Authority допустил реестр, но не вернул опубликованных участников. Это не демонстрационные карточки.</p></div></article>';
     }
     madeOverview=overviewBody.data;
     var count=document.getElementById('verifiedBrandCount');
@@ -85,7 +91,7 @@ async function hydrateVerifiedRoster(){
     var admission=document.getElementById('madeAdmissionState');
     if(admission){
       admission.classList.add('ready');
-      admission.innerHTML='<b>POSTGRESQL AUTHORITY · READY</b><span>Принят утверждённый реестр. Статус каждого отображённого бренда подтверждается PostgreSQL Authority; демонстрационные карточки не входят в реестр.</span>';
+      admission.innerHTML='<b>POSTGRESQL AUTHORITY · READY</b><span>Получена допущенная серверная выборка брендов. Количество отражает реестр, а не демонстрационные данные.</span>';
     }
     renderAccountBridge();
   }catch(_){resetVerifiedRoster();}

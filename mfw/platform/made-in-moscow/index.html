@@ -68,19 +68,24 @@
 <section class="section" id="hub">
   <div class="section-head"><div><div class="kicker">02 · DISCOVERY</div><h2>Made in Moscow Hub</h2></div><button class="text-btn" data-action="mfw">ОТКРЫТЬ MFW →</button></div>
   <div class="hub-toolbar"><span>FASHION / CREATIVE FILTER</span><span>VERIFIED ONLY</span><span>BUYER READY</span></div>
-  <div class="brand-grid" id="madeBrandGrid">
-    <article class="brand-card red"><div class="preview-pill">PREVIEW · НЕ ВЕРИФИЦИРОВАНО</div><div><small>DEMO SLOT · FASHION</small><h3>Московский бренд</h3><p>Canonical card → MFW show → showroom → follow → buyer.</p></div></article>
-    <article class="brand-card blue"><div class="preview-pill">PREVIEW · НЕ ВЕРИФИЦИРОВАНО</div><div><small>DEMO SLOT · ACCESSORIES</small><h3>Московский бренд</h3><p>Один профиль бренда во всех трёх направлениях.</p></div></article>
-    <article class="brand-card cream"><div class="preview-pill">PREVIEW · НЕ ВЕРИФИЦИРОВАНО</div><div><small>DEMO SLOT · DESIGN</small><h3>Московский бренд</h3><p>Реальные названия появятся только после verified roster import.</p></div></article>
+  <div class="brand-grid" id="madeBrandGrid" aria-live="polite">
+    <article class="made-roster-empty" data-roster-empty="unadmitted">
+      <div class="made-roster-empty-kicker"><span class="preview-pill">РЕЕСТР ОЖИДАЕТ ПОДТВЕРЖДЕНИЯ</span><span>01 / ИСТОЧНИК ДАННЫХ</span></div>
+      <div class="made-roster-empty-copy">
+        <h3>Бренды появятся после проверки реестра</h3>
+        <p>Для участия в каталоге требуется подтверждённое членство в программе и опубликованный профиль бренда. Названия, статус и переходы на MFW/BFS не подменяются демонстрационными карточками.</p>
+        <small>ПРОВЕРКА ДОПУСКА · PostgreSQL Authority</small>
+      </div>
+    </article>
   </div>
-  <div class="truth-note">Ни один реальный бренд в preview не объявляется резидентом «Сделано в Москве» без подтверждённого источника.</div>
+  <div class="truth-note">Статус участия в программе отображается только после проверки реестра. Отсутствие данных не означает, что бренд не участвует в программе.</div>
 </section>
 
 <section class="section market" id="market">
   <div class="section-head"><div><div class="kicker">03 · PHYSICAL ↔ DIGITAL</div><h2>Digital Market /<br>Showroom</h2></div><span class="section-no">03</span></div>
   <div class="market-layout">
     <div class="map-card">
-      <div class="map-head"><b>МАРКЕТ / ШОУРУМ</b><span>DEMO VENUE MAP</span></div>
+      <div class="map-head"><b>МАРКЕТ / ШОУРУМ</b><span>КОНЦЕПЦИЯ МАРШРУТА</span></div>
       <div class="booths"><i class="booth b1">A01</i><i class="booth b2">A02</i><i class="booth b3">B01</i><i class="booth b4">B02</i><i class="route"></i></div>
       <div class="map-foot">QR стенда → canonical brand page → сохранить маршрут → buyer shortlist.</div>
     </div>

@@ -193,9 +193,10 @@ test('three ecosystems share identity while keeping scoped participation and Mad
   await expect(made.locator('#madeAccountBridge')).toContainText('BFS');
   await expect(made.locator('#madeAdmissionState')).toContainText('PRODUCTION ADMISSION · WAITING');
   await expect(made.locator('#madeBrandGrid .verified-pill')).toHaveCount(0);
-  await expect(made.locator('#madeBrandGrid .preview-pill')).toHaveCount(3);
+  await expect(made.locator('#madeBrandGrid .preview-pill')).toHaveCount(1);
   await expect(made.locator('#verifiedBrandCount')).toHaveText('—');
-  await expect(made.locator('#madeBrandGrid')).toContainText('DEMO SLOT');
+  await expect(made.locator('#madeBrandGrid')).toContainText('Бренды появятся после проверки реестра');
+  await expect(made.locator('#madeBrandGrid .brand-card')).toHaveCount(0);
   await expectNoDocumentOverflow(page);
   await page.screenshot({ path: testInfo.outputPath('three-ecosystem-identity.png') });
 });
@@ -234,6 +235,7 @@ test('Made verified brand deep-links into exact MFW brand and preserves brand co
   await page.goto('/platform/index.html?event=made', { waitUntil: 'domcontentloaded' });
   const made = page.frameLocator('#eventFrame');
   await expect(made.locator('#madeBrandGrid')).toContainText('Masterpeace');
+  await expect(made.locator('#madeBrandGrid .made-roster-empty')).toHaveCount(0);
 
   await made.locator('[data-made-open-mfw="masterpeace"]').click();
   await expect(page.locator('[data-event="mfw"]')).toHaveClass(/active/);
