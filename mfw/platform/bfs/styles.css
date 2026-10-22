@@ -52,3 +52,20 @@ button,input,select,textarea{touch-action:manipulation}
 @media(max-width:430px){.bfs-media-deck{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.bfs-media-card,.bfs-video-card{flex:0 0 78%;min-height:148px;scroll-snap-align:start}}
 .bfs-action-notice{margin:12px 18px;padding:12px 14px;border:1px solid #b94f2e;background:#fff6eb;color:#442015;font-size:13px;font-weight:700;line-height:1.4}
 .bfs-action-notice[hidden]{display:none!important}
+
+
+/* BFS editorial finish — retains Summit colours without generic demo tiles. */
+:root{--bfs-stroke:#242723;--bfs-paper:#f5f2e9;--bfs-panel:#fcfaf4;--bfs-focus:#2755c5}
+.app{max-width:1320px;background:var(--bfs-paper)}
+.top{padding-inline:clamp(16px,3vw,38px);border-color:var(--bfs-stroke)}
+.hero-copy{padding-left:clamp(16px,4vw,56px);padding-right:clamp(16px,4vw,56px)}
+.section-head h2{font-family:Georgia,"Times New Roman",serif;font-weight:500;letter-spacing:-.035em;line-height:1.05;text-transform:none}
+.card{background:var(--bfs-panel);border-color:#3d4038;min-height:155px}
+.card h3{font-family:Georgia,"Times New Roman",serif;font-weight:500;line-height:1.06;letter-spacing:-.025em}
+.delegate,.meeting-card{background:rgba(255,255,255,.38);border-color:#474b43}
+.b2b{background:#f4e89e;border-color:#40413a}
+.nav button{font-size:11px;letter-spacing:.035em;font-weight:750}
+.nav button:focus-visible,.hero-actions button:focus-visible,.small-action:focus-visible,.org-actions button:focus-visible,.delegate button:focus-visible{outline:3px solid var(--bfs-focus);outline-offset:2px}
+.bfs-media-card,.bfs-video-card{border-radius:2px}
+.bfs-media-card b,.bfs-video-card b{line-height:1.12}
+@media(max-width:680px){.hero-copy{padding-left:16px}.section-head h2{font-size:clamp(26px,8.5vw,34px)}}

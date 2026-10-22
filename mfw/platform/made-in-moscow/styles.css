@@ -35,3 +35,21 @@
   .bridge-status-grid{grid-template-columns:1fr}
   .bridge-status-grid article{min-height:0}
 }
+
+
+/* Made editorial finish. Clean approved roster, clear unavailable state. */
+:root{--made-canvas:#faf9f6;--made-paper:#fffdfa;--made-outline:#d7d3cd}
+.app{background:var(--made-canvas)}
+.top,.nav{background:var(--made-paper)}
+.nav button{font-size:10px;letter-spacing:.035em;font-weight:750}
+.section-head h2{font-family:Georgia,"Times New Roman",serif;font-weight:500;letter-spacing:-.04em;line-height:1.08}
+.brand-card{border:1px solid rgba(18,18,18,.22);min-height:270px;padding:24px}
+.brand-card.red{background:#bc514b;color:#fff}
+.brand-card.blue{background:#dee9ed;color:#14191d}
+.brand-card.cream{background:#eeeae1;color:#1d1d1a}
+.brand-card h3{font-family:Georgia,"Times New Roman",serif;font-size:clamp(25px,2.7vw,34px);font-weight:500;line-height:1.07}
+.preview-pill,.verified-pill{font-size:10px;letter-spacing:.035em;padding:8px 10px}
+.brand-actions button,.top-actions button,.text-btn{min-height:44px;font-weight:750;letter-spacing:.025em}
+.brand-actions button:focus-visible,.top-actions button:focus-visible,.nav button:focus-visible,.hero-actions button:focus-visible{outline:3px solid #1a1a1a;outline-offset:3px}
+.made-photo-card,.made-video-card{border-radius:0}
+@media(max-width:600px){.brand-card{min-height:230px;padding:18px}.hero h1{line-height:.91}.section-head h2{line-height:1.1}}
