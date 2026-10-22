@@ -1455,6 +1455,18 @@ test('Follow-up Center filters owner scoped CRM deadlines and escapes names',asy
   await expect(page.locator('#followupSummary')).toBeVisible();
   await expect(page.locator('.followup-item')).toHaveCount(3);
   await expect(page.locator('.followup-kpis b').first()).toHaveText('3');
+  await expect(page.locator('#followupAnalytics')).toBeVisible();
+  await expect(page.locator('#followupAnalytics')).toContainText('План действий заполнен');
+  await expect(page.locator('#followupAnalytics')).toContainText('1 из 2 открытых');
+  await expect(page.locator('#followupAnalytics')).toContainText('1 из 2 связанных');
+  await expect(page.locator('#followupAnalytics')).toContainText('50%');
+  await expect(page.locator('#followupStageMix .followup-stage-row')).toHaveCount(3);
+  await expect(page.locator('.followup-item').first()).toContainText('ПРИОРИТЕТ');
+  await expect(page.locator('.followup-item').first()).toContainText('ПРИЧИНЫ ПРИОРИТЕТА');
+  await page.locator('[data-followup-filter="priority"]').click();
+  await expect(page.locator('.followup-item')).toHaveCount(2);
+  await expect(page.locator('#followupVisibleCount')).toContainText('Показано 2 из 3');
+  await page.locator('[data-followup-filter="all"]').click();
   await expect(page.locator('.followup-item').first()).toContainText('ПРОСРОЧЕНО');
   await expect(page.locator('#hubContent')).toContainText('<img src=x onerror=alert(1)> Atelier & Co');
   await expect(page.locator('#followupQueue img')).toHaveCount(0);
