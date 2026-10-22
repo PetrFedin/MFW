@@ -1603,22 +1603,57 @@
   // invitations are created by this screen.
   function showFollowupBoard(projection){
     if(hubTab!=='followup')return;
-    var statuses={all:'Все',overdue:'Просрочено',missing:'Нет следующего шага',
-      scheduled:'Запланировано',closed:'Закрыто'};
-    var statusLabels={overdue:'ПРОСРОЧЕНО',missing:'ТРЕБУЕТСЯ ПЛАН',
+    var a=projection.analytics,totals=projection.totals;
+    var statuses={all:'Все',priority:'Требуют внимания',overdue:'Просрочено',
+      missing:'Без плана',scheduled:'Запланировано',closed:'Закрыто'};
+    var statusLabels={overdue:'ПРОСРОЧЕНО',missing:'НЕТ ПЛАНА',
       scheduled:'ЗАПЛАНИРОВАНО',closed:'ЗАКРЫТО'};
+    var stageNames={interest:'Интерес',meeting_requested:'Запрос встречи',
+      meeting_confirmed:'Встреча согласована',met:'Встреча проведена',
+      follow_up:'Последующие действия',qualified:'Квалифицирован',
+      won:'Выигран по данным CRM',lost:'Закрыт без результата',
+      unknown:'Неопределённый этап'};
     var items=projection.rows.filter(function(row){
-      return followupFilter==='all'||row.dueStatus===followupFilter;
+      return followupFilter==='all'||(followupFilter==='priority'?
+        row.priorityScore>=60&&row.dueStatus!=='closed':row.dueStatus===followupFilter);
     });
+    var percentage=function(v){return v===null?'—':String(v).replace('.',',')+'%';};
+    var stages=Object.keys(stageNames).filter(function(k){return a.stageMix[k]>0;});
+    var highest=Math.max(1,...stages.map(function(k){return a.stageMix[k];}));
     hubContent.innerHTML=
-      '<div class="followup-header"><div><div class="drawer-kicker">B2B · POST-EVENT OPERATIONS</div>'+
-      '<h3>Центр последующих действий</h3><p>Список рабочих действий по встречам и CRM-лидам. Все показатели рассчитаны только по вашему серверному доступу.</p></div>'+
-      '<button type="button" id="followupRefresh">ОБНОВИТЬ</button></div>'+
-      '<div class="followup-truth" role="note">ИСТОЧНИК: POSTGRESQL · ЛИЧНЫЙ КОНТУР. Этап «won» — это статус CRM, а не подтверждённый заказ или выручка. Просрочка определяется по сроку следующего действия.</div>'+
+      '<div class="followup-header"><div><div class="drawer-kicker">ДЕЛОВЫЕ СВЯЗИ · ПОСЛЕ МЕРОПРИЯТИЯ</div>'+
+      '<h3>Центр последующих действий</h3><p>Встречи, CRM и следующие шаги в одной рабочей очереди. Приоритет рассчитывается по срокам и целостности связей, не по предполагаемой ценности клиента.</p></div>'+
+      '<button type="button" id="followupRefresh" aria-label="Повторно загрузить свои встречи и лиды">Обновить данные ↗</button></div>'+
+      '<p class="followup-truth" role="note">ПРОВЕРЯЕМАЯ ОСНОВА · PostgreSQL · Только доступные вам записи. Статус CRM «won» не подтверждает оплату, заказ или выручку.</p>'+
       '<div class="followup-kpis" id="followupSummary">'+
       [['all','Всего лидов'],['overdue','Просрочено'],['missing','Без плана'],['scheduled','Запланировано'],['closed','Закрыто']].map(function(pair){
-        return '<div><b>'+h(projection.totals[pair[0]])+'</b><span>'+h(pair[1])+'</span></div>';
+        return '<div><b>'+h(totals[pair[0]])+'</b><span>'+h(pair[1])+'</span></div>';
       }).join('')+'</div>'+
+      '<section class="followup-intelligence" id="followupAnalytics" aria-label="Аналитика следующих действий">'+
+        '<div class="followup-section-title"><div><span>01 / ОПЕРАЦИОННАЯ АНАЛИТИКА</span><h4>Где требуется действие</h4></div><small>На '+h(formatWhen(projection.asOf))+' · только наблюдаемое</small></div>'+
+        '<div class="followup-analytics-grid">'+
+        '<article><span>Открытые лиды</span><strong>'+h(a.open)+'</strong><small>Без закрытых CRM-статусов</small></article>'+
+        '<article><span>В зоне внимания</span><strong>'+h(a.needsAttention)+'</strong><small>Приоритет от 60 / 100</small></article>'+
+        '<article><span>План действий заполнен</span><strong>'+h(percentage(a.actionCoveragePct))+'</strong><small>'+h(a.plannedActions)+' из '+h(a.open)+' открытых</small></article>'+
+        '<article><span>Встречи найдены</span><strong>'+h(percentage(a.meetingLinkCoveragePct))+'</strong><small>'+h(a.linkedMeetings)+' из '+h(a.meetingRefs)+' связанных</small></article>'+
+        '</div>'+
+        '<div class="followup-insights"><span>В ближайшие 72 часа <b>'+h(a.dueSoon)+'</b></span>'+
+        '<span>Нарушения связи/этапа <b>'+h(totals.unlinkedMeetings+a.meetingConflicts)+'</b></span>'+
+        '<span>Просрочка суммарно <b>'+h(a.overdueDaysTotal)+' дн.</b></span></div>'+
+        '<div class="followup-stage-head"><span>СТРУКТУРА CRM</span><small>Количество записей по этапам, не конверсия</small></div>'+
+        '<div class="followup-stage-bars" id="followupStageMix">'+
+        (stages.length?stages.map(function(k){
+          var n=a.stageMix[k];
+          return '<div class="followup-stage-row"><span>'+h(stageNames[k])+'</span>'+
+            '<div class="followup-stage-track" role="img" aria-label="'+h(stageNames[k]+': '+n)+'">'+
+            '<i style="width:'+h(Math.round(n/highest*100))+'%"></i></div><b>'+h(n)+'</b></div>';
+        }).join(''):'<p class="followup-empty">Этапы не представлены.</p>')+
+        '</div>'+
+        '<details class="followup-method"><summary>Как рассчитывается приоритет и полнота данных</summary><p>'+h(a.methodology)+'</p>'+
+        '<p>Значение «—» означает отсутствие знаменателя, а не 0%. Приоритет служит только для сортировки задач; не оценивает людей и не является вероятностью сделки.</p></details>'+
+      '</section>'+
+      '<div class="followup-queue-head"><div><span>02 / РАБОЧАЯ ОЧЕРЕДЬ</span><h4>Контакты и сроки</h4></div>'+
+      '<span id="followupVisibleCount">Показано '+h(items.length)+' из '+h(totals.all)+'</span></div>'+
       '<div class="followup-controls" role="group" aria-label="Фильтр последующих действий">'+
       Object.keys(statuses).map(function(key){
         return '<button type="button" data-followup-filter="'+h(key)+'" aria-pressed="'+(key===followupFilter?'true':'false')+'"'+
@@ -1628,18 +1663,23 @@
       (items.length?items.map(function(row){
         var eventLabel=h(row.eventLabel),name=h(row.counterpart||row.organisation||'Контрагент не указан');
         var due=row.dueAt===null?'Срок не указан':formatWhen(new Date(row.dueAt).toISOString());
-        return '<article class="followup-item" data-followup-row="'+h(row.id)+'">'+
+        var priorityLabel=row.dueStatus==='closed'?'ЗАКРЫТО':
+          'ПРИОРИТЕТ '+String(row.priorityScore)+' / 100';
+        return '<article class="followup-item" data-followup-row="'+h(row.id)+'" data-priority-band="'+h(row.priorityBand)+'">'+
           '<div class="followup-row-top"><span>'+eventLabel+'</span>'+
           '<strong class="followup-status '+h(row.dueStatus)+'">'+h(statusLabels[row.dueStatus]||'НЕОПРЕДЕЛЕНО')+'</strong></div>'+
+          '<div class="followup-priority '+h(row.priorityBand)+'">'+h(priorityLabel)+'</div>'+
           '<h4>'+name+'</h4><p>'+h(row.stageLabel)+'</p>'+
           '<dl><div><dt>Следующее действие</dt><dd>'+h(row.nextAction||'Не назначено')+'</dd></div>'+
           '<div><dt>Срок</dt><dd>'+h(due)+'</dd></div>'+
           '<div><dt>Встреча</dt><dd>'+h(row.meetingLinked?row.meetingStatus||
           'Доступна в моём реестре':row.meetingId?
           'Не найдена среди доступных мне встреч':'Не связана')+'</dd></div></dl>'+
+          (row.priorityReasons.length?'<div class="followup-reasons"><b>ПРИЧИНЫ ПРИОРИТЕТА</b>'+
+          '<ul>'+row.priorityReasons.map(function(reason){return '<li>'+h(reason)+'</li>';}).join('')+'</ul></div>':'')+
           '</article>';
-      }).join(''):'<p class="followup-empty">В этом фильтре нет записей, подтверждённых серверной выборкой.</p>')+
-      '</div><p class="followup-foot">Это рабочий обзор для контроля действий, а не CRM с правом редактирования. Договоры, контакты, коммерческие цены, заказы и финансовые результаты не экспортируются и не вычисляются.</p>';
+      }).join(''):'<p class="followup-empty">По выбранному фильтру нет записей, подтверждённых серверной выборкой.</p>')+
+      '</div><p class="followup-foot">Сводка предназначена для контроля задач. Она не выполняет рассылку, не изменяет CRM и не считает договоры, коммерческие цены, заказы или выручку.</p>';
     [].slice.call(hubContent.querySelectorAll('[data-followup-filter]')).forEach(function(button){
       button.onclick=function(){
         followupFilter=button.dataset.followupFilter;
