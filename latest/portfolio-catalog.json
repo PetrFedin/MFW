@@ -1,7 +1,7 @@
 {
   "schema": "mfw-portfolio-media-v1",
-  "capturedAt": "2026-10-22T21:57:02.932Z",
-  "captureCommit": "c449daf4ad177d70ae78dd74c00704a82cf825a8",
+  "capturedAt": "2026-10-22T22:28:55.416Z",
+  "captureCommit": "155e35e57a5d8e436e07e5a60a0f9b8d4b85dbe6",
   "evidenceBoundary": "Recorded public UI only, not proof of admission, participants, media rights, payments, QR issuance or accepted revenue.",
   "sources": [
     {
@@ -9,7 +9,7 @@
       "environment": "published-live",
       "url": "https://mfw-platform.onrender.com/platform/index.html",
       "sourceSha": null,
-      "capturedAt": "2026-10-22T21:57:02.932Z",
+      "capturedAt": "2026-10-22T22:28:55.416Z",
       "portfolioReady": false,
       "errors": [
         "capture_not_portfolio_ready",
@@ -23,8 +23,8 @@
       "id": "integration-preview",
       "environment": "unmerged-integration-preview",
       "url": "http://127.0.0.1:4173/platform/index.html",
-      "sourceSha": "c449daf4ad177d70ae78dd74c00704a82cf825a8",
-      "capturedAt": "2026-10-22T21:57:02.932Z",
+      "sourceSha": "155e35e57a5d8e436e07e5a60a0f9b8d4b85dbe6",
+      "capturedAt": "2026-10-22T22:28:55.416Z",
       "portfolioReady": true,
       "errors": [],
       "issueCount": 0,
@@ -32,208 +32,208 @@
         {
           "title": "MFW",
           "file": "integration-preview/desktop-mfw.png",
-          "sha256": "b24929e441eea0edefd46045ba057079e4486343e59c172ea017e109c52f41e9",
-          "bytes": 63763,
+          "sha256": "48cc611977a8a126bcb25abdd619d12646c859e1942c2b2759ceccac50bd73d6",
+          "bytes": 63229,
           "device": "desktop",
           "ecosystem": "mfw"
         },
         {
           "title": "BFS",
           "file": "integration-preview/desktop-bfs.png",
-          "sha256": "fdd01ef172851e98cfb2d9e87434fc1b981fa994d87eae51386c3c96644834b1",
-          "bytes": 130724,
+          "sha256": "46cff3c232e23f2d29b0b3684bfdfb08b3e8e2f2d2fb8d344eaab0773ceec0c6",
+          "bytes": 139615,
           "device": "desktop",
           "ecosystem": "bfs"
         },
         {
           "title": "MADE",
           "file": "integration-preview/desktop-made.png",
-          "sha256": "8f01c14afc04672468a81248dae0ef1d5a03e9cf51464f3b021e733d3dfe9279",
-          "bytes": 165310,
+          "sha256": "c60451ebb8285ecc8d93ab8c7d217da7d7183fcb888e28bb7781305f97095376",
+          "bytes": 165949,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "MFW SCHEDULE",
           "file": "integration-preview/desktop-mfw-schedule.png",
-          "sha256": "dd6be77c2a84e614e9100748c44794751a359bd6af0d19f4b7114d5c08805997",
-          "bytes": 116223,
+          "sha256": "22580e840781d27fd88aa1114e0ea25a22aafad4503119dbb4a083d923a32d44",
+          "bytes": 115750,
           "device": "desktop",
           "ecosystem": "mfw"
         },
         {
           "title": "MFW DISCOVER",
           "file": "integration-preview/desktop-mfw-discover.png",
-          "sha256": "56c6bb0c57ed409afacfd7652b3c566da0ac72d1317a33a398071348d8022488",
-          "bytes": 636386,
+          "sha256": "24ca535d43eb2024e0c61c962cf4c4f0c4b94324d04f724f22189baecd87017d",
+          "bytes": 635970,
           "device": "desktop",
           "ecosystem": "mfw"
         },
         {
           "title": "MFW LIVE",
           "file": "integration-preview/desktop-mfw-live.png",
-          "sha256": "4a123e5d5b9ed3976d34a4c8704e4959a62c0a90305639761dbfe784877ab71b",
-          "bytes": 778675,
+          "sha256": "cce0593255a51cb6095e9da4116504427e7a2c2a36015e3a9fafe52b921d7624",
+          "bytes": 778292,
           "device": "desktop",
           "ecosystem": "mfw"
         },
         {
           "title": "BFS PROGRAMME",
           "file": "integration-preview/desktop-bfs-programme.png",
-          "sha256": "aae7060e84babdc15cb230402d94e44be8a60d0f35e958341270dea4be5f1410",
-          "bytes": 129100,
+          "sha256": "21ca0102f99508a48bd6e57e9d618db8a91af75ef2abb392ab65c657fc657771",
+          "bytes": 117465,
           "device": "desktop",
           "ecosystem": "bfs"
         },
         {
           "title": "BFS SPEAKERS",
           "file": "integration-preview/desktop-bfs-speakers.png",
-          "sha256": "a5be05fcae93191a7e2012b4bd6abcc6814b9921fbcf8b76148d2791817ea64d",
-          "bytes": 168259,
+          "sha256": "77bf286ed57e2af908d3c7f605a6837fa0a88337577e9e71a79ae57560f18aaf",
+          "bytes": 178688,
           "device": "desktop",
           "ecosystem": "bfs"
         },
         {
           "title": "BFS B2B",
           "file": "integration-preview/desktop-bfs-b2b.png",
-          "sha256": "9cbc778e7e93170bff4dd52090bd5f4f5aafc22d988735b2f2abf299878903bf",
-          "bytes": 110674,
+          "sha256": "cbd1090c6ca3b4476531540bd6d2a7bc53f3522e39e9306d1f10f90b0eede7d0",
+          "bytes": 118858,
           "device": "desktop",
           "ecosystem": "bfs"
         },
         {
           "title": "BFS ORGANISATIONS",
           "file": "integration-preview/desktop-bfs-organisations.png",
-          "sha256": "72402f398cddeac79c300c99bff9804e26c6b4394344345f73891e50516e5cc5",
-          "bytes": 112140,
+          "sha256": "cd65ee3ddda77076afb4f8820f68849c2e505b7cf6b3dd6de321584fad3520f0",
+          "bytes": 119543,
           "device": "desktop",
           "ecosystem": "bfs"
         },
         {
           "title": "MADE VERIFIED",
           "file": "integration-preview/desktop-made-verified.png",
-          "sha256": "1415e0485e00e3a87ce8665308b0bfadd642298db3041ad8b0227c10b7a54196",
-          "bytes": 100466,
+          "sha256": "4770e4e3b13749cd2d5d72d621d3c1ebc062f09977de91c9c2fcebaf0af96176",
+          "bytes": 100676,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "MADE BRANDS",
           "file": "integration-preview/desktop-made-brands.png",
-          "sha256": "981454a57bfd7bf0ca759bf4a714d45337b57fcceefe06b5fea141d0e47ed04f",
-          "bytes": 91632,
+          "sha256": "08cb439789a60fb2255648afae76920769d42265d608f585098cbd64da861146",
+          "bytes": 87460,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "MADE MARKET",
           "file": "integration-preview/desktop-made-market.png",
-          "sha256": "09c2987ba530bf302ac3a0b644b3baca329cc03e631bc37e9cc725aa1bad7604",
-          "bytes": 70508,
+          "sha256": "1467811c53b933e52d6de0b68d7898293231ff089e41482d2630ca96477867ac",
+          "bytes": 68338,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "MADE BUYER",
           "file": "integration-preview/desktop-made-buyer.png",
-          "sha256": "ff4f1c9b8a9de1123ff545192e3b1630697f924b47cb66d411c7cfc6c2112f63",
-          "bytes": 82740,
+          "sha256": "74aa52651e129edda714ed849261db3d28bfafd8cdc8067721579f1ae96cf538",
+          "bytes": 82856,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "MADE BRAND365",
           "file": "integration-preview/desktop-made-brand365.png",
-          "sha256": "b32af7dd829eb7631e739a4baa92621679994334e24ce523aa4552cb9966c48f",
-          "bytes": 83146,
+          "sha256": "bb252be98cb3b5326829ad491aef3debad91d79bd65fe1ffd79eabfaa653521f",
+          "bytes": 82799,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "MADE EVIDENCE",
           "file": "integration-preview/desktop-made-evidence.png",
-          "sha256": "ce838051a2e721841f18ef7908f05c01992416e033a74899112785194d85d490",
-          "bytes": 93973,
+          "sha256": "7f187883c2ed36cbcd81840b888afb1ffa97d83e6c51ca2e3c9c6ddc909bbd1b",
+          "bytes": 95624,
           "device": "desktop",
           "ecosystem": "made"
         },
         {
           "title": "INVESTOR",
           "file": "integration-preview/desktop-investor.png",
-          "sha256": "8eeebb863646c62ebeb4ee143e180b002e654e073a9facf9f3b7f59a027f61c2",
-          "bytes": 176141,
+          "sha256": "7d849a208a5a5d5f4abc9d91a254361b5351358bcf8d4e06776b7cc4d200bd26",
+          "bytes": 186982,
           "device": "desktop",
           "ecosystem": "platform"
         },
         {
           "title": "MFW",
           "file": "integration-preview/mobile-mfw.png",
-          "sha256": "45189783ba56210861ae03b10fd8314f8583cbf25e1d6023c7e20384b241aa98",
-          "bytes": 41725,
+          "sha256": "4af6c00c38542082d8762fdb669884c4e1ce3602f510169bbcb2c2eb9a714194",
+          "bytes": 40986,
           "device": "mobile",
           "ecosystem": "mfw"
         },
         {
           "title": "BFS",
           "file": "integration-preview/mobile-bfs.png",
-          "sha256": "42c4f45276368d7bd1936f2f146e821e406c500a359a3117145070395dcab0a6",
-          "bytes": 59814,
+          "sha256": "f7b43888981c651804943795a1c9ae5313bb775e2ed731b4f0f820088fd128fa",
+          "bytes": 58574,
           "device": "mobile",
           "ecosystem": "bfs"
         },
         {
           "title": "MADE",
           "file": "integration-preview/mobile-made.png",
-          "sha256": "89193ff5a7b751ea650b19ab03d2f58a9362ab64b4700031fe999c42f31e84f8",
-          "bytes": 50405,
+          "sha256": "eeb92314608567d1fad25c4e07a8796674164dc02746e874bc8bc3e2356856c8",
+          "bytes": 50567,
           "device": "mobile",
           "ecosystem": "made"
         },
         {
           "title": "MFW SCHEDULE",
           "file": "integration-preview/mobile-mfw-schedule.png",
-          "sha256": "d52cd7b34030e123a7b8d020eadccf71e45b84b56c54bfb7c308f829fe3fb472",
-          "bytes": 66424,
+          "sha256": "8cf37035dfcb2323f270a04d2ea52f4341bc40df7f8b16f53597b2bdefdec24f",
+          "bytes": 66759,
           "device": "mobile",
           "ecosystem": "mfw"
         },
         {
           "title": "MFW DISCOVER",
           "file": "integration-preview/mobile-mfw-discover.png",
-          "sha256": "3099d16316b880bfd271f70f5dfce75c6fae1a3dce5a7bb16077f8fc6f23dc21",
-          "bytes": 197148,
+          "sha256": "a6f49eecc2d6b4f966405e96d9d0b730ccc4432e4dd36610682a9c67467de498",
+          "bytes": 198081,
           "device": "mobile",
           "ecosystem": "mfw"
         },
         {
           "title": "BFS PROGRAMME",
           "file": "integration-preview/mobile-bfs-programme.png",
-          "sha256": "3d28c53e88137aa630d68606aac5f4631096f9f0362d8bdbdf0730ff4ff7aed9",
-          "bytes": 48354,
+          "sha256": "ae2e9f94e1b73136ac4e96630e18b3832f254e76da933f9bcdf4f83eca22e016",
+          "bytes": 49225,
           "device": "mobile",
           "ecosystem": "bfs"
         },
         {
           "title": "BFS B2B",
           "file": "integration-preview/mobile-bfs-b2b.png",
-          "sha256": "26cfa44702c531f164b3b8215164fe3b4be8f6055272e869cbc263d5bf26b91e",
-          "bytes": 48060,
+          "sha256": "8d292d5192ff1a1ef13fa962786f08562606953f8b60414eca32b50def4756ed",
+          "bytes": 47566,
           "device": "mobile",
           "ecosystem": "bfs"
         },
         {
           "title": "MADE VERIFIED",
           "file": "integration-preview/mobile-made-verified.png",
-          "sha256": "f996adcad3120de1e2c006ecfa798eeb4409a7984e5a668622d0d875e568f64b",
-          "bytes": 48814,
+          "sha256": "e067123cd776cae6a42c67fb796bf93910b6029a26b44c79301e0660c6c7317d",
+          "bytes": 48030,
           "device": "mobile",
           "ecosystem": "made"
         },
         {
           "title": "MADE BUYER",
           "file": "integration-preview/mobile-made-buyer.png",
-          "sha256": "16ce6172e5cc8d1aa4d356e327113de30ab50b8a5f55e913e114ef928935eb1f",
-          "bytes": 27086,
+          "sha256": "001bfcda7075b2d5a2dfc1a20d2e7dd7839c9fbb8163c31ad06ea6ea58cc47dc",
+          "bytes": 28541,
           "device": "mobile",
           "ecosystem": "made"
         }
@@ -242,32 +242,32 @@
         {
           "title": "PLATFORM TOUR",
           "file": "integration-preview/tour-25s.mp4",
-          "sha256": "4309be695980cb77b3faa706173d8577af9ce30f557c7fe17563e0351a442b85",
-          "bytes": 262191,
+          "sha256": "f1e8f1ea026eff876570bb4a23040da99a5fc4a9314c2ced15a453473ae3a592",
+          "bytes": 271619,
           "durationSeconds": 25,
           "ecosystem": "platform"
         },
         {
           "title": "MFW",
           "file": "integration-preview/mfw-tour-25s.mp4",
-          "sha256": "2358b35c8e369269cb00adf134ee91c2ece869bc94b9b78b35f394de3bbc051e",
-          "bytes": 572222,
+          "sha256": "d365755c61fb37c64ba3b4f7330fc0386f39026cd64bfc5d36b39902f13f3c5f",
+          "bytes": 641260,
           "durationSeconds": 25,
           "ecosystem": "mfw"
         },
         {
           "title": "BFS",
           "file": "integration-preview/bfs-tour-25s.mp4",
-          "sha256": "5d39639f8bf563199daa9a2862572f7645a484f32e1cb3659f8526961f8c6ab3",
-          "bytes": 439083,
+          "sha256": "0982eed880d3ffa38e0307c0bf84d6a5b5e93d5cd91432150e8cbfbfdae3fee0",
+          "bytes": 454385,
           "durationSeconds": 25,
           "ecosystem": "bfs"
         },
         {
           "title": "MADE",
           "file": "integration-preview/made-tour-25s.mp4",
-          "sha256": "1a39cec8ebba3b7ce1252d883b9a66677abd3e58b205356bf4052c4c1b435af9",
-          "bytes": 1786934,
+          "sha256": "0ebc66c18bd807a368e04859beac8df454e28d539368eab7d0efe6a134f9fab4",
+          "bytes": 1719376,
           "durationSeconds": 25,
           "ecosystem": "made"
         }

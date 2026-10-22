@@ -2,7 +2,7 @@
   "id": "production",
   "url": "https://mfw-platform.onrender.com/platform/index.html",
   "sourceSha": null,
-  "capturedAt": "2026-10-22T21:57:02.932Z",
+  "capturedAt": "2026-10-22T22:28:55.416Z",
   "environment": "published-live",
   "status": "diagnostic_only",
   "screenshots": [
@@ -48,8 +48,8 @@
     },
     {
       "file": "desktop-bfs-b2b.png",
-      "bytes": 110464,
-      "sha256": "a6ba4d947786baa3f673e6ddc603035293ae15798133774fcfe1d2f72231346c"
+      "bytes": 112150,
+      "sha256": "f637f5c6cf9d5421a09337f399e623e59bc072a82bcff6118a589f3d6fea5898"
     },
     {
       "file": "desktop-bfs-organisations.png",
@@ -140,30 +140,30 @@
   "video": {
     "file": "tour-25s.mp4",
     "durationSeconds": 25,
-    "bytes": 314438,
-    "sha256": "4aa86c0e2ca4c44c3abcb906e140bce451f56a8058eb4bc156e5035d24788bca"
+    "bytes": 244912,
+    "sha256": "6cdb6af8cb53b7f426c9de097f0b505b8f951ec507ae0355de738080b00b9956"
   },
   "extraVideos": [
     {
       "topic": "mfw",
       "file": "mfw-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 566179,
-      "sha256": "29b6fb9325ba76624a6479d6ef90a7995de37884d05d5ff8be2a5dde693c15c6"
+      "bytes": 526939,
+      "sha256": "2b6758fbce21ac95d7ee6e98e34e42e83f0606c36b448ed40db991be6768b686"
     },
     {
       "topic": "bfs",
       "file": "bfs-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 470130,
-      "sha256": "98b5665fa3820ea478006b71e8082d755dfa5599fa614e4cd4234c4f1b0e9224"
+      "bytes": 435676,
+      "sha256": "0eba33e6e75a3e8fc4bcf8eab6658929a7babbd021a5ffb18d09887814f0dddf"
     },
     {
       "topic": "made",
       "file": "made-tour-25s.mp4",
       "durationSeconds": 25,
-      "bytes": 1749751,
-      "sha256": "67d2a84a5a9a3c0025d6ee4b96ca85ad4c3f4f9fba7f0af420a74cc26c5ee375"
+      "bytes": 1701634,
+      "sha256": "1d6638738514b6b9880fba39d0d18304ef6e5cde0db9543ae1b55174e33c0ed8"
     }
   ],
   "warnings": [
