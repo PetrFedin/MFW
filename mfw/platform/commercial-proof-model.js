@@ -107,6 +107,47 @@
     };
   }
 
+  // Reproducible, assumption-only sensitivity (money per unit rounded to the
+  // nearest kopek BEFORE multiplication, so decimal prices stay deterministic).
+  // Counts and horizon remain fixed; this is not a forecast distribution.
+  function sensitivity(raw){
+    var a=normalize(raw),baseline=scenario(a);
+    var profiles=[
+      {id:'base',label:'Базовые допущения',fees:100,costs:100},
+      {id:'tariffs_down',label:'Тарифы −10%',fees:90,costs:100},
+      {id:'costs_up',label:'Затраты +10%',fees:100,costs:110},
+      {id:'combined',label:'Тарифы −10% / затраты +10%',fees:90,costs:110}
+    ];
+    var rows=profiles.map(function(p){
+      function revised(value,multiplier){
+        return Math.round(toKopeks(value)*multiplier/100);
+      }
+      var brandsIncome=a.paidBrands*revised(a.brandMonthlyFee,p.fees);
+      var partnerIncome=a.partnerPackages*revised(a.packageMonthlyFee,p.fees);
+      var brandsCost=a.paidBrands*revised(a.brandServiceCost,p.costs);
+      var partnerCost=a.partnerPackages*revised(a.packageServiceCost,p.costs);
+      var fixed=revised(a.fixedMonthlyCost,p.costs);
+      var potential=brandsIncome+partnerIncome,variable=brandsCost+partnerCost;
+      var operating=potential-variable-fixed;
+      var brandUnit=revised(a.brandMonthlyFee,p.fees)-revised(a.brandServiceCost,p.costs);
+      var partnerUnit=partnerIncome-partnerCost;
+      var breakEven=null;
+      if(brandUnit>0)breakEven=Math.ceil(Math.max(0,fixed-partnerUnit)/brandUnit);
+      else if(partnerUnit>=fixed)breakEven=0;
+      return {id:p.id,label:p.label,
+        feeMultiplierPct:p.fees,costMultiplierPct:p.costs,
+        monthlyPotentialValue:toRubles(potential),
+        monthlyOperatingResult:toRubles(operating),
+        contributionMarginPct:potential?Math.round((potential-variable)/potential*10000)/100:null,
+        breakEvenBrands:breakEven,
+        deltaToBaseline:toRubles(operating)-baseline.monthly.operatingResult};
+    });
+    return {truthClass:'MODELLED',admitted:false,rows:rows,
+      baselineOperatingResult:baseline.monthly.operatingResult,
+      actualRevenue:null,probabilityOfOutcome:null,
+      method:'Тарифы снижаются на 10% по каждой единице; переменные и фиксированные затраты повышаются на 10% по каждой единице. Округление тарифа/затраты до копейки перед умножением. Количество платящих организаций неизменно. Никаких вероятностей, churn, CAC, налогов и признанной выручки.'};
+  }
+
   // A browser is not a finance authority. User-supplied reference strings and
   // authorityAdmitted=true booleans do NOT provide cryptographic source proof.
   // Future server admission must validate issuer, scope, revocation and signatures
@@ -131,7 +172,7 @@
 
   return Object.freeze({
     version:version,defaults:defaults,fields:fields,evidenceStages:evidenceStages,
-    normalize:normalize,scenario:scenario,auditEvidence:auditEvidence,
+    normalize:normalize,scenario:scenario,sensitivity:sensitivity,auditEvidence:auditEvidence,
     hasAdmittedEvidence:hasAdmittedEvidence
   });
 });

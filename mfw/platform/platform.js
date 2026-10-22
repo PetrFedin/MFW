@@ -1220,8 +1220,24 @@
         {id:'breakEvenBrands',name:'Для покрытия расходов · брендов',value:sc.breakEvenBrands===null?'Не рассчитывается':String(sc.breakEvenBrands)},
         {id:'horizonPotential',name:'Модельный объём / '+sc.horizon.months+' мес.',value:displayScenarioRubles(sc.horizon.potentialCommercialValue)}
       ];
+      var stress=model.sensitivity(economicsAssumptions);
       root.innerHTML=cards.map(function(kpi){return '<article class="commercial-scenario-kpi'+(kpi.negative?' negative':'')+'"><span>'+h(kpi.name)+'</span>'+
-        '<strong data-commercial-kpi="'+h(kpi.id)+'">'+h(kpi.value)+'</strong></article>';}).join('');
+        '<strong data-commercial-kpi="'+h(kpi.id)+'">'+h(kpi.value)+'</strong></article>';}).join('')+
+        '<section class="commercial-sensitivity" id="commercialSensitivity" aria-label="Чувствительность операционной модели">'+
+        '<div class="commercial-sensitivity-head"><div><span>ЧУВСТВИТЕЛЬНОСТЬ / КОНТРОЛЬ ДОПУЩЕНИЙ</span>'+
+        '<h5>Что произойдёт с моделью при изменении условий</h5></div>'+
+        '<small>Равные количества клиентов во всех сценариях · без вероятностей</small></div>'+
+        '<div class="commercial-sensitivity-table" role="table">'+
+        '<div class="commercial-sensitivity-row heading" role="row"><b>Сценарий</b><b>Объём / мес.</b><b>Результат / мес.</b><b>Изменение</b><b>Безубыт. брендов</b></div>'+
+        stress.rows.map(function(row){
+          return '<div class="commercial-sensitivity-row" data-sensitivity-case="'+h(row.id)+'" role="row">'+
+            '<span>'+h(row.label)+'</span><b>'+h(displayScenarioRubles(row.monthlyPotentialValue))+'</b>'+
+            '<b'+(row.monthlyOperatingResult<0?' class="negative"':'')+'>'+h(displayScenarioRubles(row.monthlyOperatingResult))+'</b>'+
+            '<b>'+h(displayScenarioRubles(row.deltaToBaseline))+'</b>'+
+            '<b>'+h(row.breakEvenBrands===null?'Не достигается':row.breakEvenBrands)+'</b></div>';
+        }).join('')+'</div>'+
+        '<details class="commercial-sensitivity-method"><summary>Методика стресс-проверки</summary><p>'+h(stress.method)+'</p></details>'+
+        '<p>Сценарии не учитывают изменение спроса, состава клиентов, сезонности, налогов и финансирования. Это арифметическая чувствительность, а не подтверждённый бизнес-результат.</p></section>';
     }catch(err){
       root.innerHTML='<div class="commercial-validation" role="alert">Некорректные допущения. Исправьте значения: пустые, отрицательные и недопустимо большие числа не используются в расчёте.</div>';
     }

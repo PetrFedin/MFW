@@ -27,6 +27,28 @@ assert.equal(scenario.horizon.potentialCommercialValue,180000);
 assert.equal(scenario.horizon.operatingResult,84000);
 assert.equal(scenario.breakEvenBrands,2); // (5000 - (5000 - 1000)) / (1000 - 200) rounded up
 assert.equal(scenario.actual.recognisedRevenue,null);
+const sensitivity=commercial.sensitivity({
+  paidBrands:10,brandMonthlyFee:1000,brandServiceCost:200,
+  partnerPackages:2,packageMonthlyFee:2500,packageServiceCost:500,
+  fixedMonthlyCost:5000,horizonMonths:12
+});
+assert.equal(sensitivity.truthClass,'MODELLED');
+assert.equal(sensitivity.admitted,false);
+assert.equal(sensitivity.actualRevenue,null);
+assert.equal(sensitivity.probabilityOfOutcome,null);
+assert.deepEqual(sensitivity.rows.map(x=>x.monthlyOperatingResult),[7000,5500,6200,4700]);
+assert.deepEqual(sensitivity.rows.map(x=>x.deltaToBaseline),[0,-1500,-800,-2300]);
+assert.equal(sensitivity.rows[0].breakEvenBrands,2);
+assert.equal(sensitivity.rows[1].breakEvenBrands,3);
+assert.equal(sensitivity.rows[2].breakEvenBrands,3);
+assert.equal(sensitivity.rows[3].breakEvenBrands,4);
+assert.equal(commercial.sensitivity(commercial.defaults).rows.length,4);
+assert.equal(commercial.sensitivity(commercial.defaults).rows[0].monthlyOperatingResult,0);
+assert.equal(commercial.sensitivity(commercial.defaults).probabilityOfOutcome,null);
+assert.equal(commercial.sensitivity({
+  ...commercial.defaults,paidBrands:3,brandMonthlyFee:1.11,brandServiceCost:.11
+}).rows[1].monthlyPotentialValue,3,
+  'percentage tariff change must round each unit to kopeks before quantity');
 
 const deficit=commercial.scenario({...commercial.defaults,paidBrands:3,brandMonthlyFee:1000,brandServiceCost:1500,fixedMonthlyCost:2000});
 assert.equal(deficit.monthly.operatingResult,-3500);

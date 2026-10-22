@@ -43,6 +43,13 @@ test('Investor can explore modelled economics; invalid values fail closed and re
   await expect(page.locator('[data-commercial-kpi="monthlyResult"]')).toContainText(/7.000/);
   await expect(page.locator('[data-commercial-kpi="breakEvenBrands"]')).toHaveText('2');
   await expect(page.locator('[data-commercial-kpi="horizonPotential"]')).toContainText(/180.000/);
+  await expect(page.locator('#commercialSensitivity')).toBeVisible();
+  await expect(page.locator('[data-sensitivity-case]')).toHaveCount(4);
+  await expect(page.locator('[data-sensitivity-case="base"]')).toContainText(/7.000/);
+  await expect(page.locator('[data-sensitivity-case="tariffs_down"]')).toContainText(/5.500/);
+  await expect(page.locator('[data-sensitivity-case="costs_up"]')).toContainText(/6.200/);
+  await expect(page.locator('[data-sensitivity-case="combined"]')).toContainText(/4.700/);
+  await expect(page.locator('#commercialSensitivity')).toContainText('без вероятностей');
   await page.locator('[data-commercial-field="paidBrands"]').fill('-1');
   await expect(page.locator('.commercial-validation')).toContainText('Некорректные допущения');
   await expect(page.locator('[data-commercial-kpi]')).toHaveCount(0);
